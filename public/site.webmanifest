@@ -1,0 +1,19 @@
+{
+  "name": "Tesis20 | Elaboración y asesoría de tesis",
+  "short_name": "Tesis20",
+  "description": "Acompañamiento personalizado para tesis y proyectos de investigación.",
+  "lang": "es-PE",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#F5BD42",
+  "theme_color": "#F5BD42",
+  "icons": [
+    {
+      "src": "/assets/tesis20-logo.png",
+      "sizes": "300x300",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

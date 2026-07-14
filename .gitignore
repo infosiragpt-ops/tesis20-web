@@ -1,0 +1,15 @@
+node_modules/
+dist/
+.npm-cache/
+.playwright-cli/
+output/
+tmp/
+qa/
+reference/
+public/qa*.html
+public/qa-results/
+AGENTS.md
+design-qa.md
+.npmrc
+.DS_Store
+*.log
