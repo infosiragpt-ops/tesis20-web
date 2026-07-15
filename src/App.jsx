@@ -102,6 +102,13 @@ const evidenceGroups = [
         width: 1280,
         height: 1662,
       },
+      {
+        src: "/assets/evidence/case-407-audio-feedback-full.png",
+        alt: "Captura completa y anonimizada del seguimiento por audio y un resultado académico reportado",
+        label: "Seguimiento por audio",
+        width: 1992,
+        height: 1724,
+      },
     ],
   },
 ];
