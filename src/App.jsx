@@ -133,7 +133,7 @@ const services = [
   {
     id: "tesis-i-proyecto",
     title: "Tesis I – Proyecto",
-    price: "S/ 800",
+    price: "S/ 650",
     category: "Tesis",
     summary: "Construcción del proyecto de investigación desde el planteamiento inicial.",
     audio: "/assets/audio/servicio-tesis-1-proyecto.mp3",
