@@ -3,6 +3,7 @@ import { Pause } from "@phosphor-icons/react/Pause";
 import { Play } from "@phosphor-icons/react/Play";
 import { SpeakerHigh } from "@phosphor-icons/react/SpeakerHigh";
 import { SpeakerSlash } from "@phosphor-icons/react/SpeakerSlash";
+import { trackInteraction } from "./platform-enhancements.jsx";
 
 const AUDIO_PLAY_EVENT = "tesis20:audio-play";
 
@@ -13,14 +14,17 @@ function formatTime(value) {
   return `${minutes}:${String(seconds).padStart(2, "0")}`;
 }
 
-export function AudioPlayer({ src, title, variant = "card" }) {
+export function AudioPlayer({ src, title, variant = "card", durationHint = 0 }) {
   const audioRef = useRef(null);
+  const trackedStartRef = useRef(false);
   const playerId = useId();
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(0);
+  const [duration, setDuration] = useState(durationHint);
   const [hasError, setHasError] = useState(false);
+  const [playbackNotice, setPlaybackNotice] = useState("");
+  const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
     const pauseWhenAnotherStarts = (event) => {
@@ -33,6 +37,16 @@ export function AudioPlayer({ src, title, variant = "card" }) {
     return () => window.removeEventListener(AUDIO_PLAY_EVENT, pauseWhenAnotherStarts);
   }, [playerId]);
 
+  useEffect(() => {
+    const pauseWhenHidden = () => {
+      if (document.hidden && audioRef.current && !audioRef.current.paused) {
+        audioRef.current.pause();
+      }
+    };
+    document.addEventListener("visibilitychange", pauseWhenHidden);
+    return () => document.removeEventListener("visibilitychange", pauseWhenHidden);
+  }, []);
+
   const togglePlayback = async () => {
     const audio = audioRef.current;
     if (!audio || hasError) return;
@@ -40,9 +54,12 @@ export function AudioPlayer({ src, title, variant = "card" }) {
     if (audio.paused) {
       window.dispatchEvent(new CustomEvent(AUDIO_PLAY_EVENT, { detail: playerId }));
       try {
+        setPlaybackNotice("");
         await audio.play();
-      } catch {
-        setHasError(true);
+      } catch (error) {
+        if (error?.name !== "AbortError") {
+          setPlaybackNotice("No se pudo iniciar el audio. Intenta nuevamente.");
+        }
       }
     } else {
       audio.pause();
@@ -64,6 +81,16 @@ export function AudioPlayer({ src, title, variant = "card" }) {
   };
 
   const progress = duration ? Math.min(100, (currentTime / duration) * 100) : 0;
+  const canSeek = isReady && Number.isFinite(duration) && duration > 0 && !hasError;
+
+  const retryAudio = () => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    setHasError(false);
+    setPlaybackNotice("");
+    setIsReady(false);
+    audio.load();
+  };
 
   return (
     <div
@@ -74,21 +101,36 @@ export function AudioPlayer({ src, title, variant = "card" }) {
       <audio
         ref={audioRef}
         src={src}
-        preload="metadata"
+        preload="none"
         playsInline
         onLoadedMetadata={(event) => {
-          setDuration(event.currentTarget.duration || 0);
+          setDuration(event.currentTarget.duration || durationHint || 0);
           setHasError(false);
+          setIsReady(true);
         }}
-        onDurationChange={(event) => setDuration(event.currentTarget.duration || 0)}
+        onDurationChange={(event) =>
+          setDuration(event.currentTarget.duration || durationHint || 0)
+        }
         onTimeUpdate={(event) => setCurrentTime(event.currentTarget.currentTime)}
-        onPlay={() => setIsPlaying(true)}
+        onPlay={() => {
+          setIsPlaying(true);
+          setPlaybackNotice("");
+          if (!trackedStartRef.current) {
+            trackedStartRef.current = true;
+            trackInteraction("audio_started", { title, variant });
+          }
+        }}
         onPause={() => setIsPlaying(false)}
         onEnded={() => {
           setIsPlaying(false);
           setCurrentTime(0);
+          trackedStartRef.current = false;
+          trackInteraction("audio_completed", { title, variant });
         }}
-        onError={() => setHasError(true)}
+        onError={() => {
+          setHasError(true);
+          setIsReady(false);
+        }}
       />
 
       <button
@@ -111,9 +153,10 @@ export function AudioPlayer({ src, title, variant = "card" }) {
           <strong>{title}</strong>
         </div>
         {hasError ? (
-          <p className="audio-player__error" role="status">
-            El audio no está disponible en este momento.
-          </p>
+          <div className="audio-player__error" role="status">
+            <span>El audio no está disponible en este momento.</span>
+            <button type="button" onClick={retryAudio}>Reintentar</button>
+          </div>
         ) : (
           <div className="audio-player__timeline">
             <span aria-hidden="true">{formatTime(currentTime)}</span>
@@ -125,11 +168,16 @@ export function AudioPlayer({ src, title, variant = "card" }) {
               value={Math.min(currentTime, duration || 0)}
               onChange={seek}
               aria-label={`Posición de ${title}`}
+              aria-valuetext={`${formatTime(currentTime)} de ${formatTime(duration)}`}
+              disabled={!canSeek}
               style={{ "--audio-progress": `${progress}%` }}
             />
             <span aria-hidden="true">{formatTime(duration)}</span>
           </div>
         )}
+        {playbackNotice ? (
+          <p className="audio-player__notice" role="status">{playbackNotice}</p>
+        ) : null}
       </div>
 
       <button

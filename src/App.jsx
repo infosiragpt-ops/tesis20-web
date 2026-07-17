@@ -42,8 +42,32 @@ import {
 import { AudioPlayer } from "./audio-player.jsx";
 import contractTemplate from "./data/contract-template.json";
 
-const whatsappHref =
-  "https://api.whatsapp.com/send?phone=51918714054&text=%C2%A1Hola!%20Deseo%20obtener%20m%C3%A1s%20informaci%C3%B3n%20sobre%20los%20servicios%20de%20TESIS20.";
+const whatsappPhone = "51918714054";
+
+function buildWhatsappHref(message) {
+  return `https://api.whatsapp.com/send?phone=${whatsappPhone}&text=${encodeURIComponent(message)}`;
+}
+
+const whatsappMessages = {
+  home: "¡Hola! Deseo orientación para desarrollar mi tesis o proyecto con Tesis20.",
+  services: "¡Hola! Deseo orientación para elegir el servicio adecuado para mi investigación.",
+  evidence: "¡Hola! Revisé las evidencias de Tesis20 y deseo información sobre el acompañamiento.",
+  contract: "¡Hola! Revisé el contrato general de Tesis20 y deseo orientación antes de comenzar.",
+};
+
+function getPageFromPathname(pathname = window.location.pathname) {
+  if (pathname.startsWith("/servicios")) return "services";
+  if (pathname.startsWith("/evidencias")) return "evidence";
+  if (pathname.startsWith("/contrato")) return "contract";
+  return "home";
+}
+
+function normalizeSearchText(value) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLocaleLowerCase("es");
+}
 
 const navigation = [
   { label: "Inicio", href: "#inicio", servicesHref: "/#inicio", page: "home" },
@@ -121,6 +145,7 @@ const services = [
     category: "Publicación",
     summary: "Búsqueda, análisis y redacción científica con una estructura clara.",
     audio: "/assets/audio/servicio-articulo-cientifico.mp3",
+    audioDuration: 54.4,
     Icon: FileText,
     benefits: [
       "Búsqueda avanzada: +300 artículos de WoS, Scopus, SciELO y Redalyc",
@@ -137,6 +162,7 @@ const services = [
     category: "Tesis",
     summary: "Construcción del proyecto de investigación desde el planteamiento inicial.",
     audio: "/assets/audio/servicio-tesis-1-proyecto.mp3",
+    audioDuration: 56.4,
     Icon: ClipboardText,
     benefits: [
       "Introducción",
@@ -157,6 +183,7 @@ const services = [
     category: "Tesis",
     summary: "Desarrollo integral de la investigación hasta conclusiones y bibliografía.",
     audio: "/assets/audio/servicio-tesis-2-titulacion.mp3",
+    audioDuration: 56.6,
     Icon: GraduationCap,
     benefits: [
       "Planteamiento del título",
@@ -179,6 +206,7 @@ const services = [
     category: "Titulación",
     summary: "Acompañamiento completo para convertir tu experiencia en un trabajo sustentable.",
     audio: "/assets/audio/servicio-suficiencia-profesional.mp3",
+    audioDuration: 55.1,
     Icon: UserFocus,
     benefits: [
       "Selección del título",
@@ -206,6 +234,7 @@ const services = [
     category: "Estadística",
     summary: "Procesamiento, análisis e interpretación de datos con orientación personalizada.",
     audio: "/assets/audio/servicio-ibm-spss-statistics.mp3",
+    audioDuration: 54.9,
     Icon: MagnifyingGlass,
     benefits: [
       "Reunión para analizar su trabajo",
@@ -222,6 +251,7 @@ const services = [
     category: "Sustentación",
     summary: "Práctica guiada, preguntas del jurado y retroalimentación para defender tu trabajo.",
     audio: "/assets/audio/servicio-simulacion-sustentacion.mp3",
+    audioDuration: 50,
     Icon: VideoCamera,
     benefits: [
       "Subir sus PPT para la sustentación",
@@ -385,15 +415,23 @@ const servicesFaqs = [
 
 const noFaqs = [];
 
-function WhatsappButton({ children, className = "", dark = false }) {
+function WhatsappButton({ children, className = "", dark = false, message, location }) {
+  const page = getPageFromPathname();
+  const href = buildWhatsappHref(message || whatsappMessages[page]);
+
   return (
     <a
       className={`whatsapp-button ${dark ? "whatsapp-button--dark" : ""} ${className}`}
-      href={whatsappHref}
+      href={href}
       target="_blank"
       rel="noopener noreferrer"
       aria-label={`${children} por WhatsApp (se abre en una pestaña nueva)`}
-      onClick={() => trackInteraction("whatsapp_click", { location: className || "content" })}
+      onClick={() =>
+        trackInteraction("whatsapp_click", {
+          location: location || className || "content",
+          page,
+        })
+      }
     >
       <WhatsappLogo size={24} weight="fill" aria-hidden="true" />
       <span>{children}</span>
@@ -409,25 +447,45 @@ function getNavigationHref(item, currentPage) {
 function Header({ menuOpen, onMenuToggle, onNavigate, currentPage, isScrolled }) {
   const menuButtonRef = useRef(null);
   const firstMobileLinkRef = useRef(null);
+  const mobileNavigationRef = useRef(null);
 
   useEffect(() => {
     if (!menuOpen) return undefined;
 
     const previousOverflow = document.body.style.overflow;
-    const handleEscape = (event) => {
+    const handleKeyDown = (event) => {
       if (event.key === "Escape") {
         onMenuToggle();
-        window.requestAnimationFrame(() => menuButtonRef.current?.focus());
+        return;
+      }
+
+      if (event.key === "Tab" && mobileNavigationRef.current) {
+        const focusable = [
+          ...mobileNavigationRef.current.querySelectorAll(
+            'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])',
+          ),
+        ];
+        if (!focusable.length) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first.focus();
+        }
       }
     };
 
     document.body.style.overflow = "hidden";
-    window.addEventListener("keydown", handleEscape);
+    window.addEventListener("keydown", handleKeyDown);
     window.requestAnimationFrame(() => firstMobileLinkRef.current?.focus());
 
     return () => {
       document.body.style.overflow = previousOverflow;
-      window.removeEventListener("keydown", handleEscape);
+      window.removeEventListener("keydown", handleKeyDown);
+      window.requestAnimationFrame(() => menuButtonRef.current?.focus());
     };
   }, [menuOpen, onMenuToggle]);
 
@@ -487,6 +545,9 @@ function Header({ menuOpen, onMenuToggle, onNavigate, currentPage, isScrolled })
         className={`mobile-navigation ${menuOpen ? "mobile-navigation--open" : ""}`}
         id="mobile-navigation"
         aria-label="Navegación móvil"
+        aria-hidden={!menuOpen}
+        inert={!menuOpen ? true : undefined}
+        ref={mobileNavigationRef}
       >
         <div className="mobile-navigation__inner">
           {navigation.map((item, index) => (
@@ -789,6 +850,7 @@ function AudioIntroduction() {
           src="/assets/audio/tesis20-presentacion.mp3"
           title="Presentación de Tesis20"
           variant="featured"
+          durationHint={60.3}
         />
       </div>
     </section>
@@ -879,7 +941,7 @@ function FinalCta() {
 
 function serviceWhatsappHref(service) {
   const message = `¡Hola! Deseo más información sobre el servicio ${service.title}, desde ${service.price}.`;
-  return `https://api.whatsapp.com/send?phone=51918714054&text=${encodeURIComponent(message)}`;
+  return buildWhatsappHref(message);
 }
 
 function ServiceCard({ service, index }) {
@@ -935,7 +997,16 @@ function ServiceCard({ service, index }) {
             type="button"
             aria-expanded={expanded}
             aria-controls={`${service.id}-beneficios`}
-            onClick={() => setExpanded((current) => !current)}
+            onClick={() =>
+              setExpanded((current) => {
+                const nextExpanded = !current;
+                trackInteraction("service_details_toggle", {
+                  service: service.id,
+                  expanded: nextExpanded,
+                });
+                return nextExpanded;
+              })
+            }
           >
             <span>
               {expanded
@@ -949,7 +1020,11 @@ function ServiceCard({ service, index }) {
         )}
 
         {service.audio ? (
-          <AudioPlayer src={service.audio} title={service.title} />
+          <AudioPlayer
+            src={service.audio}
+            title={service.title}
+            durationHint={service.audioDuration}
+          />
         ) : null}
 
         <a
@@ -1096,31 +1171,69 @@ function EvidencePage() {
 }
 
 function ServicesPage() {
-  const [serviceQuery, setServiceQuery] = useState("");
-  const [activeCategory, setActiveCategory] = useState("Todos");
+  const searchInputRef = useRef(null);
+  const [serviceQuery, setServiceQuery] = useState(
+    () => new URLSearchParams(window.location.search).get("q") || "",
+  );
+  const [activeCategory, setActiveCategory] = useState(() => {
+    const requestedCategory = new URLSearchParams(window.location.search).get("categoria");
+    return services.some((service) => service.category === requestedCategory)
+      ? requestedCategory
+      : "Todos";
+  });
   const categories = useMemo(
     () => ["Todos", ...new Set(services.map((service) => service.category))],
     [],
   );
   const filteredServices = useMemo(() => {
-    const normalizedQuery = serviceQuery.trim().toLocaleLowerCase("es");
+    const normalizedQuery = normalizeSearchText(serviceQuery.trim());
     return services.filter((service) => {
       const matchesCategory = activeCategory === "Todos" || service.category === activeCategory;
-      const searchableText = [
-        service.title,
-        service.category,
-        service.summary,
-        ...service.benefits,
-      ]
-        .join(" ")
-        .toLocaleLowerCase("es");
+      const searchableText = normalizeSearchText(
+        [service.title, service.category, service.summary, ...service.benefits].join(" "),
+      );
       return matchesCategory && (!normalizedQuery || searchableText.includes(normalizedQuery));
     });
   }, [activeCategory, serviceQuery]);
 
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    if (serviceQuery.trim()) url.searchParams.set("q", serviceQuery.trim());
+    else url.searchParams.delete("q");
+    if (activeCategory !== "Todos") url.searchParams.set("categoria", activeCategory);
+    else url.searchParams.delete("categoria");
+    window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
+  }, [activeCategory, serviceQuery]);
+
+  useEffect(() => {
+    const focusSearch = (event) => {
+      if (event.key !== "/" || event.metaKey || event.ctrlKey || event.altKey) return;
+      const target = event.target;
+      if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target?.isContentEditable) {
+        return;
+      }
+      event.preventDefault();
+      searchInputRef.current?.focus();
+    };
+    window.addEventListener("keydown", focusSearch);
+    return () => window.removeEventListener("keydown", focusSearch);
+  }, []);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      trackInteraction("service_filter", {
+        category: activeCategory,
+        queryLength: serviceQuery.trim().length,
+        results: filteredServices.length,
+      });
+    }, 450);
+    return () => window.clearTimeout(timer);
+  }, [activeCategory, filteredServices.length, serviceQuery]);
+
   const resetFilters = () => {
     setServiceQuery("");
     setActiveCategory("Todos");
+    window.requestAnimationFrame(() => searchInputRef.current?.focus());
   };
 
   return (
@@ -1175,14 +1288,32 @@ function ServicesPage() {
               <span className="service-finder__input">
                 <MagnifyingGlass size={20} aria-hidden="true" />
                 <input
+                  ref={searchInputRef}
                   type="search"
                   value={serviceQuery}
                   onChange={(event) => setServiceQuery(event.target.value)}
                   placeholder="Ej.: SPSS, metodología, sustentación"
                   autoComplete="off"
+                  aria-describedby="service-finder-help service-finder-count"
                 />
+                {serviceQuery ? (
+                  <button
+                    className="service-finder__clear"
+                    type="button"
+                    aria-label="Limpiar búsqueda"
+                    onClick={() => {
+                      setServiceQuery("");
+                      searchInputRef.current?.focus();
+                    }}
+                  >
+                    <X size={18} aria-hidden="true" />
+                  </button>
+                ) : null}
               </span>
             </label>
+            <p className="sr-only" id="service-finder-help">
+              Escribe una necesidad o presiona la tecla diagonal para enfocar este buscador.
+            </p>
             <div className="service-finder__categories" aria-label="Categorías de servicios">
               {categories.map((category) => (
                 <button
@@ -1195,7 +1326,13 @@ function ServicesPage() {
                 </button>
               ))}
             </div>
-            <p className="service-finder__count" role="status" aria-live="polite">
+            <p
+              className="service-finder__count"
+              id="service-finder-count"
+              role="status"
+              aria-live="polite"
+              aria-atomic="true"
+            >
               {filteredServices.length} {filteredServices.length === 1 ? "servicio disponible" : "servicios disponibles"}
             </p>
           </div>
@@ -1215,7 +1352,17 @@ function ServicesPage() {
               <MagnifyingGlass size={36} weight="light" aria-hidden="true" />
               <h3>No encontramos un servicio con esos filtros</h3>
               <p>Prueba con otra palabra o vuelve a ver el catálogo completo.</p>
-              <button type="button" onClick={resetFilters}>Ver todos los servicios</button>
+              <div className="service-empty__actions">
+                <button type="button" onClick={resetFilters}>Ver todos los servicios</button>
+                <WhatsappButton
+                  dark
+                  className="service-empty__cta"
+                  location="service_empty"
+                  message={`¡Hola! Busqué ${serviceQuery.trim() || activeCategory} en los servicios de Tesis20 y deseo orientación personalizada.`}
+                >
+                  Consultar mi caso
+                </WhatsappButton>
+              </div>
             </div>
           )}
         </div>
@@ -1414,7 +1561,14 @@ function Footer() {
     <footer className="site-footer" id="contacto">
       <div className="footer-inner">
         <div className="footer-brand">
-          <img src="/assets/tesis20-logo.png" alt="Tesis20" width="300" height="300" />
+          <img
+            src="/assets/tesis20-logo.png"
+            alt="Tesis20"
+            width="300"
+            height="300"
+            loading="lazy"
+            decoding="async"
+          />
           <p>Tu tesis, con una ruta clara y acompañamiento real.</p>
           <WhatsappButton className="footer-brand__cta">Solicitar orientación</WhatsappButton>
         </div>
@@ -1423,13 +1577,28 @@ function Footer() {
           <a href="/servicios">Servicios</a>
           <a href="/evidencias">Evidencias</a>
           <a href="/contrato">Contrato</a>
-          <a href="http://campusvirtual.tesis20.com/login/index.php" target="_blank" rel="noopener noreferrer">
+          <a
+            href="http://campusvirtual.tesis20.com/login/index.php"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Aula virtual (se abre en una pestaña nueva)"
+          >
             Aula virtual
           </a>
-          <a href="https://tesis20.com/parafrasea/" target="_blank" rel="noopener noreferrer">
+          <a
+            href="https://tesis20.com/parafrasea/"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Paráfrasea IA (se abre en una pestaña nueva)"
+          >
             Paráfrasea IA
           </a>
-          <a href="https://www.gestion.tesis20.com" target="_blank" rel="noopener noreferrer">
+          <a
+            href="https://www.gestion.tesis20.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Pagos (se abre en una pestaña nueva)"
+          >
             Pagos
           </a>
         </nav>
@@ -1482,13 +1651,8 @@ function Footer() {
 export function App() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
-  const currentPage = window.location.pathname.startsWith("/servicios")
-    ? "services"
-    : window.location.pathname.startsWith("/evidencias")
-      ? "evidence"
-      : window.location.pathname.startsWith("/contrato")
-        ? "contract"
-        : "home";
+  const currentPage = getPageFromPathname();
+  const pageWhatsappHref = buildWhatsappHref(whatsappMessages[currentPage]);
   const toggleMenu = useCallback(() => setMenuOpen((current) => !current), []);
   const closeMenu = useCallback(() => setMenuOpen(false), []);
   const faqItems = currentPage === "services" ? servicesFaqs : currentPage === "home" ? homeFaqs : noFaqs;
@@ -1519,7 +1683,7 @@ export function App() {
   return (
     <div className="site-shell">
       <a className="skip-link" href="#main-content">Saltar al contenido principal</a>
-      <SeoManager currentPage={currentPage} faqItems={faqItems} />
+      <SeoManager currentPage={currentPage} faqItems={faqItems} serviceItems={services} />
       <RouteAnnouncer currentPage={currentPage} />
       <ScrollProgress />
       <Header
@@ -1540,7 +1704,11 @@ export function App() {
           <Hero />
           <TrustStrip />
           <ProofSection />
-          <QuickFacts />
+          <QuickFacts
+            servicesCount={services.length}
+            resultsCount={gradeResults.length}
+            stagesCount={3}
+          />
           <AudioIntroduction />
           <MethodSection />
           <SupportSection />
@@ -1552,16 +1720,18 @@ export function App() {
       <Footer />
       <a
         className="floating-whatsapp"
-        href={whatsappHref}
+        href={pageWhatsappHref}
         target="_blank"
         rel="noopener noreferrer"
         aria-label="Contactar a Tesis20 por WhatsApp (se abre en una pestaña nueva)"
-        onClick={() => trackInteraction("whatsapp_click", { location: "floating" })}
+        onClick={() =>
+          trackInteraction("whatsapp_click", { location: "floating", page: currentPage })
+        }
       >
         <WhatsappLogo size={34} weight="fill" />
       </a>
       <BackToTop />
-      <MobileContactBar href={whatsappHref} />
+      <MobileContactBar href={pageWhatsappHref} page={currentPage} />
     </div>
   );
 }

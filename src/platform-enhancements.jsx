@@ -1,4 +1,4 @@
-import { Component, useEffect, useRef, useState } from "react";
+import { Component, useEffect, useId, useRef, useState } from "react";
 import { ArrowLeft } from "@phosphor-icons/react/ArrowLeft";
 import { ArrowRight } from "@phosphor-icons/react/ArrowRight";
 import { ArrowUp } from "@phosphor-icons/react/ArrowUp";
@@ -73,10 +73,16 @@ function upsertMeta(selector, attributes) {
   Object.entries(attributes).forEach(([name, value]) => element.setAttribute(name, value));
 }
 
-export function SeoManager({ currentPage, faqItems = [] }) {
+export function SeoManager({ currentPage, faqItems = [], serviceItems = [] }) {
   useEffect(() => {
     const meta = PAGE_META[currentPage] || PAGE_META.home;
     const canonicalUrl = `https://tesis20.com${meta.path}`;
+    const pageLabels = {
+      home: "Inicio",
+      services: "Servicios",
+      evidence: "Evidencias",
+      contract: "Contrato",
+    };
 
     document.documentElement.lang = "es-PE";
     document.title = meta.title;
@@ -97,6 +103,18 @@ export function SeoManager({ currentPage, faqItems = [] }) {
       property: "og:image",
       content: "https://tesis20.com/assets/hero-students.png",
     });
+    upsertMeta('meta[property="og:image:alt"]', {
+      property: "og:image:alt",
+      content: "Estudiantes universitarios acompañados por Tesis20",
+    });
+    upsertMeta('meta[property="og:image:width"]', {
+      property: "og:image:width",
+      content: "800",
+    });
+    upsertMeta('meta[property="og:image:height"]', {
+      property: "og:image:height",
+      content: "999",
+    });
     upsertMeta('meta[name="twitter:card"]', {
       name: "twitter:card",
       content: "summary_large_image",
@@ -106,6 +124,14 @@ export function SeoManager({ currentPage, faqItems = [] }) {
       name: "twitter:description",
       content: meta.description,
     });
+    upsertMeta('meta[name="twitter:image"]', {
+      name: "twitter:image",
+      content: "https://tesis20.com/assets/hero-students.png",
+    });
+    upsertMeta('meta[name="twitter:image:alt"]', {
+      name: "twitter:image:alt",
+      content: "Estudiantes universitarios acompañados por Tesis20",
+    });
 
     let canonical = document.head.querySelector('link[rel="canonical"]');
     if (!canonical) {
@@ -114,6 +140,54 @@ export function SeoManager({ currentPage, faqItems = [] }) {
       document.head.appendChild(canonical);
     }
     canonical.href = canonicalUrl;
+
+    const breadcrumbs = {
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        {
+          "@type": "ListItem",
+          position: 1,
+          name: "Inicio",
+          item: "https://tesis20.com/",
+        },
+        ...(currentPage === "home"
+          ? []
+          : [
+              {
+                "@type": "ListItem",
+                position: 2,
+                name: pageLabels[currentPage],
+                item: canonicalUrl,
+              },
+            ]),
+      ],
+    };
+    const servicesCatalog =
+      currentPage === "services" && serviceItems.length
+        ? {
+            "@type": "ItemList",
+            name: "Servicios académicos de Tesis20",
+            numberOfItems: serviceItems.length,
+            itemListElement: serviceItems.map((service, index) => ({
+              "@type": "ListItem",
+              position: index + 1,
+              item: {
+                "@type": "Service",
+                name: service.title,
+                description: service.summary,
+                serviceType: service.category,
+                areaServed: { "@type": "Country", name: "Perú" },
+                offers: {
+                  "@type": "Offer",
+                  price: Number(service.price.replace(/[^\d.]/g, "")),
+                  priceCurrency: "PEN",
+                  url: `https://tesis20.com/servicios#${service.id}`,
+                  description: "Precio referencial sujeto a revisión del alcance.",
+                },
+              },
+            })),
+          }
+        : null;
 
     const schema = {
       "@context": "https://schema.org",
@@ -127,6 +201,8 @@ export function SeoManager({ currentPage, faqItems = [] }) {
           inLanguage: "es-PE",
           isPartOf: { "@type": "WebSite", name: "Tesis20", url: "https://tesis20.com" },
         },
+        breadcrumbs,
+        ...(servicesCatalog ? [servicesCatalog] : []),
         ...(faqItems.length
           ? [
               {
@@ -150,7 +226,8 @@ export function SeoManager({ currentPage, faqItems = [] }) {
       document.head.appendChild(structuredData);
     }
     structuredData.textContent = JSON.stringify(schema);
-  }, [currentPage, faqItems]);
+    trackInteraction("page_view", { page: currentPage });
+  }, [currentPage, faqItems, serviceItems]);
 
   return null;
 }
@@ -201,11 +278,11 @@ export function ScrollProgress() {
   );
 }
 
-export function QuickFacts() {
+export function QuickFacts({ servicesCount, resultsCount, stagesCount }) {
   const facts = [
-    { value: "6", label: "servicios especializados" },
-    { value: "15", label: "calificaciones publicadas" },
-    { value: "3", label: "etapas de acompañamiento" },
+    { value: servicesCount, label: "servicios especializados" },
+    { value: resultsCount, label: "calificaciones publicadas" },
+    { value: stagesCount, label: "etapas de acompañamiento" },
   ];
 
   return (
@@ -279,6 +356,7 @@ export function SafeImage({ fallbackLabel = "Imagen no disponible", onError, ...
 export function ImageLightbox({ items, index, onChange, onClose, returnFocusRef, label }) {
   const closeRef = useRef(null);
   const panelRef = useRef(null);
+  const descriptionId = useId();
   const item = items[index];
   const hasMultiple = items.length > 1;
 
@@ -331,11 +409,15 @@ export function ImageLightbox({ items, index, onChange, onClose, returnFocusRef,
       role="dialog"
       aria-modal="true"
       aria-label={label}
+      aria-describedby={descriptionId}
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) onClose();
       }}
     >
       <div className="image-lightbox__panel" ref={panelRef}>
+        <p className="sr-only" id={descriptionId} aria-live="polite" aria-atomic="true">
+          {item.alt}. Imagen {index + 1} de {items.length}.
+        </p>
         <div className="image-lightbox__toolbar">
           <div>
             <span>{label}</span>
@@ -390,6 +472,8 @@ export function BackToTop() {
       className={`back-to-top ${visible ? "back-to-top--visible" : ""}`}
       type="button"
       aria-label="Volver al inicio"
+      aria-hidden={!visible}
+      tabIndex={visible ? 0 : -1}
       onClick={() =>
         window.scrollTo({
           top: 0,
@@ -402,7 +486,7 @@ export function BackToTop() {
   );
 }
 
-export function MobileContactBar({ href }) {
+export function MobileContactBar({ href, page }) {
   return (
     <aside className="mobile-contact-bar" aria-label="Acceso rápido a orientación">
       <div>
@@ -413,7 +497,8 @@ export function MobileContactBar({ href }) {
         href={href}
         target="_blank"
         rel="noopener noreferrer"
-        onClick={() => trackInteraction("whatsapp_click", { location: "mobile_bar" })}
+        aria-label="Consultar por WhatsApp (se abre en una pestaña nueva)"
+        onClick={() => trackInteraction("whatsapp_click", { location: "mobile_bar", page })}
       >
         <WhatsappLogo size={20} weight="fill" aria-hidden="true" />
         <span>Consultar</span>
@@ -430,6 +515,13 @@ export class AppErrorBoundary extends Component {
 
   static getDerivedStateFromError() {
     return { hasError: true };
+  }
+
+  componentDidCatch(error, info) {
+    trackInteraction("app_error", {
+      errorName: error?.name || "Error",
+      hasComponentStack: Boolean(info?.componentStack),
+    });
   }
 
   render() {
@@ -451,9 +543,30 @@ export class AppErrorBoundary extends Component {
 }
 
 export function trackInteraction(action, detail = {}) {
+  const safeDetail = Object.fromEntries(
+    Object.entries(detail).filter(([, value]) =>
+      ["string", "number", "boolean"].includes(typeof value),
+    ),
+  );
+  const payload = { action, timestamp: Date.now(), ...safeDetail };
+
   window.dispatchEvent(
     new CustomEvent("tesis20:interaction", {
-      detail: { action, timestamp: Date.now(), ...detail },
+      detail: payload,
     }),
   );
+
+  try {
+    const storageKey = "tesis20:session-events";
+    const stored = JSON.parse(window.sessionStorage.getItem(storageKey) || "[]");
+    const events = Array.isArray(stored) ? stored : [];
+    events.push(payload);
+    window.sessionStorage.setItem(storageKey, JSON.stringify(events.slice(-80)));
+  } catch {
+    // La navegación sigue funcionando si el almacenamiento está deshabilitado.
+  }
+
+  if (Array.isArray(window.dataLayer)) {
+    window.dataLayer.push({ event: `tesis20_${action}`, ...safeDetail });
+  }
 }
