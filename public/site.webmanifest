@@ -1,19 +1,60 @@
 {
-  "name": "Tesis20 | Elaboración y asesoría de tesis",
+  "id": "/",
+  "name": "Tesis20 | Asesoría y acompañamiento para tesis",
   "short_name": "Tesis20",
   "description": "Acompañamiento personalizado para tesis y proyectos de investigación.",
   "lang": "es-PE",
+  "dir": "ltr",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
+  "orientation": "any",
   "background_color": "#F5BD42",
   "theme_color": "#F5BD42",
+  "categories": ["education", "productivity", "business"],
+  "prefer_related_applications": false,
   "icons": [
     {
-      "src": "/assets/tesis20-logo.png",
-      "sizes": "300x300",
+      "src": "/assets/tesis20-logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/icons/icon-192.png",
+      "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Ver servicios",
+      "short_name": "Servicios",
+      "description": "Explorar los servicios académicos de Tesis20.",
+      "url": "/servicios",
+      "icons": [{ "src": "/assets/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Ver evidencias",
+      "short_name": "Evidencias",
+      "description": "Consultar evidencias completas y anonimizadas.",
+      "url": "/evidencias",
+      "icons": [{ "src": "/assets/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Leer contrato",
+      "short_name": "Contrato",
+      "description": "Leer y descargar el contrato general de asesoría académica.",
+      "url": "/contrato",
+      "icons": [{ "src": "/assets/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
     }
   ]
 }

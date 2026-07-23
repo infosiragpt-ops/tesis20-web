@@ -17,9 +17,11 @@ concurrency:
 
 jobs:
   build:
-    name: Compilar plataforma
+    name: Compilar y validar plataforma
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    env:
+      CI: true
 
     steps:
       - name: Descargar código
@@ -34,5 +36,11 @@ jobs:
       - name: Instalar dependencias
         run: npm ci
 
+      - name: Validar sintaxis del control de calidad
+        run: node --check scripts/quality-check.mjs
+
       - name: Compilar
         run: npm run build
+
+      - name: Verificar HTML por ruta, SEO, enlaces, CSP, PWA y presupuesto
+        run: npm run quality

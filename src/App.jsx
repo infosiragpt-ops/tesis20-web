@@ -29,6 +29,7 @@ import { X } from "@phosphor-icons/react/X";
 import { YoutubeLogo } from "@phosphor-icons/react/YoutubeLogo";
 import {
   BackToTop,
+  ConnectionStatus,
   FaqSection,
   ImageLightbox,
   MobileContactBar,
@@ -40,7 +41,15 @@ import {
   trackInteraction,
 } from "./platform-enhancements.jsx";
 import { AudioPlayer } from "./audio-player.jsx";
+import { DiagnosticWizard } from "./diagnostic-wizard.jsx";
 import contractTemplate from "./data/contract-template.json";
+import presentationTranscript from "../audio-scripts/presentacion.txt?raw";
+import articleTranscript from "../audio-scripts/articulo-cientifico.txt?raw";
+import thesisOneTranscript from "../audio-scripts/tesis-i-proyecto.txt?raw";
+import thesisTwoTranscript from "../audio-scripts/tesis-ii-titulacion.txt?raw";
+import professionalTranscript from "../audio-scripts/suficiencia-profesional.txt?raw";
+import spssTranscript from "../audio-scripts/ibm-spss-statistics.txt?raw";
+import defenseTranscript from "../audio-scripts/simulacion-sustentacion.txt?raw";
 
 const whatsappPhone = "51918714054";
 
@@ -49,17 +58,31 @@ function buildWhatsappHref(message) {
 }
 
 const whatsappMessages = {
-  home: "¡Hola! Deseo orientación para desarrollar mi tesis o proyecto con Tesis20.",
+  home: "¡Hola! Deseo orientación para avanzar con mi propia tesis o proyecto junto a Tesis20.",
   services: "¡Hola! Deseo orientación para elegir el servicio adecuado para mi investigación.",
-  evidence: "¡Hola! Revisé las evidencias de Tesis20 y deseo información sobre el acompañamiento.",
+  evidence: "¡Hola! Revisé los resultados reportados por estudiantes y deseo información sobre el acompañamiento de Tesis20.",
   contract: "¡Hola! Revisé el contrato general de Tesis20 y deseo orientación antes de comenzar.",
 };
 
 function getPageFromPathname(pathname = window.location.pathname) {
-  if (pathname.startsWith("/servicios")) return "services";
-  if (pathname.startsWith("/evidencias")) return "evidence";
-  if (pathname.startsWith("/contrato")) return "contract";
-  return "home";
+  const normalizedPath = pathname.length > 1 ? pathname.replace(/\/+$/, "") : pathname;
+  const pageByPath = {
+    "/": "home",
+    "/index.html": "home",
+    "/servicios": "services",
+    "/evidencias": "evidence",
+    "/contrato": "contract",
+  };
+
+  if (getServiceIdFromPathname(normalizedPath)) return "services";
+  return pageByPath[normalizedPath] || "not-found";
+}
+
+function getServiceIdFromPathname(pathname = window.location.pathname) {
+  const normalizedPath = pathname.length > 1 ? pathname.replace(/\/+$/, "") : pathname;
+  const match = normalizedPath.match(/^\/servicios\/([a-z0-9-]+)$/);
+  if (!match) return null;
+  return services.some((service) => service.id === match[1]) ? match[1] : null;
 }
 
 function normalizeSearchText(value) {
@@ -67,6 +90,30 @@ function normalizeSearchText(value) {
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .toLocaleLowerCase("es");
+}
+
+function prefetchInternalPage(href) {
+  if (!href || href.startsWith("#") || href.startsWith("http")) return;
+  const absoluteUrl = new URL(href, window.location.origin);
+  if (absoluteUrl.origin !== window.location.origin) return;
+  const selector = `link[data-prefetch-route="${absoluteUrl.pathname}"]`;
+  if (document.head.querySelector(selector)) return;
+  const link = document.createElement("link");
+  link.rel = "prefetch";
+  link.href = absoluteUrl.pathname;
+  link.as = "document";
+  link.dataset.prefetchRoute = absoluteUrl.pathname;
+  document.head.appendChild(link);
+}
+
+function internalNavigationProps(item, currentPage) {
+  const href = getNavigationHref(item, currentPage);
+  if (item.external || href.startsWith("#")) return {};
+  return {
+    onMouseEnter: () => prefetchInternalPage(href),
+    onFocus: () => prefetchInternalPage(href),
+    onTouchStart: () => prefetchInternalPage(href),
+  };
 }
 
 const navigation = [
@@ -91,23 +138,28 @@ const evidenceGroups = [
   {
     id: "caso-672",
     phone: "+51 *** *** 672",
+    phoneSuffix: "672",
+    publicationAuthorized: true,
     images: [
       {
-        src: "/assets/evidence/case-672-payment-full.png",
+        src: "/assets/evidence/case-672-payment-full.jpg",
+        thumbnail: "/assets/thumbnails/evidence/case-672-payment-full.jpg",
         alt: "Captura completa y anonimizada de un pago compartido durante el proceso",
         label: "Inicio del proceso",
         width: 1994,
         height: 1662,
       },
       {
-        src: "/assets/evidence/case-672-reported-result-full.png",
+        src: "/assets/evidence/case-672-reported-result-full.jpg",
+        thumbnail: "/assets/thumbnails/evidence/case-672-reported-result-full.jpg",
         alt: "Captura completa y anonimizada de estudiante que reporta una calificación de 19",
         label: "Resultado reportado",
         width: 1280,
         height: 1658,
       },
       {
-        src: "/assets/evidence/case-672-grade-full.png",
+        src: "/assets/evidence/case-672-grade-full.jpg",
+        thumbnail: "/assets/thumbnails/evidence/case-672-grade-full.jpg",
         alt: "Captura completa y anonimizada de calificaciones con promedio final 19",
         label: "Calificación compartida",
         width: 1280,
@@ -118,9 +170,12 @@ const evidenceGroups = [
   {
     id: "caso-407",
     phone: "+51 *** *** 407",
+    phoneSuffix: "407",
+    publicationAuthorized: true,
     images: [
       {
-        src: "/assets/evidence/case-407-reported-result-full.png",
+        src: "/assets/evidence/case-407-reported-result-full.jpg",
+        thumbnail: "/assets/thumbnails/evidence/case-407-reported-result-full.jpg",
         alt: "Captura completa y anonimizada de estudiante que reporta una calificación de 17",
         label: "Resultado reportado",
         width: 1280,
@@ -128,6 +183,7 @@ const evidenceGroups = [
       },
       {
         src: "/assets/evidence/case-407-audio-feedback-full.png",
+        thumbnail: "/assets/thumbnails/evidence/case-407-audio-feedback-full.jpg",
         alt: "Captura completa y anonimizada del seguimiento por audio y un resultado académico reportado",
         label: "Seguimiento por audio",
         width: 1992,
@@ -135,7 +191,36 @@ const evidenceGroups = [
       },
     ],
   },
+  {
+    id: "caso-267",
+    phone: "+51 *** *** 267",
+    phoneSuffix: "267",
+    publicationAuthorized: true,
+    images: [
+      {
+        src: "/assets/evidence/case-267-grade-result-full.jpg",
+        thumbnail: "/assets/thumbnails/evidence/case-267-grade-result-full.jpg",
+        alt: "Captura completa y anonimizada de estudiante que comparte una calificación de 17",
+        label: "Calificación compartida",
+        width: 1346,
+        height: 1169,
+      },
+    ],
+  },
 ];
+
+const publishedEvidenceGroups = evidenceGroups.filter(
+  (group) => group.publicationAuthorized === true,
+);
+
+const serviceSearchAliases = {
+  "articulo-cientifico": "paper prisma revista publicacion scopus wos redalyc scielo",
+  "tesis-i-proyecto": "tesis 1 tesis uno plan proyecto metodologia matriz consistencia",
+  "tesis-ii-titulacion": "tesis 2 tesis dos informe resultados discusion conclusiones",
+  "suficiencia-profesional": "experiencia laboral titulacion trabajo profesional informe",
+  "ibm-spss-statistics": "spss estadistica estadisticas datos base analisis encuesta",
+  "simulacion-sustentacion": "defensa exposicion jurado preguntas ppt diapositivas",
+};
 
 const services = [
   {
@@ -143,15 +228,16 @@ const services = [
     title: "Artículo científico",
     price: "S/ 600",
     category: "Publicación",
-    summary: "Búsqueda, análisis y redacción científica con una estructura clara.",
+    summary: "Asesoría en búsqueda, análisis y estructuración de un artículo científico.",
     audio: "/assets/audio/servicio-articulo-cientifico.mp3",
     audioDuration: 54.4,
+    transcript: articleTranscript,
     Icon: FileText,
     benefits: [
       "Búsqueda avanzada: +300 artículos de WoS, Scopus, SciELO y Redalyc",
       "Análisis avanzado de 30 artículos",
-      "Redacción profesional del artículo científico bajo el modelo PRISMA",
-      "Parafraseado",
+      "Orientación para redactar el artículo científico bajo el modelo PRISMA",
+      "Revisión de parafraseado, citación y referencias",
       "Formato en APA, Vancouver, ISO, MLA, etc.",
     ],
   },
@@ -160,9 +246,10 @@ const services = [
     title: "Tesis I – Proyecto",
     price: "S/ 650",
     category: "Tesis",
-    summary: "Construcción del proyecto de investigación desde el planteamiento inicial.",
+    summary: "Asesoría para estructurar tu proyecto de investigación desde el planteamiento inicial.",
     audio: "/assets/audio/servicio-tesis-1-proyecto.mp3",
     audioDuration: 56.4,
+    transcript: thesisOneTranscript,
     Icon: ClipboardText,
     benefits: [
       "Introducción",
@@ -181,9 +268,10 @@ const services = [
     title: "Tesis II – De titulación",
     price: "S/ 1200",
     category: "Tesis",
-    summary: "Desarrollo integral de la investigación hasta conclusiones y bibliografía.",
+    summary: "Asesoría por etapas para desarrollar tu investigación hasta conclusiones y bibliografía.",
     audio: "/assets/audio/servicio-tesis-2-titulacion.mp3",
     audioDuration: 56.6,
+    transcript: thesisTwoTranscript,
     Icon: GraduationCap,
     benefits: [
       "Planteamiento del título",
@@ -207,6 +295,7 @@ const services = [
     summary: "Acompañamiento completo para convertir tu experiencia en un trabajo sustentable.",
     audio: "/assets/audio/servicio-suficiencia-profesional.mp3",
     audioDuration: 55.1,
+    transcript: professionalTranscript,
     Icon: UserFocus,
     benefits: [
       "Selección del título",
@@ -235,6 +324,7 @@ const services = [
     summary: "Procesamiento, análisis e interpretación de datos con orientación personalizada.",
     audio: "/assets/audio/servicio-ibm-spss-statistics.mp3",
     audioDuration: 54.9,
+    transcript: spssTranscript,
     Icon: MagnifyingGlass,
     benefits: [
       "Reunión para analizar su trabajo",
@@ -252,6 +342,7 @@ const services = [
     summary: "Práctica guiada, preguntas del jurado y retroalimentación para defender tu trabajo.",
     audio: "/assets/audio/servicio-simulacion-sustentacion.mp3",
     audioDuration: 50,
+    transcript: defenseTranscript,
     Icon: VideoCamera,
     benefits: [
       "Subir sus PPT para la sustentación",
@@ -266,52 +357,76 @@ const services = [
 const gradeImages = [
   {
     image: "/assets/grade-results/grade-01-average-19.png",
+    thumbnail: "/assets/thumbnails/grade-results/grade-01-average-19.jpg",
     width: 1134,
     height: 534,
+    average: "19",
+    partial: "20",
+    final: "18",
   },
   {
     image: "/assets/grade-results/grade-02-average-17.png",
+    thumbnail: "/assets/thumbnails/grade-results/grade-02-average-17.jpg",
     width: 1138,
     height: 528,
+    average: "17",
+    partial: "15",
+    final: "18",
   },
   {
     image: "/assets/grade-results/grade-03-average-18.png",
+    thumbnail: "/assets/thumbnails/grade-results/grade-03-average-18.jpg",
     width: 1140,
     height: 534,
+    average: "18",
+    partial: "18",
+    final: "18",
   },
   {
     image: "/assets/grade-results/grade-04-average-06.png",
+    thumbnail: "/assets/thumbnails/grade-results/grade-04-average-06.jpg",
     width: 1142,
     height: 528,
+    average: "06",
+    partial: "16",
+    final: "00",
   },
   {
     image: "/assets/grade-results/grade-05-average-17.png",
+    thumbnail: "/assets/thumbnails/grade-results/grade-05-average-17.jpg",
     width: 1138,
     height: 542,
+    average: "17",
+    partial: "18",
+    final: "17",
   },
 ];
 
-const gradeResults = Array.from({ length: 15 }, (_, index) => ({
-  id: `resultado-${String(index + 1).padStart(2, "0")}`,
-  image: gradeImages[index % gradeImages.length].image,
-  width: gradeImages[index % gradeImages.length].width,
-  height: gradeImages[index % gradeImages.length].height,
-}));
+const GRADE_GALLERY_SIZE = 15;
+const gradeResults = Array.from({ length: GRADE_GALLERY_SIZE }, (_, index) => {
+  const sourceIndex = index % gradeImages.length;
+
+  return {
+    id: `resultado-${String(index + 1).padStart(2, "0")}`,
+    captureNumber: sourceIndex + 1,
+    ...gradeImages[sourceIndex],
+  };
+});
 
 const gradeLightboxItems = gradeResults.map((result, index) => ({
   src: result.image,
-  alt: `Resultado de calificación ${index + 1} ampliado`,
+  alt: `Resultado ${index + 1}: promedio ${result.average}, examen parcial ${result.partial} y examen final ${result.final}`,
 }));
 
 const trustItems = [
   {
-    title: "Confidencialidad total",
-    body: "Tu información está 100% protegida.",
+    title: "Confidencialidad responsable",
+    body: "Tratamos tu información con medidas de privacidad.",
     Icon: ShieldCheck,
   },
   {
     title: "Asesoría personalizada",
-    body: "Un asesor experto te acompaña siempre.",
+    body: "Un asesor te acompaña según tu tema y etapa.",
     Icon: User,
   },
   {
@@ -320,8 +435,8 @@ const trustItems = [
     Icon: VideoCamera,
   },
   {
-    title: "Calidad garantizada",
-    body: "Trabajamos con altos estándares académicos.",
+    title: "Calidad cuidada",
+    body: "Revisamos cada entrega según el alcance acordado.",
     Icon: SealCheck,
   },
 ];
@@ -338,16 +453,16 @@ const journeySteps = [
     Icon: ClipboardText,
   },
   {
-    title: "Acompañamiento experto",
-    body: "Te guiamos con asesoría, clases en vivo y revisión constante hasta sustentar.",
+    title: "Acompañamiento por etapas",
+    body: "Te orientamos con asesoría, clases en vivo y revisiones para que desarrolles y sustentes tu propio trabajo.",
     Icon: UserFocus,
   },
 ];
 
 const commitmentItems = [
   {
-    title: "Exclusividad",
-    body: "Tus proyectos son originales. No toleramos el plagio.",
+    title: "Originalidad",
+    body: "Promovemos investigación propia y buenas prácticas de citación.",
     Icon: FileText,
   },
   {
@@ -356,13 +471,13 @@ const commitmentItems = [
     Icon: LockKey,
   },
   {
-    title: "Ilimitado",
-    body: "Clases en directo disponibles durante todo tu proceso.",
+    title: "Seguimiento continuo",
+    body: "Sesiones y revisiones de acuerdo con el servicio contratado.",
     Icon: Clock,
   },
   {
     title: "Calidad",
-    body: "Cuidamos la calidad académica de cada entrega.",
+    body: "Revisamos claridad, coherencia y formato según el alcance acordado.",
     Icon: Star,
   },
 ];
@@ -387,6 +502,11 @@ const homeFaqs = [
     question: "¿Cómo protegen mi información?",
     answer:
       "Tratamos la documentación de forma confidencial y anonimizamos las evidencias públicas para retirar nombres, códigos, fotografías y datos personales.",
+  },
+  {
+    question: "¿Quién conserva la autoría de la investigación?",
+    answer:
+      "El estudiante conserva la autoría y la responsabilidad académica de su investigación. Tesis20 brinda orientación metodológica, revisión, capacitación y acompañamiento para que desarrolle su propio trabajo.",
   },
 ];
 
@@ -417,7 +537,7 @@ const noFaqs = [];
 
 function WhatsappButton({ children, className = "", dark = false, message, location }) {
   const page = getPageFromPathname();
-  const href = buildWhatsappHref(message || whatsappMessages[page]);
+  const href = buildWhatsappHref(message || whatsappMessages[page] || whatsappMessages.home);
 
   return (
     <a
@@ -425,6 +545,7 @@ function WhatsappButton({ children, className = "", dark = false, message, locat
       href={href}
       target="_blank"
       rel="noopener noreferrer"
+      referrerPolicy="no-referrer"
       aria-label={`${children} por WhatsApp (se abre en una pestaña nueva)`}
       onClick={() =>
         trackInteraction("whatsapp_click", {
@@ -461,10 +582,11 @@ function Header({ menuOpen, onMenuToggle, onNavigate, currentPage, isScrolled })
 
       if (event.key === "Tab" && mobileNavigationRef.current) {
         const focusable = [
+          menuButtonRef.current,
           ...mobileNavigationRef.current.querySelectorAll(
             'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])',
           ),
-        ];
+        ].filter(Boolean);
         if (!focusable.length) return;
         const first = focusable[0];
         const last = focusable[focusable.length - 1];
@@ -483,9 +605,14 @@ function Header({ menuOpen, onMenuToggle, onNavigate, currentPage, isScrolled })
     window.requestAnimationFrame(() => firstMobileLinkRef.current?.focus());
 
     return () => {
+      const shouldRestoreFocus = Boolean(
+        mobileNavigationRef.current?.contains(document.activeElement),
+      );
       document.body.style.overflow = previousOverflow;
       window.removeEventListener("keydown", handleKeyDown);
-      window.requestAnimationFrame(() => menuButtonRef.current?.focus());
+      if (shouldRestoreFocus) {
+        window.requestAnimationFrame(() => menuButtonRef.current?.focus());
+      }
     };
   }, [menuOpen, onMenuToggle]);
 
@@ -498,7 +625,14 @@ function Header({ menuOpen, onMenuToggle, onNavigate, currentPage, isScrolled })
           aria-label="Tesis20 - Inicio"
           onClick={onNavigate}
         >
-          <img src="/assets/tesis20-logo.png" alt="Tesis20" width="300" height="300" />
+          <img
+            src="/assets/tesis20-logo.png"
+            alt="Tesis20"
+            width="300"
+            height="300"
+            decoding="async"
+            fetchPriority="high"
+          />
         </a>
 
         <nav className="desktop-navigation" aria-label="Navegación principal">
@@ -511,6 +645,9 @@ function Header({ menuOpen, onMenuToggle, onNavigate, currentPage, isScrolled })
               rel={item.external ? "noopener noreferrer" : undefined}
               aria-current={item.page === currentPage ? "page" : undefined}
               aria-label={item.external ? `${item.label} (se abre en una pestaña nueva)` : undefined}
+              referrerPolicy={item.external ? "no-referrer" : undefined}
+              onClick={() => trackInteraction("navigation_click", { page: item.page || "external", location: "desktop" })}
+              {...internalNavigationProps(item, currentPage)}
             >
               {item.label}
               {item.external ? <ArrowSquareOut size={14} aria-hidden="true" /> : null}
@@ -529,7 +666,7 @@ function Header({ menuOpen, onMenuToggle, onNavigate, currentPage, isScrolled })
           onClick={onMenuToggle}
           ref={menuButtonRef}
         >
-          {menuOpen ? <X size={28} /> : <List size={30} />}
+          {menuOpen ? <X size={28} aria-hidden="true" /> : <List size={30} aria-hidden="true" />}
         </button>
       </div>
 
@@ -537,6 +674,7 @@ function Header({ menuOpen, onMenuToggle, onNavigate, currentPage, isScrolled })
         className={`mobile-navigation__backdrop ${menuOpen ? "mobile-navigation__backdrop--visible" : ""}`}
         type="button"
         aria-label="Cerrar menú"
+        aria-hidden={!menuOpen}
         tabIndex={menuOpen ? 0 : -1}
         onClick={onNavigate}
       />
@@ -560,6 +698,8 @@ function Header({ menuOpen, onMenuToggle, onNavigate, currentPage, isScrolled })
               ref={index === 0 ? firstMobileLinkRef : undefined}
               aria-current={item.page === currentPage ? "page" : undefined}
               aria-label={item.external ? `${item.label} (se abre en una pestaña nueva)` : undefined}
+              referrerPolicy={item.external ? "no-referrer" : undefined}
+              {...internalNavigationProps(item, currentPage)}
             >
               <span>{item.label}</span>
               {item.external ? (
@@ -646,12 +786,13 @@ function Hero() {
         <div className="hero-copy">
           <p className="hero-eyebrow">Bienvenido a Tesis20</p>
           <h1 id="hero-title">
-            <span>Elaboración y asesoría</span>
-            <span>de tesis</span>
+            <span>Asesoría y acompañamiento</span>
+            {" "}
+            <span>para tu tesis</span>
           </h1>
           <p className="hero-intro">
-            Te guiamos paso a paso para que finalices tu tesis o proyecto y obtengas tu
-            título profesional con confianza.
+            Te guiamos paso a paso para que desarrolles tu investigación con una ruta
+            clara, manteniendo tu autoría y responsabilidad académica.
           </p>
           <div className="hero-actions">
             <WhatsappButton>Quiero orientación</WhatsappButton>
@@ -676,27 +817,25 @@ function Hero() {
           </ul>
         </div>
 
-        <div className="hero-visual" aria-label="Estudiantes avanzando con apoyo de Tesis20">
-          <img
-            className="hero-backdrop"
-            src="/assets/hero-backdrop.png"
-            alt=""
-            width="1508"
-            height="1043"
-            decoding="async"
-            aria-hidden="true"
-          />
+        <div
+          className="hero-visual"
+          role="group"
+          aria-label="Estudiantes avanzando con apoyo de Tesis20"
+        >
           <SafeImage
             className="hero-students"
             src="/assets/hero-students.png"
+            srcSet="/assets/hero-students.avif 800w"
             alt="Grupo de estudiantes universitarios"
             width="800"
             height="999"
             decoding="async"
             fetchPriority="high"
+            sizes="(max-width: 930px) 92vw, 46vw"
+            draggable="false"
           />
-          <div className="hero-journey" aria-label="Ruta de acompañamiento">
-            <div className="hero-journey__item">
+          <div className="hero-journey" role="list" aria-label="Ruta de acompañamiento">
+            <div className="hero-journey__item" role="listitem">
               <span className="hero-journey__number">1</span>
               <MagnifyingGlass size={29} aria-hidden="true" />
               <div>
@@ -704,7 +843,7 @@ function Hero() {
                 <span>Entendemos tu tema y objetivos.</span>
               </div>
             </div>
-            <div className="hero-journey__item">
+            <div className="hero-journey__item" role="listitem">
               <span className="hero-journey__number">2</span>
               <ClipboardText size={29} aria-hidden="true" />
               <div>
@@ -712,12 +851,12 @@ function Hero() {
                 <span>Trazamos tu ruta y cronograma.</span>
               </div>
             </div>
-            <div className="hero-journey__item">
+            <div className="hero-journey__item" role="listitem">
               <span className="hero-journey__number">3</span>
               <UserFocus size={29} aria-hidden="true" />
               <div>
                 <strong>Acompañamiento</strong>
-                <span>Te guiamos hasta la sustentación.</span>
+                <span>Te preparamos para sustentar tu propio trabajo.</span>
               </div>
             </div>
           </div>
@@ -752,9 +891,9 @@ function MethodSection() {
         <SectionHeading eyebrow="Ruta clara en tres etapas" id="metodo-title">
           Así avanzamos contigo
         </SectionHeading>
-        <div className="journey-grid">
+        <div className="journey-grid" role="list" aria-label="Tres etapas del acompañamiento">
           {journeySteps.map(({ title, body, Icon }, index) => (
-            <div className="journey-grid__group" key={title}>
+            <div className="journey-grid__group" key={title} role="listitem">
               <article className="journey-step">
                 <span className="journey-step__number">{index + 1}</span>
                 <span className="journey-step__icon">
@@ -787,31 +926,53 @@ function ProofSection() {
         <div className="proof-section__inner">
           <div className="results-proof">
             <div className="results-proof__header">
-              <h2 id="resultados-title">Resultados de calificaciones</h2>
+              <h2 id="resultados-title">Resultados reportados por estudiantes</h2>
+              <p className="results-proof__disclaimer">
+                Galería de 15 imágenes organizada con 5 capturas anonimizadas de casos
+                individuales. Los resultados fueron reportados por estudiantes y no
+                constituyen una garantía de resultados futuros; cada experiencia depende
+                de su desempeño y participación.
+              </p>
             </div>
-            <div className="results-grid">
+            <div
+              className="results-grid"
+              role="list"
+              aria-label={`Galería de ${GRADE_GALLERY_SIZE} imágenes de resultados académicos`}
+            >
               {gradeResults.map((result, index) => (
-                <figure className="result-photo" key={result.id}>
+                <figure
+                  className="result-photo"
+                  key={result.id}
+                  role="listitem"
+                  aria-posinset={index + 1}
+                  aria-setsize={GRADE_GALLERY_SIZE}
+                >
                   <button
                     className="result-photo__button"
                     type="button"
-                    aria-label={`Ampliar resultado de calificación ${index + 1}`}
+                    aria-haspopup="dialog"
+                    aria-label={`Ampliar imagen ${index + 1} de ${GRADE_GALLERY_SIZE}, captura ${result.captureNumber}: promedio ${result.average}, examen parcial ${result.partial} y examen final ${result.final}`}
                     onClick={(event) => {
                       resultTriggerRef.current = event.currentTarget;
+                      trackInteraction("grade_evidence_open", { index: index + 1 });
                       setSelectedResult(index);
                     }}
                   >
                     <SafeImage
-                      src={result.image}
-                      alt={`Resultado de calificación ${index + 1}`}
+                      src={result.thumbnail}
+                      alt={`Imagen ${index + 1} de ${GRADE_GALLERY_SIZE}, captura ${result.captureNumber}: promedio ${result.average}, examen parcial ${result.partial} y examen final ${result.final}`}
                       width={result.width}
                       height={result.height}
-                      loading={index < 2 ? "eager" : "lazy"}
+                      loading="lazy"
                       decoding="async"
+                      sizes="(max-width: 720px) 92vw, 46vw"
+                      draggable="false"
                     />
                   </button>
                   <figcaption className="sr-only">
-                    Captura completa del resultado de calificación {index + 1}
+                    Imagen {index + 1} de {GRADE_GALLERY_SIZE}, correspondiente a la captura{" "}
+                    {result.captureNumber}: promedio {result.average}, parcial {result.partial} y
+                    final {result.final}. Pulsa para ver la imagen completa.
                   </figcaption>
                 </figure>
               ))}
@@ -827,7 +988,7 @@ function ProofSection() {
           onChange={setSelectedResult}
           onClose={closeResult}
           returnFocusRef={resultTriggerRef}
-          label="Resultados de calificaciones"
+          label="Resultados reportados por estudiantes"
         />
       ) : null}
     </>
@@ -851,6 +1012,7 @@ function AudioIntroduction() {
           title="Presentación de Tesis20"
           variant="featured"
           durationHint={60.3}
+          transcript={presentationTranscript}
         />
       </div>
     </section>
@@ -864,12 +1026,14 @@ function SupportSection() {
         <div className="support-photo-wrap">
           <SafeImage
             className="support-photo"
-            src="/assets/support-session.png"
+            src="/assets/support-session.jpg"
             alt="Estudiante recibiendo asesoría personalizada para su tesis"
             width="1511"
             height="1041"
             loading="lazy"
             decoding="async"
+            sizes="(max-width: 760px) 92vw, 48vw"
+            draggable="false"
           />
         </div>
         <div className="support-copy">
@@ -930,9 +1094,9 @@ function FinalCta() {
       <div className="final-cta__inner">
         <GraduationCap size={74} weight="light" aria-hidden="true" />
         <div className="final-cta__title">
-          <h2 id="final-cta-title">¿Listo para dar el siguiente paso hacia tu título profesional?</h2>
+          <h2 id="final-cta-title">¿Listo para avanzar con tu propia investigación?</h2>
         </div>
-        <p>Escríbenos por WhatsApp y recibe orientación personalizada ahora.</p>
+        <p>Cuéntanos en qué etapa estás y recibe orientación personalizada por WhatsApp.</p>
         <WhatsappButton>Quiero orientación</WhatsappButton>
       </div>
     </section>
@@ -944,10 +1108,10 @@ function serviceWhatsappHref(service) {
   return buildWhatsappHref(message);
 }
 
-function ServiceCard({ service, index }) {
-  const [expanded, setExpanded] = useState(false);
+function ServiceCard({ service, index, expandedByDefault = false, showDetailLink = true }) {
+  const [expanded, setExpanded] = useState(expandedByDefault);
   const Icon = service.Icon;
-  const initialBenefits = 5;
+  const initialBenefits = 4;
   const hasMoreBenefits = service.benefits.length > initialBenefits;
   const visibleBenefits = expanded
     ? service.benefits
@@ -959,6 +1123,8 @@ function ServiceCard({ service, index }) {
       id={service.id}
       data-category={service.category}
       aria-labelledby={`${service.id}-title`}
+      itemScope
+      itemType="https://schema.org/Service"
     >
       <div className="service-card__header">
         <span className="service-card__icon" aria-hidden="true">
@@ -968,16 +1134,19 @@ function ServiceCard({ service, index }) {
           <span>
             Servicio {String(index + 1).padStart(2, "0")} · {service.category}
           </span>
-          <h2 id={`${service.id}-title`}>{service.title}</h2>
+          <h3 id={`${service.id}-title`} itemProp="name">{service.title}</h3>
         </div>
         <p className="service-card__price" aria-label={`Precio referencial desde ${service.price}`}>
           <span>Desde</span>
           <strong>{service.price}</strong>
+          <small>alcance a confirmar</small>
         </p>
       </div>
 
       <div className="service-card__body">
-        <p className="service-card__summary">{service.summary}</p>
+        <p className="service-card__summary" itemProp="description">{service.summary}</p>
+        <meta itemProp="areaServed" content="Perú" />
+        <meta itemProp="serviceType" content={service.category} />
         <div className="service-card__includes">
           <span>Este servicio incluye</span>
           <strong>{service.benefits.length} puntos</strong>
@@ -1024,23 +1193,156 @@ function ServiceCard({ service, index }) {
             src={service.audio}
             title={service.title}
             durationHint={service.audioDuration}
+            transcript={service.transcript}
           />
         ) : null}
+
+        <div className="service-card__trust-links" aria-label={`Información adicional sobre ${service.title}`}>
+          {showDetailLink ? (
+            <a href={`/servicios/${service.id}`}>Ver servicio completo</a>
+          ) : null}
+          <a href="/evidencias">Ver evidencias</a>
+          <a href="/contrato">Leer condiciones</a>
+        </div>
 
         <a
           className="service-card__cta"
           href={serviceWhatsappHref(service)}
           target="_blank"
           rel="noopener noreferrer"
-          aria-label={`Solicitar información sobre ${service.title} por WhatsApp`}
+          referrerPolicy="no-referrer"
+          aria-label={`Consultar ${service.title} por WhatsApp (se abre en una pestaña nueva)`}
           onClick={() => trackInteraction("service_whatsapp_click", { service: service.id })}
         >
           <WhatsappLogo size={22} weight="fill" aria-hidden="true" />
-          <span>Solicitar más información</span>
+          <span>Consultar {service.title}</span>
         </a>
         <p className="service-card__price-note">Precio referencial sujeto a revisión del alcance.</p>
       </div>
     </article>
+  );
+}
+
+function ServiceDetailPage({ service }) {
+  const Icon = service.Icon;
+  const relatedServices = services.filter((item) => item.id !== service.id);
+  const whatsappMessage = `¡Hola! Revisé el servicio ${service.title}, desde ${service.price}, y deseo una orientación para confirmar el alcance de mi caso.`;
+
+  return (
+    <main className="services-page service-detail" id="main-content" tabIndex="-1">
+      <section className="services-hero" aria-labelledby="service-detail-title">
+        <div className="services-hero__inner">
+          <div className="services-hero__copy">
+            <p className="services-hero__eyebrow">
+              <a href="/servicios">Servicios</a> · {service.category}
+            </p>
+            <h1 id="service-detail-title">{service.title}</h1>
+            <p>{service.summary}</p>
+            <a className="services-hero__cta" href="#alcance-servicio">
+              <span>Revisar alcance</span>
+              <ArrowRight size={20} weight="bold" aria-hidden="true" />
+            </a>
+            <ul className="services-hero__assurances" aria-label="Condiciones principales del servicio">
+              <li><CheckCircle size={18} weight="fill" aria-hidden="true" /> Tu autoría se mantiene</li>
+              <li><CheckCircle size={18} weight="fill" aria-hidden="true" /> Alcance a confirmar</li>
+              <li><CheckCircle size={18} weight="fill" aria-hidden="true" /> Orientación personalizada</li>
+            </ul>
+          </div>
+
+          <aside className="services-hero__guide" aria-label={`Precio y orientación para ${service.title}`}>
+            <span className="services-hero__guide-icon" aria-hidden="true">
+              <Icon size={36} weight="light" />
+            </span>
+            <p>Precio referencial</p>
+            <h2>Desde {service.price}</h2>
+            <span>
+              Revisamos tu avance, requisitos y fecha objetivo antes de confirmar el alcance,
+              cronograma y precio final.
+            </span>
+            <WhatsappButton
+              dark
+              location={`service_detail_hero_${service.id}`}
+              message={whatsappMessage}
+            >
+              Consultar este servicio
+            </WhatsappButton>
+          </aside>
+        </div>
+      </section>
+
+      <section
+        className="services-catalog"
+        id="alcance-servicio"
+        aria-labelledby="service-scope-title"
+      >
+        <div className="services-catalog__inner">
+          <div className="services-catalog__heading">
+            <p>Alcance del acompañamiento</p>
+            <h2 id="service-scope-title">Qué incluye {service.title}</h2>
+            <span>
+              Revisa los componentes previstos. La propuesta final se adapta a tu avance y
+              requisitos; tú conservas la autoría y responsabilidad académica de tu trabajo.
+            </span>
+          </div>
+          <div className="services-grid service-detail__scope">
+            <ServiceCard
+              service={service}
+              index={services.findIndex((item) => item.id === service.id)}
+              expandedByDefault
+              showDetailLink={false}
+            />
+          </div>
+        </div>
+      </section>
+
+      <section className="service-process" aria-labelledby="service-integrity-title">
+        <div className="section-shell">
+          <SectionHeading eyebrow="Acompañamiento responsable" id="service-integrity-title">
+            Tu autoría e integridad primero
+          </SectionHeading>
+          <div className="service-process__grid" role="list" aria-label="Principios del servicio">
+            <article role="listitem">
+              <span>01</span>
+              <h3>Tu investigación</h3>
+              <p>
+                Tú tomas las decisiones académicas y conservas la autoría y responsabilidad
+                sobre el contenido presentado a tu institución.
+              </p>
+            </article>
+            <article role="listitem">
+              <span>02</span>
+              <h3>Datos auténticos</h3>
+              <p>
+                Trabajamos con la información que proporcionas y no fabricamos datos,
+                fuentes, resultados ni evidencias académicas.
+              </p>
+            </article>
+            <article role="listitem">
+              <span>03</span>
+              <h3>Alcance transparente</h3>
+              <p>
+                Acordamos entregables, revisiones, sesiones y cronograma antes de iniciar,
+                sin prometer calificaciones ni resultados institucionales.
+              </p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <nav className="service-detail__related" aria-labelledby="related-services-title">
+        <div className="section-shell">
+          <SectionHeading eyebrow="También puedes revisar" id="related-services-title">
+            Otros servicios académicos
+          </SectionHeading>
+          <div className="service-detail__related-links">
+            <a href="/servicios">Volver al catálogo</a>
+            {relatedServices.map((item) => (
+              <a href={`/servicios/${item.id}`} key={item.id}>{item.title}</a>
+            ))}
+          </div>
+        </div>
+      </nav>
+    </main>
   );
 }
 
@@ -1049,10 +1351,12 @@ function EvidencePage() {
   const lastEvidenceTriggerRef = useRef(null);
   const evidenceItems = useMemo(
     () =>
-      evidenceGroups.flatMap((group) =>
-        group.images.map((image) => ({
+      publishedEvidenceGroups.flatMap((group, groupIndex) =>
+        group.images.map((image, imageIndex) => ({
           src: image.src,
           alt: image.alt,
+          title: `Caso ${groupIndex + 1} · ${image.label}`,
+          context: `Paso ${imageIndex + 1} de ${group.images.length} · número terminado en ${group.phoneSuffix}`,
         })),
       ),
     [],
@@ -1061,22 +1365,23 @@ function EvidencePage() {
 
   const openEvidence = (image, trigger) => {
     lastEvidenceTriggerRef.current = trigger;
+    trackInteraction("evidence_open", { type: image.label });
     setSelectedEvidence(evidenceItems.findIndex((item) => item.src === image.src));
   };
 
   return (
     <main className="evidence-page" id="main-content" tabIndex="-1">
-      <section className="evidence-hero">
+      <section className="evidence-hero" aria-labelledby="evidence-page-title">
         <div className="evidence-hero__inner">
           <div className="evidence-hero__copy">
-            <p>Evidencias compartidas por estudiantes</p>
-            <h1>Resultados que generan confianza</h1>
+            <p>Casos compartidos por estudiantes</p>
+            <h1 id="evidence-page-title">Evidencias de acompañamiento y resultados reportados</h1>
             <span>
-              Organizamos cada caso por estudiante y mostramos cada captura completa,
-              con sus datos personales anonimizados para proteger su identidad.
+              Organizamos cada caso por estudiante y mostramos sus capturas completas con
+              datos anonimizados. Son experiencias individuales y no garantizan resultados futuros.
             </span>
             <ul className="evidence-hero__facts" aria-label="Resumen de evidencias">
-              <li><strong>{evidenceGroups.length}</strong><span>casos agrupados</span></li>
+              <li><strong>{publishedEvidenceGroups.length}</strong><span>casos agrupados</span></li>
               <li><strong>{evidenceItems.length}</strong><span>capturas completas</span></li>
               <li><ShieldCheck size={22} weight="fill" aria-hidden="true" /><span>datos protegidos</span></li>
             </ul>
@@ -1102,20 +1407,26 @@ function EvidencePage() {
         <div className="evidence-catalog__inner">
           <div className="evidence-catalog__heading">
             <p>Casos agrupados</p>
-            <h2 id="evidence-catalog-title">Evidencias de acompañamiento y resultados</h2>
+            <h2 id="evidence-catalog-title">Casos de acompañamiento y resultados reportados</h2>
             <span>
-              Galería preparada para 16 evidencias: dos columnas por hasta ocho filas.
-              Cada grupo conserva únicamente capturas del mismo estudiante.
+              Explora cada caso como una secuencia del proceso. Las capturas de un mismo
+              grupo pertenecen al mismo estudiante y preservan su identidad. El resultado
+              depende del trabajo, las decisiones y la participación de cada persona.
             </span>
           </div>
 
           <div className="evidence-groups">
-            {evidenceGroups.map((group, groupIndex) => (
+            {publishedEvidenceGroups.map((group, groupIndex) => (
               <article className="evidence-group" key={group.id}>
                 <header className="evidence-group__header">
                   <div>
                     <span>Evidencia {String(groupIndex + 1).padStart(2, "0")}</span>
-                    <h2>{group.phone}</h2>
+                    <h3>
+                      <span aria-hidden="true">{group.phone}</span>
+                      <span className="sr-only">
+                        Número terminado en {group.phoneSuffix}; los dígitos anteriores están protegidos
+                      </span>
+                    </h3>
                   </div>
                   <p>
                     <ShieldCheck size={18} weight="fill" aria-hidden="true" />
@@ -1123,27 +1434,34 @@ function EvidencePage() {
                   </p>
                 </header>
 
-                <div className={`evidence-gallery evidence-gallery--${group.images.length}`}>
+                <div
+                  className={`evidence-gallery evidence-gallery--${group.images.length}`}
+                  role="list"
+                  aria-label={`Secuencia del caso ${groupIndex + 1}`}
+                >
                   {group.images.map((image, imageIndex) => (
-                    <figure className="evidence-item" key={image.src}>
+                    <figure className="evidence-item" key={image.src} role="listitem">
                       <button
                         type="button"
                         aria-haspopup="dialog"
-                        aria-label={`Ampliar ${image.label.toLowerCase()} del caso ${groupIndex + 1}`}
+                        aria-label={`Ampliar paso ${imageIndex + 1} de ${group.images.length}: ${image.label.toLowerCase()} del caso ${groupIndex + 1}`}
                         onClick={(event) => openEvidence(image, event.currentTarget)}
                       >
                         <SafeImage
-                          src={image.src}
+                          src={image.thumbnail}
                           alt={image.alt}
                           width={image.width}
                           height={image.height}
                           loading="lazy"
                           decoding="async"
+                          sizes="(max-width: 720px) 92vw, 46vw"
+                          draggable="false"
                         />
                       </button>
                       <figcaption>
                         <span>{String(imageIndex + 1).padStart(2, "0")}</span>
                         <strong>{image.label}</strong>
+                        <small>Paso {imageIndex + 1} de {group.images.length}</small>
                       </figcaption>
                     </figure>
                   ))}
@@ -1172,6 +1490,7 @@ function EvidencePage() {
 
 function ServicesPage() {
   const searchInputRef = useRef(null);
+  const categoryRefs = useRef([]);
   const [serviceQuery, setServiceQuery] = useState(
     () => new URLSearchParams(window.location.search).get("q") || "",
   );
@@ -1181,6 +1500,7 @@ function ServicesPage() {
       ? requestedCategory
       : "Todos";
   });
+  const [announcedCount, setAnnouncedCount] = useState(services.length);
   const categories = useMemo(
     () => ["Todos", ...new Set(services.map((service) => service.category))],
     [],
@@ -1190,11 +1510,30 @@ function ServicesPage() {
     return services.filter((service) => {
       const matchesCategory = activeCategory === "Todos" || service.category === activeCategory;
       const searchableText = normalizeSearchText(
-        [service.title, service.category, service.summary, ...service.benefits].join(" "),
+        [
+          service.title,
+          service.category,
+          service.summary,
+          serviceSearchAliases[service.id] || "",
+          ...service.benefits,
+        ].join(" "),
       );
       return matchesCategory && (!normalizedQuery || searchableText.includes(normalizedQuery));
     });
   }, [activeCategory, serviceQuery]);
+
+  const categoryCounts = useMemo(
+    () =>
+      Object.fromEntries(
+        categories.map((category) => [
+          category,
+          category === "Todos"
+            ? services.length
+            : services.filter((service) => service.category === category).length,
+        ]),
+      ),
+    [categories],
+  );
 
   useEffect(() => {
     const url = new URL(window.location.href);
@@ -1204,6 +1543,29 @@ function ServicesPage() {
     else url.searchParams.delete("categoria");
     window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
   }, [activeCategory, serviceQuery]);
+
+  useEffect(() => {
+    const restoreFilters = () => {
+      const params = new URLSearchParams(window.location.search);
+      const nextCategory = params.get("categoria");
+      setServiceQuery(params.get("q") || "");
+      setActiveCategory(
+        services.some((service) => service.category === nextCategory)
+          ? nextCategory
+          : "Todos",
+      );
+    };
+    window.addEventListener("popstate", restoreFilters);
+    return () => window.removeEventListener("popstate", restoreFilters);
+  }, []);
+
+  useEffect(() => {
+    const timer = window.setTimeout(
+      () => setAnnouncedCount(filteredServices.length),
+      350,
+    );
+    return () => window.clearTimeout(timer);
+  }, [filteredServices.length]);
 
   useEffect(() => {
     const focusSearch = (event) => {
@@ -1236,13 +1598,41 @@ function ServicesPage() {
     window.requestAnimationFrame(() => searchInputRef.current?.focus());
   };
 
+  const selectCategory = (category, { addHistory = true } = {}) => {
+    setActiveCategory(category);
+    if (addHistory) {
+      const url = new URL(window.location.href);
+      if (category === "Todos") url.searchParams.delete("categoria");
+      else url.searchParams.set("categoria", category);
+      window.history.pushState({}, "", `${url.pathname}${url.search}${url.hash}`);
+    }
+  };
+
+  const handleCategoryKeyDown = (event, index) => {
+    let nextIndex = null;
+    if (event.key === "ArrowRight" || event.key === "ArrowDown") {
+      nextIndex = (index + 1) % categories.length;
+    } else if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
+      nextIndex = (index - 1 + categories.length) % categories.length;
+    } else if (event.key === "Home") {
+      nextIndex = 0;
+    } else if (event.key === "End") {
+      nextIndex = categories.length - 1;
+    }
+    if (nextIndex === null) return;
+    event.preventDefault();
+    selectCategory(categories[nextIndex]);
+    categoryRefs.current[nextIndex]?.focus();
+    categoryRefs.current[nextIndex]?.scrollIntoView({ inline: "center", block: "nearest" });
+  };
+
   return (
     <main className="services-page" id="main-content" tabIndex="-1">
-      <section className="services-hero" id="servicios-inicio">
+      <section className="services-hero" id="servicios-inicio" aria-labelledby="services-page-title">
         <div className="services-hero__inner">
           <div className="services-hero__copy">
             <p className="services-hero__eyebrow">Servicios académicos</p>
-            <h1>Elige el acompañamiento que necesitas</h1>
+            <h1 id="services-page-title">Elige el acompañamiento que necesitas</h1>
             <p>
               Encuentra asesoría profesional para desarrollar tu investigación, analizar tus
               resultados y prepararte para la sustentación con una ruta clara.
@@ -1272,29 +1662,47 @@ function ServicesPage() {
         </div>
       </section>
 
-      <section className="services-catalog" id="catalogo-servicios">
+      <section className="services-catalog" id="catalogo-servicios" aria-labelledby="services-catalog-title">
         <div className="services-catalog__inner">
           <div className="services-catalog__heading">
             <p>Nuestros servicios</p>
-            <h2>Soluciones para cada etapa de tu investigación</h2>
+            <h2 id="services-catalog-title">Soluciones para cada etapa de tu investigación</h2>
             <span>
               Revisa lo que incluye cada servicio y solicita información directamente por WhatsApp.
             </span>
           </div>
 
-          <div className="service-finder" aria-label="Buscar y filtrar servicios">
-            <label className="service-finder__search">
-              <span>Buscar por necesidad</span>
+          <form
+            className="service-finder"
+            role="search"
+            aria-labelledby="service-finder-title"
+            onSubmit={(event) => event.preventDefault()}
+          >
+            <div className="service-finder__search">
+              <label id="service-finder-title" htmlFor="service-search">Buscar por necesidad</label>
               <span className="service-finder__input">
                 <MagnifyingGlass size={20} aria-hidden="true" />
                 <input
+                  id="service-search"
                   ref={searchInputRef}
                   type="search"
                   value={serviceQuery}
                   onChange={(event) => setServiceQuery(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Escape" && serviceQuery) {
+                      event.preventDefault();
+                      setServiceQuery("");
+                    }
+                  }}
                   placeholder="Ej.: SPSS, metodología, sustentación"
                   autoComplete="off"
-                  aria-describedby="service-finder-help service-finder-count"
+                  autoCapitalize="none"
+                  spellCheck="false"
+                  enterKeyHint="search"
+                  maxLength="80"
+                  aria-keyshortcuts="/"
+                  aria-controls="services-grid"
+                  aria-describedby="service-finder-help"
                 />
                 {serviceQuery ? (
                   <button
@@ -1310,17 +1718,28 @@ function ServicesPage() {
                   </button>
                 ) : null}
               </span>
-            </label>
+            </div>
             <p className="sr-only" id="service-finder-help">
               Escribe una necesidad o presiona la tecla diagonal para enfocar este buscador.
             </p>
-            <div className="service-finder__categories" aria-label="Categorías de servicios">
-              {categories.map((category) => (
+            <div
+              className="service-finder__categories"
+              role="group"
+              aria-labelledby="service-categories-title"
+            >
+              <span className="sr-only" id="service-categories-title">Filtrar por categoría</span>
+              {categories.map((category, index) => (
                 <button
                   type="button"
                   key={category}
+                  ref={(element) => {
+                    categoryRefs.current[index] = element;
+                  }}
                   aria-pressed={activeCategory === category}
-                  onClick={() => setActiveCategory(category)}
+                  aria-controls="services-grid"
+                  aria-label={`${category}: ${categoryCounts[category]} ${categoryCounts[category] === 1 ? "servicio" : "servicios"}`}
+                  onClick={() => selectCategory(category)}
+                  onKeyDown={(event) => handleCategoryKeyDown(event, index)}
                 >
                   {category}
                 </button>
@@ -1333,12 +1752,12 @@ function ServicesPage() {
               aria-live="polite"
               aria-atomic="true"
             >
-              {filteredServices.length} {filteredServices.length === 1 ? "servicio disponible" : "servicios disponibles"}
+              {announcedCount} {announcedCount === 1 ? "servicio disponible" : "servicios disponibles"}
             </p>
-          </div>
+          </form>
 
           {filteredServices.length ? (
-            <div className="services-grid">
+            <div className="services-grid" id="services-grid">
               {filteredServices.map((service) => (
                 <ServiceCard
                   service={service}
@@ -1348,17 +1767,19 @@ function ServicesPage() {
               ))}
             </div>
           ) : (
-            <div className="service-empty" role="status">
+            <div className="service-empty" id="services-grid">
               <MagnifyingGlass size={36} weight="light" aria-hidden="true" />
-              <h3>No encontramos un servicio con esos filtros</h3>
-              <p>Prueba con otra palabra o vuelve a ver el catálogo completo.</p>
+              <div role="status" aria-live="polite">
+                <h3>No encontramos un servicio con esos filtros</h3>
+                <p>Prueba con otra palabra o vuelve a ver el catálogo completo.</p>
+              </div>
               <div className="service-empty__actions">
                 <button type="button" onClick={resetFilters}>Ver todos los servicios</button>
                 <WhatsappButton
                   dark
                   className="service-empty__cta"
                   location="service_empty"
-                  message={`¡Hola! Busqué ${serviceQuery.trim() || activeCategory} en los servicios de Tesis20 y deseo orientación personalizada.`}
+                  message="¡Hola! No encontré el servicio que necesito y deseo orientación personalizada."
                 >
                   Consultar mi caso
                 </WhatsappButton>
@@ -1373,18 +1794,18 @@ function ServicesPage() {
           <SectionHeading eyebrow="Antes de comenzar" id="service-process-title">
             Una decisión clara en tres pasos
           </SectionHeading>
-          <div className="service-process__grid">
-            <article>
+          <div className="service-process__grid" role="list" aria-label="Proceso de orientación">
+            <article role="listitem">
               <span>01</span>
               <h3>Cuéntanos tu avance</h3>
               <p>Comparte tu etapa, requisitos y principales dudas.</p>
             </article>
-            <article>
+            <article role="listitem">
               <span>02</span>
               <h3>Revisamos el alcance</h3>
               <p>Identificamos el servicio y los puntos que realmente necesitas.</p>
             </article>
-            <article>
+            <article role="listitem">
               <span>03</span>
               <h3>Definimos la ruta</h3>
               <p>Recibes una orientación clara antes de iniciar el acompañamiento.</p>
@@ -1519,7 +1940,13 @@ function ContractPage() {
               <ul>
                 {contractTemplate.legalSources.map((source) => (
                   <li key={source.url}>
-                    <a href={source.url} target="_blank" rel="noopener noreferrer">
+                    <a
+                      href={source.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      referrerPolicy="no-referrer"
+                      aria-label={`${source.label} (se abre en una pestaña nueva)`}
+                    >
                       <span>{source.label}</span>
                       <ArrowSquareOut size={15} aria-hidden="true" />
                     </a>
@@ -1535,11 +1962,11 @@ function ContractPage() {
         </div>
       </section>
 
-      <section className="contract-download" aria-label="Descargar contrato">
+      <section className="contract-download" aria-labelledby="contract-download-title">
         <div>
           <FileText size={42} weight="light" aria-hidden="true" />
           <p>¿Listo para revisarlo fuera de la web?</p>
-          <h2>Descarga el modelo completo en PDF</h2>
+          <h2 id="contract-download-title">Descarga el modelo completo en PDF</h2>
           <a
             href={contractDownloadHref}
             download="contrato-general-asesoria-academica-tesis20.pdf"
@@ -1578,25 +2005,10 @@ function Footer() {
           <a href="/evidencias">Evidencias</a>
           <a href="/contrato">Contrato</a>
           <a
-            href="http://campusvirtual.tesis20.com/login/index.php"
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="Aula virtual (se abre en una pestaña nueva)"
-          >
-            Aula virtual
-          </a>
-          <a
-            href="https://tesis20.com/parafrasea/"
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="Paráfrasea IA (se abre en una pestaña nueva)"
-          >
-            Paráfrasea IA
-          </a>
-          <a
             href="https://www.gestion.tesis20.com"
             target="_blank"
             rel="noopener noreferrer"
+            referrerPolicy="no-referrer"
             aria-label="Pagos (se abre en una pestaña nueva)"
           >
             Pagos
@@ -1620,19 +2032,20 @@ function Footer() {
         <div className="footer-column footer-social">
           <h2>Síguenos</h2>
           <div className="social-links">
-            <a href="https://www.facebook.com/tesisconluis" target="_blank" rel="noopener noreferrer" aria-label="Facebook (se abre en una pestaña nueva)">
-              <FacebookLogo size={24} weight="fill" />
+            <a href="https://www.facebook.com/tesisconluis" target="_blank" rel="noopener noreferrer" referrerPolicy="no-referrer" aria-label="Facebook (se abre en una pestaña nueva)">
+              <FacebookLogo size={24} weight="fill" aria-hidden="true" />
             </a>
-            <a href="https://www.instagram.com/tesisis.com20/" target="_blank" rel="noopener noreferrer" aria-label="Instagram (se abre en una pestaña nueva)">
-              <InstagramLogo size={24} />
+            <a href="https://www.instagram.com/tesis20.comm/" target="_blank" rel="noopener noreferrer" referrerPolicy="no-referrer" aria-label="Instagram oficial de Tesis20 (se abre en una pestaña nueva)">
+              <InstagramLogo size={24} aria-hidden="true" />
             </a>
             <a
-              href="https://www.youtube.com/channel/UCf-D2F5J3MzIWHSAp8YWDcQ"
+              href="https://www.youtube.com/@tesisasesoriaycapacitacion3499"
               target="_blank"
               rel="noopener noreferrer"
-              aria-label="YouTube (se abre en una pestaña nueva)"
+              referrerPolicy="no-referrer"
+              aria-label="YouTube oficial de Tesis20 (se abre en una pestaña nueva)"
             >
-              <YoutubeLogo size={24} weight="fill" />
+              <YoutubeLogo size={24} weight="fill" aria-hidden="true" />
             </a>
           </div>
         </div>
@@ -1640,7 +2053,15 @@ function Footer() {
       <div className="footer-legal">
         <details>
           <summary>Privacidad y uso de evidencias</summary>
-          <p>Las evidencias públicas se muestran anonimizadas para proteger la identidad y los datos personales de cada estudiante.</p>
+          <p>
+            Las evidencias públicas se muestran anonimizadas para proteger la identidad y los
+            datos personales. Los resultados fueron reportados por estudiantes, corresponden a
+            casos individuales y no constituyen una garantía de resultados futuros. La plataforma
+            utiliza medición agregada y sin cookies para conocer páginas visitadas, rendimiento y
+            acciones generales; los eventos excluyen correos, teléfonos y direcciones web. Para consultas
+            sobre acceso, rectificación o eliminación de datos,
+            escribe a <a href="mailto:tesis.com20@gmail.com?subject=Solicitud%20sobre%20datos%20personales">tesis.com20@gmail.com</a>.
+          </p>
         </details>
       </div>
       <div className="footer-bottom">© {currentYear} Tesis20. Todos los derechos reservados.</div>
@@ -1648,14 +2069,71 @@ function Footer() {
   );
 }
 
+function NotFoundPage() {
+  return (
+    <main className="not-found-page" id="main-content" tabIndex="-1">
+      <section aria-labelledby="not-found-title">
+        <p>Error 404</p>
+        <h1 id="not-found-title">Esta página no está disponible</h1>
+        <span>
+          El enlace puede haber cambiado. Puedes volver al inicio o revisar nuestros servicios.
+        </span>
+        <div>
+          <a href="/#inicio">Volver al inicio</a>
+          <a href="/servicios">
+            Ver servicios <ArrowRight size={18} aria-hidden="true" />
+          </a>
+        </div>
+      </section>
+    </main>
+  );
+}
+
 export function App() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const currentPage = getPageFromPathname();
-  const pageWhatsappHref = buildWhatsappHref(whatsappMessages[currentPage]);
+  const serviceId = getServiceIdFromPathname();
+  const selectedService = serviceId
+    ? services.find((service) => service.id === serviceId) || null
+    : null;
+  const pageWhatsappMessage = selectedService
+    ? `¡Hola! Deseo orientación sobre el servicio ${selectedService.title}, desde ${selectedService.price}, y confirmar el alcance para mi caso.`
+    : whatsappMessages[currentPage] || whatsappMessages.home;
+  const pageWhatsappHref = buildWhatsappHref(pageWhatsappMessage);
   const toggleMenu = useCallback(() => setMenuOpen((current) => !current), []);
   const closeMenu = useCallback(() => setMenuOpen(false), []);
   const faqItems = currentPage === "services" ? servicesFaqs : currentPage === "home" ? homeFaqs : noFaqs;
+
+  useEffect(() => {
+    if (!menuOpen) return undefined;
+
+    const backgroundElements = [
+      document.querySelector("#main-content"),
+      document.querySelector(".site-footer"),
+      document.querySelector(".floating-whatsapp"),
+      document.querySelector(".back-to-top"),
+      document.querySelector(".mobile-contact-bar"),
+    ].filter(Boolean);
+    const previousStates = backgroundElements.map((element) => ({
+      element,
+      inert: element.inert,
+      ariaHidden: element.getAttribute("aria-hidden"),
+    }));
+
+    backgroundElements.forEach((element) => {
+      element.inert = true;
+      element.setAttribute("aria-hidden", "true");
+    });
+
+    return () => {
+      previousStates.forEach(({ element, inert, ariaHidden }) => {
+        element.inert = inert;
+        if (ariaHidden === null) element.removeAttribute("aria-hidden");
+        else element.setAttribute("aria-hidden", ariaHidden);
+      });
+    };
+  }, [menuOpen]);
 
   useEffect(() => {
     let frame = 0;
@@ -1682,9 +2160,28 @@ export function App() {
 
   return (
     <div className="site-shell">
-      <a className="skip-link" href="#main-content">Saltar al contenido principal</a>
-      <SeoManager currentPage={currentPage} faqItems={faqItems} serviceItems={services} />
+      <a
+        className="skip-link"
+        href="#main-content"
+        onClick={(event) => {
+          event.preventDefault();
+          const main = document.getElementById("main-content");
+          main?.scrollIntoView({ block: "start" });
+          main?.focus({ preventScroll: true });
+          window.history.replaceState({}, "", `${window.location.pathname}${window.location.search}#main-content`);
+        }}
+      >
+        Saltar al contenido principal
+      </a>
+      <SeoManager
+        currentPage={currentPage}
+        faqItems={faqItems}
+        serviceId={serviceId}
+        serviceItem={selectedService}
+        serviceItems={services}
+      />
       <RouteAnnouncer currentPage={currentPage} />
+      <ConnectionStatus />
       <ScrollProgress />
       <Header
         menuOpen={menuOpen}
@@ -1694,15 +2191,18 @@ export function App() {
         isScrolled={isScrolled}
       />
       {currentPage === "services" ? (
-        <ServicesPage />
+        selectedService ? <ServiceDetailPage service={selectedService} /> : <ServicesPage />
       ) : currentPage === "evidence" ? (
         <EvidencePage />
       ) : currentPage === "contract" ? (
         <ContractPage />
+      ) : currentPage === "not-found" ? (
+        <NotFoundPage />
       ) : (
         <main id="main-content" tabIndex="-1">
           <Hero />
           <TrustStrip />
+          <DiagnosticWizard />
           <ProofSection />
           <QuickFacts
             servicesCount={services.length}
@@ -1723,12 +2223,13 @@ export function App() {
         href={pageWhatsappHref}
         target="_blank"
         rel="noopener noreferrer"
+        referrerPolicy="no-referrer"
         aria-label="Contactar a Tesis20 por WhatsApp (se abre en una pestaña nueva)"
         onClick={() =>
           trackInteraction("whatsapp_click", { location: "floating", page: currentPage })
         }
       >
-        <WhatsappLogo size={34} weight="fill" />
+        <WhatsappLogo size={34} weight="fill" aria-hidden="true" />
       </a>
       <BackToTop />
       <MobileContactBar href={pageWhatsappHref} page={currentPage} />

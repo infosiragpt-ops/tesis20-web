@@ -5,14 +5,19 @@
   "type": "module",
   "scripts": {
     "dev": "vite --port 3000",
-    "build": "vite build",
-    "preview": "vite preview --port 3000"
+    "dev:lan": "vite --host 0.0.0.0 --port 3000",
+    "build": "vite build && node scripts/generate-static-routes.mjs",
+    "preview": "vite preview --port 3000",
+    "quality": "node scripts/quality-check.mjs",
+    "check": "npm run build && npm run quality"
   },
   "dependencies": {
     "@phosphor-icons/react": "^2.1.10",
+    "@vercel/analytics": "2.0.1",
+    "@vercel/speed-insights": "2.0.0",
     "@vitejs/plugin-react": "5.0.4",
     "react": "19.2.0",
     "react-dom": "19.2.0",
-    "vite": "6.4.2"
+    "vite": "6.4.3"
   }
 }
