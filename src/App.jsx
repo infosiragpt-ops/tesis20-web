@@ -1,4 +1,12 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { ArrowRight } from "@phosphor-icons/react/ArrowRight";
 import { ArrowSquareOut } from "@phosphor-icons/react/ArrowSquareOut";
 import { CaretRight } from "@phosphor-icons/react/CaretRight";
@@ -42,6 +50,7 @@ import {
 } from "./platform-enhancements.jsx";
 import { AudioPlayer } from "./audio-player.jsx";
 import { DiagnosticWizard } from "./diagnostic-wizard.jsx";
+import { PlatformSwitcher } from "./platform-switcher.jsx";
 import contractTemplate from "./data/contract-template.json";
 import presentationTranscript from "../audio-scripts/presentacion.txt?raw";
 import articleTranscript from "../audio-scripts/articulo-cientifico.txt?raw";
@@ -50,6 +59,8 @@ import thesisTwoTranscript from "../audio-scripts/tesis-ii-titulacion.txt?raw";
 import professionalTranscript from "../audio-scripts/suficiencia-profesional.txt?raw";
 import spssTranscript from "../audio-scripts/ibm-spss-statistics.txt?raw";
 import defenseTranscript from "../audio-scripts/simulacion-sustentacion.txt?raw";
+
+const NidoPage = lazy(() => import("./nido/nido-page.jsx"));
 
 const whatsappPhone = "51918714054";
 
@@ -72,6 +83,7 @@ function getPageFromPathname(pathname = window.location.pathname) {
     "/servicios": "services",
     "/evidencias": "evidence",
     "/contrato": "contract",
+    "/nido": "nido",
   };
 
   if (getServiceIdFromPathname(normalizedPath)) return "services";
@@ -533,6 +545,24 @@ const servicesFaqs = [
   },
 ];
 
+const nidoFaqs = [
+  {
+    question: "¿Los precios son definitivos?",
+    answer:
+      "No. Los importes visibles después de iniciar la demostración son referenciales y no permiten reservar ni pagar.",
+  },
+  {
+    question: "¿Este inicio de sesión ya es real?",
+    answer:
+      "No. Es una vista local de producto. La versión final requerirá autenticación segura y roles asignados desde el servidor.",
+  },
+  {
+    question: "¿Qué perfiles tendrá la plataforma?",
+    answer:
+      "Administrador, Docente y Alumno, cada uno con una experiencia y permisos propios.",
+  },
+];
+
 const noFaqs = [];
 
 function WhatsappButton({ children, className = "", dark = false, message, location }) {
@@ -619,21 +649,28 @@ function Header({ menuOpen, onMenuToggle, onNavigate, currentPage, isScrolled })
   return (
     <header className={`site-header ${isScrolled ? "site-header--scrolled" : ""}`}>
       <div className="header-inner">
-        <a
-          className="brand"
-          href={currentPage === "home" ? "#inicio" : "/#inicio"}
-          aria-label="Tesis20 - Inicio"
-          onClick={onNavigate}
-        >
-          <img
-            src="/assets/tesis20-logo.png"
-            alt="Tesis20"
-            width="300"
-            height="300"
-            decoding="async"
-            fetchPriority="high"
+        <div className="brand-ecosystem">
+          <PlatformSwitcher
+            menuOpen={menuOpen}
+            onCloseMenu={onNavigate}
+            currentPlatform="tesis"
           />
-        </a>
+          <a
+            className="brand"
+            href={currentPage === "home" ? "#inicio" : "/#inicio"}
+            aria-label="Tesis20 - Inicio"
+            onClick={onNavigate}
+          >
+            <img
+              src="/assets/tesis20-logo.png"
+              alt="Tesis20"
+              width="300"
+              height="300"
+              decoding="async"
+              fetchPriority="high"
+            />
+          </a>
+        </div>
 
         <nav className="desktop-navigation" aria-label="Navegación principal">
           {navigation.map((item) => (
@@ -2157,6 +2194,45 @@ export function App() {
       if (frame) window.cancelAnimationFrame(frame);
     };
   }, []);
+
+  if (currentPage === "nido") {
+    return (
+      <>
+        <SeoManager
+          currentPage={currentPage}
+          faqItems={nidoFaqs}
+          serviceId={null}
+          serviceItem={null}
+          serviceItems={services}
+        />
+        <RouteAnnouncer currentPage={currentPage} />
+        <ConnectionStatus />
+        <Suspense
+          fallback={
+            <main
+              id="main-content"
+              aria-busy="true"
+              aria-live="polite"
+              style={{
+                minHeight: "100vh",
+                display: "grid",
+                placeItems: "center",
+                padding: "2rem",
+                background: "#f4fbff",
+                color: "#13223a",
+                fontFamily: "system-ui, sans-serif",
+                fontWeight: 800,
+              }}
+            >
+              Preparando Tesis20 Nido…
+            </main>
+          }
+        >
+          <NidoPage />
+        </Suspense>
+      </>
+    );
+  }
 
   return (
     <div className="site-shell">

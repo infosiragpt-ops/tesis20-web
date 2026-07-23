@@ -42,10 +42,6 @@ export default defineConfig({
             return "vendor-react";
           }
 
-          if (id.includes("node_modules/@phosphor-icons/")) {
-            return "vendor-icons";
-          }
-
           return undefined;
         },
       },

@@ -3,7 +3,7 @@ import { Analytics } from "@vercel/analytics/react";
 import { track } from "@vercel/analytics";
 import { SpeedInsights } from "@vercel/speed-insights/react";
 
-const PUBLIC_PATHS = new Set(["/", "/servicios", "/evidencias", "/contrato"]);
+const PUBLIC_PATHS = new Set(["/", "/servicios", "/nido", "/evidencias", "/contrato"]);
 const SERVICE_DETAIL_PATH =
   /^\/servicios\/(articulo-cientifico|tesis-i-proyecto|tesis-ii-titulacion|suficiencia-profesional|ibm-spss-statistics|simulacion-sustentacion)$/;
 
@@ -33,9 +33,14 @@ function allowPublicMeasurement(event) {
   }
 }
 
+function canUseHostedObservability() {
+  if (!import.meta.env.PROD) return false;
+  return !["localhost", "127.0.0.1", "::1"].includes(window.location.hostname);
+}
+
 export function Observability() {
   useEffect(() => {
-    if (!import.meta.env.PROD) return undefined;
+    if (!canUseHostedObservability()) return undefined;
 
     const forwardInteraction = (event) => {
       const payload = event.detail;
@@ -54,7 +59,7 @@ export function Observability() {
     return () => window.removeEventListener("tesis20:interaction", forwardInteraction);
   }, []);
 
-  if (!import.meta.env.PROD) return null;
+  if (!canUseHostedObservability()) return null;
 
   return (
     <>

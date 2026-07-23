@@ -26,6 +26,18 @@ const routeSpecs = [
     schemaType: "CollectionPage",
   },
   {
+    path: "/nido",
+    output: "dist/nido.html",
+    title: "Clases virtuales para niños | Tesis20 Nido",
+    h1: "Aprender jugando, crecer con confianza",
+    content: [
+      "Explorar clases",
+      "Precios referenciales de demostración",
+      "Administrador, Docente o Alumno",
+    ],
+    schemaType: "CollectionPage",
+  },
+  {
     path: "/evidencias",
     output: "dist/evidencias.html",
     title: "Evidencias y resultados académicos | Tesis20",
@@ -462,7 +474,11 @@ for (const route of routeSpecs) {
   const html = routeDocuments.get(route.path);
   if (!html) continue;
   const hrefs = getTags(html, "a").map((tag) => getAttribute(tag, "href")).filter(Boolean);
-  for (const requiredPath of ["/servicios", "/evidencias", "/contrato"]) {
+  const requiredPaths =
+    route.path === "/nido"
+      ? ["/"]
+      : ["/servicios", "/evidencias", "/contrato", "/nido"];
+  for (const requiredPath of requiredPaths) {
     check(hrefs.some((href) => href === requiredPath || href.startsWith(`${requiredPath}#`)), `${route.output} debe enlazar a ${requiredPath}.`);
   }
 
@@ -493,6 +509,8 @@ check(/aria-setsize=\{GRADE_GALLERY_SIZE\}/.test(appSource), "La galería debe c
 const buildAssets = distFiles.filter((file) => /dist\/build-assets\/.*\.(?:js|css|map)$/.test(file));
 let javascriptBytes = 0;
 let stylesheetBytes = 0;
+let initialJavascriptBytes = 0;
+let initialStylesheetBytes = 0;
 let deployBytesWithoutAudioAndPdf = 0;
 for (const distFile of distFiles) {
   const bytes = await fileSize(distFile);
@@ -500,12 +518,35 @@ for (const distFile of distFiles) {
 }
 for (const buildAsset of buildAssets) {
   const bytes = await fileSize(buildAsset);
-  if (buildAsset.endsWith(".js")) javascriptBytes += bytes;
-  if (buildAsset.endsWith(".css")) stylesheetBytes += bytes;
+  const isNidoLazyAsset = /\/nido-page-[^/]+\.(?:js|css)$/.test(buildAsset);
+  if (buildAsset.endsWith(".js")) {
+    javascriptBytes += bytes;
+    if (!isNidoLazyAsset) initialJavascriptBytes += bytes;
+    check(bytes <= 250 * 1024, `${buildAsset} supera el máximo de 250 KiB por chunk.`);
+  }
+  if (buildAsset.endsWith(".css")) {
+    stylesheetBytes += bytes;
+    if (!isNidoLazyAsset) initialStylesheetBytes += bytes;
+    check(bytes <= 85 * 1024, `${buildAsset} supera el máximo de 85 KiB por hoja.`);
+  }
   check(!buildAsset.endsWith(".map"), `No se deben publicar source maps: ${buildAsset}`);
 }
-check(javascriptBytes > 0 && javascriptBytes <= 450 * 1024, `El JavaScript total debe estar entre 1 y 450 KiB (${Math.ceil(javascriptBytes / 1024)} KiB).`);
-check(stylesheetBytes > 0 && stylesheetBytes <= 85 * 1024, `El CSS total debe estar entre 1 y 85 KiB (${Math.ceil(stylesheetBytes / 1024)} KiB).`);
+check(
+  initialJavascriptBytes > 0 && initialJavascriptBytes <= 450 * 1024,
+  `El JavaScript inicial debe estar entre 1 y 450 KiB (${Math.ceil(initialJavascriptBytes / 1024)} KiB).`,
+);
+check(
+  javascriptBytes <= 540 * 1024,
+  `El JavaScript total con rutas diferidas no debe superar 540 KiB (${Math.ceil(javascriptBytes / 1024)} KiB).`,
+);
+check(
+  initialStylesheetBytes > 0 && initialStylesheetBytes <= 85 * 1024,
+  `El CSS inicial debe estar entre 1 y 85 KiB (${Math.ceil(initialStylesheetBytes / 1024)} KiB).`,
+);
+check(
+  stylesheetBytes <= 120 * 1024,
+  `El CSS total con rutas diferidas no debe superar 120 KiB (${Math.ceil(stylesheetBytes / 1024)} KiB).`,
+);
 check(deployBytesWithoutAudioAndPdf <= 9 * 1024 * 1024, `El build sin audios/PDF supera 9 MiB (${(deployBytesWithoutAudioAndPdf / 1024 / 1024).toFixed(2)} MiB).`);
 
 for (const htmlFile of distFiles.filter((file) => file.endsWith(".html"))) {

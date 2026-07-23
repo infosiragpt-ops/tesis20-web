@@ -1,8 +1,9 @@
-const CACHE_VERSION = "v2";
+const CACHE_VERSION = "v4";
 const SHELL_CACHE = `tesis20-shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `tesis20-runtime-${CACHE_VERSION}`;
 const CACHE_PREFIX = "tesis20-";
 const MAX_RUNTIME_ENTRIES = 60;
+const SHELL_URLS = ["/", "/nido"];
 
 const PRECACHE_URLS = [
   "/site.webmanifest",
@@ -12,21 +13,49 @@ const PRECACHE_URLS = [
   "/assets/roboto.woff2",
 ];
 
+async function cacheShellDocument(cache, pathname) {
+  const response = await fetch(pathname, { cache: "reload" });
+  if (!response.ok) return [];
+
+  await cache.put(pathname, response.clone());
+  const html = await response.text();
+  return [
+    ...html.matchAll(/(?:src|href)=["'](\/build-assets\/[^"']+\.(?:js|css))["']/g),
+  ].map((match) => match[1]);
+}
+
+async function discoverNidoAssets(buildAssets) {
+  const discoveredAssets = new Set();
+
+  await Promise.all(
+    buildAssets
+      .filter((url) => url.endsWith(".js"))
+      .map(async (url) => {
+        const response = await fetch(url, { cache: "reload" });
+        if (!response.ok) return;
+        const source = await response.text();
+        for (const match of source.matchAll(/nido-page-[A-Za-z0-9_-]+\.(?:js|css)/g)) {
+          discoveredAssets.add(`/build-assets/${match[0]}`);
+        }
+      }),
+  );
+
+  return [...discoveredAssets];
+}
+
 async function cacheCurrentShell() {
   const cache = await caches.open(SHELL_CACHE);
-  const shellResponse = await fetch("/", { cache: "reload" });
+  const buildAssets = new Set();
 
-  if (shellResponse.ok) {
-    await cache.put("/", shellResponse.clone());
-    const html = await shellResponse.text();
-    const buildAssets = [
-      ...html.matchAll(/(?:src|href)=["'](\/build-assets\/[^"']+\.(?:js|css))["']/g),
-    ].map((match) => match[1]);
-
-    await Promise.allSettled(buildAssets.map((url) => cache.add(url)));
+  for (const pathname of SHELL_URLS) {
+    const assets = await cacheShellDocument(cache, pathname);
+    assets.forEach((url) => buildAssets.add(url));
   }
 
-  await Promise.allSettled(PRECACHE_URLS.map((url) => cache.add(url)));
+  const nidoAssets = await discoverNidoAssets([...buildAssets]);
+  await Promise.allSettled(
+    [...buildAssets, ...nidoAssets, ...PRECACHE_URLS].map((url) => cache.add(url)),
+  );
 }
 
 async function trimRuntimeCache(cache) {
@@ -62,9 +91,10 @@ async function networkFirstNavigation(request) {
     }
     return response;
   } catch {
+    const shellFallback = url.pathname.startsWith("/nido") ? "/nido" : "/";
     return (
       (await cache.match(cacheKey)) ||
-      (await caches.match("/")) ||
+      (await caches.match(shellFallback)) ||
       new Response(
         "<!doctype html><html lang=\"es-PE\"><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>Sin conexión | Tesis20</title><body><main><h1>Sin conexión</h1><p>Revisa tu conexión e intenta nuevamente.</p></main></body></html>",
         { headers: { "Content-Type": "text/html; charset=utf-8" }, status: 503 },

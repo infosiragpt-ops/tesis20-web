@@ -177,6 +177,63 @@ const routeDefinitions = [
       </section>`,
   },
   {
+    output: "nido.html",
+    path: "/nido",
+    title: "Clases virtuales para niños | Tesis20 Nido",
+    description:
+      "Explora clases virtuales de aprendizaje creativo para niñas y niños en Tesis20 Nido. Filtra por edad, curso, docente y horario.",
+    heading: "Aprender jugando, crecer con confianza",
+    schemaType: "CollectionPage",
+    image: `${SITE_ORIGIN}/assets/nido/nido-platform-preview.png`,
+    imageAlt: "Catálogo de clases virtuales de Tesis20 Nido",
+    imageWidth: 1536,
+    imageHeight: 1024,
+    faqItems: [
+      {
+        question: "¿Los precios son definitivos?",
+        answer:
+          "No. Los importes visibles después de iniciar la demostración son referenciales y no permiten reservar ni pagar.",
+      },
+      {
+        question: "¿Este inicio de sesión ya es real?",
+        answer:
+          "No. Es una vista local de producto. La versión final requerirá autenticación segura y roles asignados desde el servidor.",
+      },
+      {
+        question: "¿Qué perfiles tendrá la plataforma?",
+        answer:
+          "Administrador, Docente y Alumno, cada uno con una experiencia y permisos propios.",
+      },
+    ],
+    content: `
+      <p class="eyebrow">Tesis20 Nido</p>
+      <h1>Aprender jugando, crecer con confianza</h1>
+      <p>Clases virtuales creativas para niñas y niños, organizadas por edad, curso, docente y horario.</p>
+      <p><a href="/nido#clases">Explorar clases</a> <a href="/nido#iniciar-sesion">Iniciar sesión</a></p>
+      <section id="clases" aria-labelledby="static-nido-classes-title">
+        <h2 id="static-nido-classes-title">Clases pensadas para aprender haciendo</h2>
+        <p>El catálogo interactivo permite filtrar las sesiones. Los precios referenciales de demostración se muestran únicamente después de iniciar una sesión local.</p>
+        <ul>
+          <li>Las vocales: comunicación inicial mediante juego y movimiento.</li>
+          <li>Arte y colores: creatividad, coordinación y expresión visual.</li>
+          <li>Cuentos en movimiento: comprensión, imaginación y expresión corporal.</li>
+        </ul>
+      </section>
+      <section id="como-funciona" aria-labelledby="static-nido-process-title">
+        <h2 id="static-nido-process-title">Cómo funciona la demostración</h2>
+        <ol>
+          <li>Explora y filtra el catálogo público.</li>
+          <li>Inicia una sesión local como Administrador, Docente o Alumno.</li>
+          <li>Accede a una vista de demostración adaptada al rol seleccionado.</li>
+        </ol>
+        <p>Esta experiencia local no procesa pagos ni constituye un sistema de autenticación productivo.</p>
+      </section>
+      <section id="preguntas" aria-labelledby="static-nido-faq-title">
+        <h2 id="static-nido-faq-title">Preguntas frecuentes</h2>
+        <p>Las clases, docentes, horarios, cupos y precios publicados en esta versión son datos de demostración para validar la experiencia.</p>
+      </section>`,
+  },
+  {
     output: "evidencias.html",
     path: "/evidencias",
     title: "Evidencias y resultados académicos | Tesis20",
@@ -324,7 +381,21 @@ function getCanonicalUrl(route) {
   return route.path === "/" ? `${SITE_ORIGIN}/` : `${SITE_ORIGIN}${route.path}`;
 }
 
-function createNavigation() {
+function createNavigation(route) {
+  if (route.path === "/nido") {
+    return `
+      <header data-seo-header>
+        <a href="/nido" aria-label="Tesis20 Nido, inicio">Tesis20 Nido</a>
+        <nav aria-label="Navegación principal de Nido">
+          <a href="/nido">Inicio</a>
+          <a href="/nido#clases">Clases</a>
+          <a href="/nido#como-funciona">Cómo funciona</a>
+          <a href="/nido#preguntas">Preguntas</a>
+          <a href="/">Tesis20.com</a>
+        </nav>
+      </header>`;
+  }
+
   return `
     <header data-seo-header>
       <a href="/" aria-label="Tesis20, inicio">Tesis20</a>
@@ -333,21 +404,30 @@ function createNavigation() {
         <a href="/servicios">Servicios</a>
         <a href="/evidencias">Evidencias</a>
         <a href="/contrato">Contrato</a>
+        <a href="/nido">Nido</a>
       </nav>
     </header>`;
 }
 
 function createStaticMarkup(route) {
+  const footer =
+    route.path === "/nido"
+      ? `<footer>
+          <p><strong>Tesis20 Nido</strong> · Aprendizaje creativo en una experiencia local de demostración.</p>
+          <p><a href="/">Volver a la plataforma Tesis de Tesis20.com</a></p>
+        </footer>`
+      : `<footer>
+          <p><strong>Tesis20</strong> · Asesoría y acompañamiento académico en Lima y todo el Perú.</p>
+          <address>Jr. Lincoln 638, Pueblo Libre, Lima – Perú · <a href="tel:+51918714054">(+51) 918 714 054</a></address>
+        </footer>`;
+
   return `
     <div data-seo-prerendered="true">
-      ${createNavigation()}
+      ${createNavigation(route)}
       <main id="main-content">
         ${route.content}
       </main>
-      <footer>
-        <p><strong>Tesis20</strong> · Asesoría y acompañamiento académico en Lima y todo el Perú.</p>
-        <address>Jr. Lincoln 638, Pueblo Libre, Lima – Perú · <a href="tel:+51918714054">(+51) 918 714 054</a></address>
-      </footer>
+      ${footer}
     </div>`;
 }
 
@@ -378,6 +458,19 @@ function createStructuredData(route) {
         "https://www.youtube.com/@tesisasesoriaycapacitacion3499",
       ],
     },
+    ...(route.path === "/nido"
+      ? [
+          {
+            "@type": "Organization",
+            "@id": `${SITE_ORIGIN}/nido#organization`,
+            name: "Tesis20 Nido",
+            url: `${SITE_ORIGIN}/nido`,
+            description:
+              "Plataforma de demostración para experiencias virtuales de aprendizaje temprano organizadas por edad, curso, docente y horario.",
+            parentOrganization: { "@id": `${SITE_ORIGIN}/#organization` },
+          },
+        ]
+      : []),
     {
       "@type": "WebSite",
       "@id": `${SITE_ORIGIN}/#website`,
@@ -395,7 +488,12 @@ function createStructuredData(route) {
       description: route.description,
       inLanguage: "es-PE",
       isPartOf: { "@id": `${SITE_ORIGIN}/#website` },
-      about: { "@id": `${SITE_ORIGIN}/#organization` },
+      about: {
+        "@id":
+          route.path === "/nido"
+            ? `${SITE_ORIGIN}/nido#organization`
+            : `${SITE_ORIGIN}/#organization`,
+      },
     },
     {
       "@type": "BreadcrumbList",
@@ -496,6 +594,18 @@ function createStructuredData(route) {
     });
   }
 
+  if (Array.isArray(route.faqItems) && route.faqItems.length > 0) {
+    graph.push({
+      "@type": "FAQPage",
+      "@id": `${canonicalUrl}#faq`,
+      mainEntity: route.faqItems.map((faq) => ({
+        "@type": "Question",
+        name: faq.question,
+        acceptedAnswer: { "@type": "Answer", text: faq.answer },
+      })),
+    });
+  }
+
   return `<script id="tesis20-structured-data" type="application/ld+json">${JSON.stringify({
     "@context": "https://schema.org",
     "@graph": graph,
@@ -505,6 +615,12 @@ function createStructuredData(route) {
 function renderRoute(template, route) {
   const isNotFound = !route.path;
   const canonicalUrl = isNotFound ? null : getCanonicalUrl(route);
+  const shareImage = route.image || SHARE_IMAGE;
+  const shareImageAlt =
+    route.imageAlt ||
+    "Estudiantes universitarios durante un proceso de acompañamiento académico";
+  const shareImageWidth = String(route.imageWidth || 800);
+  const shareImageHeight = String(route.imageHeight || 999);
   let html = template;
 
   html = html.replace(/<title>[^<]*<\/title>/i, `<title>${route.title}</title>`);
@@ -521,13 +637,15 @@ function renderRoute(template, route) {
     ["og:title", route.title],
     ["og:description", route.description],
     ["og:url", canonicalUrl || `${SITE_ORIGIN}/404`],
-    ["og:image", SHARE_IMAGE],
-    ["og:image:secure_url", SHARE_IMAGE],
-    ["og:image:alt", "Estudiantes universitarios durante un proceso de acompañamiento académico"],
+    ["og:image", shareImage],
+    ["og:image:secure_url", shareImage],
+    ["og:image:alt", shareImageAlt],
+    ["og:image:width", shareImageWidth],
+    ["og:image:height", shareImageHeight],
     ["twitter:title", route.title],
     ["twitter:description", route.description],
-    ["twitter:image", SHARE_IMAGE],
-    ["twitter:image:alt", "Estudiantes universitarios durante un proceso de acompañamiento académico"],
+    ["twitter:image", shareImage],
+    ["twitter:image:alt", shareImageAlt],
     ["twitter:url", canonicalUrl || `${SITE_ORIGIN}/404`],
   ];
 

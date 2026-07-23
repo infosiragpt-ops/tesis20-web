@@ -50,6 +50,17 @@ const PAGE_META = {
     image: DEFAULT_SHARE_IMAGE,
     imageAlt: "Modelo general informativo de contrato de Tesis20",
   },
+  nido: {
+    title: "Clases virtuales para niños | Tesis20 Nido",
+    description:
+      "Explora clases virtuales de aprendizaje creativo para niñas y niños en Tesis20 Nido. Filtra por edad, curso, docente y horario.",
+    path: "/nido",
+    schemaType: "CollectionPage",
+    image: `${SITE_ORIGIN}/assets/nido/nido-platform-preview.png`,
+    imageAlt: "Catálogo de clases virtuales de Tesis20 Nido",
+    imageWidth: 1536,
+    imageHeight: 1024,
+  },
   "not-found": {
     title: "Página no encontrada | Tesis20",
     description:
@@ -94,6 +105,16 @@ const organizationSchema = {
   ],
 };
 
+const nidoOrganizationSchema = {
+  "@type": "Organization",
+  "@id": `${SITE_ORIGIN}/nido#organization`,
+  name: "Tesis20 Nido",
+  url: `${SITE_ORIGIN}/nido`,
+  description:
+    "Plataforma de demostración para experiencias virtuales de aprendizaje temprano organizadas por edad, curso, docente y horario.",
+  parentOrganization: { "@id": `${SITE_ORIGIN}/#organization` },
+};
+
 function upsertMeta(selector, attributes) {
   let element = document.head.querySelector(selector);
   if (!element) {
@@ -123,6 +144,7 @@ function getSafePageKey(pathname = window.location.pathname) {
     "/servicios": "services",
     "/evidencias": "evidence",
     "/contrato": "contract",
+    "/nido": "nido",
   };
 
   return pageByPath[normalizedPath] || "not-found";
@@ -182,6 +204,7 @@ export function SeoManager({
       services: "Servicios",
       evidence: "Evidencias",
       contract: "Contrato",
+      nido: "Nido",
       "not-found": "Página no encontrada",
     };
 
@@ -225,11 +248,11 @@ export function SeoManager({
     });
     upsertMeta('meta[property="og:image:width"]', {
       property: "og:image:width",
-      content: "800",
+      content: String(meta.imageWidth || 800),
     });
     upsertMeta('meta[property="og:image:height"]', {
       property: "og:image:height",
-      content: "999",
+      content: String(meta.imageHeight || 999),
     });
     upsertMeta('meta[name="twitter:card"]', {
       name: "twitter:card",
@@ -307,8 +330,8 @@ export function SeoManager({
       url: meta.image,
       contentUrl: meta.image,
       caption: meta.imageAlt,
-      width: 800,
-      height: 999,
+      width: meta.imageWidth || 800,
+      height: meta.imageHeight || 999,
     };
     const websiteSchema = {
       "@type": "WebSite",
@@ -326,7 +349,12 @@ export function SeoManager({
       url: canonicalUrl,
       inLanguage: "es-PE",
       isPartOf: { "@id": `${SITE_ORIGIN}/#website` },
-      about: { "@id": `${SITE_ORIGIN}/#organization` },
+      about: {
+        "@id":
+          pageKey === "nido"
+            ? `${SITE_ORIGIN}/nido#organization`
+            : `${SITE_ORIGIN}/#organization`,
+      },
       breadcrumb: { "@id": `${canonicalUrl}#breadcrumb` },
       primaryImageOfPage: { "@id": `${canonicalUrl}#primaryimage` },
     };
@@ -425,6 +453,7 @@ export function SeoManager({
       "@context": "https://schema.org",
       "@graph": [
         organizationSchema,
+        ...(pageKey === "nido" ? [nidoOrganizationSchema] : []),
         websiteSchema,
         ...(!isNotFound ? [primaryImage, webpageSchema, breadcrumbs] : []),
         ...(servicesCatalog ? [servicesCatalog] : []),
@@ -457,6 +486,7 @@ export function RouteAnnouncer({ currentPage }) {
     services: "Página de servicios cargada",
     evidence: "Página de evidencias cargada",
     contract: "Página de contrato cargada",
+    nido: "Página de Nido cargada",
     "not-found": "Página no encontrada cargada",
   };
 
