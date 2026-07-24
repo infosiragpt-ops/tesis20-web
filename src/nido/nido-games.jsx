@@ -965,34 +965,31 @@ export function NidoGamesExperience({
     onStatus(`Área de ${findArea(areaId).name} seleccionada.`);
   };
 
-  const handleCategoryChange = (categoryId) => {
-    setSelectedCategory(categoryId);
-    setCurrentGameIndex(
-      Math.min(
-        getProgressValue(progress, selectedAge, selectedArea, categoryId),
-        NIDO_CURRICULUM_GAME_COUNT - 1,
-      ),
+  const startCategory = (categoryId, event) => {
+    const nextCategory = area.categories.find(
+      (item) => item.id === categoryId,
     );
-    resetActivity();
-    const nextCategory = area.categories.find((item) => item.id === categoryId);
-    onStatus(
-      `Subcategoría ${nextCategory.name} seleccionada. Contiene 20 retos.`,
-    );
-  };
+    if (!nextCategory) return;
 
-  const handleStart = (event) => {
     previousFocusRef.current = event?.currentTarget ?? document.activeElement;
+    const categoryProgress = getProgressValue(
+      progress,
+      selectedAge,
+      selectedArea,
+      categoryId,
+    );
     const startingGameIndex =
-      completedGames >= NIDO_CURRICULUM_GAME_COUNT
+      categoryProgress >= NIDO_CURRICULUM_GAME_COUNT
         ? 0
-        : Math.min(completedGames, NIDO_CURRICULUM_GAME_COUNT - 1);
+        : Math.min(categoryProgress, NIDO_CURRICULUM_GAME_COUNT - 1);
     const startingChallenge = buildCurriculumChallenge({
       areaId: selectedArea,
-      categoryId: selectedCategory,
+      categoryId,
       ageId: selectedAge,
       gameIndex: startingGameIndex,
     });
 
+    setSelectedCategory(categoryId);
     setCurrentGameIndex(startingGameIndex);
     setSelectedAnswer("");
     setRouteComplete(false);
@@ -1016,9 +1013,13 @@ export function NidoGamesExperience({
     }
 
     onStatus(
-      `${category.name}, reto ${startingGameIndex + 1} de 20, iniciado con narración automática.`,
+      `${nextCategory.name}, reto ${startingGameIndex + 1} de 20, iniciado con narración automática.`,
     );
     void playInstruction(startingChallenge);
+  };
+
+  const handleStart = (event) => {
+    startCategory(selectedCategory, event);
   };
 
   const handleSpeak = () => {
@@ -1277,7 +1278,11 @@ export function NidoGamesExperience({
                     }}
                     type="button"
                     aria-pressed={selected}
-                    onClick={() => handleCategoryChange(categoryItem.id)}
+                    aria-haspopup="dialog"
+                    aria-label={`Abrir ${categoryItem.name}. ${completed} de 20 retos completados.`}
+                    onClick={(event) =>
+                      startCategory(categoryItem.id, event)
+                    }
                     key={categoryItem.id}
                   >
                     <span className="nido-games__category-icon">
@@ -1329,7 +1334,11 @@ export function NidoGamesExperience({
                   </span>
                 </span>
               </div>
-              <button type="button" onClick={handleStart}>
+              <button
+                type="button"
+                aria-haspopup="dialog"
+                onClick={handleStart}
+              >
                 <Play size={22} weight="fill" aria-hidden="true" />
                 {completedGames === 20 ? "Repetir ruta" : "Comenzar 20 retos"}
               </button>
