@@ -547,9 +547,11 @@ check(
   initialStylesheetBytes > 0 && initialStylesheetBytes <= 85 * 1024,
   `El CSS inicial debe estar entre 1 y 85 KiB (${Math.ceil(initialStylesheetBytes / 1024)} KiB).`,
 );
+// 2026-07: 120 → 132 KiB al sumar la capa ilustrada de Nido (portadas, pasos,
+// celebraciones) sobre los estilos del modo juego; el CSS inicial mantiene 85 KiB.
 check(
-  stylesheetBytes <= 120 * 1024,
-  `El CSS total con rutas diferidas no debe superar 120 KiB (${Math.ceil(stylesheetBytes / 1024)} KiB).`,
+  stylesheetBytes <= 132 * 1024,
+  `El CSS total con rutas diferidas no debe superar 132 KiB (${Math.ceil(stylesheetBytes / 1024)} KiB).`,
 );
 check(deployBytesWithoutAudioAndPdf <= 9 * 1024 * 1024, `El build sin audios/PDF supera 9 MiB (${(deployBytesWithoutAudioAndPdf / 1024 / 1024).toFixed(2)} MiB).`);
 
@@ -559,7 +561,9 @@ for (const htmlFile of distFiles.filter((file) => file.endsWith(".html"))) {
 for (const thumbnail of distFiles.filter((file) => file.includes("/assets/thumbnails/") && /\.(?:png|jpe?g|webp)$/i.test(file))) {
   check((await fileSize(thumbnail)) <= 250 * 1024, `${thumbnail} supera 250 KiB.`);
 }
-for (const audio of distFiles.filter((file) => /\/assets\/audio\/.*\.mp3$/i.test(file))) {
+for (const audio of distFiles.filter((file) =>
+  /\/assets\/(?:nido\/)?audio\/.*\.mp3$/i.test(file),
+)) {
   check((await fileSize(audio)) <= 1_200 * 1024, `${audio} supera 1.2 MiB.`);
 }
 for (const imageFile of distFiles.filter((file) => /\.(?:png|jpe?g|webp|svg)$/i.test(file))) {

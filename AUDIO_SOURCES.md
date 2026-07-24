@@ -29,3 +29,24 @@ El comando `./scripts/generate_male_audio.sh` vuelve a producir las siete pistas
 ## Referencia histórica
 
 Antes de esta unificación, cinco pistas provenían de la página pública de Tesis20 y utilizaban voces, ritmos y niveles distintos. Esos archivos fueron reemplazados por las versiones uniformes indicadas arriba. IBM SPSS Statistics y Simulación de sustentación recibieron guiones nuevos basados en el contenido visible de sus respectivas tarjetas.
+
+## Voz profesional de Tesis20 Nido
+
+Los juegos de `/nido` usan un catálogo independiente de narraciones locales:
+
+- Proveedor de generación: OpenRouter.
+- Modelo por defecto: `x-ai/grok-voice-tts-1.0`.
+- Voz femenina por defecto: `ara`.
+- Cobertura: 1.740 retos, con archivos deduplicados por texto y perfil de edad.
+- Entrega: MP3 estático desde `/assets/nido/audio/generated/`; la clave nunca llega al navegador.
+- Respaldo: si un archivo no está disponible, la interfaz intenta la voz del dispositivo y siempre conserva la consigna visible.
+
+Los perfiles cambian el ritmo y la redacción para `2–3`, `4–5` y `6` años. Los sonidos de acierto y error son archivos locales independientes para responder de inmediato.
+
+Para regenerar:
+
+```bash
+OPENROUTER_API_KEY=... npm run audio:nido
+```
+
+La variable debe configurarse únicamente en un entorno seguro y nunca con el prefijo `VITE_`. El script reanuda por hash, valida cada MP3 con `ffprobe` cuando está disponible y actualiza `public/assets/nido/audio/manifest.json` solo después de completar el catálogo.
