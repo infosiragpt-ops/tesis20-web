@@ -1278,3 +1278,160 @@
     opacity: 0;
   }
 }
+
+/* --- Andamiaje, flujo continuo y escalado por edad --- */
+
+/* Pista: tras dos intentos, la respuesta correcta late con suavidad. */
+.nido-games__answers > button.is-hint {
+  border-color: #ffc94d;
+  box-shadow:
+    0 0 0 3px rgba(255, 201, 77, 0.35),
+    0 10px 22px rgba(16, 35, 63, 0.12);
+  animation: nido-hint-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes nido-hint-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    box-shadow:
+      0 0 0 3px rgba(255, 201, 77, 0.35),
+      0 10px 22px rgba(16, 35, 63, 0.12);
+  }
+
+  50% {
+    transform: scale(1.03);
+    box-shadow:
+      0 0 0 6px rgba(255, 201, 77, 0.5),
+      0 14px 26px rgba(16, 35, 63, 0.16);
+  }
+}
+
+/* Botones con profundidad táctil profesional. */
+.nido-games__answers > button {
+  border-bottom-width: 5px;
+  border-bottom-color: rgba(16, 35, 63, 0.18);
+}
+
+.nido-games__answers > button:active:not(:disabled) {
+  border-bottom-width: 2px;
+  transform: translateY(3px) scale(0.98);
+}
+
+/* Chip de ronda. */
+.nido-games__focus-round {
+  border: 2px solid #ffc94d !important;
+  background: #fff3c9 !important;
+  color: #7a561c;
+  font-weight: 900;
+}
+
+/* Siguiente aventura: acción principal grande y visual. */
+.nido-games__focus-success-next {
+  min-height: 62px;
+  display: grid !important;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 18px 8px 10px !important;
+  border: 0 !important;
+  border-bottom: 5px solid rgba(16, 35, 63, 0.35) !important;
+  border-radius: 18px !important;
+  background: linear-gradient(180deg, #ff8577, #ff6f61) !important;
+  box-shadow: 0 12px 26px rgba(220, 80, 72, 0.4);
+  color: #ffffff !important;
+  text-align: left;
+  transition: transform 160ms ease, box-shadow 160ms ease;
+}
+
+.nido-games__focus-success-next:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 32px rgba(220, 80, 72, 0.5);
+}
+
+.nido-games__focus-success-next:active {
+  transform: translateY(2px);
+  border-bottom-width: 2px !important;
+}
+
+.nido-games__focus-success-next-icon {
+  width: 46px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.92);
+  color: #10233f;
+}
+
+.nido-games__focus-success-next > span:not(.nido-games__focus-success-next-icon) {
+  display: grid;
+  line-height: 1.15;
+}
+
+.nido-games__focus-success-next small {
+  font-size: 0.62rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  opacity: 0.9;
+  text-transform: uppercase;
+}
+
+.nido-games__focus-success-next strong {
+  font-size: 1.02rem;
+}
+
+/* Escalado por edad: 2–3 años juega con tarjetas gigantes y una columna. */
+.nido-games__focus-shell[data-age="2-3"] .nido-games__answers {
+  grid-template-columns: 1fr;
+}
+
+.nido-games__focus-shell[data-age="2-3"] .nido-games__answers > button {
+  min-height: 92px;
+  grid-template-columns: 64px 1fr;
+  font-size: 1.05rem;
+}
+
+.nido-games__focus-shell[data-age="2-3"] .nido-games__answer-visual {
+  width: 64px;
+  min-height: 64px;
+}
+
+.nido-games__focus-shell[data-age="2-3"] .nido-games__picture {
+  width: 56px;
+  height: 56px;
+}
+
+.nido-games__focus-shell[data-age="2-3"] .nido-games__picture svg {
+  width: 52px;
+  height: 52px;
+}
+
+@media (max-width: 620px) {
+  .nido-games__focus-shell[data-age="2-3"] .nido-games__answers > button {
+    min-height: 64px;
+    grid-template-columns: 48px 1fr;
+    font-size: 0.82rem;
+  }
+
+  .nido-games__focus-shell[data-age="2-3"] .nido-games__answer-visual {
+    width: 48px;
+    min-height: 48px;
+  }
+
+  .nido-games__focus-shell[data-age="2-3"] .nido-games__picture,
+  .nido-games__focus-shell[data-age="2-3"] .nido-games__picture svg {
+    width: 42px;
+    height: 42px;
+  }
+
+  .nido-games__focus-success-next {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nido-games__answers > button.is-hint {
+    animation: none;
+  }
+}

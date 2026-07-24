@@ -696,7 +696,7 @@ function makeOptions(values, correctIndex, seed) {
 }
 
 function makeChallenge(context, definition) {
-  const { area, categoryItem, age, gameIndex, seed } = context;
+  const { area, categoryItem, age, gameIndex, seed, round = 0 } = context;
   const baseSpokenInstruction =
     definition.spokenInstruction ??
     `${definition.question} Escucha, observa y toca la respuesta correcta.`;
@@ -728,9 +728,10 @@ function makeChallenge(context, definition) {
   }
 
   const challengeId = `${area.id}-${categoryItem.id}-${age.id}-${gameIndex + 1}`;
+  const publicId = round ? `${challengeId}-ronda-${round + 1}` : challengeId;
 
   return Object.freeze({
-    id: challengeId,
+    id: publicId,
     areaId: area.id,
     categoryId: categoryItem.id,
     ageId: age.id,
@@ -743,7 +744,7 @@ function makeChallenge(context, definition) {
     prompt: definition.question,
     spokenInstruction,
     voice: spokenInstruction,
-    audioId: challengeId,
+    audioId: round ? null : challengeId,
     visualType: definition.visualType,
     visual: Object.freeze({
       kind: definition.visualKind,
@@ -1632,11 +1633,15 @@ export function getCurriculumCategory(areaId, categoryId) {
   );
 }
 
+// `round` habilita rondas infinitas: cada ronda re-siembra los 20 retos con
+// combinaciones nuevas. La ronda 0 conserva la semilla original para que la
+// narración profesional pregrabada siga coincidiendo con sus textos.
 export function buildCurriculumChallenge({
   areaId,
   categoryId,
   ageId,
   gameIndex,
+  round = 0,
 }) {
   const area = getCurriculumArea(areaId);
   if (!area) {
@@ -1661,16 +1666,23 @@ export function buildCurriculumChallenge({
     );
   }
 
-  const seed = hashSeed(`${areaId}|${categoryId}|${ageId}|${gameIndex}`);
+  const safeRound = Number.isInteger(round) && round > 0 ? round : 0;
+  const seed = hashSeed(
+    safeRound
+      ? `${areaId}|${categoryId}|${ageId}|${gameIndex}|ronda-${safeRound}`
+      : `${areaId}|${categoryId}|${ageId}|${gameIndex}`,
+  );
   const challenge = AREA_BUILDERS[areaId]({
     area,
     categoryItem,
     age,
     gameIndex,
     seed,
+    round: safeRound,
   });
 
   if (
+    !safeRound &&
     areaId === "atencion" &&
     categoryId === "mascaras" &&
     ageId === "2-3" &&

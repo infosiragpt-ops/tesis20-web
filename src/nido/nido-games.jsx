@@ -100,6 +100,22 @@ function createRouteStats(correct = 0) {
 }
 
 const AUTO_ADVANCE_MS = 1500;
+const ROUNDS_KEY = "tesis20.nido.route-rounds";
+
+function loadRouteRounds() {
+  if (typeof window === "undefined") return {};
+  try {
+    const stored = JSON.parse(window.localStorage.getItem(ROUNDS_KEY));
+    return stored && typeof stored === "object" ? stored : {};
+  } catch {
+    return {};
+  }
+}
+
+function getRoundValue(rounds, ageId, areaId, categoryId) {
+  const value = rounds?.[ageId]?.[areaId]?.[categoryId];
+  return Number.isInteger(value) && value > 0 ? value : 0;
+}
 const PROGRESS_MILESTONES = Object.freeze([5, 10, 15, 20]);
 
 // Piezas de confeti deterministas (sin Math.random: mantiene el render estable).
@@ -508,6 +524,11 @@ function ChallengeAnswers({
               correct ? "is-correct" : "",
               incorrect ? "is-error" : "",
               visualOnly ? "is-visual-only" : "",
+              !locked &&
+              incorrectAnswers.length >= 2 &&
+              option.id === challenge.answerId
+                ? "is-hint"
+                : "",
             ]
               .filter(Boolean)
               .join(" ")}
@@ -582,6 +603,7 @@ export function NidoGamesExperience({
   );
   const [focusMode, setFocusMode] = useState(false);
   const [replayingRoute, setReplayingRoute] = useState(false);
+  const [routeRounds, setRouteRounds] = useState(loadRouteRounds);
   const [routeComplete, setRouteComplete] = useState(false);
   const [feedbackEffect, setFeedbackEffect] = useState(null);
 
@@ -612,6 +634,12 @@ export function NidoGamesExperience({
     selectedArea,
     selectedCategory,
   );
+  const currentRound = getRoundValue(
+    routeRounds,
+    selectedAge,
+    selectedArea,
+    selectedCategory,
+  );
   const challenge = useMemo(
     () =>
       buildCurriculumChallenge({
@@ -619,8 +647,9 @@ export function NidoGamesExperience({
         categoryId: selectedCategory,
         ageId: selectedAge,
         gameIndex: currentGameIndex,
+        round: currentRound,
       }),
-    [currentGameIndex, selectedAge, selectedArea, selectedCategory],
+    [currentGameIndex, currentRound, selectedAge, selectedArea, selectedCategory],
   );
   const answerIsCorrect = selectedAnswer === challenge.answerId;
   const progressSummary = useMemo(
@@ -1036,8 +1065,9 @@ export function NidoGamesExperience({
     onStatus(`Área de ${findArea(areaId).name} seleccionada.`);
   };
 
-  const startCategory = (categoryId, event) => {
-    const nextCategory = area.categories.find(
+  const startCategory = (categoryId, event, areaId = selectedArea) => {
+    const targetArea = findArea(areaId);
+    const nextCategory = targetArea?.categories.find(
       (item) => item.id === categoryId,
     );
     if (!nextCategory) return;
@@ -1046,38 +1076,95 @@ export function NidoGamesExperience({
     const categoryProgress = getProgressValue(
       progress,
       selectedAge,
-      selectedArea,
+      areaId,
       categoryId,
     );
-    const startingGameIndex =
-      categoryProgress >= NIDO_CURRICULUM_GAME_COUNT
-        ? 0
-        : Math.min(categoryProgress, NIDO_CURRICULUM_GAME_COUNT - 1);
+    const isReplay = categoryProgress >= NIDO_CURRICULUM_GAME_COUNT;
+    const startingGameIndex = isReplay
+      ? 0
+      : Math.min(categoryProgress, NIDO_CURRICULUM_GAME_COUNT - 1);
+
+    // Cada rejugado abre una ronda nueva: los 20 retos cambian de combinación.
+    let startingRound = getRoundValue(
+      routeRounds,
+      selectedAge,
+      areaId,
+      categoryId,
+    );
+    if (isReplay) {
+      startingRound += 1;
+      setRouteRounds((current) => {
+        const next = {
+          ...current,
+          [selectedAge]: {
+            ...current[selectedAge],
+            [areaId]: {
+              ...current[selectedAge]?.[areaId],
+              [categoryId]: startingRound,
+            },
+          },
+        };
+        try {
+          window.localStorage.setItem(ROUNDS_KEY, JSON.stringify(next));
+        } catch {
+          // La ronda seguirá activa durante esta visita aunque no se persista.
+        }
+        return next;
+      });
+    }
+
     const startingChallenge = buildCurriculumChallenge({
-      areaId: selectedArea,
+      areaId,
       categoryId,
       ageId: selectedAge,
       gameIndex: startingGameIndex,
+      round: startingRound,
     });
 
+    setSelectedArea(areaId);
     setSelectedCategory(categoryId);
     setCurrentGameIndex(startingGameIndex);
     setSelectedAnswer("");
     setIncorrectAnswers([]);
     setRouteStats(createRouteStats(startingGameIndex));
-    setReplayingRoute(
-      categoryProgress >= NIDO_CURRICULUM_GAME_COUNT,
-    );
+    setReplayingRoute(isReplay);
     setRouteComplete(false);
     clearFeedbackEffect();
     stopFeedbackSound();
     setFocusMode(true);
 
     onStatus(
-      `${nextCategory.name}, reto ${startingGameIndex + 1} de 20, iniciado con narración automática.`,
+      isReplay
+        ? `${nextCategory.name}, ronda ${startingRound + 1} con 20 retos nuevos.`
+        : `${nextCategory.name}, reto ${startingGameIndex + 1} de 20, iniciado con narración automática.`,
     );
     void playInstruction(startingChallenge);
   };
+
+  // La siguiente aventura encadena el juego sin pausas: la subcategoría
+  // que sigue en el área o, al terminarla, la primera del área siguiente.
+  const nextAdventure = useMemo(() => {
+    const categoryIndex = area.categories.findIndex(
+      (item) => item.id === selectedCategory,
+    );
+    if (categoryIndex < area.categories.length - 1) {
+      return {
+        areaId: selectedArea,
+        category: area.categories[categoryIndex + 1],
+        areaName: area.name,
+      };
+    }
+    const areaIndex = NIDO_CURRICULUM.findIndex(
+      (item) => item.id === selectedArea,
+    );
+    const followingArea =
+      NIDO_CURRICULUM[(areaIndex + 1) % NIDO_CURRICULUM.length];
+    return {
+      areaId: followingArea.id,
+      category: followingArea.categories[0],
+      areaName: followingArea.name,
+    };
+  }, [area, selectedArea, selectedCategory]);
 
   const handleStart = (event) => {
     startCategory(selectedCategory, event);
@@ -1141,7 +1228,9 @@ export function NidoGamesExperience({
       playFeedbackSound("error");
       navigator.vibrate?.([25, 40, 25]);
       onStatus(
-        "Tin–ton. Esa no es la respuesta correcta. La pantalla indicó que debes intentarlo otra vez.",
+        incorrectAnswers.length >= 1
+          ? "Tin–ton. Mira con calma: la respuesta correcta brilla despacito para ayudarte."
+          : "Tin–ton. Esa no es la respuesta correcta. La pantalla indicó que debes intentarlo otra vez.",
       );
     }
   };
@@ -1168,6 +1257,7 @@ export function NidoGamesExperience({
         categoryId: selectedCategory,
         ageId: selectedAge,
         gameIndex: nextGameIndex,
+        round: currentRound,
       });
       setCurrentGameIndex(nextGameIndex);
       setSelectedAnswer("");
@@ -1462,7 +1552,11 @@ export function NidoGamesExperience({
                 closeFocusedGame();
               }}
             >
-              <div className="nido-games__focus-shell" data-area={selectedArea}>
+              <div
+                className="nido-games__focus-shell"
+                data-area={selectedArea}
+                data-age={selectedAge}
+              >
                 <header className="nido-games__focus-header">
                   <button
                     className="nido-games__focus-close"
@@ -1481,6 +1575,11 @@ export function NidoGamesExperience({
                     <small>
                       Reto {currentGameIndex + 1} de {NIDO_CURRICULUM_GAME_COUNT}
                     </small>
+                    {currentRound > 0 ? (
+                      <small className="nido-games__focus-round">
+                        Ronda {currentRound + 1}
+                      </small>
+                    ) : null}
                   </div>
                   <button
                     className={`nido-games__focus-audio ${speaking ? "is-speaking" : ""}`}
@@ -1565,7 +1664,11 @@ export function NidoGamesExperience({
                       <CelebrationBurst className="nido-games__success-burst" />
                       <NidoMascot pose="cheer" size={116} />
                     </div>
-                    <span>20 retos completados</span>
+                    <span>
+                      {replayingRoute
+                        ? `Ronda ${currentRound + 1} · 20 retos completados`
+                        : "20 retos completados"}
+                    </span>
                     <h2 id="nido-focus-title" ref={routeSuccessRef} tabIndex="-1">
                       ¡Ruta terminada!
                     </h2>
@@ -1590,6 +1693,30 @@ export function NidoGamesExperience({
                       </span>
                     </div>
                     <div className="nido-games__focus-success-actions">
+                      <button
+                        className="nido-games__focus-success-next"
+                        type="button"
+                        onClick={(event) =>
+                          startCategory(
+                            nextAdventure.category.id,
+                            event,
+                            nextAdventure.areaId,
+                          )
+                        }
+                      >
+                        <span className="nido-games__focus-success-next-icon" aria-hidden="true">
+                          <NidoGlyph
+                            name={nextAdventure.category.iconName}
+                            size={30}
+                            weight="duotone"
+                          />
+                        </span>
+                        <span>
+                          <small>¡Siguiente aventura!</small>
+                          <strong>{nextAdventure.category.name}</strong>
+                        </span>
+                        <ArrowRight size={22} weight="bold" aria-hidden="true" />
+                      </button>
                       <button
                         type="button"
                         onClick={(event) => startCategory(selectedCategory, event)}
