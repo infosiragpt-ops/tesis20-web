@@ -1536,7 +1536,6 @@ export function NidoGamesExperience({
               <Star size={19} weight="fill" aria-hidden="true" />
               Mi álbum · {Object.keys(stickerAlbum).length}/{REWARD_STICKERS.length}
             </button>
-            <a href="#precios">Ver precios y accesos</a>
           </div>
         </header>
 

@@ -179,44 +179,44 @@ const routeDefinitions = [
   {
     output: "nido.html",
     path: "/nido",
-    title: "Clases virtuales para niños | Tesis20 Nido",
+    title: "Videojuegos educativos para niños | Tesis20 Nido",
     description:
-      "Explora clases virtuales de aprendizaje creativo para niñas y niños en Tesis20 Nido. Filtra por edad, curso, docente y horario.",
+      "Videojuegos educativos para niñas y niños de 2 a 6 años: lógica, matemáticas, atención y memoria, habla en inglés, con narración profesional.",
     heading: "Aprender jugando, crecer con confianza",
     schemaType: "CollectionPage",
     image: `${SITE_ORIGIN}/assets/nido/nido-platform-preview.jpg`,
-    imageAlt: "Catálogo de clases virtuales de Tesis20 Nido",
+    imageAlt: "Catálogo de juegos educativos de Tesis20 Nido",
     imageWidth: 1536,
     imageHeight: 1024,
     faqItems: [
       {
-        question: "¿Los precios son definitivos?",
+        question: "¿Necesito crear una cuenta para jugar?",
         answer:
-          "No. Los importes visibles después de iniciar la demostración son referenciales y no permiten reservar ni pagar.",
+          "No. Los juegos de Tesis20 Nido se juegan directamente desde el navegador, sin registro ni datos del menor.",
       },
       {
-        question: "¿Este inicio de sesión ya es real?",
+        question: "¿Los niños necesitan saber leer?",
         answer:
-          "No. Es una vista local de producto. La versión final requerirá autenticación segura y roles asignados desde el servidor.",
+          "No. Cada consigna se narra en voz alta y las respuestas son tarjetas grandes con dibujos, pensadas para deditos pequeños.",
       },
       {
-        question: "¿Qué perfiles tendrá la plataforma?",
+        question: "¿Qué edades cubre la plataforma?",
         answer:
-          "Administrador, Docente y Alumno, cada uno con una experiencia y permisos propios.",
+          "Rutas adaptadas a tres etapas: 2–3, 4–5 y 6 años, con dificultad y ayudas propias de cada una.",
       },
     ],
     content: `
       <p class="eyebrow">Tesis20 Nido</p>
       <h1>Aprender jugando, crecer con confianza</h1>
-      <p>Clases virtuales creativas para niñas y niños, organizadas por edad, curso, docente y horario.</p>
-      <p><a href="/nido#clases">Explorar clases</a> <a href="/nido#iniciar-sesion">Iniciar sesión</a></p>
+      <p>Videojuegos educativos para niñas y niños, organizados por edad y área de aprendizaje.</p>
+      <p><a href="/nido#clases">Explorar juegos</a></p>
       <section id="clases" aria-labelledby="static-nido-classes-title">
-        <h2 id="static-nido-classes-title">Clases pensadas para aprender haciendo</h2>
-        <p>El catálogo interactivo permite filtrar las sesiones. Los precios referenciales de demostración se muestran únicamente después de iniciar una sesión local.</p>
+        <h2 id="static-nido-classes-title">Juegos pensados para aprender haciendo</h2>
+        <p>Rutas de lógica, matemáticas, atención y memoria, desarrollo del habla e inglés, más la Misión del Bosque: un videojuego de exploración y matemáticas.</p>
         <ul>
-          <li>Las vocales: comunicación inicial mediante juego y movimiento.</li>
-          <li>Arte y colores: creatividad, coordinación y expresión visual.</li>
-          <li>Cuentos en movimiento: comprensión, imaginación y expresión corporal.</li>
+          <li>Lógica: observar, relacionar, clasificar y resolver patrones.</li>
+          <li>Matemáticas: comparar, contar y reconocer relaciones numéricas.</li>
+          <li>Misión del Bosque: correr, saltar y recolectar para aprender a contar en movimiento.</li>
         </ul>
       </section>
       <section id="como-jugar" aria-labelledby="static-nido-steps-title">
@@ -228,19 +228,6 @@ const routeDefinitions = [
           <li>Ganan estrellas hasta completar los 20 retos de cada ruta.</li>
         </ol>
         <p>No necesitan saber leer: cada juego se narra y se resuelve tocando ilustraciones.</p>
-      </section>
-      <section id="como-funciona" aria-labelledby="static-nido-process-title">
-        <h2 id="static-nido-process-title">Cómo funciona la demostración</h2>
-        <ol>
-          <li>Explora y filtra el catálogo público.</li>
-          <li>Inicia una sesión local como Administrador, Docente o Alumno.</li>
-          <li>Accede a una vista de demostración adaptada al rol seleccionado.</li>
-        </ol>
-        <p>Esta experiencia local no procesa pagos ni constituye un sistema de autenticación productivo.</p>
-      </section>
-      <section id="preguntas" aria-labelledby="static-nido-faq-title">
-        <h2 id="static-nido-faq-title">Preguntas frecuentes</h2>
-        <p>Las clases, docentes, horarios, cupos y precios publicados en esta versión son datos de demostración para validar la experiencia.</p>
       </section>`,
   },
   {
@@ -398,10 +385,8 @@ function createNavigation(route) {
         <a href="/nido" aria-label="Tesis20 Nido, inicio">Tesis20 Nido</a>
         <nav aria-label="Navegación principal de Nido">
           <a href="/nido">Inicio</a>
-          <a href="/nido#clases">Clases</a>
+          <a href="/nido#clases">Juegos</a>
           <a href="/nido#como-jugar">Cómo se juega</a>
-          <a href="/nido#como-funciona">Cómo funciona</a>
-          <a href="/nido#preguntas">Preguntas</a>
           <a href="/">Tesis20.com</a>
         </nav>
       </header>`;
@@ -477,7 +462,7 @@ function createStructuredData(route) {
             name: "Tesis20 Nido",
             url: `${SITE_ORIGIN}/nido`,
             description:
-              "Plataforma de demostración para experiencias virtuales de aprendizaje temprano organizadas por edad, curso, docente y horario.",
+              "Plataforma de videojuegos educativos para el aprendizaje temprano, con rutas organizadas por edad y área de aprendizaje.",
             parentOrganization: { "@id": `${SITE_ORIGIN}/#organization` },
           },
         ]

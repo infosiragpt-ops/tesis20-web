@@ -15,6 +15,18 @@ import {
 } from "../content/forest-mission.js";
 import { createDifficultyAdapter } from "../learning/difficulty.js";
 import {
+  briefingKey,
+  missionCompleteKey,
+  missionCompleteText,
+  NUMBER_WORDS,
+  partialKey,
+  partialText,
+  successKey,
+  successText,
+  tryAgainKey,
+  tryAgainText,
+} from "../content/forest-voice-lines.js";
+import {
   drawBackground,
   drawBasket,
   drawBush,
@@ -31,19 +43,6 @@ import "./bosque-game.css";
 
 const WORLD = Object.freeze({ width: 1900, groundY: 470 });
 const BASKET = Object.freeze({ x: 1700, y: 400, w: 120, h: 66 });
-const NUMBER_WORDS = [
-  "cero",
-  "una",
-  "dos",
-  "tres",
-  "cuatro",
-  "cinco",
-  "seis",
-  "siete",
-  "ocho",
-  "nueve",
-  "diez",
-];
 
 /**
  * @param {{
@@ -81,6 +80,7 @@ export default function BosqueGame({
   const busRef = useRef(null);
   const adapterRef = useRef(null);
   const stateRef = useRef(null);
+  const bosqueTracksRef = useRef({});
   const inputRef = useRef({
     left: false,
     right: false,
@@ -90,20 +90,30 @@ export default function BosqueGame({
   const phaseRef = useRef("intro");
   phaseRef.current = phase;
 
-  const round = useMemo(
-    () =>
-      createForestRound({
-        ageId,
-        roundIndex,
-        level: adapterRef.current?.level() ?? 0,
-      }),
-    [ageId, roundIndex],
-  );
+  // El nivel adaptativo se lee de forma imperativa (no es estado reactivo);
+  // se guarda junto al reto para que la clave de audio pregrabado
+  // (briefingKey) siempre coincida con el texto que generó `round`.
+  const roundLevelRef = useRef(0);
+  const round = useMemo(() => {
+    const level = adapterRef.current?.level() ?? 0;
+    roundLevelRef.current = level;
+    return createForestRound({ ageId, roundIndex, level });
+  }, [ageId, roundIndex]);
 
   const speak = useCallback((text, opts) => {
     setSubtitle(text);
     audioRef.current?.speak(text, opts);
   }, []);
+
+  // Narra con audio profesional pregrabado cuando existe (mismo manifiesto
+  // que el currículo clásico); si la clave no está cubierta, la voz del
+  // dispositivo entra como respaldo automático dentro de audioDirector.speak.
+  const narrate = useCallback(
+    (text, key, opts) => {
+      speak(text, { ...opts, audioSrc: bosqueTracksRef.current[key] });
+    },
+    [speak],
+  );
 
   // Construcción y teardown completos del runtime.
   useEffect(() => {
@@ -117,7 +127,19 @@ export default function BosqueGame({
     });
     bus.emit(GAME_TO_PLATFORM.GAME_READY, { game: "mision-del-bosque" });
 
+    let active = true;
+    fetch("/assets/nido/audio/manifest.json", { cache: "no-store" })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((manifest) => {
+        if (!active || !manifest?.bosqueTracks) return;
+        bosqueTracksRef.current = manifest.bosqueTracks;
+      })
+      .catch(() => {
+        // Sin manifiesto, la voz del dispositivo sigue disponible.
+      });
+
     return () => {
+      active = false;
       window.clearInterval(stateRef.current?.counting);
       loopRef.current?.destroy();
       loopRef.current = null;
@@ -194,11 +216,7 @@ export default function BosqueGame({
           });
         }
         setPhase("celebrating");
-        speak(
-          levelUp
-            ? "¡Lo lograste! Ahora vamos a un reto un poquito más grande."
-            : "¡Muy bien! ¡Lo lograste!",
-        );
+        narrate(successText(levelUp), successKey(ageId, levelUp));
         const completedRound = roundIndex + 1;
         onRoundComplete?.(completedRound);
         busRef.current?.emit(GAME_TO_PLATFORM.LEVEL_COMPLETED, {
@@ -210,7 +228,7 @@ export default function BosqueGame({
             const summary = adapterRef.current.summary();
             setMissionSummary(summary);
             setPhase("missionComplete");
-            speak("¡Misión del bosque completada! Eres increíble.");
+            narrate(missionCompleteText, missionCompleteKey(ageId));
             onMissionComplete?.(summary);
           } else {
             setRoundIndex(completedRound);
@@ -244,19 +262,21 @@ export default function BosqueGame({
         state.delivered = 0;
         setHud({ carried: state.carried, delivered: 0 });
         setPhase("playing");
-        speak(
-          `Casi. Contemos juntos: necesitamos ${NUMBER_WORDS[targetRound.target]} ${targetRound.target === 1 ? "fruta" : "frutas"}. Inténtalo otra vez.`,
+        narrate(
+          tryAgainText(targetRound.target),
+          tryAgainKey(ageId, targetRound.target),
         );
       } else {
         // Entrega parcial: ánimo, sin marcar error.
         const missing = targetRound.target - state.delivered;
         setPhase("playing");
-        speak(
-          `Ya llevas ${NUMBER_WORDS[state.delivered]}. ${missing === 1 ? "Falta una fruta" : `Faltan ${NUMBER_WORDS[missing]} frutas`}.`,
+        narrate(
+          partialText(state.delivered, missing),
+          partialKey(ageId, state.delivered, missing),
         );
       }
     },
-    [onMissionComplete, onRoundComplete, round, roundIndex, speak],
+    [ageId, narrate, onMissionComplete, onRoundComplete, round, roundIndex],
   );
 
   const update = useCallback(
@@ -469,16 +489,20 @@ export default function BosqueGame({
     setHelpVisible(profile.helpAlways);
     adapterRef.current?.resetRound();
     setupRound(round, roundIndex);
-    speak(round.spokenText, {
-      onEnd: () => {
-        if (phaseRef.current === "briefing") setPhase("playing");
+    narrate(
+      round.spokenText,
+      briefingKey(ageId, roundIndex, roundLevelRef.current),
+      {
+        onEnd: () => {
+          if (phaseRef.current === "briefing") setPhase("playing");
+        },
       },
-    });
+    );
     const fallback = window.setTimeout(() => {
       if (phaseRef.current === "briefing") setPhase("playing");
     }, 6000);
     return () => window.clearTimeout(fallback);
-  }, [phase, profile.helpAlways, round, roundIndex, setupRound, speak]);
+  }, [ageId, narrate, phase, profile.helpAlways, round, roundIndex, setupRound]);
 
   // Teclado
   useEffect(() => {
@@ -655,7 +679,12 @@ export default function BosqueGame({
                 <button
                   type="button"
                   aria-label="Repetir instrucción"
-                  onClick={() => speak(round.spokenText)}
+                  onClick={() =>
+                    narrate(
+                      round.spokenText,
+                      briefingKey(ageId, roundIndex, roundLevelRef.current),
+                    )
+                  }
                 >
                   🔊
                 </button>

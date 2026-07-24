@@ -19,6 +19,7 @@ import {
   NIDO_CURRICULUM_GAME_COUNT,
   buildCurriculumChallenge,
 } from "../src/nido/nido-curriculum.js";
+import { enumerateForestVoiceLines } from "../src/nido/game/content/forest-voice-lines.js";
 
 const ROOT = process.cwd();
 const AUDIO_ROOT = path.join(ROOT, "public", "assets", "nido", "audio");
@@ -102,9 +103,22 @@ function getAudioHash({ ageId, text }) {
     .slice(0, 28);
 }
 
+function addJob(jobsByHash, { key, ageId, text }, tracksTarget) {
+  if (!text) throw new Error(`${key} no tiene texto narrable.`);
+  const hash = getAudioHash({ ageId, text });
+  const fileName = `${hash}.mp3`;
+  tracksTarget[key] = `/assets/nido/audio/generated/${fileName}`;
+  if (!jobsByHash.has(hash)) {
+    jobsByHash.set(hash, { hash, fileName, text, ageId, ids: [key] });
+  } else {
+    jobsByHash.get(hash).ids.push(key);
+  }
+}
+
 function enumerateAudioPlan() {
   const jobsByHash = new Map();
   const tracks = {};
+  const bosqueTracks = {};
 
   for (const age of NIDO_AGE_GROUPS) {
     for (const area of NIDO_CURRICULUM) {
@@ -120,32 +134,28 @@ function enumerateAudioPlan() {
             ageId: age.id,
             gameIndex,
           });
-          const text = getChallengeText(challenge);
-          if (!text) {
-            throw new Error(`El reto ${challenge.id} no tiene texto narrable.`);
-          }
-          const hash = getAudioHash({ ageId: age.id, text });
-          const fileName = `${hash}.mp3`;
-          tracks[challenge.id] = `/assets/nido/audio/generated/${fileName}`;
-          if (!jobsByHash.has(hash)) {
-            jobsByHash.set(hash, {
-              hash,
-              fileName,
-              text,
-              ageId: age.id,
-              challengeIds: [challenge.id],
-            });
-          } else {
-            jobsByHash.get(hash).challengeIds.push(challenge.id);
-          }
+          addJob(
+            jobsByHash,
+            { key: challenge.id, ageId: age.id, text: getChallengeText(challenge) },
+            tracks,
+          );
         }
       }
     }
   }
 
+  for (const line of enumerateForestVoiceLines()) {
+    addJob(
+      jobsByHash,
+      { key: line.key, ageId: line.ageId, text: line.text },
+      bosqueTracks,
+    );
+  }
+
   return {
     jobs: [...jobsByHash.values()],
     tracks,
+    bosqueTracks,
   };
 }
 
@@ -311,12 +321,12 @@ async function main() {
   const apiKey = getApiKey();
   if (!apiKey) throw new Error("OPENROUTER_API_KEY está vacía.");
 
-  const { jobs, tracks } = enumerateAudioPlan();
+  const { jobs, tracks, bosqueTracks } = enumerateAudioPlan();
   let generatedCount = 0;
   let cachedCount = 0;
 
   console.log(
-    `Plan de voz: ${Object.keys(tracks).length} retos, ${jobs.length} audios únicos, concurrencia ${CONCURRENCY}.`,
+    `Plan de voz: ${Object.keys(tracks).length} retos, ${Object.keys(bosqueTracks).length} líneas de Misión del Bosque, ${jobs.length} audios únicos, concurrencia ${CONCURRENCY}.`,
   );
 
   await runPool(
@@ -361,6 +371,7 @@ async function main() {
       ]),
     ),
     tracks,
+    bosqueTracks,
   };
 
   await writeFile(MANIFEST_PATH, `${JSON.stringify(manifest, null, 2)}\n`);
@@ -374,7 +385,7 @@ async function main() {
     ),
   );
   console.log(
-    `Manifiesto actualizado: ${generatedCount} generados, ${cachedCount} reutilizados, ${obsoleteFiles.length} obsoletos retirados y ${Object.keys(tracks).length} retos cubiertos.`,
+    `Manifiesto actualizado: ${generatedCount} generados, ${cachedCount} reutilizados, ${obsoleteFiles.length} obsoletos retirados, ${Object.keys(tracks).length} retos y ${Object.keys(bosqueTracks).length} líneas del bosque cubiertos.`,
   );
 }
 

@@ -51,13 +51,13 @@ const PAGE_META = {
     imageAlt: "Modelo general informativo de contrato de Tesis20",
   },
   nido: {
-    title: "Clases virtuales para niños | Tesis20 Nido",
+    title: "Videojuegos educativos para niños | Tesis20 Nido",
     description:
-      "Explora clases virtuales de aprendizaje creativo para niñas y niños en Tesis20 Nido. Filtra por edad, curso, docente y horario.",
+      "Videojuegos educativos para niñas y niños de 2 a 6 años: lógica, matemáticas, atención y memoria, habla en inglés, con narración profesional.",
     path: "/nido",
     schemaType: "CollectionPage",
     image: `${SITE_ORIGIN}/assets/nido/nido-platform-preview.jpg`,
-    imageAlt: "Catálogo de clases virtuales de Tesis20 Nido",
+    imageAlt: "Catálogo de juegos educativos de Tesis20 Nido",
     imageWidth: 1536,
     imageHeight: 1024,
   },
@@ -111,7 +111,7 @@ const nidoOrganizationSchema = {
   name: "Tesis20 Nido",
   url: `${SITE_ORIGIN}/nido`,
   description:
-    "Plataforma de demostración para experiencias virtuales de aprendizaje temprano organizadas por edad, curso, docente y horario.",
+    "Plataforma de videojuegos educativos para el aprendizaje temprano, con rutas organizadas por edad y área de aprendizaje.",
   parentOrganization: { "@id": `${SITE_ORIGIN}/#organization` },
 };
 

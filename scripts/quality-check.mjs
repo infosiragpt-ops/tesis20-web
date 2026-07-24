@@ -28,12 +28,12 @@ const routeSpecs = [
   {
     path: "/nido",
     output: "dist/nido.html",
-    title: "Clases virtuales para niños | Tesis20 Nido",
+    title: "Videojuegos educativos para niños | Tesis20 Nido",
     h1: "Aprender jugando, crecer con confianza",
     content: [
-      "Explorar clases",
-      "Precios referenciales de demostración",
-      "Administrador, Docente o Alumno",
+      "Explorar juegos",
+      "Misión del Bosque",
+      "no necesitan saber leer",
     ],
     schemaType: "CollectionPage",
   },

@@ -8,6 +8,7 @@ import {
   NIDO_CURRICULUM_GAME_COUNT,
   buildCurriculumChallenge,
 } from "../src/nido/nido-curriculum.js";
+import { enumerateForestVoiceLines } from "../src/nido/game/content/forest-voice-lines.js";
 
 const EXPECTED_AREA_COUNT = 5;
 const MIN_CATEGORIES_PER_AREA = 5;
@@ -348,6 +349,53 @@ for (const audioPublicPath of professionalAudioFiles) {
   );
 }
 
+// Misión del Bosque: mismo contrato de narración profesional que el
+// currículo clásico, pero con líneas enumerables (briefing + retroalimentación
+// parametrizada) en vez de retos.
+const bosqueTracks =
+  audioManifest?.bosqueTracks && typeof audioManifest.bosqueTracks === "object"
+    ? audioManifest.bosqueTracks
+    : {};
+const bosqueVoiceLines = enumerateForestVoiceLines();
+const bosqueAudioFiles = new Set();
+
+for (const line of bosqueVoiceLines) {
+  const audioPublicPath = bosqueTracks[line.key];
+  check(
+    typeof audioPublicPath === "string" &&
+      audioPublicPath.startsWith("/assets/nido/audio/generated/") &&
+      audioPublicPath.endsWith(".mp3"),
+    `Misión del Bosque: “${line.key}” no está cubierto por el manifiesto profesional.`,
+  );
+  if (typeof audioPublicPath !== "string") continue;
+  bosqueAudioFiles.add(audioPublicPath);
+  const expectedAudioHash = createHash("sha256")
+    .update(
+      [
+        audioManifest.generatorVersion,
+        audioManifest.model,
+        audioManifest.voiceId,
+        line.ageId,
+        line.text,
+      ].join("\n"),
+      "utf8",
+    )
+    .digest("hex")
+    .slice(0, 28);
+  check(
+    audioPublicPath === `/assets/nido/audio/generated/${expectedAudioHash}.mp3`,
+    `Misión del Bosque: “${line.key}” apunta a una locución desactualizada.`,
+  );
+}
+for (const audioPublicPath of bosqueAudioFiles) {
+  const relativePath = audioPublicPath.replace(/^\/+/, "");
+  const audioFilePath = path.join(AUDIO_PUBLIC_ROOT.pathname, relativePath);
+  check(
+    existsSync(audioFilePath),
+    `No existe el archivo profesional del bosque ${audioPublicPath}.`,
+  );
+}
+
 if (failureCount > 0) {
   console.error(
     `✗ Currículo Nido inválido: ${failureCount} de ${assertionCount} controles fallaron.`,
@@ -363,6 +411,8 @@ if (failureCount > 0) {
   console.log(
     `✓ Currículo Nido válido: ${areas.length} áreas, ${categoryCount} subcategorías, ` +
       `${combinationCount} retos activos y ${optionCount} opciones verificadas ` +
-      `con ${professionalAudioFiles.size} audios profesionales y ${assertionCount} controles.`,
+      `con ${professionalAudioFiles.size} audios profesionales, ` +
+      `${bosqueVoiceLines.length} líneas de Misión del Bosque (${bosqueAudioFiles.size} audios) ` +
+      `y ${assertionCount} controles.`,
   );
 }

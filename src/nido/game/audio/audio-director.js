@@ -1,6 +1,8 @@
-// AudioDirector: buses master/música/sfx sobre WebAudio + voz por
-// speechSynthesis. La música es un loop generativo original (pentatónica),
-// los efectos son sintetizados: cero archivos descargados.
+// AudioDirector: buses master/música/sfx sobre WebAudio + voz. La música es
+// un loop generativo original (pentatónica), los efectos son sintetizados:
+// cero archivos descargados. La narración prioriza audio profesional
+// pregrabado (mismo pipeline que el currículo clásico) y cae a la voz del
+// dispositivo solo si no hay pista o el archivo falla al cargar.
 // Ducking: la música baja al 25 % mientras habla la narradora.
 
 const PREFS_KEY = "tesis20.nido.bosque-audio";
@@ -24,7 +26,7 @@ function loadPrefs() {
  *   start: () => void,
  *   playMusic: () => void,
  *   sfx: (name: "jump"|"collect"|"deposit"|"success"|"try"|"celebrate"|"count") => void,
- *   speak: (text: string, opts?: { onEnd?: () => void }) => void,
+ *   speak: (text: string, opts?: { onEnd?: () => void, audioSrc?: string }) => void,
  *   stopSpeech: () => void,
  *   setMusicEnabled: (on: boolean) => void,
  *   setVoiceEnabled: (on: boolean) => void,
@@ -43,6 +45,8 @@ export function createAudioDirector() {
   let musicStep = 0;
   let speaking = false;
   let prefs = loadPrefs();
+  let narrationAudio = null;
+  let narrationRunId = 0;
 
   const persist = () => {
     try {
@@ -148,29 +152,71 @@ export function createAudioDirector() {
         // El silencio de un efecto no interrumpe el juego.
       }
     },
-    speak(text, { onEnd } = {}) {
-      if (!prefs.voice || !("speechSynthesis" in window)) {
-        onEnd?.();
-        return;
-      }
-      window.speechSynthesis.cancel();
-      const utterance = new window.SpeechSynthesisUtterance(text);
-      utterance.lang = "es-PE";
-      utterance.rate = 0.9;
-      utterance.pitch = 1.08;
-      speaking = true;
-      duckMusic(true);
+    speak(text, { onEnd, audioSrc } = {}) {
+      narrationRunId += 1;
+      const runId = narrationRunId;
+      if (narrationAudio) narrationAudio.pause();
+
+      const speakWithDeviceVoice = () => {
+        if (!prefs.voice || !("speechSynthesis" in window)) {
+          if (runId === narrationRunId) finish();
+          return;
+        }
+        window.speechSynthesis.cancel();
+        const utterance = new window.SpeechSynthesisUtterance(text);
+        utterance.lang = "es-PE";
+        utterance.rate = 0.9;
+        utterance.pitch = 1.08;
+        utterance.onend = () => {
+          if (runId === narrationRunId) finish();
+        };
+        utterance.onerror = () => {
+          if (runId === narrationRunId) finish();
+        };
+        window.speechSynthesis.speak(utterance);
+      };
+
       const finish = () => {
         if (!speaking) return;
         speaking = false;
         duckMusic(false);
         onEnd?.();
       };
-      utterance.onend = finish;
-      utterance.onerror = finish;
-      window.speechSynthesis.speak(utterance);
+
+      if (!prefs.voice) {
+        onEnd?.();
+        return;
+      }
+
+      speaking = true;
+      duckMusic(true);
+
+      if (!audioSrc) {
+        speakWithDeviceVoice();
+        return;
+      }
+
+      // Narración profesional pregrabada, con respaldo silencioso a la voz
+      // del dispositivo si el archivo no existe o falla al reproducirse.
+      if (!narrationAudio) narrationAudio = new Audio();
+      const audio = narrationAudio;
+      let fallbackStarted = false;
+      const fallbackToDevice = () => {
+        if (fallbackStarted || runId !== narrationRunId) return;
+        fallbackStarted = true;
+        speakWithDeviceVoice();
+      };
+      audio.src = audioSrc;
+      audio.currentTime = 0;
+      audio.onended = () => {
+        if (runId === narrationRunId) finish();
+      };
+      audio.onerror = fallbackToDevice;
+      void audio.play().catch(fallbackToDevice);
     },
     stopSpeech() {
+      narrationRunId += 1;
+      narrationAudio?.pause();
       window.speechSynthesis?.cancel();
       speaking = false;
       duckMusic(false);
@@ -189,10 +235,16 @@ export function createAudioDirector() {
     setVoiceEnabled(on) {
       prefs = { ...prefs, voice: on };
       persist();
-      if (!on) window.speechSynthesis?.cancel();
+      if (!on) {
+        narrationRunId += 1;
+        narrationAudio?.pause();
+        window.speechSynthesis?.cancel();
+      }
     },
     prefs: () => ({ ...prefs }),
     suspend() {
+      narrationRunId += 1;
+      narrationAudio?.pause();
       window.speechSynthesis?.cancel();
       if (ctx?.state === "running") void ctx.suspend().catch(() => {});
     },
@@ -200,8 +252,14 @@ export function createAudioDirector() {
       if (ctx?.state === "suspended") void ctx.resume().catch(() => {});
     },
     destroy() {
+      narrationRunId += 1;
       window.clearInterval(musicTimer);
       musicTimer = null;
+      if (narrationAudio) {
+        narrationAudio.pause();
+        narrationAudio.removeAttribute("src");
+        narrationAudio = null;
+      }
       window.speechSynthesis?.cancel();
       if (ctx && ctx.state !== "closed") void ctx.close().catch(() => {});
       ctx = null;
