@@ -8,10 +8,16 @@ import {
 import { CelebrationBurst, NidoMascot } from "./illustrations/nido-mascot.jsx";
 import { createNidoIcon, NidoGlyph } from "./nido-icon-map";
 import { STICKERS } from "./stickers/sticker-registry.jsx";
+import { CATCH_THEMES } from "./game/content/catch-mission.js";
+import { MEMORY_THEMES } from "./game/content/memory-mission.js";
+import ArcadeHub from "./game/hub/ArcadeHub.jsx";
+import "./game/hub/arcade-hub.css";
 
-// El motor del videojuego se carga bajo demanda: chunk propio de Vite que solo
-// se descarga al abrir la misión.
+// El motor de cada videojuego se carga bajo demanda: chunk propio de Vite
+// que solo se descarga al abrir esa experiencia.
 const BosqueGame = lazy(() => import("./game/bosque/BosqueGame.jsx"));
+const MemoriaGame = lazy(() => import("./game/memoria/MemoriaGame.jsx"));
+const CatchGame = lazy(() => import("./game/catch/CatchGame.jsx"));
 import "./nido-games.css";
 import "./nido-focus.css";
 
@@ -107,6 +113,7 @@ const AUTO_ADVANCE_MS = 1500;
 const ROUNDS_KEY = "tesis20.nido.route-rounds";
 const ALBUM_KEY = "tesis20.nido.sticker-album";
 const BOSQUE_KEY = "tesis20.nido.bosque-rondas";
+const ARCADE_KEY = "tesis20.nido.arcade-rondas";
 
 function loadBosqueProgress() {
   if (typeof window === "undefined") return {};
@@ -116,6 +123,23 @@ function loadBosqueProgress() {
   } catch {
     return {};
   }
+}
+
+// Progreso compartido de Memoria Mágica y Atrapa y Cuenta, ambos con varios
+// temas por edad: { [gameId]: { [themeId]: { [ageId]: rondaAlcanzada } } }.
+function loadArcadeProgress() {
+  if (typeof window === "undefined") return {};
+  try {
+    const stored = JSON.parse(window.localStorage.getItem(ARCADE_KEY));
+    return stored && typeof stored === "object" ? stored : {};
+  } catch {
+    return {};
+  }
+}
+
+function getArcadeRounds(progress, gameId, themeId, ageId) {
+  const value = progress?.[gameId]?.[themeId]?.[ageId];
+  return Number.isInteger(value) ? value : 0;
 }
 
 // Premios coleccionables: un sticker ilustrado por ruta completada.
@@ -159,6 +183,21 @@ const REWARD_STICKERS = Object.freeze([
   { name: "Star", label: "Estrellita" },
   { name: "Tooth", label: "Muelita" },
 ]);
+
+const ARCADE_CATEGORIES = Object.freeze([
+  { id: "rutas", label: "Rutas por área" },
+  { id: "aventura", label: "Aventura" },
+  { id: "memoria", label: "Memoria" },
+  { id: "atrapa", label: "Atrapa y cuenta" },
+]);
+
+const AREA_TILE_STYLE = Object.freeze({
+  logica: { accent: "#46b982", accentSoft: "#e2f6ec" },
+  matematicas: { accent: "#9873e7", accentSoft: "#efe7ff" },
+  atencion: { accent: "#4b8ff7", accentSoft: "#e3f1ff" },
+  habla: { accent: "#ff6f61", accentSoft: "#ffe3df" },
+  ingles: { accent: "#29c7c9", accentSoft: "#dff8f7" },
+});
 
 function loadStickerAlbum() {
   if (typeof window === "undefined") return {};
@@ -699,7 +738,12 @@ export function NidoGamesExperience({
   const [bosqueOpen, setBosqueOpen] = useState(false);
   const [bosqueProgress, setBosqueProgress] = useState(loadBosqueProgress);
   const bosqueDialogRef = useRef(null);
-  const [gamesView, setGamesView] = useState("camino");
+  const [arcadeProgress, setArcadeProgress] = useState(loadArcadeProgress);
+  const [memoriaTheme, setMemoriaTheme] = useState(null);
+  const memoriaDialogRef = useRef(null);
+  const [catchTheme, setCatchTheme] = useState(null);
+  const catchDialogRef = useRef(null);
+  const [gamesView, setGamesView] = useState("arcade");
   const albumDialogRef = useRef(null);
   const [routeComplete, setRouteComplete] = useState(false);
   const [feedbackEffect, setFeedbackEffect] = useState(null);
@@ -1132,6 +1176,42 @@ export function NidoGamesExperience({
     };
   }, [bosqueOpen]);
 
+  useEffect(() => {
+    if (!memoriaTheme) return undefined;
+    const dialog = memoriaDialogRef.current;
+    if (dialog && !dialog.open) {
+      try {
+        dialog.showModal();
+      } catch {
+        dialog.setAttribute("open", "");
+      }
+    }
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      if (dialog?.open) dialog.close();
+    };
+  }, [memoriaTheme]);
+
+  useEffect(() => {
+    if (!catchTheme) return undefined;
+    const dialog = catchDialogRef.current;
+    if (dialog && !dialog.open) {
+      try {
+        dialog.showModal();
+      } catch {
+        dialog.setAttribute("open", "");
+      }
+    }
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      if (dialog?.open) dialog.close();
+    };
+  }, [catchTheme]);
+
   const bosqueRounds = Number.isInteger(bosqueProgress?.[selectedAge])
     ? bosqueProgress[selectedAge]
     : 0;
@@ -1172,6 +1252,120 @@ export function NidoGamesExperience({
       `¡Misión del bosque completada! Ganaste el sticker ${reward.label}.`,
     );
   };
+
+  const handleArcadeGameRound = (gameId, themeId) => (roundNumber) => {
+    setArcadeProgress((current) => {
+      const currentBest = getArcadeRounds(current, gameId, themeId, selectedAge);
+      const next = {
+        ...current,
+        [gameId]: {
+          ...current[gameId],
+          [themeId]: {
+            ...current[gameId]?.[themeId],
+            [selectedAge]: Math.max(currentBest, roundNumber),
+          },
+        },
+      };
+      try {
+        window.localStorage.setItem(ARCADE_KEY, JSON.stringify(next));
+      } catch {
+        // El avance sigue vivo en memoria durante la visita.
+      }
+      return next;
+    });
+  };
+
+  const handleArcadeGameComplete = (gameId, themeId, missionLabel) => () => {
+    const rounds = getArcadeRounds(arcadeProgress, gameId, themeId, selectedAge);
+    const reward = pickRewardSticker(stickerAlbum, `${gameId}|${themeId}|${selectedAge}|${rounds}`);
+    if (reward.isNew) {
+      setStickerAlbum((current) => {
+        const next = { ...current, [reward.name]: true };
+        try {
+          window.localStorage.setItem(ALBUM_KEY, JSON.stringify(next));
+        } catch {
+          // Sin persistencia el premio sigue en pantalla.
+        }
+        return next;
+      });
+    }
+    onStatus(`¡${missionLabel} completado! Ganaste el sticker ${reward.label}.`);
+  };
+
+  // Tarjetas de la Sala de juegos: 5 áreas de rutas + Misión del Bosque +
+  // 5 mazos de Memoria + 5 mundos de Atrapa y Cuenta.
+  const arcadeTiles = useMemo(() => {
+    const areaTiles = NIDO_CURRICULUM.map((areaItem) => {
+      const style = AREA_TILE_STYLE[areaItem.id] ?? AREA_TILE_STYLE.logica;
+      const areaDone = areaItem.categories.filter(
+        (categoryItem) =>
+          getProgressValue(progress, selectedAge, areaItem.id, categoryItem.id) >=
+          NIDO_CURRICULUM_GAME_COUNT,
+      ).length;
+      return {
+        id: `area-${areaItem.id}`,
+        title: areaItem.name,
+        tagline: areaItem.description,
+        category: "rutas",
+        accent: style.accent,
+        accentSoft: style.accentSoft,
+        progressLabel: `${areaDone}/${areaItem.categories.length} rutas`,
+        icon: <NidoGlyph name={areaItem.iconName} size={40} weight="duotone" />,
+        onOpen: () => {
+          setSelectedArea(areaItem.id);
+          setGamesView("explorar");
+        },
+      };
+    });
+
+    const bosqueTile = {
+      id: "bosque",
+      title: "Misión del Bosque",
+      tagline: "Corre, salta y recolecta contando.",
+      category: "aventura",
+      accent: "#46b982",
+      accentSoft: "#e2f6ec",
+      badge: "¡Nuevo!",
+      progressLabel:
+        bosqueRounds >= 20 ? "Completado" : `Ronda ${Math.min(bosqueRounds + 1, 20)}/20`,
+      icon: <NidoMascot pose="hola" size={48} />,
+      onOpen: () => setBosqueOpen(true),
+    };
+
+    const memoriaTiles = MEMORY_THEMES.map((theme) => {
+      const rounds = getArcadeRounds(arcadeProgress, "memoria", theme.id, selectedAge);
+      const Icon = STICKERS[theme.stickers[0]];
+      return {
+        id: `memoria-${theme.id}`,
+        title: theme.name,
+        tagline: theme.tagline,
+        category: "memoria",
+        accent: theme.accent,
+        accentSoft: theme.accentSoft,
+        progressLabel: rounds >= 20 ? "Completado" : `Ronda ${Math.min(rounds + 1, 20)}/20`,
+        icon: Icon ? <Icon size={44} /> : null,
+        onOpen: () => setMemoriaTheme(theme.id),
+      };
+    });
+
+    const catchTiles = CATCH_THEMES.map((theme) => {
+      const rounds = getArcadeRounds(arcadeProgress, "atrapa", theme.id, selectedAge);
+      const Icon = STICKERS[theme.target[0]];
+      return {
+        id: `atrapa-${theme.id}`,
+        title: theme.name,
+        tagline: theme.tagline,
+        category: "atrapa",
+        accent: theme.accent,
+        accentSoft: theme.accentSoft,
+        progressLabel: rounds >= 20 ? "Completado" : `Ronda ${Math.min(rounds + 1, 20)}/20`,
+        icon: Icon ? <Icon size={44} /> : null,
+        onOpen: () => setCatchTheme(theme.id),
+      };
+    });
+
+    return [bosqueTile, ...memoriaTiles, ...catchTiles, ...areaTiles];
+  }, [arcadeProgress, bosqueRounds, progress, selectedAge]);
 
   const resetActivity = () => {
     clearAutoAdvance();
@@ -1633,6 +1827,15 @@ export function NidoGamesExperience({
           aria-label="Cómo quieres jugar"
         >
           <button
+            className={gamesView === "arcade" ? "is-selected" : ""}
+            type="button"
+            role="tab"
+            aria-selected={gamesView === "arcade"}
+            onClick={() => setGamesView("arcade")}
+          >
+            🎮 Sala de juegos
+          </button>
+          <button
             className={gamesView === "camino" ? "is-selected" : ""}
             type="button"
             role="tab"
@@ -1651,6 +1854,10 @@ export function NidoGamesExperience({
             Explorar por áreas
           </button>
         </div>
+
+        {gamesView === "arcade" ? (
+          <ArcadeHub tiles={arcadeTiles} categories={ARCADE_CATEGORIES} />
+        ) : null}
 
         {gamesView === "camino" ? (
           <div className="nido-games__path" aria-label="Camino de aprendizaje">
@@ -1978,6 +2185,68 @@ export function NidoGamesExperience({
                   onRoundComplete={handleBosqueRound}
                   onMissionComplete={handleBosqueComplete}
                   onExit={() => setBosqueOpen(false)}
+                />
+              </Suspense>
+            </dialog>,
+            document.body,
+          )
+        : null}
+
+      {memoriaTheme && typeof document !== "undefined"
+        ? createPortal(
+            <dialog
+              className="nido-games__bosque-dialog"
+              ref={memoriaDialogRef}
+              aria-label="Memoria Mágica"
+              onCancel={(event) => event.preventDefault()}
+            >
+              <Suspense
+                fallback={<div className="nido-games__bosque-loading">Preparando la memoria…</div>}
+              >
+                <MemoriaGame
+                  themeId={memoriaTheme}
+                  ageId={selectedAge}
+                  initialRound={getArcadeRounds(arcadeProgress, "memoria", memoriaTheme, selectedAge) >= 20
+                    ? 0
+                    : getArcadeRounds(arcadeProgress, "memoria", memoriaTheme, selectedAge)}
+                  onRoundComplete={handleArcadeGameRound("memoria", memoriaTheme)}
+                  onMissionComplete={handleArcadeGameComplete(
+                    "memoria",
+                    memoriaTheme,
+                    MEMORY_THEMES.find((theme) => theme.id === memoriaTheme)?.name ?? "Memoria",
+                  )}
+                  onExit={() => setMemoriaTheme(null)}
+                />
+              </Suspense>
+            </dialog>,
+            document.body,
+          )
+        : null}
+
+      {catchTheme && typeof document !== "undefined"
+        ? createPortal(
+            <dialog
+              className="nido-games__bosque-dialog"
+              ref={catchDialogRef}
+              aria-label="Atrapa y Cuenta"
+              onCancel={(event) => event.preventDefault()}
+            >
+              <Suspense
+                fallback={<div className="nido-games__bosque-loading">Preparando el juego…</div>}
+              >
+                <CatchGame
+                  themeId={catchTheme}
+                  ageId={selectedAge}
+                  initialRound={getArcadeRounds(arcadeProgress, "atrapa", catchTheme, selectedAge) >= 20
+                    ? 0
+                    : getArcadeRounds(arcadeProgress, "atrapa", catchTheme, selectedAge)}
+                  onRoundComplete={handleArcadeGameRound("atrapa", catchTheme)}
+                  onMissionComplete={handleArcadeGameComplete(
+                    "atrapa",
+                    catchTheme,
+                    CATCH_THEMES.find((theme) => theme.id === catchTheme)?.name ?? "Atrapa y Cuenta",
+                  )}
+                  onExit={() => setCatchTheme(null)}
                 />
               </Suspense>
             </dialog>,

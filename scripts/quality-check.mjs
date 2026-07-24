@@ -518,6 +518,17 @@ check(/resultsCount=\{gradeResults\.length\}/.test(appSource), "El contador debe
 check(/aria-setsize=\{GRADE_GALLERY_SIZE\}/.test(appSource), "La galería debe comunicar sus 15 elementos a tecnologías de asistencia.");
 
 // Presupuestos del artefacto final.
+//
+// "Inicial" = lo que dist/index.html carga de forma ansiosa (<script src>,
+// <link rel=modulepreload>, <link rel=stylesheet>). Cualquier otro archivo en
+// build-assets/ solo se alcanza por import() dinámico (rutas de Nido, cada
+// videojuego en su propio chunk) y por lo tanto es diferido. Derivarlo del
+// HTML real evita depender de un patrón de nombre que se desactualiza cada
+// vez que Vite separa un chunk nuevo (p. ej. al añadir un videojuego).
+const builtIndexHtml = await read("dist/index.html");
+const eagerAssetHrefs = new Set(
+  [...builtIndexHtml.matchAll(/<(?:script|link)[^>]*(?:src|href)="([^"]+)"/g)].map((match) => match[1]),
+);
 const buildAssets = distFiles.filter((file) => /dist\/build-assets\/.*\.(?:js|css|map)$/.test(file));
 let javascriptBytes = 0;
 let stylesheetBytes = 0;
@@ -530,15 +541,15 @@ for (const distFile of distFiles) {
 }
 for (const buildAsset of buildAssets) {
   const bytes = await fileSize(buildAsset);
-  const isNidoLazyAsset = /\/nido-page-[^/]+\.(?:js|css)$/.test(buildAsset);
+  const isEagerAsset = eagerAssetHrefs.has(`/${buildAsset.replace(/^dist\//, "")}`);
   if (buildAsset.endsWith(".js")) {
     javascriptBytes += bytes;
-    if (!isNidoLazyAsset) initialJavascriptBytes += bytes;
+    if (isEagerAsset) initialJavascriptBytes += bytes;
     check(bytes <= 250 * 1024, `${buildAsset} supera el máximo de 250 KiB por chunk.`);
   }
   if (buildAsset.endsWith(".css")) {
     stylesheetBytes += bytes;
-    if (!isNidoLazyAsset) initialStylesheetBytes += bytes;
+    if (isEagerAsset) initialStylesheetBytes += bytes;
     check(bytes <= 85 * 1024, `${buildAsset} supera el máximo de 85 KiB por hoja.`);
   }
   check(!buildAsset.endsWith(".map"), `No se deben publicar source maps: ${buildAsset}`);

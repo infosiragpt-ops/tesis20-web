@@ -1,0 +1,260 @@
+/* Atrapa y Cuenta: campo de caída DOM (sin canvas), tema por CSS vars. */
+
+.catch {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  background: #0d1b30;
+}
+
+.catch__stage {
+  position: relative;
+  width: min(100%, calc((100dvh - 24px) * 4 / 3));
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  border-radius: 18px;
+  background: linear-gradient(180deg, var(--catch-accent-soft), #ffffff 78%);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.4);
+}
+
+.catch__hud {
+  position: absolute;
+  z-index: 3;
+  top: 10px;
+  left: 10px;
+  right: 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.catch__hud-exit,
+.catch__hud-buttons button {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border: 3px solid rgba(16, 35, 63, 0.18);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.95);
+  color: #10233f;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.catch__hud-round {
+  padding: 7px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  color: #10233f;
+  font-size: 0.72rem;
+  font-weight: 900;
+}
+
+.catch__hud-target {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: rgba(16, 35, 63, 0.88);
+  color: #ffffff;
+  font-weight: 900;
+}
+
+.catch__hud-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.catch__field {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.catch__item {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: grid;
+  place-items: center;
+  filter: drop-shadow(0 6px 8px rgba(16, 35, 63, 0.2));
+  will-change: transform;
+}
+
+.catch__item.is-good {
+  animation: catch-pop 400ms ease;
+}
+
+.catch__item.is-bad {
+  animation: catch-shake 400ms ease;
+}
+
+@keyframes catch-pop {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+
+  60% {
+    transform: scale(1.4);
+  }
+
+  100% {
+    transform: scale(0);
+    opacity: 0;
+  }
+}
+
+@keyframes catch-shake {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 0 rgba(220, 80, 72, 0));
+  }
+
+  30%,
+  70% {
+    filter: drop-shadow(0 0 10px rgba(220, 80, 72, 0.6));
+  }
+}
+
+.catch__basket {
+  position: absolute;
+  bottom: 34px;
+  left: 0;
+  height: 60px;
+  will-change: transform;
+}
+
+.catch__touch {
+  position: absolute;
+  z-index: 3;
+  left: 14px;
+  right: 14px;
+  bottom: 14px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.catch__touch button {
+  width: 72px;
+  height: 72px;
+  border: 3px solid rgba(16, 35, 63, 0.25);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.92);
+  color: #10233f;
+  font-size: 1.5rem;
+  font-weight: 900;
+  cursor: pointer;
+  touch-action: none;
+}
+
+.catch__touch button:active {
+  transform: scale(0.94);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .catch__touch {
+    opacity: 0.35;
+  }
+}
+
+/* --- Overlays --- */
+
+.catch__overlay {
+  position: absolute;
+  z-index: 4;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 12px;
+  padding: 24px;
+  background: rgba(13, 27, 48, 0.85);
+  color: #ffffff;
+  text-align: center;
+}
+
+.catch__kicker {
+  color: var(--catch-accent);
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.catch__overlay h2 {
+  margin: 0;
+  font-family: "Arial Rounded MT Bold", "Avenir Next", sans-serif;
+  font-size: clamp(1.5rem, 4vw, 2.3rem);
+}
+
+.catch__overlay p {
+  max-width: 420px;
+  margin: 0;
+  font-size: 0.92rem;
+  opacity: 0.92;
+}
+
+.catch__start {
+  min-height: 60px;
+  padding: 0 34px;
+  border: 0;
+  border-bottom: 5px solid rgba(0, 0, 0, 0.3);
+  border-radius: 20px;
+  background: var(--catch-accent);
+  color: #ffffff;
+  font-size: 1.1rem;
+  font-weight: 900;
+  cursor: pointer;
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.35);
+}
+
+.catch__secondary {
+  min-height: 44px;
+  padding: 0 18px;
+  border: 2px solid rgba(255, 255, 255, 0.7);
+  border-radius: 14px;
+  background: transparent;
+  color: #ffffff;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.catch__summary {
+  display: flex;
+  gap: 14px;
+}
+
+.catch__summary span {
+  display: grid;
+  min-width: 110px;
+  padding: 12px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.catch__summary strong {
+  font-size: 1.5rem;
+}
+
+.catch__summary small {
+  font-size: 0.66rem;
+  opacity: 0.85;
+}
+
+.catch button:focus-visible {
+  outline: 3px solid #ffc94d;
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .catch__item.is-good,
+  .catch__item.is-bad {
+    animation: none;
+  }
+}
