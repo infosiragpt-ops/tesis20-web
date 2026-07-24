@@ -448,6 +448,16 @@
   transform: translateY(3px);
 }
 
+.nido-games__answers > button.is-visual-only {
+  grid-template-columns: 1fr;
+  justify-items: center;
+}
+
+.nido-games__answers > button.is-visual-only .nido-games__answer-visual strong {
+  font-size: 2rem;
+  line-height: 1;
+}
+
 .nido-games__answers > button.is-selected {
   border-color: var(--a);
 }
@@ -956,6 +966,14 @@
     padding: 5px 24px 5px 6px;
     border-radius: 12px;
     font-size: 0.82rem;
+  }
+
+  .nido-games__answers > button.is-visual-only {
+    grid-template-columns: 1fr;
+  }
+
+  .nido-games__answers > button.is-visual-only .nido-games__answer-visual strong {
+    font-size: 1.45rem;
   }
 
   .nido-games__answer-index {

@@ -497,6 +497,9 @@ function ChallengeAnswers({
           (/^-?\d+(?:[.,]\d+)?$/.test(String(option.label).trim())
             ? option.label
             : null);
+        const visualOnly =
+          numericValue !== null &&
+          String(numericValue) === String(option.label);
 
         return (
           <button
@@ -504,6 +507,7 @@ function ChallengeAnswers({
               chosen ? "is-selected" : "",
               correct ? "is-correct" : "",
               incorrect ? "is-error" : "",
+              visualOnly ? "is-visual-only" : "",
             ]
               .filter(Boolean)
               .join(" ")}
@@ -532,7 +536,7 @@ function ChallengeAnswers({
                 <Picture item={option} />
               )}
             </span>
-            <span>{option.label}</span>
+            {visualOnly ? null : <span>{option.label}</span>}
             {correct || incorrect ? (
               correct ? (
                 <CheckCircle
