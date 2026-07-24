@@ -1,0 +1,345 @@
+/* Misión del Bosque: escenario canvas + HUD accesible + controles táctiles
+   grandes (≥64 px) con feedback inmediato. */
+
+.bosque {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  background: #0d1b30;
+}
+
+.bosque__stage {
+  position: relative;
+  width: min(100%, calc((100dvh - 24px) * 16 / 9));
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border-radius: 18px;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.45);
+}
+
+.bosque__canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  touch-action: none;
+}
+
+/* --- HUD --- */
+
+.bosque__hud {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  right: 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  pointer-events: none;
+}
+
+.bosque__hud > * {
+  pointer-events: auto;
+}
+
+.bosque__hud-exit,
+.bosque__hud-buttons button {
+  width: 46px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  border: 3px solid rgba(16, 35, 63, 0.2);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.95);
+  color: #10233f;
+  font-size: 1.05rem;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.bosque__hud-round {
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  color: #10233f;
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.bosque__hud-target {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.bosque__hud-instruction {
+  padding: 8px 16px;
+  border-radius: 999px;
+  background: rgba(16, 35, 63, 0.88);
+  color: #ffffff;
+  font-size: 0.9rem;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.bosque__hud-fruits {
+  display: flex;
+  gap: 4px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+}
+
+.bosque__hud-fruits i {
+  width: 16px;
+  height: 16px;
+  border: 2px solid #dc5048;
+  border-radius: 50%;
+  background: transparent;
+}
+
+.bosque__hud-fruits i.is-filled {
+  background: #ff6f61;
+}
+
+.bosque__hud-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.bosque__subtitle {
+  position: absolute;
+  left: 50%;
+  bottom: 108px;
+  max-width: min(86%, 640px);
+  margin: 0;
+  padding: 10px 18px;
+  transform: translateX(-50%);
+  border-radius: 16px;
+  background: rgba(16, 35, 63, 0.82);
+  color: #ffffff;
+  font-size: 0.92rem;
+  font-weight: 700;
+  text-align: center;
+  line-height: 1.4;
+}
+
+/* --- Controles táctiles --- */
+
+.bosque__touch {
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: 14px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  pointer-events: none;
+}
+
+.bosque__touch button {
+  pointer-events: auto;
+  border: 3px solid rgba(16, 35, 63, 0.25);
+  background: rgba(255, 255, 255, 0.92);
+  color: #10233f;
+  font-weight: 900;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+  transition: transform 90ms ease, background 90ms ease;
+}
+
+.bosque__touch button:active {
+  transform: scale(0.94);
+  background: #ffe9d9;
+}
+
+.bosque__touch-move {
+  display: flex;
+  gap: 12px;
+}
+
+.bosque__touch-move button {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  font-size: 1.5rem;
+}
+
+.bosque__touch-actions {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+}
+
+.bosque__touch-jump {
+  width: 92px;
+  height: 92px;
+  border-radius: 50%;
+  background: #ffc94d !important;
+  border-color: rgba(122, 86, 28, 0.4) !important;
+  font-size: 0.95rem;
+}
+
+.bosque__touch-drop {
+  min-height: 64px;
+  padding: 0 20px;
+  border-radius: 20px;
+  font-size: 0.9rem;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .bosque__touch-move {
+    opacity: 0.35;
+  }
+
+  .bosque__touch-jump {
+    opacity: 0.5;
+  }
+}
+
+/* --- Overlays --- */
+
+.bosque__overlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 12px;
+  padding: 24px;
+  background: rgba(13, 27, 48, 0.82);
+  color: #ffffff;
+  text-align: center;
+}
+
+.bosque__intro-kicker {
+  color: #ffc94d;
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.bosque__overlay h2 {
+  margin: 0;
+  font-size: clamp(1.6rem, 4vw, 2.6rem);
+  font-family: "Arial Rounded MT Bold", "Avenir Next", sans-serif;
+}
+
+.bosque__overlay p {
+  max-width: 460px;
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  opacity: 0.9;
+}
+
+.bosque__start {
+  min-height: 68px;
+  padding: 0 40px;
+  border: 0;
+  border-bottom: 6px solid rgba(122, 37, 30, 0.55);
+  border-radius: 22px;
+  background: linear-gradient(180deg, #ff8577, #ff6f61);
+  color: #ffffff;
+  font-size: 1.25rem;
+  font-weight: 900;
+  cursor: pointer;
+  box-shadow: 0 16px 36px rgba(220, 80, 72, 0.45);
+  transition: transform 140ms ease;
+}
+
+.bosque__start:hover {
+  transform: translateY(-2px);
+}
+
+.bosque__start:active {
+  transform: translateY(3px);
+  border-bottom-width: 2px;
+}
+
+.bosque__secondary {
+  min-height: 50px;
+  padding: 0 22px;
+  border: 2px solid rgba(255, 255, 255, 0.7);
+  border-radius: 15px;
+  background: transparent;
+  color: #ffffff;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.bosque__intro-audio {
+  display: flex;
+  gap: 20px;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.bosque__intro-audio label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  cursor: pointer;
+}
+
+.bosque__intro-audio input {
+  width: 20px;
+  height: 20px;
+  accent-color: #ffc94d;
+}
+
+.bosque__overlay small {
+  font-size: 0.72rem;
+  opacity: 0.65;
+}
+
+.bosque__summary {
+  display: flex;
+  gap: 14px;
+}
+
+.bosque__summary span {
+  display: grid;
+  min-width: 120px;
+  padding: 14px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.bosque__summary strong {
+  font-size: 1.7rem;
+}
+
+.bosque__summary small {
+  font-size: 0.72rem;
+  opacity: 0.85;
+}
+
+/* Botones con foco visible (teclado) */
+.bosque button:focus-visible {
+  outline: 3px solid #ffc94d;
+  outline-offset: 2px;
+}
+
+@media (max-width: 700px) {
+  .bosque__stage {
+    width: 100%;
+    border-radius: 10px;
+  }
+
+  .bosque__hud-instruction {
+    font-size: 0.72rem;
+  }
+
+  .bosque__subtitle {
+    bottom: 118px;
+    font-size: 0.78rem;
+  }
+}

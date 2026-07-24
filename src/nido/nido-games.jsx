@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
   buildCurriculumChallenge,
@@ -8,6 +8,10 @@ import {
 import { CelebrationBurst, NidoMascot } from "./illustrations/nido-mascot.jsx";
 import { createNidoIcon, NidoGlyph } from "./nido-icon-map";
 import { STICKERS } from "./stickers/sticker-registry.jsx";
+
+// El motor del videojuego se carga bajo demanda: chunk propio de Vite que solo
+// se descarga al abrir la misión.
+const BosqueGame = lazy(() => import("./game/bosque/BosqueGame.jsx"));
 import "./nido-games.css";
 import "./nido-focus.css";
 
@@ -102,6 +106,17 @@ function createRouteStats(correct = 0) {
 const AUTO_ADVANCE_MS = 1500;
 const ROUNDS_KEY = "tesis20.nido.route-rounds";
 const ALBUM_KEY = "tesis20.nido.sticker-album";
+const BOSQUE_KEY = "tesis20.nido.bosque-rondas";
+
+function loadBosqueProgress() {
+  if (typeof window === "undefined") return {};
+  try {
+    const stored = JSON.parse(window.localStorage.getItem(BOSQUE_KEY));
+    return stored && typeof stored === "object" ? stored : {};
+  } catch {
+    return {};
+  }
+}
 
 // Premios coleccionables: un sticker ilustrado por ruta completada.
 const REWARD_STICKERS = Object.freeze([
@@ -679,6 +694,9 @@ export function NidoGamesExperience({
   const [stickerAlbum, setStickerAlbum] = useState(loadStickerAlbum);
   const [latestReward, setLatestReward] = useState(null);
   const [albumOpen, setAlbumOpen] = useState(false);
+  const [bosqueOpen, setBosqueOpen] = useState(false);
+  const [bosqueProgress, setBosqueProgress] = useState(loadBosqueProgress);
+  const bosqueDialogRef = useRef(null);
   const [gamesView, setGamesView] = useState("camino");
   const albumDialogRef = useRef(null);
   const [routeComplete, setRouteComplete] = useState(false);
@@ -1093,6 +1111,65 @@ export function NidoGamesExperience({
       if (dialog?.open) dialog.close();
     };
   }, [albumOpen]);
+
+  useEffect(() => {
+    if (!bosqueOpen) return undefined;
+    const dialog = bosqueDialogRef.current;
+    if (dialog && !dialog.open) {
+      try {
+        dialog.showModal();
+      } catch {
+        dialog.setAttribute("open", "");
+      }
+    }
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      if (dialog?.open) dialog.close();
+    };
+  }, [bosqueOpen]);
+
+  const bosqueRounds = Number.isInteger(bosqueProgress?.[selectedAge])
+    ? bosqueProgress[selectedAge]
+    : 0;
+
+  const handleBosqueRound = (roundNumber) => {
+    setBosqueProgress((current) => {
+      const best = Math.max(
+        Number.isInteger(current?.[selectedAge]) ? current[selectedAge] : 0,
+        roundNumber,
+      );
+      const next = { ...current, [selectedAge]: best };
+      try {
+        window.localStorage.setItem(BOSQUE_KEY, JSON.stringify(next));
+      } catch {
+        // El avance sigue vivo en memoria durante la visita.
+      }
+      return next;
+    });
+  };
+
+  const handleBosqueComplete = () => {
+    const reward = pickRewardSticker(
+      stickerAlbum,
+      `bosque|${selectedAge}|${bosqueRounds}`,
+    );
+    if (reward.isNew) {
+      setStickerAlbum((current) => {
+        const next = { ...current, [reward.name]: true };
+        try {
+          window.localStorage.setItem(ALBUM_KEY, JSON.stringify(next));
+        } catch {
+          // Sin persistencia el premio sigue en pantalla.
+        }
+        return next;
+      });
+    }
+    onStatus(
+      `¡Misión del bosque completada! Ganaste el sticker ${reward.label}.`,
+    );
+  };
 
   const resetActivity = () => {
     clearAutoAdvance();
@@ -1517,6 +1594,38 @@ export function NidoGamesExperience({
           </aside>
         </div>
 
+        <section
+          className="nido-games__featured"
+          aria-labelledby="nido-featured-title"
+        >
+          <div className="nido-games__featured-scene" aria-hidden="true">
+            <NidoMascot pose="cheer" size={84} />
+          </div>
+          <div className="nido-games__featured-copy">
+            <span className="nido-games__featured-badge">
+              ¡Nuevo videojuego!
+            </span>
+            <h2 id="nido-featured-title">Misión del Bosque</h2>
+            <p>
+              Corre, salta, recoge frutas y entrégalas contando. Matemáticas en
+              movimiento, adaptadas a {age.label}.
+            </p>
+            <small>
+              {bosqueRounds >= 20
+                ? "Misión completada · ¡puedes rejugarla!"
+                : `Ronda ${Math.min(bosqueRounds + 1, 20)} de 20`}
+            </small>
+          </div>
+          <button
+            className="nido-games__featured-play"
+            type="button"
+            onClick={() => setBosqueOpen(true)}
+          >
+            <Play size={26} weight="fill" aria-hidden="true" />
+            Jugar
+          </button>
+        </section>
+
         <div
           className="nido-games__view-toggle"
           role="tablist"
@@ -1843,6 +1952,37 @@ export function NidoGamesExperience({
         </div>
         ) : null}
       </div>
+
+      {bosqueOpen && typeof document !== "undefined"
+        ? createPortal(
+            <dialog
+              className="nido-games__bosque-dialog"
+              ref={bosqueDialogRef}
+              aria-label="Misión del Bosque"
+              onCancel={(event) => {
+                // Escape lo gestiona el juego (pausa); el diálogo no se cierra solo.
+                event.preventDefault();
+              }}
+            >
+              <Suspense
+                fallback={
+                  <div className="nido-games__bosque-loading">
+                    Preparando el bosque…
+                  </div>
+                }
+              >
+                <BosqueGame
+                  ageId={selectedAge}
+                  initialRound={bosqueRounds >= 20 ? 0 : bosqueRounds}
+                  onRoundComplete={handleBosqueRound}
+                  onMissionComplete={handleBosqueComplete}
+                  onExit={() => setBosqueOpen(false)}
+                />
+              </Suspense>
+            </dialog>,
+            document.body,
+          )
+        : null}
 
       {albumOpen && typeof document !== "undefined"
         ? createPortal(

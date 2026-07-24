@@ -12,7 +12,8 @@
     "audio:nido:legacy-elevenlabs": "node scripts/generate-nido-elevenlabs-audio.mjs",
     "quality": "node scripts/quality-check.mjs",
     "check:nido": "node scripts/check-nido-curriculum.mjs",
-    "check": "npm run build && npm run quality && npm run check:nido"
+    "check": "npm run build && npm run quality && npm run check:nido",
+    "test:game": "node --test \"tests/nido-game/*.test.mjs\""
   },
   "dependencies": {
     "@phosphor-icons/react": "^2.1.10",
