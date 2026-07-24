@@ -855,3 +855,154 @@
     animation: none;
   }
 }
+
+/* --- Interactividad: estrellas de hito, confeti y acciones finales --- */
+
+.nido-games__focus-progress-track {
+  position: relative;
+  display: block;
+  min-width: 0;
+  height: auto;
+  overflow: visible;
+  background: none;
+}
+
+.nido-games__focus-progress-track > span {
+  height: 11px;
+  display: block;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #e5ebf3;
+}
+
+.nido-games__focus-milestones {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.nido-games__focus-milestones svg {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  color: #c6d2e0;
+  filter: drop-shadow(0 1px 1px rgba(16, 35, 63, 0.25));
+  transition: color 220ms ease;
+}
+
+.nido-games__focus-milestones svg.is-reached {
+  color: var(--nido-yellow);
+  animation: nido-milestone-pop 460ms cubic-bezier(0.2, 1.5, 0.4, 1) both;
+}
+
+@keyframes nido-milestone-pop {
+  0% {
+    transform: translate(-50%, -50%) scale(0.4);
+  }
+
+  60% {
+    transform: translate(-50%, -50%) scale(1.35);
+  }
+
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+.nido-games__confetti {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  overflow: hidden;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.nido-games__confetti i {
+  position: absolute;
+  top: -24px;
+  aspect-ratio: 1 / 1.4;
+  border-radius: 3px;
+  opacity: 0;
+  animation-name: nido-confetti-fall;
+  animation-timing-function: cubic-bezier(0.3, 0.4, 0.6, 1);
+  animation-fill-mode: both;
+}
+
+@keyframes nido-confetti-fall {
+  0% {
+    transform: translateY(0) rotate(var(--confetti-tilt, 0deg));
+    opacity: 0;
+  }
+
+  12% {
+    opacity: 1;
+  }
+
+  100% {
+    transform: translateY(560px) rotate(calc(var(--confetti-tilt, 0deg) + 260deg));
+    opacity: 0.85;
+  }
+}
+
+.nido-games__focus-feedback-card {
+  position: relative;
+  z-index: 2;
+}
+
+.nido-games__focus-success-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+}
+
+.nido-games__focus-success-secondary {
+  border: 2px solid var(--nido-navy) !important;
+  background: transparent !important;
+  color: var(--nido-navy) !important;
+}
+
+/* --- Botones de respuesta: reacción táctil --- */
+
+.nido-games__answers > button:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
+.nido-games__answers > button.is-correct {
+  animation: nido-answer-pop 420ms cubic-bezier(0.2, 1.4, 0.4, 1) both;
+}
+
+@keyframes nido-answer-pop {
+  0% {
+    transform: scale(1);
+  }
+
+  45% {
+    transform: scale(1.05);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nido-games__confetti i,
+  .nido-games__focus-milestones svg.is-reached,
+  .nido-games__answers > button.is-correct {
+    animation: none;
+  }
+
+  .nido-games__confetti i {
+    opacity: 0;
+  }
+}
+
+.nido-games__answer-number {
+  font-size: 2.1rem;
+  font-weight: 900;
+  color: var(--game-accent, var(--nido-navy));
+  -webkit-text-stroke: 1.5px rgba(16, 35, 63, 0.55);
+  paint-order: stroke fill;
+}

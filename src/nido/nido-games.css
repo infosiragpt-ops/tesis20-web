@@ -846,3 +846,42 @@
     height: 132px;
   }
 }
+
+/* --- Las subcategorías se abren con un toque: afford de juego --- */
+
+.nido-games__categories button {
+  cursor: pointer;
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease,
+    filter 180ms ease;
+}
+
+.nido-games__categories button:hover {
+  transform: translateY(-4px) scale(1.012);
+  box-shadow: 0 16px 30px rgba(16, 35, 63, 0.16);
+  filter: saturate(1.06);
+}
+
+.nido-games__categories button:active {
+  transform: translateY(-1px) scale(0.99);
+}
+
+.nido-games__categories button:hover .nido-games__category-count svg {
+  transform: translateX(4px);
+}
+
+.nido-games__category-count svg {
+  transition: transform 180ms ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nido-games__categories button:hover,
+  .nido-games__categories button:active {
+    transform: none;
+  }
+
+  .nido-games__categories button:hover .nido-games__category-count svg {
+    transform: none;
+  }
+}

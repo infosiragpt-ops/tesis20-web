@@ -62,6 +62,28 @@ const DEFAULT_FEEDBACK_TRACKS = Object.freeze({
   error: "/assets/nido/audio/error-tin-ton-v1.mp3",
 });
 
+const AUTO_ADVANCE_MS = 1500;
+const PROGRESS_MILESTONES = Object.freeze([5, 10, 15, 20]);
+
+// Piezas de confeti deterministas (sin Math.random: mantiene el render estable).
+const CONFETTI_PIECES = Object.freeze(
+  Array.from({ length: 16 }, (_, index) => ({
+    left: `${(index * 61 + 7) % 100}%`,
+    delay: `${(index % 8) * 90}ms`,
+    duration: `${1150 + (index % 5) * 170}ms`,
+    color: ["#ff6f61", "#ffc94d", "#46b982", "#4b8ff7", "#9873e7"][index % 5],
+    width: `${7 + (index % 3) * 3}px`,
+    tilt: `${(index * 47) % 360}deg`,
+  })),
+);
+
+// Al reabrir una ruta terminada se empieza de nuevo; si está a medias, se
+// retoma en el primer reto pendiente.
+function getStartIndex(completed) {
+  if (completed >= NIDO_CURRICULUM_GAME_COUNT) return 0;
+  return Math.min(completed, NIDO_CURRICULUM_GAME_COUNT - 1);
+}
+
 function createInitialProgress() {
   return Object.fromEntries(
     AGE_GROUPS.map((age) => [
@@ -254,6 +276,11 @@ function ChallengeAnswers({
             <span className="nido-games__answer-visual" aria-hidden="true">
               {option.imageSrc ? (
                 <img src={option.imageSrc} alt="" />
+              ) : option.iconName === "NumberCircleOne" &&
+                /^\d+$/.test(String(option.label).trim()) ? (
+                <strong className="nido-games__answer-number">
+                  {String(option.label).trim()}
+                </strong>
               ) : option.iconName ? (
                 <NidoGlyph
                   name={option.iconName}
@@ -321,6 +348,7 @@ export function NidoGamesExperience({
   const feedbackSoundRunRef = useRef(0);
   const feedbackTimerRef = useRef(null);
   const feedbackRunRef = useRef(0);
+  const autoAdvanceTimerRef = useRef(null);
   const focusDialogRef = useRef(null);
   const focusCloseRef = useRef(null);
   const focusTitleRef = useRef(null);
@@ -389,6 +417,7 @@ export function NidoGamesExperience({
     () => () => {
       playbackRunRef.current += 1;
       feedbackSoundRunRef.current += 1;
+      window.clearTimeout(autoAdvanceTimerRef.current);
       if (audioRef.current) {
         audioRef.current.pause();
         audioRef.current.removeAttribute("src");
@@ -632,9 +661,15 @@ export function NidoGamesExperience({
     speakWithBrowserFallback(text, runId);
   };
 
+  const clearAutoAdvance = () => {
+    window.clearTimeout(autoAdvanceTimerRef.current);
+    autoAdvanceTimerRef.current = null;
+  };
+
   const resetActivity = () => {
     setSelectedAnswer("");
     setRouteComplete(false);
+    clearAutoAdvance();
     clearFeedbackEffect();
     stopFeedbackSound();
     stopInstruction();
@@ -680,9 +715,8 @@ export function NidoGamesExperience({
     setSelectedArea(firstArea.id);
     setSelectedCategory(firstCategory.id);
     setCurrentGameIndex(
-      Math.min(
+      getStartIndex(
         getProgressValue(progress, ageId, firstArea.id, firstCategory.id),
-        NIDO_CURRICULUM_GAME_COUNT - 1,
       ),
     );
     resetActivity();
@@ -696,28 +730,52 @@ export function NidoGamesExperience({
     setSelectedArea(areaId);
     setSelectedCategory(categoryId);
     setCurrentGameIndex(
-      Math.min(
-        getProgressValue(progress, selectedAge, areaId, categoryId),
-        NIDO_CURRICULUM_GAME_COUNT - 1,
-      ),
+      getStartIndex(getProgressValue(progress, selectedAge, areaId, categoryId)),
     );
     resetActivity();
     onStatus(`Área de ${findArea(areaId).name} seleccionada.`);
   };
 
-  const handleCategoryChange = (categoryId) => {
+  // Tocar una subcategoría abre su juego directamente (antes solo la
+  // seleccionaba y había que buscar el botón "Comenzar").
+  const startCategory = (categoryId, event) => {
+    previousFocusRef.current = event?.currentTarget ?? document.activeElement;
+    const gameIndex = getStartIndex(
+      getProgressValue(progress, selectedAge, selectedArea, categoryId),
+    );
     setSelectedCategory(categoryId);
-    setCurrentGameIndex(
-      Math.min(
-        getProgressValue(progress, selectedAge, selectedArea, categoryId),
-        NIDO_CURRICULUM_GAME_COUNT - 1,
-      ),
-    );
+    setCurrentGameIndex(gameIndex);
     resetActivity();
+    setFocusMode(true);
     const nextCategory = area.categories.find((item) => item.id === categoryId);
+    const nextChallenge = buildCurriculumChallenge({
+      areaId: selectedArea,
+      categoryId,
+      ageId: selectedAge,
+      gameIndex,
+    });
     onStatus(
-      `Subcategoría ${nextCategory.name} seleccionada. Contiene 20 retos.`,
+      `${nextCategory.name}, reto ${gameIndex + 1} de 20, iniciado con narración automática.`,
     );
+    void playInstruction(nextChallenge);
+  };
+
+  const replayRoute = () => {
+    setRouteComplete(false);
+    setSelectedAnswer("");
+    clearAutoAdvance();
+    clearFeedbackEffect();
+    stopFeedbackSound();
+    setCurrentGameIndex(0);
+    const nextChallenge = buildCurriculumChallenge({
+      areaId: selectedArea,
+      categoryId: selectedCategory,
+      ageId: selectedAge,
+      gameIndex: 0,
+    });
+    onStatus(`Ruta de ${category.name} reiniciada. Reto 1 de 20.`);
+    void playInstruction(nextChallenge);
+    window.requestAnimationFrame(() => focusTitleRef.current?.focus());
   };
 
   const handleStart = (event) => {
@@ -754,6 +812,11 @@ export function NidoGamesExperience({
       navigator.vibrate?.(60);
       onStatus("¡Yupi! Respuesta correcta. Sonó la estrellita.");
       window.requestAnimationFrame(() => focusNextRef.current?.focus());
+      clearAutoAdvance();
+      autoAdvanceTimerRef.current = window.setTimeout(() => {
+        autoAdvanceTimerRef.current = null;
+        handleNext();
+      }, AUTO_ADVANCE_MS);
     } else {
       showFeedbackEffect("error");
       playFeedbackSound("error");
@@ -765,6 +828,7 @@ export function NidoGamesExperience({
   };
 
   const handleNext = () => {
+    clearAutoAdvance();
     stopFeedbackSound();
     const nextCompleted = Math.max(completedGames, currentGameIndex + 1);
     setProgress((current) => ({
@@ -978,7 +1042,8 @@ export function NidoGamesExperience({
                     }}
                     type="button"
                     aria-pressed={selected}
-                    onClick={() => handleCategoryChange(categoryItem.id)}
+                    aria-label={`Jugar ${categoryItem.name}: ${categoryItem.description} Progreso: ${completed} de 20.`}
+                    onClick={(event) => startCategory(categoryItem.id, event)}
                     key={categoryItem.id}
                   >
                     <span className="nido-games__category-icon">
@@ -1093,17 +1158,37 @@ export function NidoGamesExperience({
                 </header>
 
                 <div className="nido-games__focus-progress">
-                  <span
-                    role="progressbar"
-                    aria-label={`Progreso en ${category.name}`}
-                    aria-valuemin="0"
-                    aria-valuemax={NIDO_CURRICULUM_GAME_COUNT}
-                    aria-valuenow={Math.min(
-                      visibleCompleted,
-                      NIDO_CURRICULUM_GAME_COUNT,
-                    )}
-                  >
-                    <i style={{ width: `${focusProgress}%` }} />
+                  <span className="nido-games__focus-progress-track">
+                    <span
+                      role="progressbar"
+                      aria-label={`Progreso en ${category.name}`}
+                      aria-valuemin="0"
+                      aria-valuemax={NIDO_CURRICULUM_GAME_COUNT}
+                      aria-valuenow={Math.min(
+                        visibleCompleted,
+                        NIDO_CURRICULUM_GAME_COUNT,
+                      )}
+                    >
+                      <i style={{ width: `${focusProgress}%` }} />
+                    </span>
+                    <span
+                      className="nido-games__focus-milestones"
+                      aria-hidden="true"
+                    >
+                      {PROGRESS_MILESTONES.map((milestone) => (
+                        <Star
+                          className={
+                            visibleCompleted >= milestone ? "is-reached" : ""
+                          }
+                          style={{
+                            left: `${(milestone / NIDO_CURRICULUM_GAME_COUNT) * 100}%`,
+                          }}
+                          size={17}
+                          weight="fill"
+                          key={milestone}
+                        />
+                      ))}
+                    </span>
                   </span>
                   <small>
                     {Math.min(visibleCompleted, NIDO_CURRICULUM_GAME_COUNT)}/
@@ -1127,13 +1212,20 @@ export function NidoGamesExperience({
                     <p>
                       Completaste {category.name} de {area.name} para {age.label}.
                     </p>
-                    <button
-                      type="button"
-                      onClick={() => closeFocusedGame({ announce: false })}
-                    >
-                      <CheckCircle size={24} weight="fill" aria-hidden="true" />
-                      Volver a mis subcategorías
-                    </button>
+                    <div className="nido-games__focus-success-actions">
+                      <button type="button" onClick={replayRoute}>
+                        <Play size={22} weight="fill" aria-hidden="true" />
+                        Jugar de nuevo
+                      </button>
+                      <button
+                        className="nido-games__focus-success-secondary"
+                        type="button"
+                        onClick={() => closeFocusedGame({ announce: false })}
+                      >
+                        <CheckCircle size={24} weight="fill" aria-hidden="true" />
+                        Elegir otra ruta
+                      </button>
+                    </div>
                   </section>
                 ) : (
                   <main
@@ -1178,6 +1270,23 @@ export function NidoGamesExperience({
                         className={`nido-games__focus-feedback is-${feedbackEffect.type}`}
                         aria-hidden="true"
                       >
+                        {feedbackEffect.type === "success" ? (
+                          <div className="nido-games__confetti">
+                            {CONFETTI_PIECES.map((piece, index) => (
+                              <i
+                                style={{
+                                  left: piece.left,
+                                  width: piece.width,
+                                  background: piece.color,
+                                  animationDelay: piece.delay,
+                                  animationDuration: piece.duration,
+                                  "--confetti-tilt": piece.tilt,
+                                }}
+                                key={index}
+                              />
+                            ))}
+                          </div>
+                        ) : null}
                         <div className="nido-games__focus-feedback-card">
                           {feedbackEffect.type === "success" ? (
                             <>
