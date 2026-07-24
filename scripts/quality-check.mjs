@@ -280,6 +280,8 @@ const manifestText = await read("public/site.webmanifest");
 const serviceWorker = await read("public/sw.js");
 const vercelText = await read("vercel.json");
 const appSource = await read("src/App.jsx");
+const nidoGamesSource = await read("src/nido/nido-games.jsx");
+const nidoFocusStyles = await read("src/nido/nido-focus.css");
 const manifest = JSON.parse(manifestText);
 const vercel = JSON.parse(vercelText);
 
@@ -290,6 +292,16 @@ check(!index.includes("https://tesis20.com"), "index.html todavía contiene URLs
 check(!index.includes("api.whatsapp.com\" crossorigin") && !index.includes('rel="dns-prefetch" href="https://api.whatsapp.com"'), "No se debe abrir una conexión anticipada a WhatsApp.");
 check(robots.includes("Sitemap: https://www.tesis20.com/sitemap.xml"), "robots.txt debe apuntar al sitemap canónico con www.");
 check(!/^\s*Disallow:\s*\/\s*$/im.test(robots), "robots.txt no debe bloquear el sitio completo.");
+check(
+  !nidoGamesSource.includes("requestFullscreen"),
+  "Los juegos de Nido no deben forzar pantalla completa al abrir una ruta.",
+);
+check(
+  nidoGamesSource.includes("dialog.showModal()") &&
+    nidoGamesSource.includes('dialog.setAttribute("open", "")') &&
+    nidoFocusStyles.includes("position: fixed"),
+  "La apertura de juegos de Nido debe conservar el diálogo modal y su fallback visible.",
+);
 
 // El sitemap debe describir exactamente las páginas indexables que entrega el build.
 const sitemapEntries = extractSitemapEntries(sitemap);
@@ -535,10 +547,10 @@ check(
   initialJavascriptBytes > 0 && initialJavascriptBytes <= 450 * 1024,
   `El JavaScript inicial debe estar entre 1 y 450 KiB (${Math.ceil(initialJavascriptBytes / 1024)} KiB).`,
 );
-// 2026-07: el presupuesto subió de 540 a 640 KiB al incorporar la biblioteca
-// ilustrada de Nido (stickers SVG, portadas de clases, mascota y escenas) que
-// reemplaza los iconos genéricos en los juegos infantiles. El chunk de Nido es
-// diferido: no afecta el JavaScript inicial, que conserva su límite de 450 KiB.
+// 2026-07: el presupuesto subió a 640 KiB al incorporar la biblioteca
+// ilustrada de Nido (stickers SVG, portadas, mascota y escenas) sobre la
+// narración profesional. El chunk de Nido es diferido: el JavaScript inicial
+// conserva su límite de 450 KiB.
 check(
   javascriptBytes <= 640 * 1024,
   `El JavaScript total con rutas diferidas no debe superar 640 KiB (${Math.ceil(javascriptBytes / 1024)} KiB).`,
@@ -547,11 +559,12 @@ check(
   initialStylesheetBytes > 0 && initialStylesheetBytes <= 85 * 1024,
   `El CSS inicial debe estar entre 1 y 85 KiB (${Math.ceil(initialStylesheetBytes / 1024)} KiB).`,
 );
-// 2026-07: 120 → 132 KiB al sumar la capa ilustrada de Nido (portadas, pasos,
-// celebraciones) sobre los estilos del modo juego; el CSS inicial mantiene 85 KiB.
+// 2026-07: 136 → 144 KiB al sumar la capa ilustrada de Nido (portadas, pasos,
+// hitos y celebraciones) sobre los estilos del modo juego; el CSS inicial
+// mantiene su límite de 85 KiB.
 check(
-  stylesheetBytes <= 132 * 1024,
-  `El CSS total con rutas diferidas no debe superar 132 KiB (${Math.ceil(stylesheetBytes / 1024)} KiB).`,
+  stylesheetBytes <= 144 * 1024,
+  `El CSS total con rutas diferidas no debe superar 144 KiB (${Math.ceil(stylesheetBytes / 1024)} KiB).`,
 );
 check(deployBytesWithoutAudioAndPdf <= 9 * 1024 * 1024, `El build sin audios/PDF supera 9 MiB (${(deployBytesWithoutAudioAndPdf / 1024 / 1024).toFixed(2)} MiB).`);
 

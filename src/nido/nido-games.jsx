@@ -44,20 +44,18 @@ const AGE_GROUPS = Object.freeze([
 ]);
 
 const CATEGORY_TONES = Object.freeze([
-  { background: "#df6467", ink: "#ffffff", track: "rgba(119, 37, 48, 0.28)" },
-  { background: "#efd38f", ink: "#10233f", track: "rgba(114, 77, 35, 0.24)" },
-  { background: "#63cf83", ink: "#ffffff", track: "rgba(16, 92, 57, 0.24)" },
-  { background: "#ffd985", ink: "#10233f", track: "rgba(122, 86, 28, 0.22)" },
-  { background: "#51b7ef", ink: "#ffffff", track: "rgba(27, 79, 130, 0.25)" },
-  { background: "#7757f5", ink: "#ffffff", track: "rgba(38, 26, 118, 0.28)" },
+  { background: "#c74d59", ink: "#ffffff", track: "rgba(85, 23, 35, 0.34)" },
+  { background: "#f0d493", ink: "#10233f", track: "rgba(114, 77, 35, 0.24)" },
+  { background: "#a7e4ba", ink: "#10233f", track: "rgba(16, 92, 57, 0.22)" },
+  { background: "#ffda86", ink: "#10233f", track: "rgba(122, 86, 28, 0.22)" },
+  { background: "#a8ddf7", ink: "#10233f", track: "rgba(27, 79, 130, 0.22)" },
+  { background: "#654bdc", ink: "#ffffff", track: "rgba(30, 21, 101, 0.32)" },
 ]);
 
 const FOCUS_RENDERER_STYLES = String.raw`
 .nido-games__picture{--picture-scale:1;--picture-tone:var(--a);position:relative;width:42px;height:42px;display:inline-grid;place-items:center;flex:none;color:var(--picture-tone);font-size:1.6rem;transform:scale(var(--picture-scale))}.nido-games__picture img{width:100%;height:100%;object-fit:contain}.nido-games__picture[data-shape]:not([data-shape=""])::before{content:"";width:34px;height:34px;border:2px solid #10233f66;background:var(--picture-tone)}.nido-games__picture[data-shape=circle]::before{border-radius:50%}.nido-games__picture[data-shape=triangle]::before{clip-path:polygon(50% 0,100% 100%,0 100%)}.nido-games__picture[data-shape=pentagon]::before{clip-path:polygon(50% 0,100% 38%,80% 100%,20% 100%,0 38%)}.nido-games__picture[data-shape=hexagon]::before{clip-path:polygon(25% 0,75% 0,100% 50%,75% 100%,25% 100%,0 50%)}.nido-games__picture[data-shape=star]::before{clip-path:polygon(50% 0,62% 35%,100% 35%,69% 57%,80% 96%,50% 73%,20% 96%,31% 57%,0 35%,38% 35%)}.nido-games__picture[data-mark]:not([data-mark=""])::after{content:"●";position:absolute;color:var(--n)}.nido-games__picture[data-mark=line]::after{content:"━";font-size:1.6rem;transform:rotate(-35deg)}.nido-games__picture[data-mark=small-circle]::after{content:"○";font-size:1.6rem}.nido-games__picture[data-mark=corner]::after{content:"⌟";font-size:1.6rem}.nido-games__picture[data-mark=different-mark]::after{content:"×";color:#dc5048;font-size:2rem}.nido-games__picture.is-compact{width:25px;height:25px;font-size:1rem}.nido-games__picture.is-compact::before{width:20px!important;height:20px!important}.nido-games__count-picture{min-width:68px;display:grid;grid-template-columns:repeat(4,1fr);place-items:center;gap:1px;padding:3px;background:#ffffffcc}.nido-games__count-picture.is-compact{min-width:0;width:48px;padding:0;background:none}.nido-games__count-picture.is-compact .nido-games__picture{width:9px;height:9px;font-size:.5rem}.nido-games__count-picture.is-compact .nido-games__picture::before{width:7px!important;height:7px!important;border-width:1px!important}
 .nido-games__mechanic,.nido-games__relationship{width:100%;display:flex;align-items:center;justify-content:center;gap:9px}.nido-games__mechanic.is-groups>span,.nido-games__mechanic.is-sizes>span{display:grid;place-items:center;gap:3px;padding:4px;background:#ffffffcc}.nido-games__mechanic.is-sizes{min-height:90px;align-items:end;border-bottom:3px solid #10233f22}.nido-games__mechanic.is-options{display:grid}.nido-games__mechanic.is-options>span{display:flex;flex-wrap:wrap}.nido-games__camouflage{width:170px;height:100px;display:grid;place-items:center;background:var(--camouflage)}.nido-games__camouflage .nido-games__picture{opacity:.58}.nido-games__position{position:relative;width:190px;height:115px;border:2px solid #fff;background:#ffffffaa}.nido-games__position>.nido-games__picture{position:absolute;top:55%;left:50%;z-index:2;transform:translate(-50%,-50%) scale(1.15)}.nido-games__position>:last-child{top:15%;z-index:3;transform:translate(-50%,-50%)}.nido-games__position[data-position=below]>:last-child{top:88%}.nido-games__position[data-position=inside]>:last-child{top:55%;transform:translate(-50%,-50%) scale(.5)}.nido-games__position[data-position=outside]>:last-child{left:88%}.nido-games__position[data-position=beside]>:last-child{top:55%;left:80%}.nido-games__position[data-position=between]>:first-child{left:25%}.nido-games__position[data-position=between]>:nth-child(2){left:75%}.nido-games__position[data-position=between]>:last-child,.nido-games__position[data-position=behind]>:last-child{top:55%}.nido-games__position[data-position=behind]>:last-child{z-index:1}.nido-games__position[data-position=in-front]>:last-child{top:58%;transform:translate(-50%,-50%) scale(1.2)}
 .nido-games__difference{width:100%;display:grid;grid-template-columns:1fr 1fr;gap:3px}.nido-games__difference>span>i{min-height:80px;display:grid;grid-template-columns:1fr 1fr;place-items:center;border:2px solid #fff;background:linear-gradient(#c8efff 60%,#b8df85 60%)}.nido-games__difference .is-color{background:#ff8177}.nido-games__difference .is-position{transform:translate(10px,-8px)}.nido-games__difference .is-size{transform:scale(.5)}.nido-games__detail{width:min(270px,100%);display:grid;grid-template-columns:repeat(4,1fr);gap:2px;padding:4px;background:linear-gradient(#c8efff 55%,#b8df85 55%)}.nido-games__memory,.nido-games__clue{min-width:min(210px,90%);min-height:85px;display:grid;place-items:center;align-content:center;gap:4px;padding:6px;border:2px dashed var(--a);background:#ffffffcc}.nido-games__memory>button{border:0;background:var(--n);color:#fff}.nido-games__hidden{position:relative;min-width:190px;min-height:90px}.nido-games__hidden>span{position:absolute;left:38%;top:25%;font-size:1.8rem}.nido-games__hidden>.nido-games__picture{position:absolute;left:52%;top:18%;transform:scale(1.4)}.nido-games__hidden>b{position:absolute;bottom:0;left:10%;background:#fff}.nido-games__relationship{display:grid;grid-template-columns:auto auto auto}.nido-games__relationship>strong{width:38px;height:38px;display:grid;place-items:center;border:2px dashed var(--a)}.nido-games__relationship>small{grid-column:1/-1}
-.nido-games__focus-result{display:flex;align-items:center;justify-content:space-between;gap:5px;padding:4px;background:#ffffffdd}.nido-games__focus-result p{margin:0;font-size:.62rem}.nido-games__focus-result button,.nido-games__focus-success button{min-height:36px;border:0;background:var(--n);color:#fff}.nido-games__focus-result button:disabled{opacity:.35}.nido-games__focus-feedback{position:absolute;z-index:4;display:grid;place-items:center;inset:0;background:#10233f55;pointer-events:none}.nido-games__focus-feedback-card{display:grid;place-items:center;padding:12px;border:4px solid #fff;background:#46b982;color:#fff}.nido-games__focus-feedback.is-error .nido-games__focus-feedback-card{background:#dc5048}.nido-games__focus-stars{display:flex;color:#ffc94d}.nido-games__focus-success{display:grid;place-items:center;align-content:center;text-align:center}.nido-games__focus-success :is(h2,p){margin:1px}
-.nido-games__focus-dialog button:focus-visible{outline:3px solid #ffc94d;outline-offset:2px}@media(max-height:560px){.nido-games__focus-shell{gap:2px;padding:3px}.nido-games__focus-title p{display:none}.nido-games__focus-activity{grid-template:1fr/.75fr 1.25fr}.nido-games__scene{min-height:0}.nido-games__answers{grid-template-columns:1fr 1fr}.nido-games__answers>button{min-height:40px}.nido-games__focus-result{padding:2px}}
 `;
 
 const PROGRESS_STORAGE_KEY = "tesis20-nido-progress-v2";
@@ -91,6 +89,15 @@ const DEFAULT_FEEDBACK_TRACKS = Object.freeze({
   success: "/assets/nido/audio/success-tiriri-yupi-v1.mp3",
   error: "/assets/nido/audio/error-tin-ton-v1.mp3",
 });
+
+function createRouteStats(correct = 0) {
+  return {
+    correct,
+    mistakes: 0,
+    streak: 0,
+    bestStreak: 0,
+  };
+}
 
 const AUTO_ADVANCE_MS = 1500;
 const PROGRESS_MILESTONES = Object.freeze([5, 10, 15, 20]);
@@ -189,16 +196,22 @@ function getFirstCategoryId(areaId) {
 
 const SHAPES = new Set(["Circle", "Triangle", "Square", "Pentagon", "Hexagon", "Star"]);
 const EMOJI = Object.freeze({
+  ArrowBendLeftDown: "↙️", ArrowBendRightUp: "↗️", ArrowDown: "⬇️",
+  ArrowSquareIn: "↘️", ArrowSquareOut: "↗️", ArrowUp: "⬆️",
+  ArrowsDownUp: "↕️", ArrowsHorizontal: "↔️", ArrowsLeftRight: "↔️",
   Backpack: "🎒", Basketball: "🏀", Bed: "🛏️", Bicycle: "🚲", Bird: "🐦",
   Boat: "⛵", BookOpen: "📖", BowlFood: "🍎", Bread: "🍞", Bug: "🐝",
   Butterfly: "🦋", Car: "🚗", Carrot: "🥕", Cat: "🐱", Chair: "🪑",
+  CirclesThreePlus: "◉◉+", NumberCircleOne: "1️⃣",
   Clock: "🕒", Cloud: "☁️", Coffee: "🥤", Cow: "🐮", Dog: "🐶",
   Door: "🚪", FishSimple: "🐟", Flower: "🌼", Headphones: "🎧",
   Horse: "🐴", House: "🏠", Moon: "🌙", PawPrint: "🐾", Pencil: "✏️",
-  Plant: "🌿", Rabbit: "🐰", Smiley: "😄", SmileyMeh: "😌",
+  Package: "📦", Palette: "🎨", Plant: "🌿", Rabbit: "🐰", Rectangle: "▭",
+  Smiley: "😄", SmileyMeh: "😌",
   SmileyNervous: "😨", SmileySad: "😢", SmileyWink: "😮",
   SmileyXEyes: "😠", Snowflake: "❄️", Sun: "☀️", Table: "🪑",
-  Tooth: "🪥", Tree: "🌳", Umbrella: "☂️", Waves: "🌊",
+  SortAscending: "↗️", SortDescending: "↘️", Tooth: "🪥", Tree: "🌳",
+  Umbrella: "☂️", Waves: "🌊",
 });
 
 function itemLabel(item) {
@@ -461,6 +474,7 @@ function ChallengeScene({ challenge, selectedAnswer }) {
 function ChallengeAnswers({
   challenge,
   selectedAnswer,
+  incorrectAnswers,
   onAnswer,
   locked = false,
 }) {
@@ -470,31 +484,40 @@ function ChallengeAnswers({
       role="group"
       aria-label="Opciones de respuesta"
     >
-      {challenge.options.map((option) => {
+      {challenge.options.map((option, optionIndex) => {
         const chosen = option.id === selectedAnswer;
         const correct = chosen && option.id === challenge.answerId;
+        const incorrect = incorrectAnswers.includes(option.id);
         const groupNumber = Number(option.id.match(/option-group-(\d+)/)?.[1]);
         const group = groupNumber
           ? challenge.visual.groups?.[groupNumber - 1]
           : null;
+        const numericValue =
+          option.meta?.numericValue ??
+          (/^-?\d+(?:[.,]\d+)?$/.test(String(option.label).trim())
+            ? option.label
+            : null);
 
         return (
           <button
             className={[
               chosen ? "is-selected" : "",
-              chosen && correct ? "is-correct" : "",
-              chosen && !correct ? "is-error" : "",
+              correct ? "is-correct" : "",
+              incorrect ? "is-error" : "",
             ]
               .filter(Boolean)
               .join(" ")}
             style={option.tone ? { "--option-tone": option.tone } : undefined}
             type="button"
             aria-pressed={chosen}
-            aria-label={option.label}
-            disabled={locked && !chosen}
+            aria-label={`${option.label}${incorrect ? ". Opción ya intentada." : ""}`}
+            disabled={incorrect || (locked && !chosen)}
             onClick={() => onAnswer(option.id)}
             key={option.id}
           >
+            <span className="nido-games__answer-index" aria-hidden="true">
+              {optionIndex + 1}
+            </span>
             <span className="nido-games__answer-visual" aria-hidden="true">
               {group || option.meta?.count !== undefined ? (
                 <CountPicture
@@ -502,15 +525,15 @@ function ChallengeAnswers({
                   iconName={group?.itemIconName}
                   compact
                 />
-              ) : option.meta?.numericValue !== null &&
-                option.meta?.numericValue !== undefined ? (
-                <strong>{option.meta.numericValue}</strong>
+              ) : numericValue !== null &&
+                numericValue !== undefined ? (
+                <strong>{numericValue}</strong>
               ) : (
                 <Picture item={option} />
               )}
             </span>
             <span>{option.label}</span>
-            {chosen ? (
+            {correct || incorrect ? (
               correct ? (
                 <CheckCircle
                   className="nido-games__answer-state"
@@ -546,12 +569,15 @@ export function NidoGamesExperience({
   const [currentGameIndex, setCurrentGameIndex] = useState(0);
   const [progress, setProgress] = useState(loadProgress);
   const [selectedAnswer, setSelectedAnswer] = useState("");
+  const [incorrectAnswers, setIncorrectAnswers] = useState([]);
+  const [routeStats, setRouteStats] = useState(createRouteStats);
   const [speaking, setSpeaking] = useState(false);
   const [audioTracks, setAudioTracks] = useState(() => DEFAULT_AUDIO_TRACKS);
   const [feedbackTracks, setFeedbackTracks] = useState(
     () => DEFAULT_FEEDBACK_TRACKS,
   );
   const [focusMode, setFocusMode] = useState(false);
+  const [replayingRoute, setReplayingRoute] = useState(false);
   const [routeComplete, setRouteComplete] = useState(false);
   const [feedbackEffect, setFeedbackEffect] = useState(null);
 
@@ -570,7 +596,6 @@ export function NidoGamesExperience({
   const routeSuccessRef = useRef(null);
   const autoAdvanceTimerRef = useRef(null);
   const previousFocusRef = useRef(null);
-  const fullscreenOwnedRef = useRef(false);
 
   const age = AGE_GROUPS.find((item) => item.id === selectedAge);
   const area = findArea(selectedArea);
@@ -922,6 +947,9 @@ export function NidoGamesExperience({
   const resetActivity = () => {
     clearAutoAdvance();
     setSelectedAnswer("");
+    setIncorrectAnswers([]);
+    setRouteStats(createRouteStats());
+    setReplayingRoute(false);
     setRouteComplete(false);
     clearFeedbackEffect();
     stopFeedbackSound();
@@ -931,14 +959,6 @@ export function NidoGamesExperience({
   const closeFocusedGame = ({ announce = true } = {}) => {
     resetActivity();
     setFocusMode(false);
-    if (
-      fullscreenOwnedRef.current &&
-      document.fullscreenElement &&
-      typeof document.exitFullscreen === "function"
-    ) {
-      void document.exitFullscreen().catch(() => {});
-    }
-    fullscreenOwnedRef.current = false;
     if (announce) {
       onStatus("Juego cerrado. Regresaste a la selección de subcategorías.");
     }
@@ -950,7 +970,13 @@ export function NidoGamesExperience({
     const previousOverflow = document.body.style.overflow;
     const previousScrollbarGutter =
       document.documentElement.style.scrollbarGutter;
-    if (!dialog.open) dialog.showModal();
+    if (!dialog.open) {
+      try {
+        dialog.showModal();
+      } catch {
+        dialog.setAttribute("open", "");
+      }
+    }
     document.body.style.overflow = "hidden";
     document.documentElement.style.scrollbarGutter = "auto";
     const focusFrame = window.requestAnimationFrame(() => {
@@ -1033,48 +1059,20 @@ export function NidoGamesExperience({
     setSelectedCategory(categoryId);
     setCurrentGameIndex(startingGameIndex);
     setSelectedAnswer("");
+    setIncorrectAnswers([]);
+    setRouteStats(createRouteStats(startingGameIndex));
+    setReplayingRoute(
+      categoryProgress >= NIDO_CURRICULUM_GAME_COUNT,
+    );
     setRouteComplete(false);
     clearFeedbackEffect();
     stopFeedbackSound();
     setFocusMode(true);
 
-    const fullscreenTarget = document.documentElement;
-    if (
-      !document.fullscreenElement &&
-      typeof fullscreenTarget.requestFullscreen === "function"
-    ) {
-      void fullscreenTarget
-        .requestFullscreen({ navigationUI: "hide" })
-        .then(() => {
-          fullscreenOwnedRef.current = true;
-        })
-        .catch(() => {
-          fullscreenOwnedRef.current = false;
-        });
-    }
-
     onStatus(
       `${nextCategory.name}, reto ${startingGameIndex + 1} de 20, iniciado con narración automática.`,
     );
     void playInstruction(startingChallenge);
-  };
-
-  const replayRoute = () => {
-    setRouteComplete(false);
-    setSelectedAnswer("");
-    clearAutoAdvance();
-    clearFeedbackEffect();
-    stopFeedbackSound();
-    setCurrentGameIndex(0);
-    const nextChallenge = buildCurriculumChallenge({
-      areaId: selectedArea,
-      categoryId: selectedCategory,
-      ageId: selectedAge,
-      gameIndex: 0,
-    });
-    onStatus(`Ruta de ${category.name} reiniciada. Reto 1 de 20.`);
-    void playInstruction(nextChallenge);
-    window.requestAnimationFrame(() => focusTitleRef.current?.focus());
   };
 
   const handleStart = (event) => {
@@ -1092,11 +1090,21 @@ export function NidoGamesExperience({
   };
 
   const handleAnswer = (answerId) => {
-    if (answerIsCorrect) return;
+    if (answerIsCorrect || incorrectAnswers.includes(answerId)) return;
     stopInstruction();
     setSelectedAnswer(answerId);
 
     if (answerId === challenge.answerId) {
+      setRouteStats((current) => {
+        const nextStreak =
+          incorrectAnswers.length === 0 ? current.streak + 1 : 0;
+        return {
+          ...current,
+          correct: current.correct + 1,
+          streak: nextStreak,
+          bestStreak: Math.max(current.bestStreak, nextStreak),
+        };
+      });
       const nextCompleted = Math.max(completedGames, currentGameIndex + 1);
       setProgress((current) => ({
         ...current,
@@ -1119,6 +1127,12 @@ export function NidoGamesExperience({
         handleNext();
       }, AUTO_ADVANCE_MS);
     } else {
+      setIncorrectAnswers((current) => [...current, answerId]);
+      setRouteStats((current) => ({
+        ...current,
+        mistakes: current.mistakes + 1,
+        streak: 0,
+      }));
       showFeedbackEffect("error");
       playFeedbackSound("error");
       navigator.vibrate?.([25, 40, 25]);
@@ -1153,6 +1167,7 @@ export function NidoGamesExperience({
       });
       setCurrentGameIndex(nextGameIndex);
       setSelectedAnswer("");
+      setIncorrectAnswers([]);
       clearFeedbackEffect();
       onStatus(
         `¡Reto completado! Se abrió automáticamente el reto ${nextGameIndex + 1} de 20.`,
@@ -1170,10 +1185,12 @@ export function NidoGamesExperience({
     }
   };
 
-  const visibleCompleted = Math.max(
-    completedGames,
-    answerIsCorrect ? currentGameIndex + 1 : 0,
-  );
+  const visibleCompleted = replayingRoute
+    ? currentGameIndex + (answerIsCorrect ? 1 : 0)
+    : Math.max(
+        completedGames,
+        answerIsCorrect ? currentGameIndex + 1 : 0,
+      );
   const focusProgress = Math.round(
     (Math.min(visibleCompleted, NIDO_CURRICULUM_GAME_COUNT) /
       NIDO_CURRICULUM_GAME_COUNT) *
@@ -1350,7 +1367,6 @@ export function NidoGamesExperience({
                       "--category-track": tone.track,
                     }}
                     type="button"
-                    aria-pressed={selected}
                     aria-haspopup="dialog"
                     aria-label={`Abrir ${categoryItem.name}. ${completed} de 20 retos completados.`}
                     onClick={(event) =>
@@ -1381,7 +1397,10 @@ export function NidoGamesExperience({
                       </span>
                     </span>
                     <span className="nido-games__category-count">
-                      <strong>{completed} / 20</strong>
+                      <span>
+                        <strong>{completed} / 20</strong>
+                        <small>{completed > 0 ? "Continuar" : "Jugar ahora"}</small>
+                      </span>
                       <ArrowRight size={24} weight="bold" aria-hidden="true" />
                     </span>
                   </button>
@@ -1398,7 +1417,7 @@ export function NidoGamesExperience({
                   aria-hidden="true"
                 />
                 <span>
-                  <small>SUBCATEGORÍA SELECCIONADA</small>
+                  <small>RUTA LISTA PARA JUGAR</small>
                   <strong>{category.name}</strong>
                   <span>
                     {completedGames === NIDO_CURRICULUM_GAME_COUNT
@@ -1413,7 +1432,11 @@ export function NidoGamesExperience({
                 onClick={handleStart}
               >
                 <Play size={22} weight="fill" aria-hidden="true" />
-                {completedGames === 20 ? "Repetir ruta" : "Comenzar 20 retos"}
+                {completedGames === 20
+                  ? "Repetir ruta"
+                  : completedGames > 0
+                    ? "Continuar ruta"
+                    : "Abrir ruta"}
               </button>
             </footer>
           </article>
@@ -1425,6 +1448,7 @@ export function NidoGamesExperience({
             <dialog
               className="nido-games__focus-dialog"
               ref={focusDialogRef}
+              aria-modal="true"
               aria-labelledby="nido-focus-title"
               aria-describedby={
                 routeComplete ? undefined : "nido-focus-instruction"
@@ -1511,6 +1535,21 @@ export function NidoGamesExperience({
                     {Math.min(visibleCompleted, NIDO_CURRICULUM_GAME_COUNT)}/
                     {NIDO_CURRICULUM_GAME_COUNT}
                   </small>
+                  <div
+                    className="nido-games__focus-score"
+                    aria-label={`${routeStats.correct} aciertos, ${routeStats.mistakes} intentos extra y racha de ${routeStats.streak}`}
+                  >
+                    <span title="Aciertos">
+                      <CheckCircle size={18} weight="fill" aria-hidden="true" />
+                      <strong>{routeStats.correct}</strong>
+                      <small>Aciertos</small>
+                    </span>
+                    <span title="Racha sin errores">
+                      <Star size={18} weight="fill" aria-hidden="true" />
+                      <strong>{routeStats.streak}</strong>
+                      <small>Racha</small>
+                    </span>
+                  </div>
                 </div>
 
                 {routeComplete ? (
@@ -1529,8 +1568,28 @@ export function NidoGamesExperience({
                     <p>
                       Completaste {category.name} de {area.name} para {age.label}.
                     </p>
+                    <div className="nido-games__focus-summary">
+                      <span>
+                        <CheckCircle size={28} weight="fill" aria-hidden="true" />
+                        <strong>{routeStats.correct}</strong>
+                        <small>Aciertos</small>
+                      </span>
+                      <span>
+                        <XCircle size={28} weight="fill" aria-hidden="true" />
+                        <strong>{routeStats.mistakes}</strong>
+                        <small>Intentos extra</small>
+                      </span>
+                      <span>
+                        <Star size={28} weight="fill" aria-hidden="true" />
+                        <strong>{routeStats.bestStreak}</strong>
+                        <small>Mejor racha</small>
+                      </span>
+                    </div>
                     <div className="nido-games__focus-success-actions">
-                      <button type="button" onClick={replayRoute}>
+                      <button
+                        type="button"
+                        onClick={(event) => startCategory(selectedCategory, event)}
+                      >
                         <Play size={22} weight="fill" aria-hidden="true" />
                         Jugar de nuevo
                       </button>
@@ -1554,7 +1613,7 @@ export function NidoGamesExperience({
                     ]
                       .filter(Boolean)
                       .join(" ")}
-                    key={`${challenge.id}-${feedbackEffect?.runId ?? "idle"}`}
+                    key={challenge.id}
                   >
                     <div className="nido-games__focus-title">
                       <span>
@@ -1564,8 +1623,8 @@ export function NidoGamesExperience({
                         {challenge.question}
                       </h2>
                       <p id="nido-focus-instruction">
-                        La consigna se reproduce automáticamente. Observa con
-                        calma y toca una respuesta.
+                        Observa la pista, escucha la consigna y toca la mejor
+                        respuesta.
                       </p>
                     </div>
 
@@ -1577,6 +1636,7 @@ export function NidoGamesExperience({
                       <ChallengeAnswers
                         challenge={challenge}
                         selectedAnswer={selectedAnswer}
+                        incorrectAnswers={incorrectAnswers}
                         onAnswer={handleAnswer}
                         locked={answerIsCorrect}
                       />
@@ -1585,6 +1645,7 @@ export function NidoGamesExperience({
                     {feedbackEffect ? (
                       <div
                         className={`nido-games__focus-feedback is-${feedbackEffect.type}`}
+                        key={feedbackEffect.runId}
                         aria-hidden="true"
                       >
                         {feedbackEffect.type === "success" ? (
@@ -1630,10 +1691,10 @@ export function NidoGamesExperience({
                     <div className="nido-games__focus-result">
                       <p role="status" aria-live="polite">
                         {!selectedAnswer
-                          ? "Elige una respuesta para continuar."
+                          ? "Elige una respuesta. Las opciones incorrectas quedarán descartadas."
                           : answerIsCorrect
                             ? "¡Yupi! Encontraste la respuesta correcta."
-                            : "Esa opción no es correcta. Puedes volver a intentarlo."}
+                            : `Esa opción no es correcta. ${incorrectAnswers.length === 1 ? "Prueba con otra." : "Sigue observando: ya descartaste varias opciones."}`}
                       </p>
                       <button
                         ref={focusNextRef}
@@ -1641,10 +1702,10 @@ export function NidoGamesExperience({
                         onClick={handleNext}
                         disabled={!answerIsCorrect}
                       >
-                        <CheckCircle size={24} weight="fill" aria-hidden="true" />
                         {currentGameIndex < NIDO_CURRICULUM_GAME_COUNT - 1
                           ? "Siguiente reto"
                           : "Finalizar ruta"}
+                        <ArrowRight size={22} weight="bold" aria-hidden="true" />
                       </button>
                     </div>
                   </main>
