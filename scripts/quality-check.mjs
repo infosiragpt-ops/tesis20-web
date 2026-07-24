@@ -535,9 +535,13 @@ check(
   initialJavascriptBytes > 0 && initialJavascriptBytes <= 450 * 1024,
   `El JavaScript inicial debe estar entre 1 y 450 KiB (${Math.ceil(initialJavascriptBytes / 1024)} KiB).`,
 );
+// 2026-07: el presupuesto subió de 540 a 640 KiB al incorporar la biblioteca
+// ilustrada de Nido (stickers SVG, portadas de clases, mascota y escenas) que
+// reemplaza los iconos genéricos en los juegos infantiles. El chunk de Nido es
+// diferido: no afecta el JavaScript inicial, que conserva su límite de 450 KiB.
 check(
-  javascriptBytes <= 540 * 1024,
-  `El JavaScript total con rutas diferidas no debe superar 540 KiB (${Math.ceil(javascriptBytes / 1024)} KiB).`,
+  javascriptBytes <= 640 * 1024,
+  `El JavaScript total con rutas diferidas no debe superar 640 KiB (${Math.ceil(javascriptBytes / 1024)} KiB).`,
 );
 check(
   initialStylesheetBytes > 0 && initialStylesheetBytes <= 85 * 1024,

@@ -56,7 +56,7 @@ const PAGE_META = {
       "Explora clases virtuales de aprendizaje creativo para niñas y niños en Tesis20 Nido. Filtra por edad, curso, docente y horario.",
     path: "/nido",
     schemaType: "CollectionPage",
-    image: `${SITE_ORIGIN}/assets/nido/nido-platform-preview.png`,
+    image: `${SITE_ORIGIN}/assets/nido/nido-platform-preview.jpg`,
     imageAlt: "Catálogo de clases virtuales de Tesis20 Nido",
     imageWidth: 1536,
     imageHeight: 1024,
@@ -240,7 +240,7 @@ export function SeoManager({
     });
     upsertMeta('meta[property="og:image:type"]', {
       property: "og:image:type",
-      content: "image/png",
+      content: meta.image.endsWith(".jpg") ? "image/jpeg" : "image/png",
     });
     upsertMeta('meta[property="og:image:alt"]', {
       property: "og:image:alt",

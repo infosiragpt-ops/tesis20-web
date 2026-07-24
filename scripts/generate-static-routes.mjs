@@ -184,7 +184,7 @@ const routeDefinitions = [
       "Explora clases virtuales de aprendizaje creativo para niñas y niños en Tesis20 Nido. Filtra por edad, curso, docente y horario.",
     heading: "Aprender jugando, crecer con confianza",
     schemaType: "CollectionPage",
-    image: `${SITE_ORIGIN}/assets/nido/nido-platform-preview.png`,
+    image: `${SITE_ORIGIN}/assets/nido/nido-platform-preview.jpg`,
     imageAlt: "Catálogo de clases virtuales de Tesis20 Nido",
     imageWidth: 1536,
     imageHeight: 1024,
@@ -218,6 +218,16 @@ const routeDefinitions = [
           <li>Arte y colores: creatividad, coordinación y expresión visual.</li>
           <li>Cuentos en movimiento: comprensión, imaginación y expresión corporal.</li>
         </ul>
+      </section>
+      <section id="como-jugar" aria-labelledby="static-nido-steps-title">
+        <h2 id="static-nido-steps-title">¿Cómo lo usan los alumnos?</h2>
+        <ol>
+          <li>Eligen su edad: 2–3, 4–5 o 6 años.</li>
+          <li>Escuchan la consigna narrada en voz alta por la voz guía.</li>
+          <li>Tocan su respuesta en tarjetas grandes con dibujos.</li>
+          <li>Ganan estrellas hasta completar los 20 retos de cada ruta.</li>
+        </ol>
+        <p>No necesitan saber leer: cada juego se narra y se resuelve tocando ilustraciones.</p>
       </section>
       <section id="como-funciona" aria-labelledby="static-nido-process-title">
         <h2 id="static-nido-process-title">Cómo funciona la demostración</h2>
@@ -389,6 +399,7 @@ function createNavigation(route) {
         <nav aria-label="Navegación principal de Nido">
           <a href="/nido">Inicio</a>
           <a href="/nido#clases">Clases</a>
+          <a href="/nido#como-jugar">Cómo se juega</a>
           <a href="/nido#como-funciona">Cómo funciona</a>
           <a href="/nido#preguntas">Preguntas</a>
           <a href="/">Tesis20.com</a>
@@ -639,6 +650,7 @@ function renderRoute(template, route) {
     ["og:url", canonicalUrl || `${SITE_ORIGIN}/404`],
     ["og:image", shareImage],
     ["og:image:secure_url", shareImage],
+    ["og:image:type", shareImage.endsWith(".jpg") ? "image/jpeg" : "image/png"],
     ["og:image:alt", shareImageAlt],
     ["og:image:width", shareImageWidth],
     ["og:image:height", shareImageHeight],

@@ -5,6 +5,8 @@ import {
   NIDO_CURRICULUM,
   NIDO_CURRICULUM_GAME_COUNT,
 } from "./nido-curriculum";
+import { AREA_SCENES } from "./illustrations/area-scenes.jsx";
+import { CelebrationBurst, NidoMascot } from "./illustrations/nido-mascot.jsx";
 import { createNidoIcon, NidoGlyph } from "./nido-icon-map";
 import "./nido-games.css";
 import nidoFocusStyles from "./nido-focus.css?inline";
@@ -144,6 +146,7 @@ function VisualToken({ item, compact = false }) {
           name={iconName}
           size={compact ? 30 : 44}
           weight="duotone"
+          tint={tone}
           aria-hidden="true"
         />
       ) : null}
@@ -252,7 +255,12 @@ function ChallengeAnswers({
               {option.imageSrc ? (
                 <img src={option.imageSrc} alt="" />
               ) : option.iconName ? (
-                <NidoGlyph name={option.iconName} size={52} weight="duotone" />
+                <NidoGlyph
+                  name={option.iconName}
+                  size={52}
+                  weight="duotone"
+                  tint={option.tone}
+                />
               ) : option.tone ? (
                 <i />
               ) : (
@@ -322,6 +330,7 @@ export function NidoGamesExperience({
 
   const age = AGE_GROUPS.find((item) => item.id === selectedAge);
   const area = findArea(selectedArea);
+  const AreaScene = AREA_SCENES[selectedArea] ?? AREA_SCENES.logica;
   const category = area.categories.find(
     (categoryItem) => categoryItem.id === selectedCategory,
   );
@@ -742,11 +751,13 @@ export function NidoGamesExperience({
     if (answerId === challenge.answerId) {
       showFeedbackEffect("success");
       playFeedbackSound("success");
+      navigator.vibrate?.(60);
       onStatus("¡Yupi! Respuesta correcta. Sonó la estrellita.");
       window.requestAnimationFrame(() => focusNextRef.current?.focus());
     } else {
       showFeedbackEffect("error");
       playFeedbackSound("error");
+      navigator.vibrate?.([25, 40, 25]);
       onStatus(
         "Tin–ton. Esa no es la respuesta correcta. La pantalla indicó que debes intentarlo otra vez.",
       );
@@ -812,6 +823,12 @@ export function NidoGamesExperience({
 
       <div className="nido-shell nido-games__shell">
         <header className="nido-games__heading">
+          <NidoMascot
+            className="nido-games__mascot"
+            pose="hola"
+            size={118}
+            aria-hidden="true"
+          />
           <div>
             <span>JUEGOS EDUCATIVOS POR EDAD</span>
             <h1 id="nido-games-title">Elige la edad para comenzar</h1>
@@ -934,12 +951,7 @@ export function NidoGamesExperience({
                 <h2>{area.name}</h2>
                 <p>{area.description}</p>
               </div>
-              {selectedArea === "ingles" ? (
-                <img
-                  src="/assets/nido/activities/english-world-v1.jpg"
-                  alt="Tucán docente y dos niños aprendiendo inglés con tarjetas ilustradas."
-                />
-              ) : null}
+              <AreaScene className="nido-games__area-scene" aria-hidden="true" />
             </header>
 
             <div
@@ -1104,7 +1116,10 @@ export function NidoGamesExperience({
                     className="nido-games__focus-success"
                     aria-labelledby="nido-focus-title"
                   >
-                    <Trophy size={82} weight="duotone" aria-hidden="true" />
+                    <div className="nido-games__success-art" aria-hidden="true">
+                      <CelebrationBurst className="nido-games__success-burst" />
+                      <NidoMascot pose="cheer" size={128} />
+                    </div>
                     <span>20 retos completados</span>
                     <h2 id="nido-focus-title" ref={routeSuccessRef} tabIndex="-1">
                       ¡Ruta terminada!
@@ -1171,7 +1186,7 @@ export function NidoGamesExperience({
                                 <Star size={58} weight="fill" />
                                 <Star size={42} weight="fill" />
                               </div>
-                              <CheckCircle size={76} weight="fill" />
+                              <NidoMascot pose="cheer" size={94} />
                               <strong>¡Yupi!</strong>
                               <small>¡Tirirí! Respuesta correcta</small>
                             </>

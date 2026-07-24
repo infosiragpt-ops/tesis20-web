@@ -777,8 +777,8 @@ function logicChallenge(context) {
       visualKind: "detective-clues",
       visual: {
         clues: [
-          { type: "shape", value: shape.id, iconName: shape.iconName },
-          { type: "color", value: color.id, tone: color.tone },
+          { type: "shape", value: shape.id, label: shape.label, iconName: shape.iconName },
+          { type: "color", value: color.id, label: color.label, tone: color.tone },
         ],
       },
       ...answer,
