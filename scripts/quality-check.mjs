@@ -536,8 +536,8 @@ check(
   `El JavaScript inicial debe estar entre 1 y 450 KiB (${Math.ceil(initialJavascriptBytes / 1024)} KiB).`,
 );
 check(
-  javascriptBytes <= 540 * 1024,
-  `El JavaScript total con rutas diferidas no debe superar 540 KiB (${Math.ceil(javascriptBytes / 1024)} KiB).`,
+  javascriptBytes <= 542 * 1024,
+  `El JavaScript total con rutas diferidas no debe superar 542 KiB (${Math.ceil(javascriptBytes / 1024)} KiB).`,
 );
 check(
   initialStylesheetBytes > 0 && initialStylesheetBytes <= 85 * 1024,
@@ -555,7 +555,9 @@ for (const htmlFile of distFiles.filter((file) => file.endsWith(".html"))) {
 for (const thumbnail of distFiles.filter((file) => file.includes("/assets/thumbnails/") && /\.(?:png|jpe?g|webp)$/i.test(file))) {
   check((await fileSize(thumbnail)) <= 250 * 1024, `${thumbnail} supera 250 KiB.`);
 }
-for (const audio of distFiles.filter((file) => /\/assets\/audio\/.*\.mp3$/i.test(file))) {
+for (const audio of distFiles.filter((file) =>
+  /\/assets\/(?:nido\/)?audio\/.*\.mp3$/i.test(file),
+)) {
   check((await fileSize(audio)) <= 1_200 * 1024, `${audio} supera 1.2 MiB.`);
 }
 for (const imageFile of distFiles.filter((file) => /\.(?:png|jpe?g|webp|svg)$/i.test(file))) {

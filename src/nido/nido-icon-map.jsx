@@ -43,47 +43,10 @@ const ICONS = Object.freeze({
   XCircle,
 });
 
-const ANIMAL_ICONS = new Set([
-  "Bird",
-  "Bug",
-  "Butterfly",
-  "Cat",
-  "Cow",
-  "Dog",
-  "FishSimple",
-  "Horse",
-  "Rabbit",
-]);
-
-const FOOD_ICONS = new Set([
-  "Bread",
-  "Carrot",
-  "Coffee",
-  "Flower",
-  "ForkKnife",
-  "Plant",
-]);
-
-const EDUCATION_ICONS = new Set([
-  "Backpack",
-  "ChalkboardTeacher",
-  "GraduationCap",
-  "IdentificationCard",
-  "Pencil",
-]);
-
 function resolveIcon(name) {
   if (ICONS[name]) return ICONS[name];
-  if (ANIMAL_ICONS.has(name)) return Shapes;
-  if (FOOD_ICONS.has(name)) return Shapes;
-  if (EDUCATION_ICONS.has(name)) return Shapes;
-  if (name === "Palette") return Shapes;
-  if (name === "House" || name === "HouseLine") return Shapes;
   if (
-    name === "Person" ||
-    name === "PersonSimple" ||
-    name === "PersonSimpleRun" ||
-    name === "PersonSimpleTaiChi" ||
+    name?.startsWith("Person") ||
     name === "UsersThree"
   ) {
     return Smiley;
@@ -96,9 +59,6 @@ function resolveIcon(name) {
     name === "ChartLineUp"
   ) {
     return ArrowRight;
-  }
-  if (name === "Detective" || name === "Eye" || name === "EyeClosed") {
-    return Shapes;
   }
   if (name === "NumberCircleOne" || name === "PlusCircle") {
     return MathOperations;

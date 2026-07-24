@@ -666,13 +666,15 @@
 
   .nido-games__areas {
     position: static;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-columns: repeat(5, minmax(145px, 1fr));
     overflow-x: auto;
+    scroll-snap-type: x proximity;
   }
 
   .nido-games__areas button {
     min-width: 145px;
     grid-template-columns: 42px minmax(0, 1fr);
+    scroll-snap-align: start;
   }
 }
 

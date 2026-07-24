@@ -8,7 +8,8 @@
     "dev:lan": "vite --host 0.0.0.0 --port 3000",
     "build": "vite build && node scripts/generate-static-routes.mjs",
     "preview": "vite preview --port 3000",
-    "audio:nido": "node scripts/generate-nido-elevenlabs-audio.mjs",
+    "audio:nido": "node scripts/generate-nido-openrouter-audio.mjs",
+    "audio:nido:legacy-elevenlabs": "node scripts/generate-nido-elevenlabs-audio.mjs",
     "quality": "node scripts/quality-check.mjs",
     "check:nido": "node scripts/check-nido-curriculum.mjs",
     "check": "npm run build && npm run quality && npm run check:nido"

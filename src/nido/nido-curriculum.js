@@ -450,14 +450,14 @@ const CHARACTER_CLUES = Object.freeze([
 ]);
 
 const ANIMAL_YOUNG = Object.freeze([
-  { adult: "vaca", young: "ternero", adultIcon: "Cow", youngIcon: "Cow" },
-  { adult: "caballo", young: "potro", adultIcon: "Horse", youngIcon: "Horse" },
-  { adult: "gallina", young: "pollito", adultIcon: "Bird", youngIcon: "Bird" },
-  { adult: "perro", young: "cachorro", adultIcon: "Dog", youngIcon: "Dog" },
-  { adult: "gato", young: "gatito", adultIcon: "Cat", youngIcon: "Cat" },
-  { adult: "oveja", young: "cordero", adultIcon: "PawPrint", youngIcon: "PawPrint" },
-  { adult: "pato", young: "patito", adultIcon: "Bird", youngIcon: "Bird" },
-  { adult: "conejo", young: "gazapo", adultIcon: "Rabbit", youngIcon: "Rabbit" },
+  { article: "la", adult: "vaca", young: "ternero", adultIcon: "Cow", youngIcon: "Cow" },
+  { article: "el", adult: "caballo", young: "potro", adultIcon: "Horse", youngIcon: "Horse" },
+  { article: "la", adult: "gallina", young: "pollito", adultIcon: "Bird", youngIcon: "Bird" },
+  { article: "el", adult: "perro", young: "cachorro", adultIcon: "Dog", youngIcon: "Dog" },
+  { article: "el", adult: "gato", young: "gatito", adultIcon: "Cat", youngIcon: "Cat" },
+  { article: "la", adult: "oveja", young: "cordero", adultIcon: "PawPrint", youngIcon: "PawPrint" },
+  { article: "el", adult: "pato", young: "patito", adultIcon: "Bird", youngIcon: "Bird" },
+  { article: "el", adult: "conejo", young: "gazapo", adultIcon: "Rabbit", youngIcon: "Rabbit" },
 ]);
 
 const SPOKEN_QUESTIONS = Object.freeze([
@@ -483,14 +483,14 @@ const EMOTIONS = Object.freeze([
 ]);
 
 const ANIMAL_FOODS = Object.freeze([
-  { animal: "conejo", animalIcon: "Rabbit", food: "zanahoria", foodIcon: "Carrot" },
-  { animal: "vaca", animalIcon: "Cow", food: "pasto", foodIcon: "Plant" },
-  { animal: "panda", animalIcon: "PawPrint", food: "bambú", foodIcon: "Plant" },
-  { animal: "mono", animalIcon: "PawPrint", food: "plátano", foodIcon: "BowlFood" },
-  { animal: "ardilla", animalIcon: "PawPrint", food: "nuez", foodIcon: "BowlFood" },
-  { animal: "mariposa", animalIcon: "Butterfly", food: "néctar", foodIcon: "Flower" },
-  { animal: "caballo", animalIcon: "Horse", food: "heno", foodIcon: "Plant" },
-  { animal: "gato", animalIcon: "Cat", food: "pescado", foodIcon: "FishSimple" },
+  { article: "el", animal: "conejo", animalIcon: "Rabbit", food: "zanahoria", foodIcon: "Carrot" },
+  { article: "la", animal: "vaca", animalIcon: "Cow", food: "pasto", foodIcon: "Plant" },
+  { article: "el", animal: "panda", animalIcon: "PawPrint", food: "bambú", foodIcon: "Plant" },
+  { article: "el", animal: "mono", animalIcon: "PawPrint", food: "plátano", foodIcon: "BowlFood" },
+  { article: "la", animal: "ardilla", animalIcon: "PawPrint", food: "nuez", foodIcon: "BowlFood" },
+  { article: "la", animal: "mariposa", animalIcon: "Butterfly", food: "néctar", foodIcon: "Flower" },
+  { article: "el", animal: "caballo", animalIcon: "Horse", food: "heno", foodIcon: "Plant" },
+  { article: "el", animal: "gato", animalIcon: "Cat", food: "pescado", foodIcon: "FishSimple" },
 ]);
 
 const POSITIONS = Object.freeze([
@@ -505,14 +505,14 @@ const POSITIONS = Object.freeze([
 ]);
 
 const HABITATS = Object.freeze([
-  { animal: "pez", animalIcon: "FishSimple", habitat: "agua", habitatIcon: "Waves" },
-  { animal: "ave", animalIcon: "Bird", habitat: "nido", habitatIcon: "Bird" },
-  { animal: "abeja", animalIcon: "Bug", habitat: "colmena", habitatIcon: "Hexagon" },
-  { animal: "conejo", animalIcon: "Rabbit", habitat: "madriguera", habitatIcon: "CircleDashed" },
-  { animal: "león", animalIcon: "PawPrint", habitat: "sabana", habitatIcon: "SunHorizon" },
-  { animal: "rana", animalIcon: "PawPrint", habitat: "estanque", habitatIcon: "Drop" },
-  { animal: "oso polar", animalIcon: "PawPrint", habitat: "hielo", habitatIcon: "Snowflake" },
-  { animal: "mono", animalIcon: "PawPrint", habitat: "selva", habitatIcon: "TreePalm" },
+  { article: "el", animal: "pez", animalIcon: "FishSimple", habitat: "agua", habitatPhrase: "el agua", habitatIcon: "Waves" },
+  { article: "el", animal: "ave", animalIcon: "Bird", habitat: "nido", habitatPhrase: "un nido", habitatIcon: "Bird" },
+  { article: "la", animal: "abeja", animalIcon: "Bug", habitat: "colmena", habitatPhrase: "una colmena", habitatIcon: "Hexagon" },
+  { article: "el", animal: "conejo", animalIcon: "Rabbit", habitat: "madriguera", habitatPhrase: "una madriguera", habitatIcon: "CircleDashed" },
+  { article: "el", animal: "león", animalIcon: "PawPrint", habitat: "sabana", habitatPhrase: "la sabana", habitatIcon: "SunHorizon" },
+  { article: "la", animal: "rana", animalIcon: "PawPrint", habitat: "estanque", habitatPhrase: "un estanque", habitatIcon: "Drop" },
+  { article: "el", animal: "oso polar", animalIcon: "PawPrint", habitat: "hielo", habitatPhrase: "el hielo", habitatIcon: "Snowflake" },
+  { article: "el", animal: "mono", animalIcon: "PawPrint", habitat: "selva", habitatPhrase: "la selva", habitatIcon: "TreePalm" },
 ]);
 
 const ENGLISH_VOCABULARY = Object.freeze({
@@ -697,12 +697,40 @@ function makeOptions(values, correctIndex, seed) {
 
 function makeChallenge(context, definition) {
   const { area, categoryItem, age, gameIndex, seed } = context;
-  const spokenInstruction =
+  const baseSpokenInstruction =
     definition.spokenInstruction ??
     `${definition.question} Escucha, observa y toca la respuesta correcta.`;
+  const ageCoaching = {
+    "2-3": "Vamos despacio. Mira una opción a la vez.",
+    "4-5": "Observa todas las pistas y piensa antes de elegir.",
+    6: "Resuelve el reto y comprueba tu respuesta antes de continuar.",
+  };
+  const spokenInstruction = `${baseSpokenInstruction} ${ageCoaching[age.id]}`;
+  const maximumOptionCount = Math.min(age.difficulty + 1, 4);
+  const correctOption = definition.options.find(
+    (option) => option.id === definition.answerId,
+  );
+  const visibleOptionIds = new Set([
+    definition.answerId,
+    ...definition.options
+      .filter((option) => option.id !== definition.answerId)
+      .slice(0, Math.max(0, maximumOptionCount - 1))
+      .map((option) => option.id),
+  ]);
+  const ageAdjustedOptions = definition.options.filter((option) =>
+    visibleOptionIds.has(option.id),
+  );
+
+  if (!correctOption || !ageAdjustedOptions.length) {
+    throw new Error(
+      `El reto ${area.id}/${categoryItem.id}/${age.id}/${gameIndex + 1} no tiene una respuesta visible.`,
+    );
+  }
+
+  const challengeId = `${area.id}-${categoryItem.id}-${age.id}-${gameIndex + 1}`;
 
   return Object.freeze({
-    id: `${area.id}-${categoryItem.id}-${age.id}-${gameIndex + 1}`,
+    id: challengeId,
     areaId: area.id,
     categoryId: categoryItem.id,
     ageId: age.id,
@@ -710,16 +738,20 @@ function makeChallenge(context, definition) {
     gameNumber: gameIndex + 1,
     totalGames: categoryItem.gameCount,
     difficulty: age.difficulty,
+    instructionStyle: age.instructionStyle,
     question: definition.question,
     prompt: definition.question,
     spokenInstruction,
     voice: spokenInstruction,
+    audioId: challengeId,
     visualType: definition.visualType,
     visual: Object.freeze({
       kind: definition.visualKind,
+      ageProfile: age.id,
+      complexity: age.difficulty,
       ...definition.visual,
     }),
-    options: Object.freeze(definition.options),
+    options: Object.freeze(ageAdjustedOptions),
     answerId: definition.answerId,
     answer: definition.answerId,
     iconMetadata: Object.freeze({
@@ -1329,6 +1361,8 @@ function speechChallenge(context) {
 
   if (categoryItem.strategy === "animal-young") {
     const pair = pick(ANIMAL_YOUNG, seed, 1);
+    const adultPossessive =
+      pair.article === "la" ? `de la ${pair.adult}` : `del ${pair.adult}`;
     const distractors = rotate(
       ANIMAL_YOUNG.filter((item) => item.young !== pair.young),
       gameIndex,
@@ -1347,8 +1381,8 @@ function speechChallenge(context) {
     );
 
     return makeChallenge(context, {
-      question: `¿Cómo se llama la cría de la ${pair.adult}?`,
-      spokenInstruction: `La cría de la ${pair.adult} se llama ${pair.young}. Repite ${pair.young} y toca su imagen.`,
+      question: `¿Cómo se llama la cría ${adultPossessive}?`,
+      spokenInstruction: `La cría ${adultPossessive} se llama ${pair.young}. Repite ${pair.young} y toca su imagen.`,
       visualType: "speech",
       visualKind: "animal-young",
       visual: {
@@ -1412,6 +1446,9 @@ function speechChallenge(context) {
 
   if (categoryItem.strategy === "animal-food") {
     const pair = pick(ANIMAL_FOODS, seed, 1);
+    const animalSubject = `${pair.article} ${pair.animal}`;
+    const animalSubjectCapitalized =
+      animalSubject.charAt(0).toUpperCase() + animalSubject.slice(1);
     const distractors = rotate(
       ANIMAL_FOODS.filter((item) => item.food !== pair.food),
       gameIndex,
@@ -1430,13 +1467,13 @@ function speechChallenge(context) {
     );
 
     return makeChallenge(context, {
-      question: `¿Qué come el ${pair.animal}?`,
-      spokenInstruction: `El ${pair.animal} come ${pair.food}. Repite la frase y toca ${pair.food}.`,
+      question: `¿Qué come ${animalSubject}?`,
+      spokenInstruction: `${animalSubjectCapitalized} come ${pair.food}. Repite la frase y toca ${pair.food}.`,
       visualType: "speech",
       visualKind: "animal-food",
       visual: {
         subject: { label: pair.animal, iconName: pair.animalIcon },
-        repeatPhrase: `El ${pair.animal} come ${pair.food}.`,
+        repeatPhrase: `${animalSubjectCapitalized} come ${pair.food}.`,
       },
       ...answer,
     });
@@ -1444,6 +1481,10 @@ function speechChallenge(context) {
 
   if (categoryItem.strategy === "position") {
     const position = pick(POSITIONS, seed, 1);
+    const positionPhrase =
+      position.id === "between"
+        ? "entre las dos referencias"
+        : `${position.label} la referencia`;
     const distractors = rotate(
       POSITIONS.filter((item) => item.id !== position.id),
       gameIndex,
@@ -1454,7 +1495,7 @@ function speechChallenge(context) {
 
     return makeChallenge(context, {
       question: `¿Dónde está el objeto respecto de la referencia?`,
-      spokenInstruction: `El objeto está ${position.label} la referencia. Repite ${position.label} y toca esa opción.`,
+      spokenInstruction: `El objeto está ${positionPhrase}. Repite ${position.label} y toca esa opción.`,
       visualType: "speech",
       visualKind: "position-scene",
       visual: {
@@ -1468,6 +1509,9 @@ function speechChallenge(context) {
   }
 
   const pair = pick(HABITATS, seed, 1);
+  const animalSubject = `${pair.article} ${pair.animal}`;
+  const animalSubjectCapitalized =
+    animalSubject.charAt(0).toUpperCase() + animalSubject.slice(1);
   const distractors = rotate(
     HABITATS.filter((item) => item.habitat !== pair.habitat),
     gameIndex,
@@ -1486,23 +1530,32 @@ function speechChallenge(context) {
   );
 
   return makeChallenge(context, {
-    question: `¿Dónde vive el ${pair.animal}?`,
-    spokenInstruction: `El ${pair.animal} vive en ${pair.habitat}. Repite la frase y toca ${pair.habitat}.`,
+    question: `¿Dónde vive ${animalSubject}?`,
+    spokenInstruction: `${animalSubjectCapitalized} vive en ${pair.habitatPhrase}. Repite la frase y toca ${pair.habitat}.`,
     visualType: "speech",
     visualKind: "habitat-match",
     visual: {
       subject: { label: pair.animal, iconName: pair.animalIcon },
-      repeatPhrase: `El ${pair.animal} vive en ${pair.habitat}.`,
+      repeatPhrase: `${animalSubjectCapitalized} vive en ${pair.habitatPhrase}.`,
     },
     ...answer,
   });
 }
 
 function englishChallenge(context) {
-  const { categoryItem, gameIndex, seed } = context;
+  const { categoryItem, age, gameIndex, seed } = context;
   const words = ENGLISH_VOCABULARY[categoryItem.strategy];
-  const item = words[gameIndex % words.length];
-  const reverse = gameIndex >= 10;
+  const item =
+    words[
+      (gameIndex + (age.difficulty - 1) * Math.max(1, words.length / 5)) %
+        words.length
+    ];
+  const reverse =
+    age.id === "2-3"
+      ? false
+      : age.id === "4-5"
+        ? gameIndex >= 10
+        : gameIndex % 2 === 1;
   const distractors = rotate(
     words.filter((candidate) => candidate.id !== item.id),
     mix(seed, 1),
@@ -1525,11 +1578,21 @@ function englishChallenge(context) {
   );
 
   const question = reverse
-    ? `What does “${item.english}” mean?`
-    : `¿Cómo se dice “${item.spanish}” en inglés?`;
+    ? age.id === "6"
+      ? `Listen and choose: what does “${item.english}” mean?`
+      : `What does “${item.english}” mean?`
+    : age.id === "2-3"
+      ? `Escucha: ¿dónde está “${item.english}”?`
+      : `¿Cómo se dice “${item.spanish}” en inglés?`;
   const spokenInstruction = reverse
-    ? `Listen: ${item.english}. En español significa ${item.spanish}. Toca ${item.spanish}.`
-    : `Escucha y repite: ${item.english}. ${item.english}. Ahora toca ${item.english}.`;
+    ? age.id === "6"
+      ? `Listen carefully: ${item.english}. Say the word, then choose its meaning in Spanish.`
+      : `Listen: ${item.english}. En español significa ${item.spanish}. Toca ${item.spanish}.`
+    : age.id === "2-3"
+      ? `Escucha y repite conmigo: ${item.english}. ${item.english}. Ahora encuentra ${item.english}.`
+      : age.id === "6"
+        ? `Say the English word for ${item.spanish}. Then choose ${item.english}.`
+        : `Escucha y repite: ${item.english}. ${item.english}. Ahora toca ${item.english}.`;
 
   return makeChallenge(context, {
     question,
@@ -1632,7 +1695,7 @@ export function buildCurriculumChallenge({
         "Escucha con atención. Selecciona al osito que tiene un moño. Muy bien, tú puedes.",
       voice:
         "Escucha con atención. Selecciona al osito que tiene un moño. Muy bien, tú puedes.",
-      audioId: "attention-2-3-level-1",
+      audioId: challenge.id,
       visualType: "choice-grid",
       visual: Object.freeze({
         kind: "teddy-bow-match",
