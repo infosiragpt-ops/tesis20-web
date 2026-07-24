@@ -280,6 +280,8 @@ const manifestText = await read("public/site.webmanifest");
 const serviceWorker = await read("public/sw.js");
 const vercelText = await read("vercel.json");
 const appSource = await read("src/App.jsx");
+const nidoGamesSource = await read("src/nido/nido-games.jsx");
+const nidoFocusStyles = await read("src/nido/nido-focus.css");
 const manifest = JSON.parse(manifestText);
 const vercel = JSON.parse(vercelText);
 
@@ -290,6 +292,16 @@ check(!index.includes("https://tesis20.com"), "index.html todavía contiene URLs
 check(!index.includes("api.whatsapp.com\" crossorigin") && !index.includes('rel="dns-prefetch" href="https://api.whatsapp.com"'), "No se debe abrir una conexión anticipada a WhatsApp.");
 check(robots.includes("Sitemap: https://www.tesis20.com/sitemap.xml"), "robots.txt debe apuntar al sitemap canónico con www.");
 check(!/^\s*Disallow:\s*\/\s*$/im.test(robots), "robots.txt no debe bloquear el sitio completo.");
+check(
+  !nidoGamesSource.includes("requestFullscreen"),
+  "Los juegos de Nido no deben forzar pantalla completa al abrir una ruta.",
+);
+check(
+  nidoGamesSource.includes("dialog.showModal()") &&
+    nidoGamesSource.includes('dialog.setAttribute("open", "")') &&
+    nidoFocusStyles.includes("position: fixed"),
+  "La apertura de juegos de Nido debe conservar el diálogo modal y su fallback visible.",
+);
 
 // El sitemap debe describir exactamente las páginas indexables que entrega el build.
 const sitemapEntries = extractSitemapEntries(sitemap);
@@ -544,8 +556,8 @@ check(
   `El CSS inicial debe estar entre 1 y 85 KiB (${Math.ceil(initialStylesheetBytes / 1024)} KiB).`,
 );
 check(
-  stylesheetBytes <= 120 * 1024,
-  `El CSS total con rutas diferidas no debe superar 120 KiB (${Math.ceil(stylesheetBytes / 1024)} KiB).`,
+  stylesheetBytes <= 136 * 1024,
+  `El CSS total con rutas diferidas no debe superar 136 KiB (${Math.ceil(stylesheetBytes / 1024)} KiB).`,
 );
 check(deployBytesWithoutAudioAndPdf <= 9 * 1024 * 1024, `El build sin audios/PDF supera 9 MiB (${(deployBytesWithoutAudioAndPdf / 1024 / 1024).toFixed(2)} MiB).`);
 

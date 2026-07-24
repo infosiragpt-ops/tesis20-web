@@ -1,4 +1,4 @@
-const CACHE_VERSION = "v4";
+const CACHE_VERSION = "v5";
 const SHELL_CACHE = `tesis20-shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `tesis20-runtime-${CACHE_VERSION}`;
 const CACHE_PREFIX = "tesis20-";
@@ -125,7 +125,9 @@ async function staleWhileRevalidate(event, request) {
 }
 
 self.addEventListener("install", (event) => {
-  event.waitUntil(cacheCurrentShell());
+  event.waitUntil(
+    cacheCurrentShell().then(() => self.skipWaiting()),
+  );
 });
 
 self.addEventListener("activate", (event) => {

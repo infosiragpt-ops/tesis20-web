@@ -468,6 +468,16 @@
   transform: translateY(-3px);
 }
 
+.nido-games__categories > button:active {
+  box-shadow: 0 8px 16px rgba(16, 35, 63, 0.13);
+  transform: translateY(1px) scale(0.995);
+}
+
+.nido-games__categories > button:focus-visible {
+  outline: 4px solid white;
+  outline-offset: -8px;
+}
+
 .nido-games__categories > button.is-selected {
   border-color: var(--nido-navy);
   box-shadow:
@@ -536,6 +546,20 @@
   font-family: "Arial Rounded MT Bold", "Avenir Next", sans-serif;
   font-size: 1rem;
   white-space: nowrap;
+}
+
+.nido-games__category-count > span {
+  display: grid;
+  justify-items: end;
+  gap: 2px;
+}
+
+.nido-games__category-count small {
+  font-family: Arial, sans-serif;
+  font-size: 0.62rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 .nido-games__catalog-action {
