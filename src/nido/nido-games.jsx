@@ -373,6 +373,8 @@ function Picture({ item, compact = false }) {
             weight="duotone"
             tint={tone}
           />
+        ) : tone ? (
+          <i className="nido-games__picture-swatch" aria-hidden="true" />
         ) : (
           label
         ))

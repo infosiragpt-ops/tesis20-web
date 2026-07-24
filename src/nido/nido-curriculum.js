@@ -699,13 +699,27 @@ function makeChallenge(context, definition) {
   const { area, categoryItem, age, gameIndex, seed, round = 0 } = context;
   const baseSpokenInstruction =
     definition.spokenInstruction ??
-    `${definition.question} Escucha, observa y toca la respuesta correcta.`;
+    `${definition.question} Escucha con atención, mira con calma y elige tu respuesta.`;
+  // Cierres alentadores rotativos: cariñosos, sin presión y deterministas.
   const ageCoaching = {
-    "2-3": "Vamos despacio. Mira una opción a la vez.",
-    "4-5": "Observa todas las pistas y piensa antes de elegir.",
-    6: "Resuelve el reto y comprueba tu respuesta antes de continuar.",
+    "2-3": [
+      "Vamos despacito, sin apuro. ¡Tú puedes!",
+      "Mira una cosita a la vez. ¡Lo harás genial!",
+      "Respira, mira bien… ¡y elige con tu dedito!",
+    ],
+    "4-5": [
+      "Piensa con calma y elige. ¡Confío en ti!",
+      "Mira todas las pistas como un gran explorador. ¡Vamos!",
+      "Tómate tu tiempo… ¡tú puedes con esto!",
+    ],
+    6: [
+      "Piénsalo bien y demuestra lo que sabes. ¡Adelante!",
+      "Analiza como todo un experto. ¡Confío en ti!",
+      "Revisa con tus ojos de águila antes de elegir. ¡Tú puedes!",
+    ],
   };
-  const spokenInstruction = `${baseSpokenInstruction} ${ageCoaching[age.id]}`;
+  const coachingLines = ageCoaching[age.id];
+  const spokenInstruction = `${baseSpokenInstruction} ${coachingLines[gameIndex % coachingLines.length]}`;
   const maximumOptionCount = Math.min(age.difficulty + 1, 4);
   const correctOption = definition.options.find(
     (option) => option.id === definition.answerId,
@@ -805,7 +819,7 @@ function logicChallenge(context) {
 
     return makeChallenge(context, {
       question: `¿Dónde está el ${shape.label} de color ${color.label}?`,
-      spokenInstruction: `Juego ${gameIndex + 1}. Busca el ${shape.label} de color ${color.label}. Observa las dos pistas antes de responder.`,
+      spokenInstruction: `¡Detective a la obra! Se esconde un ${shape.label} de color ${color.label}. Mira las dos pistas con tus ojos de lupa… ¿dónde está?`,
       visualType: "choice-grid",
       visualKind: "detective-clues",
       visual: {
@@ -834,7 +848,7 @@ function logicChallenge(context) {
 
     return makeChallenge(context, {
       question: `Hay ${amount}. Si agregamos uno más, ¿cuántos hay?`,
-      spokenInstruction: `Cuenta ${amount} elementos. Agrega uno más y toca el número ${result}.`,
+      spokenInstruction: `Hay ${amount} en la fila… ¡y llega uno más! Cuenta conmigo despacito: ¿cuántos hay ahora? Toca el número.`,
       visualType: "quantity",
       visualKind: "add-one",
       visual: {
@@ -877,7 +891,7 @@ function logicChallenge(context) {
 
     return makeChallenge(context, {
       question: "¿Qué color continúa la serie?",
-      spokenInstruction: `Mira el orden de los colores. Después de ${sequence.at(-1).label}, toca el color que continúa.`,
+      spokenInstruction: `¡Qué patrón tan bonito! Mira el orden de los colores. Después del ${sequence.at(-1).label}… ¿cuál sigue? ¡Tócalo!`,
       visualType: "sequence",
       visualKind: "color-pattern",
       visual: {
@@ -898,7 +912,7 @@ function logicChallenge(context) {
 
     return makeChallenge(context, {
       question: "¿Qué elemento sobra?",
-      spokenInstruction: `Tres opciones pertenecen al grupo de ${family.name}. Toca la opción que no pertenece al grupo.`,
+      spokenInstruction: `Casi todos son ${family.name}… ¡pero se coló un invitado sorpresa! Descubre cuál no pertenece al grupo y tócalo.`,
       visualType: "choice-grid",
       visualKind: "odd-one-out",
       visual: { family: family.name },
@@ -912,7 +926,7 @@ function logicChallenge(context) {
 
     return makeChallenge(context, {
       question: "¿Cuál de estas opciones existe en el mundo real?",
-      spokenInstruction: `Piensa en lo que has visto en la vida real. Toca ${set.real.label}.`,
+      spokenInstruction: `Piensa bien: ¿cuál de estos existe de verdad en el mundo real? Cuando lo sepas… ¡tócalo!`,
       visualType: "choice-grid",
       visualKind: "real-or-imaginary",
       visual: { topic: gameIndex % 2 ? "seres y objetos" : "mundo real" },
@@ -943,7 +957,7 @@ function logicChallenge(context) {
 
   return makeChallenge(context, {
     question: `¿Cuál ${shape.label} está camuflado en el fondo ${targetColor.label}?`,
-    spokenInstruction: `Busca la figura que tiene el mismo color que el fondo. Toca el ${shape.label} ${targetColor.label}.`,
+    spokenInstruction: `Shhh… ¡hay una figura escondida! Busca el ${shape.label} de color ${targetColor.label}, el que se camufla con el fondo. ¡Atrápalo!`,
     visualType: "choice-grid",
     visualKind: "camouflage",
     visual: {
@@ -983,7 +997,7 @@ function mathChallenge(context) {
 
     return makeChallenge(context, {
       question: `¿Cuál es ${askLarge ? "más grande" : "más pequeño"}?`,
-      spokenInstruction: `Compara el tamaño de los dos dibujos y toca el que es ${askLarge ? "más grande" : "más pequeño"}.`,
+      spokenInstruction: `Uno es grandote y el otro pequeñito. Compáralos con calma y toca el que es ${askLarge ? "más grande" : "más pequeño"}.`,
       visualType: "comparison",
       visualKind: "size-pair",
       visual: { itemIconName, relation: askLarge ? "largest" : "smallest" },
@@ -1008,8 +1022,8 @@ function mathChallenge(context) {
         ? `¿Qué figura tiene ${target.sides} lados?`
         : `¿Cuál es el ${target.label}?`,
       spokenInstruction: askBySides
-        ? `Cuenta los lados de cada figura y toca la que tiene ${target.sides}.`
-        : `Observa las figuras y toca el ${target.label}.`,
+        ? `¡A contar laditos! Recorre cada figura con tu dedito y toca la que tiene ${target.sides} lados.`
+        : `Mira estas figuras tan bonitas… ¿dónde está el ${target.label}? ¡Tócalo!`,
       visualType: "choice-grid",
       visualKind: "shape-properties",
       visual: { clue: askBySides ? { sides: target.sides } : { name: target.label } },
@@ -1036,7 +1050,7 @@ function mathChallenge(context) {
 
     return makeChallenge(context, {
       question: `¿Qué grupo tiene ${askMost ? "muchos" : "pocos"} elementos?`,
-      spokenInstruction: `Cuenta los dos grupos y toca el que tiene ${askMost ? "más" : "menos"} elementos.`,
+      spokenInstruction: `¡A contar! Cuenta los dos grupos con tu dedito, uno por uno, y toca el que tiene ${askMost ? "más" : "menos"}.`,
       visualType: "quantity",
       visualKind: "quantity-groups",
       visual: {
@@ -1083,7 +1097,7 @@ function mathChallenge(context) {
 
     return makeChallenge(context, {
       question: `¿Cuál es el orden de ${ascending ? "pequeño a grande" : "grande a pequeño"}?`,
-      spokenInstruction: `Mira los tres tamaños y elige el orden que va de ${ascending ? "pequeño a grande" : "grande a pequeño"}.`,
+      spokenInstruction: `Como una escalerita: mira los tres tamaños y elige el orden que va de ${ascending ? "pequeño a grande" : "grande a pequeño"}.`,
       visualType: "comparison",
       visualKind: "size-order",
       visual: {
@@ -1113,7 +1127,7 @@ function mathChallenge(context) {
 
   return makeChallenge(context, {
     question: "¿Qué número continúa el patrón?",
-    spokenInstruction: `Escucha la serie: ${sequence.join(", ")}. Observa cuánto aumenta y toca el número que sigue.`,
+    spokenInstruction: `Escucha esta serie mágica: ${sequence.join(", ")}… ¿Descubriste el truco? ¡Toca el número que sigue!`,
     visualType: "sequence",
     visualKind: "number-pattern",
     visual: { items: sequence, step, missingPosition: "end" },
@@ -1164,7 +1178,7 @@ function attentionChallenge(context) {
 
     return makeChallenge(context, {
       question: `¿Cuál máscara está ${expression.label} y es de color ${color.label}?`,
-      spokenInstruction: `Recuerda dos detalles: emoción ${expression.label} y color ${color.label}. Toca la máscara que tiene ambos.`,
+      spokenInstruction: `¡Memoria de elefante! La máscara es ${expression.label} y de color ${color.label}. Encuentra la que tiene las dos cosas y tócala.`,
       visualType: "memory",
       visualKind: "mask-match",
       visual: {
@@ -1197,7 +1211,7 @@ function attentionChallenge(context) {
 
     return makeChallenge(context, {
       question: `¿Dónde está el ${target.label} en el dibujo?`,
-      spokenInstruction: `Mira cada rincón del dibujo y toca el ${target.label}.`,
+      spokenInstruction: `Explora el dibujo como un aventurero: en algún rincón se esconde el ${target.label}. Cuando lo veas… ¡tócalo!`,
       visualType: "choice-grid",
       visualKind: "drawing-detail",
       visual: {
@@ -1229,7 +1243,7 @@ function attentionChallenge(context) {
 
     return makeChallenge(context, {
       question: `¿Quién está escondido detrás de ${cover.label === "árbol" ? "un" : "una"} ${cover.label}?`,
-      spokenInstruction: `${character.clue} ¿Quién puede ser? Escucha la pista y toca ${character.label}.`,
+      spokenInstruction: `${character.clue} Mmm… ¿quién puede ser? ¡Resuelve el misterio y toca a ese personaje!`,
       visualType: "memory",
       visualKind: "hidden-character",
       visual: {
@@ -1251,7 +1265,7 @@ function attentionChallenge(context) {
 
     return makeChallenge(context, {
       question: `¿Quién está aquí? Pista: ${character.clue}`,
-      spokenInstruction: `${character.clue} Mira todas las opciones y toca ${character.label}.`,
+      spokenInstruction: `${character.clue} Mira a todos con mucha atención… ¡y toca a quien acaba de llegar!`,
       visualType: "choice-grid",
       visualKind: "character-clue",
       visual: { clue: character.clue },
@@ -1310,7 +1324,7 @@ function attentionChallenge(context) {
 
     return makeChallenge(context, {
       question: "¿Cuál es exactamente igual al modelo?",
-      spokenInstruction: "Compara forma, color y marca. Toca el gemelo que coincide en los tres detalles.",
+      spokenInstruction: "¡Búsqueda de gemelos! Compara la forma, el color y la marca… ¡y toca al gemelo idéntico!",
       visualType: "memory",
       visualKind: "twin-match",
       visual: {
@@ -1344,7 +1358,7 @@ function attentionChallenge(context) {
 
   return makeChallenge(context, {
     question: "¿Qué elemento cambió entre los dos dibujos?",
-    spokenInstruction: `Compara los dos dibujos. El ${changed.label} cambió de ${changeType === "missing" ? "presencia" : changeType}. Tócalo.`,
+    spokenInstruction: `Dos dibujos casi iguales… ¡pero algo cambió! Mira con mucho cuidado y toca lo que es diferente.`,
     visualType: "memory",
     visualKind: "difference",
     visual: {
@@ -1383,7 +1397,7 @@ function speechChallenge(context) {
 
     return makeChallenge(context, {
       question: `¿Cómo se llama la cría ${adultPossessive}?`,
-      spokenInstruction: `La cría ${adultPossessive} se llama ${pair.young}. Repite ${pair.young} y toca su imagen.`,
+      spokenInstruction: `¿Sabías que la cría ${adultPossessive} se llama ${pair.young}? Dilo conmigo: ¡${pair.young}! Ahora toca su imagen.`,
       visualType: "speech",
       visualKind: "animal-young",
       visual: {
@@ -1415,7 +1429,7 @@ function speechChallenge(context) {
 
     return makeChallenge(context, {
       question: item.question,
-      spokenInstruction: `${item.question} Piensa, di la respuesta en voz alta y toca ${item.answer}.`,
+      spokenInstruction: `${item.question} Piénsalo… dilo en voz alta con tu vocecita… ¡y toca la respuesta!`,
       visualType: "speech",
       visualKind: "spoken-question",
       visual: { listenFirst: true, repeatAnswer: item.answer },
@@ -1433,7 +1447,7 @@ function speechChallenge(context) {
 
     return makeChallenge(context, {
       question: `¿Qué emoción siente? ${emotion.context}`,
-      spokenInstruction: `${emotion.context} Esa emoción se llama ${emotion.label}. Repite ${emotion.label} y elígela.`,
+      spokenInstruction: `${emotion.context} Esa emoción se llama ${emotion.label}. Dilo conmigo: ¡${emotion.label}! Y ahora tócala.`,
       visualType: "speech",
       visualKind: "emotion-scene",
       visual: {
@@ -1469,7 +1483,7 @@ function speechChallenge(context) {
 
     return makeChallenge(context, {
       question: `¿Qué come ${animalSubject}?`,
-      spokenInstruction: `${animalSubjectCapitalized} come ${pair.food}. Repite la frase y toca ${pair.food}.`,
+      spokenInstruction: `¡Ñam, ñam! ${animalSubjectCapitalized} come ${pair.food}. Repite la frase conmigo… ¡y toca ${pair.food}!`,
       visualType: "speech",
       visualKind: "animal-food",
       visual: {
@@ -1496,7 +1510,7 @@ function speechChallenge(context) {
 
     return makeChallenge(context, {
       question: `¿Dónde está el objeto respecto de la referencia?`,
-      spokenInstruction: `El objeto está ${positionPhrase}. Repite ${position.label} y toca esa opción.`,
+      spokenInstruction: `Mira bien dónde está: ${positionPhrase}. Dilo conmigo: ¡${position.label}! Y toca esa opción.`,
       visualType: "speech",
       visualKind: "position-scene",
       visual: {
@@ -1532,7 +1546,7 @@ function speechChallenge(context) {
 
   return makeChallenge(context, {
     question: `¿Dónde vive ${animalSubject}?`,
-    spokenInstruction: `${animalSubjectCapitalized} vive en ${pair.habitatPhrase}. Repite la frase y toca ${pair.habitat}.`,
+    spokenInstruction: `¿Dónde vive? ${animalSubjectCapitalized} vive en ${pair.habitatPhrase}. Repítelo conmigo… ¡y toca ${pair.habitat}!`,
     visualType: "speech",
     visualKind: "habitat-match",
     visual: {
@@ -1587,13 +1601,13 @@ function englishChallenge(context) {
       : `¿Cómo se dice “${item.spanish}” en inglés?`;
   const spokenInstruction = reverse
     ? age.id === "6"
-      ? `Listen carefully: ${item.english}. Say the word, then choose its meaning in Spanish.`
-      : `Listen: ${item.english}. En español significa ${item.spanish}. Toca ${item.spanish}.`
+      ? `Listen carefully: ${item.english}. Can you say it out loud? Great! Now choose what it means in Spanish.`
+      : `Listen: ${item.english}. En español significa ${item.spanish}. ¡Muy bien! Ahora toca ${item.spanish}.`
     : age.id === "2-3"
-      ? `Escucha y repite conmigo: ${item.english}. ${item.english}. Ahora encuentra ${item.english}.`
+      ? `Escucha esta palabra mágica: ${item.english}. Repite conmigo: ¡${item.english}! Ahora búscala en los dibujos y tócala.`
       : age.id === "6"
-        ? `Say the English word for ${item.spanish}. Then choose ${item.english}.`
-        : `Escucha y repite: ${item.english}. ${item.english}. Ahora toca ${item.english}.`;
+        ? `How do you say ${item.spanish} in English? Say it out loud with me… then touch the word!`
+        : `Escucha y repite conmigo: ${item.english}… ¡${item.english}! ¿Ya lo dijiste? ¡Ahora tócalo!`;
 
   return makeChallenge(context, {
     question,
@@ -1704,9 +1718,9 @@ export function buildCurriculumChallenge({
       question: "¿Cuál osito tiene un moño?",
       prompt: "¿Cuál osito tiene un moño?",
       spokenInstruction:
-        "Escucha con atención. Selecciona al osito que tiene un moño. Muy bien, tú puedes.",
+        "¡Mira estos ositos tan tiernos! Uno tiene un moño precioso… ¿lo ves? ¡Tócalo!",
       voice:
-        "Escucha con atención. Selecciona al osito que tiene un moño. Muy bien, tú puedes.",
+        "¡Mira estos ositos tan tiernos! Uno tiene un moño precioso… ¿lo ves? ¡Tócalo!",
       audioId: challenge.id,
       visualType: "choice-grid",
       visual: Object.freeze({

@@ -25,7 +25,7 @@ const AUDIO_ROOT = path.join(ROOT, "public", "assets", "nido", "audio");
 const GENERATED_AUDIO_DIR = path.join(AUDIO_ROOT, "generated");
 const MANIFEST_PATH = path.join(AUDIO_ROOT, "manifest.json");
 const ENDPOINT = "https://openrouter.ai/api/v1/audio/speech";
-const GENERATOR_VERSION = "nido-teacher-v2";
+const GENERATOR_VERSION = "nido-teacher-v3";
 const MODEL =
   process.env.OPENROUTER_TTS_MODEL || "x-ai/grok-voice-tts-1.0";
 const VOICE = process.env.OPENROUTER_TTS_VOICE || "ara";
@@ -38,7 +38,7 @@ const MAX_ATTEMPTS = 5;
 
 const AGE_PROFILES = Object.freeze({
   "2-3": {
-    speed: 0.87,
+    speed: 0.85,
     style: "cheerful",
     styleDegree: 1.08,
     label: "cálida, pausada y muy clara",
