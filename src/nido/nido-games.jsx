@@ -101,6 +101,78 @@ function createRouteStats(correct = 0) {
 
 const AUTO_ADVANCE_MS = 1500;
 const ROUNDS_KEY = "tesis20.nido.route-rounds";
+const ALBUM_KEY = "tesis20.nido.sticker-album";
+
+// Premios coleccionables: un sticker ilustrado por ruta completada.
+const REWARD_STICKERS = Object.freeze([
+  { name: "Dog", label: "Perrito" },
+  { name: "Cat", label: "Gatito" },
+  { name: "Bird", label: "Pajarito" },
+  { name: "Rabbit", label: "Conejito" },
+  { name: "Cow", label: "Vaquita" },
+  { name: "Horse", label: "Caballito" },
+  { name: "FishSimple", label: "Pececito" },
+  { name: "Butterfly", label: "Mariposa" },
+  { name: "Bug", label: "Mariquita" },
+  { name: "PawPrint", label: "Huellita" },
+  { name: "Tree", label: "Arbolito" },
+  { name: "Flower", label: "Florecita" },
+  { name: "Sun", label: "Solecito" },
+  { name: "Moon", label: "Lunita" },
+  { name: "Cloud", label: "Nubecita" },
+  { name: "Snowflake", label: "Copo de nieve" },
+  { name: "Drop", label: "Gotita" },
+  { name: "Fire", label: "Llamita" },
+  { name: "Umbrella", label: "Paraguas" },
+  { name: "Carrot", label: "Zanahoria" },
+  { name: "Bread", label: "Pancito" },
+  { name: "Coffee", label: "Tacita" },
+  { name: "House", label: "Casita" },
+  { name: "Car", label: "Autito" },
+  { name: "Boat", label: "Barquito" },
+  { name: "Bicycle", label: "Bicicleta" },
+  { name: "Clock", label: "Relojito" },
+  { name: "Backpack", label: "Mochilita" },
+  { name: "Pencil", label: "Lapicito" },
+  { name: "BookOpen", label: "Librito" },
+  { name: "Palette", label: "Paleta de colores" },
+  { name: "Headphones", label: "Audífonos" },
+  { name: "Balloon", label: "Globito" },
+  { name: "Basketball", label: "Pelota" },
+  { name: "GameController", label: "Mando de juego" },
+  { name: "Microphone", label: "Micrófono" },
+  { name: "Star", label: "Estrellita" },
+  { name: "Tooth", label: "Muelita" },
+]);
+
+function loadStickerAlbum() {
+  if (typeof window === "undefined") return {};
+  try {
+    const stored = JSON.parse(window.localStorage.getItem(ALBUM_KEY));
+    return stored && typeof stored === "object" ? stored : {};
+  } catch {
+    return {};
+  }
+}
+
+function hashRewardSeed(value) {
+  let hash = 5381;
+  for (let index = 0; index < value.length; index += 1) {
+    hash = (hash * 33) ^ value.charCodeAt(index);
+  }
+  return Math.abs(hash | 0);
+}
+
+// Elige el premio de la ruta: determinista y, si es posible, uno nuevo.
+function pickRewardSticker(album, seedText) {
+  const start = hashRewardSeed(seedText) % REWARD_STICKERS.length;
+  for (let step = 0; step < REWARD_STICKERS.length; step += 1) {
+    const candidate =
+      REWARD_STICKERS[(start + step) % REWARD_STICKERS.length];
+    if (!album[candidate.name]) return { ...candidate, isNew: true };
+  }
+  return { ...REWARD_STICKERS[start], isNew: false };
+}
 
 function loadRouteRounds() {
   if (typeof window === "undefined") return {};
@@ -604,6 +676,11 @@ export function NidoGamesExperience({
   const [focusMode, setFocusMode] = useState(false);
   const [replayingRoute, setReplayingRoute] = useState(false);
   const [routeRounds, setRouteRounds] = useState(loadRouteRounds);
+  const [stickerAlbum, setStickerAlbum] = useState(loadStickerAlbum);
+  const [latestReward, setLatestReward] = useState(null);
+  const [albumOpen, setAlbumOpen] = useState(false);
+  const [gamesView, setGamesView] = useState("camino");
+  const albumDialogRef = useRef(null);
   const [routeComplete, setRouteComplete] = useState(false);
   const [feedbackEffect, setFeedbackEffect] = useState(null);
 
@@ -652,6 +729,23 @@ export function NidoGamesExperience({
     [currentGameIndex, currentRound, selectedAge, selectedArea, selectedCategory],
   );
   const answerIsCorrect = selectedAnswer === challenge.answerId;
+  const pathCurrentId = useMemo(() => {
+    for (const areaItem of NIDO_CURRICULUM) {
+      for (const categoryItem of areaItem.categories) {
+        if (
+          getProgressValue(
+            progress,
+            selectedAge,
+            areaItem.id,
+            categoryItem.id,
+          ) < NIDO_CURRICULUM_GAME_COUNT
+        ) {
+          return `${areaItem.id}:${categoryItem.id}`;
+        }
+      }
+    }
+    return null;
+  }, [progress, selectedAge]);
   const progressSummary = useMemo(
     () => getProgressSummary(progress, selectedAge),
     [progress, selectedAge],
@@ -977,6 +1071,29 @@ export function NidoGamesExperience({
     autoAdvanceTimerRef.current = null;
   };
 
+  useEffect(() => {
+    if (!albumOpen) return undefined;
+    const dialog = albumDialogRef.current;
+    if (dialog && !dialog.open) {
+      try {
+        dialog.showModal();
+      } catch {
+        dialog.setAttribute("open", "");
+      }
+    }
+    const handleKey = (event) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        setAlbumOpen(false);
+      }
+    };
+    document.addEventListener("keydown", handleKey);
+    return () => {
+      document.removeEventListener("keydown", handleKey);
+      if (dialog?.open) dialog.close();
+    };
+  }, [albumOpen]);
+
   const resetActivity = () => {
     clearAutoAdvance();
     setSelectedAnswer("");
@@ -1129,6 +1246,7 @@ export function NidoGamesExperience({
     setRouteStats(createRouteStats(startingGameIndex));
     setReplayingRoute(isReplay);
     setRouteComplete(false);
+    setLatestReward(null);
     clearFeedbackEffect();
     stopFeedbackSound();
     setFocusMode(true);
@@ -1271,6 +1389,22 @@ export function NidoGamesExperience({
     } else {
       stopInstruction();
       clearFeedbackEffect();
+      const reward = pickRewardSticker(
+        stickerAlbum,
+        `${selectedAge}|${selectedArea}|${selectedCategory}|${currentRound}`,
+      );
+      setLatestReward(reward);
+      if (reward.isNew) {
+        setStickerAlbum((current) => {
+          const next = { ...current, [reward.name]: true };
+          try {
+            window.localStorage.setItem(ALBUM_KEY, JSON.stringify(next));
+          } catch {
+            // El premio se muestra igual aunque no se pueda persistir.
+          }
+          return next;
+        });
+      }
       setRouteComplete(true);
       onStatus(
         `¡Subcategoría ${category.name} completada para ${age.label}!`,
@@ -1314,7 +1448,17 @@ export function NidoGamesExperience({
               profesional.
             </p>
           </div>
-          <a href="#precios">Ver precios y accesos</a>
+          <div className="nido-games__heading-actions">
+            <button
+              className="nido-games__album-button"
+              type="button"
+              onClick={() => setAlbumOpen(true)}
+            >
+              <Star size={19} weight="fill" aria-hidden="true" />
+              Mi álbum · {Object.keys(stickerAlbum).length}/{REWARD_STICKERS.length}
+            </button>
+            <a href="#precios">Ver precios y accesos</a>
+          </div>
         </header>
 
         <div className="nido-games__age-progress">
@@ -1373,6 +1517,168 @@ export function NidoGamesExperience({
           </aside>
         </div>
 
+        <div
+          className="nido-games__view-toggle"
+          role="tablist"
+          aria-label="Cómo quieres jugar"
+        >
+          <button
+            className={gamesView === "camino" ? "is-selected" : ""}
+            type="button"
+            role="tab"
+            aria-selected={gamesView === "camino"}
+            onClick={() => setGamesView("camino")}
+          >
+            Camino de aprendizaje
+          </button>
+          <button
+            className={gamesView === "explorar" ? "is-selected" : ""}
+            type="button"
+            role="tab"
+            aria-selected={gamesView === "explorar"}
+            onClick={() => setGamesView("explorar")}
+          >
+            Explorar por áreas
+          </button>
+        </div>
+
+        {gamesView === "camino" ? (
+          <div className="nido-games__path" aria-label="Camino de aprendizaje">
+            {NIDO_CURRICULUM.map((areaItem) => {
+              const areaDone = areaItem.categories.filter(
+                (categoryItem) =>
+                  getProgressValue(
+                    progress,
+                    selectedAge,
+                    areaItem.id,
+                    categoryItem.id,
+                  ) >= NIDO_CURRICULUM_GAME_COUNT,
+              ).length;
+
+              return (
+                <section
+                  className="nido-games__path-area"
+                  data-area={areaItem.id}
+                  key={areaItem.id}
+                >
+                  <header className="nido-games__path-area-heading">
+                    <span aria-hidden="true">
+                      <NidoGlyph
+                        name={areaItem.iconName}
+                        size={26}
+                        weight="duotone"
+                      />
+                    </span>
+                    <strong>{areaItem.name}</strong>
+                    <small>
+                      {areaDone}/{areaItem.categories.length} rutas
+                    </small>
+                  </header>
+                  <ol className="nido-games__path-nodes">
+                    {areaItem.categories.map((categoryItem) => {
+                      const completed = getProgressValue(
+                        progress,
+                        selectedAge,
+                        areaItem.id,
+                        categoryItem.id,
+                      );
+                      const done = completed >= NIDO_CURRICULUM_GAME_COUNT;
+                      const isCurrent =
+                        pathCurrentId === `${areaItem.id}:${categoryItem.id}`;
+                      const nodeRound = getRoundValue(
+                        routeRounds,
+                        selectedAge,
+                        areaItem.id,
+                        categoryItem.id,
+                      );
+
+                      return (
+                        <li
+                          className={
+                            done
+                              ? "is-done"
+                              : isCurrent
+                                ? "is-current"
+                                : "is-pending"
+                          }
+                          key={categoryItem.id}
+                        >
+                          {isCurrent ? (
+                            <NidoMascot
+                              className="nido-games__path-mascot"
+                              pose="hola"
+                              size={72}
+                              aria-hidden="true"
+                            />
+                          ) : null}
+                          <button
+                            type="button"
+                            aria-label={`${done ? "Ruta completada" : isCurrent ? "Tu siguiente paso" : "Ruta"}: ${categoryItem.name}. ${completed} de 20 retos.`}
+                            onClick={(event) =>
+                              startCategory(categoryItem.id, event, areaItem.id)
+                            }
+                          >
+                            <span
+                              className="nido-games__path-node-icon"
+                              aria-hidden="true"
+                            >
+                              <NidoGlyph
+                                name={categoryItem.iconName}
+                                size={34}
+                                weight="duotone"
+                              />
+                              {done ? (
+                                <CheckCircle
+                                  className="nido-games__path-node-check"
+                                  size={22}
+                                  weight="fill"
+                                />
+                              ) : null}
+                            </span>
+                            <span className="nido-games__path-node-copy">
+                              <strong>{categoryItem.name}</strong>
+                              <small>
+                                {done
+                                  ? nodeRound > 0
+                                    ? `¡Completada! · Ronda ${nodeRound + 1} lista`
+                                    : "¡Completada! Toca para una ronda nueva"
+                                  : isCurrent
+                                    ? `Tu siguiente paso · ${completed}/20`
+                                    : `${completed}/20 retos`}
+                              </small>
+                            </span>
+                            <span
+                              className="nido-games__path-node-stars"
+                              aria-hidden="true"
+                            >
+                              <Star
+                                size={17}
+                                weight="fill"
+                                className={completed >= 7 ? "is-on" : ""}
+                              />
+                              <Star
+                                size={21}
+                                weight="fill"
+                                className={completed >= 14 ? "is-on" : ""}
+                              />
+                              <Star
+                                size={17}
+                                weight="fill"
+                                className={done ? "is-on" : ""}
+                              />
+                            </span>
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ol>
+                </section>
+              );
+            })}
+          </div>
+        ) : null}
+
+        {gamesView === "explorar" ? (
         <div className="nido-games__learning">
           <nav className="nido-games__areas" aria-label="Áreas de aprendizaje">
             {NIDO_CURRICULUM.map((areaOption) => {
@@ -1535,7 +1841,63 @@ export function NidoGamesExperience({
             </footer>
           </article>
         </div>
+        ) : null}
       </div>
+
+      {albumOpen && typeof document !== "undefined"
+        ? createPortal(
+            <dialog
+              className="nido-games__album-dialog"
+              ref={albumDialogRef}
+              aria-labelledby="nido-album-title"
+              onCancel={(event) => {
+                event.preventDefault();
+                setAlbumOpen(false);
+              }}
+            >
+              <div className="nido-games__album-shell">
+                <header>
+                  <div>
+                    <span>Tu colección de premios</span>
+                    <h2 id="nido-album-title">Mi álbum de stickers</h2>
+                    <p>
+                      Gana un sticker nuevo cada vez que completes una ruta de
+                      20 retos.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    aria-label="Cerrar álbum"
+                    onClick={() => setAlbumOpen(false)}
+                  >
+                    <X size={26} weight="bold" aria-hidden="true" />
+                  </button>
+                </header>
+                <ul className="nido-games__album-grid">
+                  {REWARD_STICKERS.map((reward) => {
+                    const owned = Boolean(stickerAlbum[reward.name]);
+                    const RewardArt = STICKERS[reward.name];
+                    return (
+                      <li
+                        className={owned ? "is-owned" : "is-locked"}
+                        key={reward.name}
+                      >
+                        <span
+                          className="nido-games__album-art"
+                          aria-hidden="true"
+                        >
+                          {RewardArt ? <RewardArt size={54} /> : null}
+                        </span>
+                        <small>{owned ? reward.label : "?"}</small>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            </dialog>,
+            document.body,
+          )
+        : null}
 
       {focusMode && typeof document !== "undefined"
         ? createPortal(
@@ -1692,6 +2054,27 @@ export function NidoGamesExperience({
                         <small>Mejor racha</small>
                       </span>
                     </div>
+                    {latestReward && STICKERS[latestReward.name] ? (
+                      <div className="nido-games__reward" role="status">
+                        <span
+                          className="nido-games__reward-art"
+                          aria-hidden="true"
+                        >
+                          {(() => {
+                            const RewardArt = STICKERS[latestReward.name];
+                            return <RewardArt size={72} />;
+                          })()}
+                        </span>
+                        <span className="nido-games__reward-copy">
+                          <small>
+                            {latestReward.isNew
+                              ? "¡Nuevo sticker para tu álbum!"
+                              : "¡Sticker de colección!"}
+                          </small>
+                          <strong>{latestReward.label}</strong>
+                        </span>
+                      </div>
+                    ) : null}
                     <div className="nido-games__focus-success-actions">
                       <button
                         className="nido-games__focus-success-next"
