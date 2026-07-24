@@ -1,31 +1,31 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ArrowRight } from "@phosphor-icons/react/ArrowRight";
-import { Baby } from "@phosphor-icons/react/Baby";
-import { BookOpen } from "@phosphor-icons/react/BookOpen";
-import { CalendarBlank } from "@phosphor-icons/react/CalendarBlank";
-import { ChalkboardTeacher } from "@phosphor-icons/react/ChalkboardTeacher";
-import { CheckCircle } from "@phosphor-icons/react/CheckCircle";
-import { Clock } from "@phosphor-icons/react/Clock";
-import { Flask } from "@phosphor-icons/react/Flask";
-import { Heart } from "@phosphor-icons/react/Heart";
-import { IdentificationCard } from "@phosphor-icons/react/IdentificationCard";
-import { Lock } from "@phosphor-icons/react/Lock";
-import { MusicNotes } from "@phosphor-icons/react/MusicNotes";
-import { PaintBrush } from "@phosphor-icons/react/PaintBrush";
-import { PersonSimpleRun } from "@phosphor-icons/react/PersonSimpleRun";
-import { PuzzlePiece } from "@phosphor-icons/react/PuzzlePiece";
-import { ShieldCheck } from "@phosphor-icons/react/ShieldCheck";
-import { SignOut } from "@phosphor-icons/react/SignOut";
-import { Sparkle } from "@phosphor-icons/react/Sparkle";
-import { Star } from "@phosphor-icons/react/Star";
-import { Student } from "@phosphor-icons/react/Student";
-import { Sun } from "@phosphor-icons/react/Sun";
-import { Trash } from "@phosphor-icons/react/Trash";
-import { UsersThree } from "@phosphor-icons/react/UsersThree";
-import { X } from "@phosphor-icons/react/X";
 import { PlatformSwitcher } from "../platform-switcher.jsx";
 import { NIDO_CLASSES, NIDO_FILTERS, NIDO_ROLES } from "./nido-data.js";
+import { NidoGamesExperience } from "./nido-games.jsx";
+import { createNidoIcon } from "./nido-icon-map";
 import "./nido-styles.css";
+
+const ArrowRight = createNidoIcon("ArrowRight");
+const Baby = createNidoIcon("Baby");
+const BookOpen = createNidoIcon("BookOpen");
+const CalendarBlank = createNidoIcon("CalendarBlank");
+const ChalkboardTeacher = createNidoIcon("ChalkboardTeacher");
+const CheckCircle = createNidoIcon("CheckCircle");
+const Clock = createNidoIcon("Clock");
+const Flask = createNidoIcon("Flask");
+const Heart = createNidoIcon("Heart");
+const IdentificationCard = createNidoIcon("IdentificationCard");
+const Lock = createNidoIcon("Lock");
+const MusicNotes = createNidoIcon("MusicNotes");
+const PaintBrush = createNidoIcon("PaintBrush");
+const PersonSimpleRun = createNidoIcon("PersonSimpleRun");
+const PuzzlePiece = createNidoIcon("PuzzlePiece");
+const ShieldCheck = createNidoIcon("ShieldCheck");
+const SignOut = createNidoIcon("SignOut");
+const Student = createNidoIcon("Student");
+const Trash = createNidoIcon("Trash");
+const UsersThree = createNidoIcon("UsersThree");
+const X = createNidoIcon("X");
 
 const SESSION_KEY = "tesis20.nido.demo-session";
 
@@ -62,44 +62,6 @@ function getStoredSession() {
   } catch {
     return null;
   }
-}
-
-function NidoIllustration() {
-  return (
-    <div className="nido-illustration" aria-hidden="true">
-      <span className="nido-illustration__sun">
-        <Sun size={28} weight="fill" />
-      </span>
-      <span className="nido-illustration__spark nido-illustration__spark--one">
-        <Sparkle size={24} weight="fill" />
-      </span>
-      <span className="nido-illustration__spark nido-illustration__spark--two">
-        <Star size={20} weight="fill" />
-      </span>
-      <div className="nido-illustration__cloud nido-illustration__cloud--one" />
-      <div className="nido-illustration__cloud nido-illustration__cloud--two" />
-      <div className="nido-illustration__board">
-        <span className="nido-illustration__board-label">Hoy descubrimos</span>
-        <div className="nido-illustration__board-icons">
-          <span><BookOpen size={38} weight="duotone" /></span>
-          <span><PuzzlePiece size={40} weight="duotone" /></span>
-          <span><MusicNotes size={36} weight="duotone" /></span>
-        </div>
-      </div>
-      <div className="nido-illustration__child nido-illustration__child--one">
-        <span className="nido-illustration__head"><Baby size={46} weight="duotone" /></span>
-        <span className="nido-illustration__body" />
-      </div>
-      <div className="nido-illustration__child nido-illustration__child--two">
-        <span className="nido-illustration__head"><Baby size={46} weight="duotone" /></span>
-        <span className="nido-illustration__body" />
-      </div>
-      <div className="nido-illustration__table">
-        <span className="nido-illustration__paper" />
-        <span className="nido-illustration__pencil" />
-      </div>
-    </div>
-  );
 }
 
 function FilterSelect({ id, label, value, options, onChange }) {
@@ -371,7 +333,7 @@ export default function NidoPage() {
   const [loginOpen, setLoginOpen] = useState(false);
   const [selectedRole, setSelectedRole] = useState("alumno");
   const [statusMessage, setStatusMessage] = useState("");
-  const catalogRef = useRef(null);
+  const pricesRef = useRef(null);
 
   const filteredClasses = useMemo(
     () =>
@@ -395,8 +357,8 @@ export default function NidoPage() {
     });
   };
 
-  const scrollToCatalog = () => {
-    scrollToElement(catalogRef.current);
+  const scrollToClasses = () => {
+    scrollToElement(document.getElementById("clases"));
   };
 
   const closeLogin = useCallback(() => setLoginOpen(false), []);
@@ -458,10 +420,8 @@ export default function NidoPage() {
             </a>
           </div>
           <nav className="nido-nav" aria-label="Navegación de Nido">
-            <a href="#nido-inicio">Inicio</a>
             <a href="#clases">Clases</a>
-            <a href="#como-funciona">Cómo funciona</a>
-            <a href="#preguntas">Preguntas</a>
+            <a href="#precios">Precios</a>
           </nav>
           {session ? (
             <div className="nido-header__session">
@@ -490,50 +450,20 @@ export default function NidoPage() {
       </header>
 
       <main id="nido-main">
-        <section className="nido-hero" id="nido-inicio" aria-labelledby="nido-hero-title">
-          <div className="nido-shell nido-hero__inner">
-            <div className="nido-hero__copy">
-              <span className="nido-kicker">Aprendizaje temprano · clases virtuales</span>
-              <h1 id="nido-hero-title">Aprender jugando, crecer con confianza</h1>
-              <p>
-                Experiencias en vivo, cercanas y creativas para acompañar cada etapa
-                con docentes que convierten la curiosidad en aprendizaje.
-              </p>
-              <div className="nido-hero__actions">
-                <button type="button" onClick={scrollToCatalog}>
-                  Explorar clases
-                  <ArrowRight size={20} weight="bold" aria-hidden="true" />
-                </button>
-                {!session ? (
-                  <button type="button" onClick={() => openLogin("alumno")}>
-                    Conocer mi acceso
-                  </button>
-                ) : (
-                  <a href="#mi-espacio">Ir a mi espacio</a>
-                )}
-              </div>
-              <ul className="nido-hero__benefits" aria-label="Beneficios de Tesis20 Nido">
-                <li><CheckCircle weight="fill" aria-hidden="true" /> Grupos pequeños</li>
-                <li><CheckCircle weight="fill" aria-hidden="true" /> Docentes cercanos</li>
-                <li><CheckCircle weight="fill" aria-hidden="true" /> Aprendizaje activo</li>
-              </ul>
-            </div>
-            <NidoIllustration />
-          </div>
-        </section>
+        <NidoGamesExperience onStatus={setStatusMessage} />
 
-        {session ? <RoleWorkspace session={session} onExplore={scrollToCatalog} /> : null}
+        {session ? <RoleWorkspace session={session} onExplore={scrollToClasses} /> : null}
 
-        <section className="nido-catalog" id="clases" ref={catalogRef} aria-labelledby="nido-catalog-title">
+        <section className="nido-catalog" id="precios" ref={pricesRef} aria-labelledby="nido-catalog-title">
           <div className="nido-shell">
             <header className="nido-section-heading">
               <div>
-                <span className="nido-kicker">Elige a su ritmo</span>
-                <h2 id="nido-catalog-title">Clases para descubrir y crear</h2>
+                <span className="nido-kicker">Accesos flexibles</span>
+                <h2 id="nido-catalog-title">Clases y precios para seguir avanzando</h2>
               </div>
               <p>
-                Filtra la propuesta por etapa, interés, docente u horario. Todo el
-                catálogo es demostrativo.
+                Filtra por etapa, curso, docente u horario. Los precios referenciales
+                aparecen únicamente al entrar en la demostración.
               </p>
             </header>
 

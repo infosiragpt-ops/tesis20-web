@@ -1,0 +1,16 @@
+{
+  "provider": "local-prerecorded",
+  "preferredProvider": "elevenlabs",
+  "model": "eleven_multilingual_v2",
+  "voiceId": "EXAVITQu4vr4xnSDxMaL",
+  "fallbackProvider": "browser-speech-synthesis",
+  "feedbackProvider": "local-prerecorded",
+  "feedbackFallback": "web-audio",
+  "feedbackTracks": {
+    "success": "/assets/nido/audio/success-tiriri-yupi-v1.mp3",
+    "error": "/assets/nido/audio/error-tin-ton-v1.mp3"
+  },
+  "tracks": {
+    "attention-2-3-level-1": "/assets/nido/audio/attention-2-3-level-1-v1.mp3"
+  }
+}

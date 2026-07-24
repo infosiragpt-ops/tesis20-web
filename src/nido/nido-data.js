@@ -90,7 +90,7 @@ export const NIDO_CLASSES = [
     id: "pequenos-cientificos",
     title: "Pequeños científicos",
     summary: "Descubrimos el mundo con preguntas y experimentos seguros en casa.",
-    age: "7 a 8 años",
+    age: "6 años",
     course: "Ciencia",
     teacher: "Profe Diego",
     schedule: "Tarde",
@@ -120,7 +120,7 @@ export const NIDO_CLASSES = [
     id: "emociones-amistad",
     title: "Emociones y amistad",
     summary: "Aprendemos a reconocer lo que sentimos y a convivir con empatía.",
-    age: "7 a 8 años",
+    age: "6 años",
     course: "Socioemocional",
     teacher: "Miss Camila",
     schedule: "Mañana",
@@ -134,7 +134,7 @@ export const NIDO_CLASSES = [
 ];
 
 export const NIDO_FILTERS = {
-  age: ["3 a 4 años", "5 a 6 años", "7 a 8 años"],
+  age: ["3 a 4 años", "5 a 6 años", "6 años"],
   course: [...new Set(NIDO_CLASSES.map((classItem) => classItem.course))],
   teacher: [...new Set(NIDO_CLASSES.map((classItem) => classItem.teacher))],
   schedule: ["Mañana", "Tarde"],

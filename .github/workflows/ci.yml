@@ -42,5 +42,8 @@ jobs:
       - name: Compilar
         run: npm run build
 
+      - name: Verificar currículo y retos de Nido
+        run: npm run check:nido
+
       - name: Verificar HTML por ruta, SEO, enlaces, CSP, PWA y presupuesto
         run: npm run quality
