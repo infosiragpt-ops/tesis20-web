@@ -422,6 +422,60 @@ function getVisualItems(visual) {
   return [];
 }
 
+// Celebración en el punto tocado. El acierto se marcaba solo tiñendo el botón
+// de verde: correcto, pero mudo. Las chispas salen justo de donde apoyó el dedo
+// para que la recompensa se lea como consecuencia del gesto y no como un aviso
+// del sistema. Se pintan en el `body` con posición fija porque los botones
+// recortan su contenido (`overflow: hidden`) y ahí quedarían encerradas.
+const TAP_BURST_SHARDS = 9;
+const TAP_BURST_REACH = 58;
+
+function burstFromEvent(event) {
+  if (window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches) return;
+  const rect = event.currentTarget?.getBoundingClientRect?.();
+  // Con teclado no hay coordenadas de puntero (`detail` es 0): las chispas
+  // salen del centro del botón enfocado.
+  const pointer = event.detail > 0 && (event.clientX || event.clientY);
+  const x = pointer ? event.clientX : rect ? rect.left + rect.width / 2 : 0;
+  const y = pointer ? event.clientY : rect ? rect.top + rect.height / 2 : 0;
+  if (!x && !y) return;
+
+  const burst = document.createElement("span");
+  burst.className = "nido-games__tap-burst";
+  burst.style.left = `${x}px`;
+  burst.style.top = `${y}px`;
+  for (let index = 0; index < TAP_BURST_SHARDS; index += 1) {
+    const shard = document.createElement("i");
+    const angle = (index / TAP_BURST_SHARDS) * Math.PI * 2;
+    const reach = TAP_BURST_REACH * (index % 2 ? 0.68 : 1);
+    shard.style.setProperty("--burst-x", `${Math.cos(angle) * reach}px`);
+    shard.style.setProperty("--burst-y", `${Math.sin(angle) * reach}px`);
+    shard.style.setProperty("--burst-delay", `${index * 14}ms`);
+    burst.append(shard);
+  }
+  document.body.append(burst);
+  window.setTimeout(() => burst.remove(), 900);
+}
+
+function answerBurst(challenge, option, event) {
+  if (option.id === challenge.answerId) burstFromEvent(event);
+}
+
+// A los 2–3 años nadie lee todavía: el rótulo bajo el dibujo solo roba altura,
+// obliga a encoger el objeto tocable y compite con la ilustración. Se conserva
+// cuando la opción no trae dibujo propio —ahí el texto *es* la opción— y para
+// 4–5 y 6 años, que ya descifran palabras. El `aria-label` del botón nunca
+// pierde la etiqueta, así que el lector de pantalla y la locución no cambian.
+function showsOptionLabel(challenge, option) {
+  if (challenge.ageId !== "2-3") return true;
+  return !(
+    option.iconName ||
+    option.imageSrc ||
+    option.meta?.count !== undefined ||
+    /option-group-\d+/.test(option.id ?? "")
+  );
+}
+
 function Picture({ item, compact = false }) {
   const value = typeof item === "object" && item !== null ? item : { value: item };
   const icon = value.iconName ?? value.value?.iconName;
@@ -542,16 +596,12 @@ function SceneChoice({
       aria-label={`${ariaLabel ?? optionPresentationLabel(challenge, option)}${
         incorrect ? ". Opción ya intentada." : ""
       }`}
-      style={{
-        gridTemplateColumns: "1fr",
-        placeItems: "center",
-        minHeight: 48,
-        padding: 4,
-        textAlign: "center",
-        ...style,
-      }}
+      style={style}
       disabled={incorrect || (locked && !chosen)}
-      onClick={() => onAnswer(option.id)}
+      onClick={(event) => {
+        answerBurst(challenge, option, event);
+        onAnswer(option.id);
+      }}
     >
       {children}
     </button>
@@ -586,23 +636,20 @@ function DirectTapScene({
 
   return (
     <div
-      className="nido-games__mechanic is-options"
+      className="nido-games__mechanic is-options nido-games__direct-scene"
       data-direct-kind={visual.kind}
-      style={{
-        width: "min(460px, 100%)",
-        gap: 7,
-        padding: isCamouflage ? 9 : 4,
-        borderRadius: 18,
-        background: isCamouflage
-          ? visual.backgroundTone
-          : "rgba(255,255,255,.68)",
-      }}
+      data-options={challenge.options.length}
+      style={
+        isCamouflage
+          ? { "--direct-canvas": visual.backgroundTone }
+          : undefined
+      }
     >
       {visual.kind === "detective-clues" ? (
         <span
+          className="nido-games__direct-clues"
           role="group"
           aria-label="Pistas del detective"
-          style={{ justifyContent: "center", gap: 6 }}
         >
           {visual.clues.map((clue) => (
             <VisualToken item={clue} key={`${clue.type}-${clue.value}`} />
@@ -622,14 +669,9 @@ function DirectTapScene({
       ) : null}
       {prompt ? <b>{prompt}</b> : null}
       <span
+        className="nido-games__direct-options"
         role="group"
         aria-label="Objetos tocables de la escena"
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit,minmax(88px,1fr))",
-          gap: 7,
-          width: "100%",
-        }}
       >
         {challenge.options.map((option) => {
           const presentationLabel = optionPresentationLabel(
@@ -645,21 +687,15 @@ function DirectTapScene({
               locked={locked}
               onAnswer={onAnswer}
               ariaLabel={`${presentationLabel} dentro de la escena`}
-              style={
-                isCamouflage
-                  ? {
-                      minHeight: 76,
-                      borderColor: "rgba(255,255,255,.62)",
-                      background: "transparent",
-                    }
-                  : undefined
-              }
+              className="nido-games__direct-choice"
               key={option.id}
             >
               <Picture
                 item={{ ...option, label: presentationLabel }}
               />
-              {isCamouflage ? null : <small>{presentationLabel}</small>}
+              {isCamouflage || !showsOptionLabel(challenge, option) ? null : (
+                <small>{presentationLabel}</small>
+              )}
             </SceneChoice>
           );
         })}
@@ -1122,13 +1158,16 @@ function InteractiveOption({
       aria-pressed={pressed ?? chosen}
       aria-label={`${option.label}${incorrect ? ". Opción ya intentada." : ""}`}
       disabled={incorrect || (locked && !chosen)}
-      onClick={onClick}
+      onClick={(event) => {
+        answerBurst(challenge, option, event);
+        onClick?.(event);
+      }}
       {...buttonProps}
     >
       <span className="nido-games__interactive-art" aria-hidden="true">
         <OptionArtwork challenge={challenge} option={option} />
       </span>
-      <span>{option.label}</span>
+      {showsOptionLabel(challenge, option) ? <span>{option.label}</span> : null}
       {correct ? (
         <CheckCircle size={28} weight="fill" aria-hidden="true" />
       ) : incorrect ? (
@@ -2165,9 +2204,12 @@ function ChallengeAnswers({
           (/^-?\d+(?:[.,]\d+)?$/.test(String(option.label).trim())
             ? option.label
             : null);
+        // Sin rótulo la tarjeta se reordena a una sola columna centrada: el
+        // dibujo pasa a ser la respuesta entera en vez de un icono al margen.
         const visualOnly =
-          numericValue !== null &&
-          String(numericValue) === String(option.label);
+          !showsOptionLabel(challenge, option) ||
+          (numericValue !== null &&
+            String(numericValue) === String(option.label));
         const presentationLabel = optionPresentationLabel(challenge, option);
         const presentationOption =
           presentationLabel === option.label
@@ -2194,7 +2236,10 @@ function ChallengeAnswers({
             aria-pressed={chosen}
             aria-label={`${presentationLabel}${incorrect ? ". Opción ya intentada." : ""}`}
             disabled={incorrect || (locked && !chosen)}
-            onClick={() => onAnswer(option.id)}
+            onClick={(event) => {
+              answerBurst(challenge, option, event);
+              onAnswer(option.id);
+            }}
             key={option.id}
           >
             <span className="nido-games__answer-index" aria-hidden="true">

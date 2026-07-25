@@ -261,6 +261,25 @@
   box-shadow: inset 0 -12px 0 var(--token-tone);
 }
 
+/* Pista de color sin dibujo: la franja inferior quedaba recortada por el radio
+   de la ficha y se leía como un error de pintura. Un disco del color, del
+   tamaño de los stickers vecinos, dice «rojo» a un niño que aún no lee. */
+.nido-games__visual-token.has-tone:not(:has(.nido-games__picture)) {
+  box-shadow: none;
+}
+
+.nido-games__visual-token.has-tone:not(:has(.nido-games__picture))::before {
+  content: "";
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: var(--token-tone);
+  box-shadow:
+    inset 0 -5px 0 rgba(16, 35, 63, 0.16),
+    0 0 0 3px white,
+    0 0 0 5px rgba(16, 35, 63, 0.1);
+}
+
 .nido-games__visual-token strong {
   max-width: 100px;
   overflow: hidden;

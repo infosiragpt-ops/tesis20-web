@@ -528,6 +528,176 @@
   filter: drop-shadow(0 2px 4px rgba(16, 35, 63, 0.16));
 }
 
+/* Chispas del acierto. Viven en el `body` con posición fija: los botones
+   recortan su contenido y encerrarlas dentro les quitaba todo el impulso. */
+.nido-games__tap-burst {
+  position: fixed;
+  z-index: 60;
+  pointer-events: none;
+}
+
+.nido-games__tap-burst i {
+  position: absolute;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: var(--a);
+  box-shadow: inset 0 -3px 0 rgba(16, 35, 63, 0.16);
+  opacity: 0;
+  animation: nido-tap-burst 620ms cubic-bezier(0.18, 0.86, 0.32, 1)
+    var(--burst-delay, 0ms) both;
+}
+
+.nido-games__tap-burst i:nth-child(3n) {
+  background: #2ba96f;
+}
+
+.nido-games__tap-burst i:nth-child(3n + 2) {
+  background: #ffc247;
+}
+
+@keyframes nido-tap-burst {
+  0% {
+    transform: translate(-50%, -50%) scale(0.3);
+    opacity: 0;
+  }
+
+  18% {
+    opacity: 1;
+  }
+
+  100% {
+    transform: translate(
+        calc(-50% + var(--burst-x, 0px)),
+        calc(-50% + var(--burst-y, 0px))
+      )
+      scale(0.42);
+    opacity: 0;
+  }
+}
+
+/* Escena de toque directo (detective, camuflaje, personaje escondido…). El
+   contenedor heredaba `justify-content: center` de `.nido-games__mechanic`, así
+   que su única columna se ajustaba al contenido: los objetos tocables caían en
+   una tira de 158 px en mitad de una escena de 1074 px, con las etiquetas
+   partidas en dos líneas. Con la columna en `1fr` la escena ocupa su sitio y
+   los objetos crecen hasta ser tocables por una mano de tres años. */
+/* Los selectores llevan `.nido-games__mechanic` a propósito: la hoja base de
+   los mecanismos se inyecta después que esta y, a igual especificidad, ganaba
+   ella (de ahí el `justify-content: center` que encogía la columna). */
+.nido-games__mechanic.nido-games__direct-scene {
+  width: min(660px, 100%);
+  grid-template-columns: minmax(0, 1fr);
+  justify-content: stretch;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.nido-games__mechanic.nido-games__direct-scene[data-direct-kind="camouflage"] {
+  background: var(--direct-canvas, rgba(255, 255, 255, 0.72));
+}
+
+.nido-games__direct-scene > b {
+  font-size: 0.98rem;
+  text-align: center;
+}
+
+.nido-games__mechanic.is-options > span.nido-games__direct-clues {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+}
+
+.nido-games__mechanic.is-options > span.nido-games__direct-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(128px, 1fr));
+  gap: 10px;
+  width: 100%;
+}
+
+/* Con dos o tres opciones caben en una fila aunque la escena sea estrecha; a
+   partir de cuatro conviene que se repartan en dos filas antes que encogerse
+   por debajo del pulgar. */
+.nido-games__direct-scene[data-options="4"] .nido-games__direct-options {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.nido-games__interactive-option.nido-games__direct-choice {
+  min-height: 104px;
+  grid-template-columns: minmax(0, 1fr);
+  place-items: center;
+  gap: 4px;
+  padding: 8px;
+  text-align: center;
+}
+
+/* Al soltar el rótulo, el dibujo hereda todo el botón. Los selectores arrancan
+   en `.nido-games__focus-shell` porque la regla de 2–3 años lo encoge a 56 px
+   más abajo en la hoja y con la misma especificidad ganaría ella. */
+.nido-games__focus-shell[data-age] .nido-games__direct-choice .nido-games__picture {
+  width: 84px;
+  height: 84px;
+}
+
+.nido-games__focus-shell[data-age] .nido-games__direct-choice .nido-games__picture svg {
+  width: 78px;
+  height: 78px;
+}
+
+/* Tarjeta sin rótulo: el dibujo pasa a ocupar el botón entero. Antes quedaba
+   una miniatura de 56 px arrinconada arriba a la izquierda de una tarjeta de
+   574 × 222 px —el hueco que dejó el texto no lo recuperaba nadie— y el objetivo
+   real de toque era diez veces más pequeño que la tarjeta que lo contenía. */
+.nido-games__focus-shell[data-age]
+  .nido-games__answers
+  > button.is-visual-only {
+  grid-template-columns: minmax(0, 1fr);
+  place-items: center;
+  padding: 10px;
+}
+
+.nido-games__focus-shell[data-age]
+  .nido-games__answers
+  > button.is-visual-only
+  .nido-games__answer-visual {
+  width: 100%;
+  height: 100%;
+  min-height: 84px;
+}
+
+.nido-games__focus-shell[data-age]
+  .nido-games__answers
+  > button.is-visual-only
+  .nido-games__picture {
+  width: min(100%, 136px);
+  height: min(100%, 136px);
+}
+
+.nido-games__focus-shell[data-age]
+  .nido-games__answers
+  > button.is-visual-only
+  .nido-games__picture
+  svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* El número sigue arriba a la izquierda, pero sobre un dibujo grande necesita
+   contraste propio para no perderse dentro de la ilustración. */
+.nido-games__answers > button.is-visual-only .nido-games__answer-index {
+  box-shadow: 0 0 0 2px white;
+}
+
+.nido-games__direct-scene[data-direct-kind="camouflage"]
+  .nido-games__direct-choice {
+  min-height: 84px;
+  border-color: rgba(255, 255, 255, 0.62);
+  background: transparent;
+}
+
 .nido-games__focus-dialog .nido-games__focus-result {
   min-height: 58px;
   display: grid;
@@ -2890,5 +3060,11 @@
 
   .nido-games__order-piece.is-dragging {
     transition: none;
+  }
+
+  /* `burstFromEvent` ya ni siquiera crea los nodos con movimiento reducido;
+     esto solo cubre las chispas que quedaran en vuelo al activar el ajuste. */
+  .nido-games__tap-burst {
+    display: none;
   }
 }
