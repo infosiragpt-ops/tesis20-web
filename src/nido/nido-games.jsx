@@ -1825,38 +1825,6 @@ export function NidoGamesExperience({
         </div>
 
         <section
-          className="nido-games__featured"
-          aria-labelledby="nido-featured-title"
-        >
-          <div className="nido-games__featured-scene" aria-hidden="true">
-            <NidoMascot pose="cheer" size={84} />
-          </div>
-          <div className="nido-games__featured-copy">
-            <span className="nido-games__featured-badge">
-              ¡Nuevo videojuego!
-            </span>
-            <h2 id="nido-featured-title">Misión del Bosque</h2>
-            <p>
-              Corre, salta, recoge frutas y entrégalas contando. Matemáticas en
-              movimiento, adaptadas a {age.label}.
-            </p>
-            <small>
-              {bosqueRounds >= 20
-                ? "Misión completada · ¡puedes rejugarla!"
-                : `Ronda ${Math.min(bosqueRounds + 1, 20)} de 20`}
-            </small>
-          </div>
-          <button
-            className="nido-games__featured-play"
-            type="button"
-            onClick={() => setBosqueOpen(true)}
-          >
-            <Play size={26} weight="fill" aria-hidden="true" />
-            Jugar
-          </button>
-        </section>
-
-        <section
           className="nido-games__subjects"
           aria-labelledby="nido-subjects-title"
         >
