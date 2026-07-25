@@ -2,6 +2,11 @@
 // catálogo de stickers ya ilustrado (sin arte nuevo). Cada tema es un
 // "juego" distinto en el hub aunque comparta motor con los demás.
 
+// Ronda a partir de la cual una temática con mecánica especial activa su
+// variante de nivel experto (últimas 4 rondas de 20, ver diseño en
+// docs/PLATAFORMA_JUEGOS_360.md).
+export const MEMORY_EXPERT_ROUND_INDEX = 16;
+
 export const MEMORY_THEMES = Object.freeze([
   {
     id: "bosque",
@@ -26,6 +31,9 @@ export const MEMORY_THEMES = Object.freeze([
     accent: "#4b8ff7",
     accentSoft: "#e3f1ff",
     stickers: ["House", "Door", "Chair", "Bed", "Car", "Boat", "Bicycle", "Package", "Clock", "HouseLine"],
+    // Ayuda extra propia de este mazo: tras varios errores seguidos en la
+    // misma ronda, un "segundo vistazo" breve del tablero completo.
+    specialRule: { type: "secondPeek", errorStreak: 3, peekMs: 900 },
   },
   {
     id: "cole",
@@ -34,6 +42,13 @@ export const MEMORY_THEMES = Object.freeze([
     accent: "#ffc94d",
     accentSoft: "#fff3c9",
     stickers: ["Backpack", "Pencil", "BookOpen", "Palette", "Headphones", "Balloon", "Basketball", "GameController", "Microphone", "Tooth"],
+    // Nivel experto (últimas rondas): una pareja es "intrusa", un objeto que
+    // no es del cole, para sumar un matiz de clasificación a la memoria.
+    specialRule: {
+      type: "intruderPair",
+      fromRoundIndex: MEMORY_EXPERT_ROUND_INDEX,
+      intruderSticker: "Carrot",
+    },
   },
   {
     id: "formas",
@@ -42,8 +57,24 @@ export const MEMORY_THEMES = Object.freeze([
     accent: "#9873e7",
     accentSoft: "#efe7ff",
     stickers: ["Circle", "Square", "Triangle", "Rectangle", "Pentagon", "Hexagon", "Star", "Cube", "CircleDashed", "Smiley"],
+    // Nivel experto (últimas rondas): al completar el tablero, una pregunta
+    // extra de razonamiento geométrico usando figuras que ya aparecieron.
+    specialRule: { type: "bonusSides", fromRoundIndex: MEMORY_EXPERT_ROUND_INDEX },
   },
 ]);
+
+// Número de lados de cada figura del mazo "formas", solo para las que tienen
+// un conteo de lados inequívoco (se excluyen Star, Cube y Smiley a propósito:
+// no son polígonos simples de lados claros y generarían ambigüedad).
+export const MEMORY_SHAPE_SIDES = Object.freeze({
+  Circle: 0,
+  CircleDashed: 0,
+  Triangle: 3,
+  Square: 4,
+  Rectangle: 4,
+  Pentagon: 5,
+  Hexagon: 6,
+});
 
 // Rango por edad: la ronda 1 arranca suave (menos parejas, más tiempo de
 // vista) y la ronda 20 llega al nivel ya afinado de siempre (mismos valores
@@ -133,7 +164,7 @@ function shuffle(items, random) {
  * Genera el tablero de una ronda: una lista de cartas ya barajadas con
  * pares repetidos, determinista por (themeId, ageId, roundIndex).
  *
- * @returns {{ id: string, sticker: string, matched: boolean }[]}
+ * @returns {{ id: string, sticker: string, matched: boolean, isIntruder?: boolean }[]}
  */
 export function createMemoryBoard({ themeId, ageId, roundIndex }) {
   const theme = MEMORY_THEMES.find((item) => item.id === themeId) ?? MEMORY_THEMES[0];
@@ -141,12 +172,57 @@ export function createMemoryBoard({ themeId, ageId, roundIndex }) {
   const random = mulberry(hashText(`memoria|${themeId}|${ageId}|${roundIndex}`));
   const pairCount = Math.min(roundPairCount, theme.stickers.length);
   const chosen = shuffle(theme.stickers, random).slice(0, pairCount);
+
+  let intruderSticker = null;
+  const rule = theme.specialRule;
+  if (rule?.type === "intruderPair" && roundIndex >= rule.fromRoundIndex && chosen.length > 0) {
+    const swapIndex = Math.floor(random() * chosen.length);
+    chosen[swapIndex] = rule.intruderSticker;
+    intruderSticker = rule.intruderSticker;
+  }
+
   const cards = shuffle(
     chosen.flatMap((sticker, index) => [
-      { id: `${sticker}-a`, sticker, pairId: index },
-      { id: `${sticker}-b`, sticker, pairId: index },
+      { id: `${sticker}-a`, sticker, pairId: index, isIntruder: sticker === intruderSticker },
+      { id: `${sticker}-b`, sticker, pairId: index, isIntruder: sticker === intruderSticker },
     ]),
     random,
   );
   return cards.map((card) => ({ ...card, matched: false }));
+}
+
+/**
+ * Ronda con "pareja intrusa" activa para el mazo del tema (si aplica).
+ */
+export function hasIntruderRound(themeId, roundIndex) {
+  const theme = MEMORY_THEMES.find((item) => item.id === themeId);
+  const rule = theme?.specialRule;
+  return rule?.type === "intruderPair" && roundIndex >= rule.fromRoundIndex;
+}
+
+/**
+ * Elige una pregunta bonus de "¿cuál tiene más lados?" a partir de las
+ * figuras que ya aparecen en el tablero de esta ronda, solo con figuras de
+ * lados inequívocos (ver MEMORY_SHAPE_SIDES). Devuelve null si el tablero no
+ * tiene al menos dos figuras distintas con número de lados distinto entre sí
+ * (evita preguntas ambiguas o sin respuesta única).
+ *
+ * @param {{ sticker: string }[]} board
+ */
+export function pickBonusSidesQuestion(board) {
+  const candidates = [...new Set(board.map((card) => card.sticker))].filter(
+    (sticker) => MEMORY_SHAPE_SIDES[sticker] !== undefined,
+  );
+  if (candidates.length < 2) return null;
+  for (let i = 0; i < candidates.length; i += 1) {
+    for (let j = i + 1; j < candidates.length; j += 1) {
+      const a = candidates[i];
+      const b = candidates[j];
+      if (MEMORY_SHAPE_SIDES[a] !== MEMORY_SHAPE_SIDES[b]) {
+        const answer = MEMORY_SHAPE_SIDES[a] > MEMORY_SHAPE_SIDES[b] ? a : b;
+        return { optionA: a, optionB: b, answer };
+      }
+    }
+  }
+  return null;
 }

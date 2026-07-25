@@ -1575,6 +1575,32 @@ function speechChallenge(context) {
   });
 }
 
+// Apoyo visual en español del área de inglés: en las primeras rondas el
+// español acompaña siempre a la palabra en inglés; en las rondas intermedias
+// solo aparece la primera vez que la ruta presenta esa palabra; en las
+// rondas avanzadas/expertas desaparece (solo audio + imagen). Es una capa
+// puramente visual: la narración (y su audio pregrabado) no cambia nunca.
+const ENGLISH_SUPPORT_FULL_UNTIL = 7;
+const ENGLISH_SUPPORT_NONE_FROM = 14;
+
+function englishWordIndex(words, age, gameIndex) {
+  return (
+    (gameIndex + (age.difficulty - 1) * Math.max(1, words.length / 5)) %
+    words.length
+  );
+}
+
+function englishSpanishSupport({ words, age, gameIndex }) {
+  if (age.id === "2-3") return true;
+  if (gameIndex < ENGLISH_SUPPORT_FULL_UNTIL) return true;
+  if (gameIndex >= ENGLISH_SUPPORT_NONE_FROM) return false;
+  const current = englishWordIndex(words, age, gameIndex);
+  for (let earlier = 0; earlier < gameIndex; earlier += 1) {
+    if (englishWordIndex(words, age, earlier) === current) return false;
+  }
+  return true;
+}
+
 function englishChallenge(context) {
   const { categoryItem, age, gameIndex, seed } = context;
   const words = ENGLISH_VOCABULARY[categoryItem.strategy];
@@ -1627,6 +1653,13 @@ function englishChallenge(context) {
         ? `How do you say ${item.spanish} in English? Say it out loud with me… then touch the word!`
         : `Escucha y repite conmigo: ${item.english}… ¡${item.english}! ¿Ya lo dijiste? ¡Ahora tócalo!`;
 
+  // En modo inverso la palabra grande en inglés ES la consigna, siempre se
+  // muestra; el retiro gradual solo aplica al apoyo en español del modo
+  // directo (es→en).
+  const spanishSupport = reverse
+    ? true
+    : englishSpanishSupport({ words, age, gameIndex });
+
   return makeChallenge(context, {
     question,
     spokenInstruction,
@@ -1635,7 +1668,8 @@ function englishChallenge(context) {
     visual: {
       sourceLanguage: reverse ? "en" : "es",
       targetLanguage: reverse ? "es" : "en",
-      word: reverse ? item.english : item.spanish,
+      word: reverse ? item.english : spanishSupport ? item.spanish : null,
+      spanishSupport,
       iconName: item.iconName,
       tone: item.tone ?? null,
       numericValue: item.value ?? null,

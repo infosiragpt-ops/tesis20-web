@@ -166,6 +166,57 @@
   }
 }
 
+/* --- Pregunta bonus (Memoria de las Formas, nivel experto) --- */
+
+.memoria__bonus {
+  position: absolute;
+  left: 50%;
+  bottom: 18px;
+  transform: translateX(-50%);
+  display: grid;
+  gap: 10px;
+  justify-items: center;
+  padding: 14px 18px;
+  max-width: min(92%, 420px);
+  border-radius: 18px;
+  background: rgba(16, 35, 63, 0.92);
+  box-shadow: 0 16px 34px rgba(16, 35, 63, 0.3);
+}
+
+.memoria__bonus-question {
+  margin: 0;
+  color: #ffffff;
+  font-size: 0.86rem;
+  font-weight: 800;
+  text-align: center;
+}
+
+.memoria__bonus-options {
+  display: flex;
+  gap: 12px;
+}
+
+.memoria__bonus-option {
+  display: grid;
+  place-items: center;
+  gap: 4px;
+  min-width: 84px;
+  padding: 10px 14px;
+  border: 0;
+  border-radius: 16px;
+  background: #ffffff;
+  color: #10233f;
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: capitalize;
+  cursor: pointer;
+  transition: transform 120ms ease;
+}
+
+.memoria__bonus-option:hover {
+  transform: translateY(-2px);
+}
+
 /* --- Overlays --- */
 
 .memoria__overlay {

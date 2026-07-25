@@ -8,9 +8,13 @@ import { createAudioDirector } from "../audio/audio-director.js";
 import { createGameLoop } from "../core/game-loop.js";
 import { createDifficultyAdapter } from "../learning/difficulty.js";
 import {
+  CATCH_EXPERT_ROUND_INDEX,
   CATCH_ROUNDS,
   CATCH_THEMES,
+  cieloSecondaryTarget,
   createCatchRound,
+  formasAttributeTargets,
+  huertoTargetSwitch,
 } from "../content/catch-mission.js";
 import { STICKERS } from "../../stickers/sticker-registry.jsx";
 import "./catch-game.css";
@@ -72,6 +76,18 @@ export default function CatchGame({
     [ageId, roundIndex, theme.id],
   );
 
+  // Variantes propias por mundo, derivadas de la ronda actual (ver
+  // catch-mission.js): Cielo suma un segundo objetivo con doble puntaje,
+  // Formas cambia el objetivo por "figuras con N lados".
+  const secondaryTarget = useMemo(
+    () => cieloSecondaryTarget({ themeId: theme.id, theme, roundIndex, target: round.target, count: round.count }),
+    [theme, roundIndex, round.target, round.count],
+  );
+  const attributeMode = useMemo(
+    () => formasAttributeTargets({ themeId: theme.id, theme, roundIndex, target: round.target }),
+    [theme, roundIndex, round.target],
+  );
+
   const stateRef = useRef({
     items: [],
     basketX: 0,
@@ -81,6 +97,10 @@ export default function CatchGame({
     time: 0,
   });
   const inputRef = useRef({ left: false, right: false });
+  // Objetivo activo de "Atrapa en el Huerto": arranca en round.target y
+  // puede cambiar una vez a mitad de ronda en nivel experto.
+  const currentTargetRef = useRef(round.target);
+  const targetSwitchedRef = useRef(false);
 
   const speak = useCallback((text) => {
     audioRef.current?.speak(text);
@@ -122,8 +142,9 @@ export default function CatchGame({
         caughtCount: 0,
         time: 0,
       };
+      currentTargetRef.current = targetRound.target;
+      targetSwitchedRef.current = false;
       setCaught(0);
-      void targetRound;
     },
     [ageId, stageWidth, theme.id],
   );
@@ -162,24 +183,42 @@ export default function CatchGame({
       if (inputRef.current.right) state.basketX += speed * dt;
       state.basketX = Math.max(0, Math.min(stageWidth - BASKET_WIDTH, state.basketX));
 
+      // Objetivos válidos de esta ronda: por defecto el objetivo actual de
+      // Huerto (que puede haber cambiado a mitad de ronda); Cielo suma un
+      // segundo objetivo de doble puntaje; Formas usa el grupo por atributo.
+      const activeTargets = attributeMode
+        ? attributeMode.validTargets
+        : secondaryTarget
+          ? [round.target, secondaryTarget]
+          : [currentTargetRef.current];
+      const decoyPool = theme.decoy.filter((sticker) => !activeTargets.includes(sticker));
+      const spawnCount =
+        theme.id === "juguetes" && roundIndex >= CATCH_EXPERT_ROUND_INDEX ? 2 : 1;
+
       state.spawnT += dt * 1000;
       if (state.spawnT >= round.spawnGapMs) {
         state.spawnT = 0;
         const random = state.spawnSeed;
-        const isDecoy = random() < round.decoyChance;
-        const pool = isDecoy ? theme.decoy : [round.target];
-        const sticker = pool[Math.floor(random() * pool.length)];
-        state.items.push({
-          id: `${Date.now()}-${Math.floor(random() * 100000)}`,
-          sticker,
-          isTarget: !isDecoy,
-          x: 16 + random() * Math.max(1, stageWidth - ITEM_SIZE - 32),
-          y: -ITEM_SIZE,
-        });
+        for (let slot = 0; slot < spawnCount; slot += 1) {
+          const isDecoy = random() < round.decoyChance;
+          const pool = isDecoy ? decoyPool : activeTargets;
+          const sticker = pool[Math.floor(random() * pool.length)];
+          const laneWidth = Math.max(1, stageWidth - ITEM_SIZE - 32) / spawnCount;
+          const x = 16 + slot * laneWidth + random() * laneWidth;
+          state.items.push({
+            id: `${Date.now()}-${slot}-${Math.floor(random() * 100000)}`,
+            sticker,
+            isTarget: !isDecoy,
+            points: !isDecoy && secondaryTarget && sticker === secondaryTarget ? 2 : 1,
+            x,
+            y: -ITEM_SIZE,
+          });
+        }
       }
 
       const basketCenterX = state.basketX + BASKET_WIDTH / 2;
       const survivors = [];
+      let targetSwitched = false;
       for (const item of state.items) {
         item.y += round.fallSpeed * dt;
         const itemCenterX = item.x + ITEM_SIZE / 2;
@@ -188,11 +227,32 @@ export default function CatchGame({
 
         if (withinBasketX && withinBasketY) {
           if (item.isTarget) {
-            state.caughtCount += 1;
+            state.caughtCount += item.points ?? 1;
             audioRef.current?.sfx("collect");
             setCaught(state.caughtCount);
             setFeedback({ type: "good", id: item.id });
             window.setTimeout(() => setFeedback(null), 400);
+
+            if (
+              theme.id === "huerto" &&
+              !targetSwitchedRef.current &&
+              state.caughtCount >= Math.ceil(round.count / 2) &&
+              state.caughtCount < round.count
+            ) {
+              const nextTarget = huertoTargetSwitch({
+                themeId: theme.id,
+                theme,
+                roundIndex,
+                currentTarget: currentTargetRef.current,
+              });
+              if (nextTarget) {
+                targetSwitchedRef.current = true;
+                currentTargetRef.current = nextTarget;
+                targetSwitched = true;
+                speak("¡Cambio de objetivo! Ahora busca esto en el huerto.");
+              }
+            }
+
             if (state.caughtCount >= round.count) {
               evaluateRound();
             }
@@ -206,10 +266,13 @@ export default function CatchGame({
         }
         if (item.y < STAGE_HEIGHT + ITEM_SIZE) survivors.push(item);
       }
-      state.items = survivors;
+      // Si el objetivo cambió a mitad de ronda, limpiamos lo que caía con
+      // el objetivo anterior para que no queden dos reglas mezcladas en
+      // pantalla a la vez.
+      state.items = targetSwitched ? [] : survivors;
       setTick((current) => current + 1);
     },
-    [evaluateRound, round, stageWidth, theme.decoy],
+    [attributeMode, evaluateRound, round, roundIndex, secondaryTarget, speak, stageWidth, theme],
   );
 
   const render = useCallback(() => {}, []);
@@ -237,9 +300,17 @@ export default function CatchGame({
   useEffect(() => {
     if (phase !== "briefing") return;
     setupRound(roundIndex);
-    speak(round.spokenText);
+    let intro = round.spokenText;
+    if (attributeMode) {
+      intro += ` Esta vez busca figuras con ${attributeMode.sides} lados: pueden ser distintas, pero todas cuentan.`;
+    } else if (secondaryTarget) {
+      intro += " Y ojo: atrapar el segundo dibujo vale doble.";
+    } else if (theme.id === "huerto" && roundIndex >= CATCH_EXPERT_ROUND_INDEX) {
+      intro += " En esta ronda el objetivo podría cambiar a la mitad, ¡te avisaré!";
+    }
+    speak(intro);
     setPhase("playing");
-  }, [phase, roundIndex, round.spokenText, setupRound, speak]);
+  }, [attributeMode, phase, roundIndex, round.spokenText, secondaryTarget, setupRound, speak, theme.id]);
 
   const handleStart = () => {
     audioRef.current?.start();
@@ -304,8 +375,21 @@ export default function CatchGame({
     },
   });
 
-  const TargetSticker = STICKERS[round.target];
   void tick;
+  const activeTarget = currentTargetRef.current ?? round.target;
+  const displayTargets = attributeMode
+    ? attributeMode.validTargets.map((sticker) => ({ sticker, badge: null }))
+    : secondaryTarget
+      ? [
+          { sticker: activeTarget, badge: null },
+          { sticker: secondaryTarget, badge: "×2" },
+        ]
+      : [{ sticker: activeTarget, badge: null }];
+  const targetAriaLabel = attributeMode
+    ? `Atrapa figuras con ${attributeMode.sides} lados`
+    : secondaryTarget
+      ? `Atrapa ${activeTarget} o ${secondaryTarget}, que vale doble`
+      : `Atrapa ${activeTarget}`;
 
   return (
     <div className="catch" data-theme={theme.id} style={{ "--catch-accent": theme.accent, "--catch-accent-soft": theme.accentSoft }}>
@@ -317,8 +401,21 @@ export default function CatchGame({
                 ✕
               </button>
               <div className="catch__hud-round">Ronda {roundIndex + 1} / {CATCH_ROUNDS}</div>
-              <div className="catch__hud-target" aria-label={round.instructionText}>
-                {TargetSticker ? <TargetSticker size={30} /> : null}
+              <div className="catch__hud-target" aria-label={targetAriaLabel}>
+                {displayTargets.map(({ sticker, badge }) => {
+                  const Sticker = STICKERS[sticker];
+                  return (
+                    <span key={sticker} className="catch__hud-target-icon">
+                      {Sticker ? <Sticker size={28} /> : null}
+                      {badge ? <em className="catch__hud-target-badge">{badge}</em> : null}
+                    </span>
+                  );
+                })}
+                {attributeMode ? (
+                  <span className="catch__hud-target-badge catch__hud-target-badge--sides">
+                    {attributeMode.sides} lados
+                  </span>
+                ) : null}
                 <span>{caught} / {round.count}</span>
               </div>
               <div className="catch__hud-buttons">

@@ -7,9 +7,12 @@ import { createAudioDirector } from "../audio/audio-director.js";
 import { createDifficultyAdapter } from "../learning/difficulty.js";
 import {
   createMemoryBoard,
+  hasIntruderRound,
   memoryDifficultyForRound,
   MEMORY_ROUNDS,
+  MEMORY_SHAPE_SIDES,
   MEMORY_THEMES,
+  pickBonusSidesQuestion,
 } from "../content/memory-mission.js";
 import { STICKERS } from "../../stickers/sticker-registry.jsx";
 import "./memoria-game.css";
@@ -43,6 +46,8 @@ export default function MemoriaGame({
   const [moves, setMoves] = useState(0);
   const [locked, setLocked] = useState(true);
   const [previewing, setPreviewing] = useState(true);
+  const [peeking, setPeeking] = useState(false);
+  const [bonusQuestion, setBonusQuestion] = useState(null);
   const [audioPrefs, setAudioPrefs] = useState({ music: true, voice: true });
   const [missionSummary, setMissionSummary] = useState(null);
   const [celebrateId, setCelebrateId] = useState(null);
@@ -51,6 +56,8 @@ export default function MemoriaGame({
   const adapterRef = useRef(null);
   const previewTimerRef = useRef(null);
   const mismatchTimerRef = useRef(null);
+  const peekTimerRef = useRef(null);
+  const mismatchStreakRef = useRef(0);
 
   useEffect(() => {
     const audio = createAudioDirector();
@@ -60,6 +67,7 @@ export default function MemoriaGame({
     return () => {
       window.clearTimeout(previewTimerRef.current);
       window.clearTimeout(mismatchTimerRef.current);
+      window.clearTimeout(peekTimerRef.current);
       audio.destroy();
       audioRef.current = null;
     };
@@ -78,7 +86,11 @@ export default function MemoriaGame({
       setMoves(0);
       setLocked(true);
       setPreviewing(true);
+      setPeeking(false);
+      setBonusQuestion(null);
+      mismatchStreakRef.current = 0;
       window.clearTimeout(previewTimerRef.current);
+      window.clearTimeout(peekTimerRef.current);
       const { previewMs } = memoryDifficultyForRound(ageId, index);
       previewTimerRef.current = window.setTimeout(() => {
         setLocked(false);
@@ -91,13 +103,16 @@ export default function MemoriaGame({
   useEffect(() => {
     if (phase !== "briefing") return;
     setupRound(roundIndex);
+    const intro = `${theme.tagline} Mira bien la posición de cada tarjeta, ${
+      roundIndex === 0 ? "" : "y "
+    }encuentra las parejas.`;
     speak(
-      `${theme.tagline} Mira bien la posición de cada tarjeta, ${
-        roundIndex === 0 ? "" : "y "
-      }encuentra las parejas.`,
+      hasIntruderRound(theme.id, roundIndex)
+        ? `${intro} Esta vez, una pareja no es del cole, ¿la notas?`
+        : intro,
     );
     setPhase("playing");
-  }, [phase, roundIndex, setupRound, speak, theme.tagline]);
+  }, [phase, roundIndex, setupRound, speak, theme.id, theme.tagline]);
 
   const handleStart = () => {
     audioRef.current?.start();
@@ -105,8 +120,40 @@ export default function MemoriaGame({
     setPhase("briefing");
   };
 
+  const advanceAfterRound = useCallback(
+    (completedRound) => {
+      if (completedRound >= MEMORY_ROUNDS) {
+        const summary = adapterRef.current.summary();
+        setMissionSummary(summary);
+        setPhase("missionComplete");
+        speak("¡Memoria mágica completada! Qué buena memoria tienes.");
+        onMissionComplete?.(summary);
+      } else {
+        setRoundIndex(completedRound);
+        setPhase("briefing");
+      }
+    },
+    [onMissionComplete, speak],
+  );
+
+  const handleBonusAnswer = (chosenSticker) => {
+    if (!bonusQuestion) return;
+    const { answer, completedRound } = bonusQuestion;
+    setBonusQuestion(null);
+    if (chosenSticker === answer) {
+      audioRef.current?.sfx("success");
+      speak("¡Exacto! Esa figura tiene más lados. ¡Gran razonamiento!");
+    } else {
+      const sidesAnswer = MEMORY_SHAPE_SIDES[answer];
+      speak(
+        `Casi. La figura con más lados tenía ${sidesAnswer}. ¡La próxima la encontrarás!`,
+      );
+    }
+    window.setTimeout(() => advanceAfterRound(completedRound), 1400);
+  };
+
   const handleFlip = (card) => {
-    if (locked || flipped.length === 2) return;
+    if (locked || peeking || flipped.length === 2) return;
     if (flipped.some((item) => item.id === card.id)) return;
     if (matchedIds.has(card.pairId)) return;
 
@@ -117,10 +164,14 @@ export default function MemoriaGame({
       setMoves((current) => current + 1);
       const [first, second] = nextFlipped;
       if (first.pairId === second.pairId) {
+        mismatchStreakRef.current = 0;
         adapterRef.current?.recordSuccess();
         audioRef.current?.sfx("collect");
         setCelebrateId(first.pairId);
         window.setTimeout(() => setCelebrateId(null), 650);
+        if (first.isIntruder) {
+          speak("¡Ese no era del cole, pero lo encontraste igual! Buen ojo.");
+        }
         const nextMatched = new Set(matchedIds);
         nextMatched.add(first.pairId);
         setMatchedIds(nextMatched);
@@ -132,29 +183,50 @@ export default function MemoriaGame({
           const completedRound = roundIndex + 1;
           speak(moves <= totalPairs ? "¡Memoria perfecta! Sigamos." : "¡Encontraste todas las parejas!");
           onRoundComplete?.(completedRound);
-          window.setTimeout(() => {
-            if (completedRound >= MEMORY_ROUNDS) {
-              const summary = adapterRef.current.summary();
-              setMissionSummary(summary);
-              setPhase("missionComplete");
-              speak("¡Memoria mágica completada! Qué buena memoria tienes.");
-              onMissionComplete?.(summary);
-            } else {
-              setRoundIndex(completedRound);
-              setPhase("briefing");
-            }
-          }, 1500);
+
+          const bonusEligible =
+            theme.specialRule?.type === "bonusSides" && roundIndex >= theme.specialRule.fromRoundIndex;
+          const bonus = bonusEligible ? pickBonusSidesQuestion(board) : null;
+
+          if (bonus) {
+            window.setTimeout(() => {
+              speak(
+                `Antes de seguir, una pregunta extra: ¿cuál figura tiene más lados, la ${bonus.optionA} o la ${bonus.optionB}?`,
+              );
+              setBonusQuestion({ ...bonus, completedRound });
+            }, 1500);
+          } else {
+            window.setTimeout(() => advanceAfterRound(completedRound), 1500);
+          }
         }
       } else {
         adapterRef.current?.recordError();
         audioRef.current?.sfx("try");
         setLocked(true);
+        mismatchStreakRef.current += 1;
         window.clearTimeout(mismatchTimerRef.current);
         const { mismatchMs } = memoryDifficultyForRound(ageId, roundIndex);
-        mismatchTimerRef.current = window.setTimeout(() => {
-          setFlipped([]);
-          setLocked(false);
-        }, mismatchMs);
+        const rule = theme.specialRule;
+        const triggerPeek =
+          rule?.type === "secondPeek" && mismatchStreakRef.current >= rule.errorStreak;
+
+        if (triggerPeek) {
+          mismatchStreakRef.current = 0;
+          speak("Con calma, aquí tienes un segundo vistazo.");
+          mismatchTimerRef.current = window.setTimeout(() => {
+            setFlipped([]);
+            setPeeking(true);
+            peekTimerRef.current = window.setTimeout(() => {
+              setPeeking(false);
+              setLocked(false);
+            }, rule.peekMs);
+          }, mismatchMs);
+        } else {
+          mismatchTimerRef.current = window.setTimeout(() => {
+            setFlipped([]);
+            setLocked(false);
+          }, mismatchMs);
+        }
       }
     }
   };
@@ -202,7 +274,9 @@ export default function MemoriaGame({
             <p className="memoria__moves" role="status">
               {previewing
                 ? "¡Memorízalas! Las tarjetas se voltearán en un momento…"
-                : `${matchedIds.size} / ${totalPairs} parejas · ${moves} intentos`}
+                : peeking
+                  ? "¡Segundo vistazo! Mira bien antes de que se escondan otra vez…"
+                  : `${matchedIds.size} / ${totalPairs} parejas · ${moves} intentos`}
             </p>
 
             <div
@@ -212,7 +286,10 @@ export default function MemoriaGame({
             >
               {board.map((card) => {
                 const isFlipped =
-                  previewing || flipped.some((item) => item.id === card.id) || matchedIds.has(card.pairId);
+                  previewing ||
+                  peeking ||
+                  flipped.some((item) => item.id === card.id) ||
+                  matchedIds.has(card.pairId);
                 const isMatched = matchedIds.has(card.pairId);
                 const Sticker = STICKERS[card.sticker];
                 return (
@@ -225,7 +302,7 @@ export default function MemoriaGame({
                       isMatched ? "is-matched" : "",
                       celebrateId === card.pairId ? "is-celebrating" : "",
                     ].filter(Boolean).join(" ")}
-                    disabled={isMatched || locked && !isFlipped}
+                    disabled={isMatched || peeking || (locked && !isFlipped)}
                     aria-label={isFlipped ? card.sticker : "Tarjeta boca abajo"}
                     onClick={() => handleFlip(card)}
                   >
@@ -241,6 +318,30 @@ export default function MemoriaGame({
                 );
               })}
             </div>
+
+            {bonusQuestion ? (
+              <div className="memoria__bonus" role="dialog" aria-label="Pregunta extra">
+                <p className="memoria__bonus-question">
+                  ¿Cuál figura tiene más lados?
+                </p>
+                <div className="memoria__bonus-options">
+                  {[bonusQuestion.optionA, bonusQuestion.optionB].map((sticker) => {
+                    const Sticker = STICKERS[sticker];
+                    return (
+                      <button
+                        key={sticker}
+                        type="button"
+                        className="memoria__bonus-option"
+                        onClick={() => handleBonusAnswer(sticker)}
+                      >
+                        {Sticker ? <Sticker size={48} /> : null}
+                        <span>{sticker}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : null}
           </>
         ) : null}
 

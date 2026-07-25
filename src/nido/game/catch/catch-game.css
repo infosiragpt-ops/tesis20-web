@@ -57,12 +57,38 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-wrap: wrap;
   gap: 8px;
   padding: 6px 14px;
   border-radius: 999px;
   background: rgba(16, 35, 63, 0.88);
   color: #ffffff;
   font-weight: 900;
+}
+
+.catch__hud-target-icon {
+  position: relative;
+  display: inline-flex;
+}
+
+.catch__hud-target-badge {
+  position: absolute;
+  right: -6px;
+  bottom: -4px;
+  padding: 1px 4px;
+  border-radius: 999px;
+  background: #ffc94d;
+  color: #10233f;
+  font-size: 0.6rem;
+  font-style: normal;
+  font-weight: 900;
+  line-height: 1.3;
+}
+
+.catch__hud-target-badge--sides {
+  position: static;
+  padding: 2px 8px;
+  font-size: 0.66rem;
 }
 
 .catch__hud-buttons {

@@ -85,6 +85,34 @@ export const CATCH_AGE_PROFILES = Object.freeze({
 
 export const CATCH_ROUNDS = 20;
 
+// Umbrales de banda para las variantes de nivel avanzado/experto de cada
+// mundo (mismo criterio que Memoria Mágica: últimas rondas de las 20).
+export const CATCH_ADVANCED_ROUND_INDEX = 13;
+export const CATCH_EXPERT_ROUND_INDEX = 16;
+
+// Número de lados de cada figura relevante para "Atrapa Formas", incluyendo
+// "Rectangle" (hoy señuelo) porque comparte 4 lados con "Square" y es la
+// única pareja de atributo inequívoca disponible en este set de stickers.
+export const CATCH_SHAPE_SIDES = Object.freeze({
+  Circle: 0,
+  Triangle: 3,
+  Square: 4,
+  Rectangle: 4,
+  Pentagon: 5,
+  Hexagon: 6,
+});
+
+/**
+ * Siguiente sticker distinto dentro de una lista, de forma determinista
+ * (cíclica a partir del actual). Nunca devuelve el mismo valor si la lista
+ * tiene al menos dos elementos distintos.
+ */
+function nextDistinctSticker(list, current) {
+  const index = list.indexOf(current);
+  if (index === -1) return list[0];
+  return list[(index + 1) % list.length];
+}
+
 /**
  * Dificultad efectiva de una ronda: interpola entre el arranque suave y el
  * techo ya afinado de la edad según el avance dentro de las 20 rondas.
@@ -155,4 +183,39 @@ export function createCatchRound({ themeId, ageId, roundIndex }) {
     instructionText: `Atrapa ${count} ${target}`,
     spokenText: `¡Prepárate! Atrapa ${NUMBER_WORDS[count]} ${count === 1 ? "vez" : "veces"} lo que caiga igual a este dibujo. ¡Vamos!`,
   };
+}
+
+/**
+ * Mundo "Atrapa en el Huerto", nivel experto: a mitad de la meta, el
+ * objetivo cambia una vez a otro sticker del mismo tema (anunciado por voz
+ * antes de aplicarse). Devuelve null si la ronda no cambia de objetivo.
+ */
+export function huertoTargetSwitch({ themeId, theme, roundIndex, currentTarget }) {
+  if (themeId !== "huerto" || roundIndex < CATCH_EXPERT_ROUND_INDEX) return null;
+  return nextDistinctSticker(theme.target, currentTarget);
+}
+
+/**
+ * Mundo "Atrapa en el Cielo", nivel avanzado: un segundo objetivo válido
+ * que vale doble puntaje. Devuelve null si la ronda no tiene doble objetivo.
+ */
+export function cieloSecondaryTarget({ themeId, theme, roundIndex, target, count }) {
+  if (themeId !== "cielo" || roundIndex < CATCH_ADVANCED_ROUND_INDEX || count < 2) return null;
+  return nextDistinctSticker(theme.target, target);
+}
+
+/**
+ * Mundo "Atrapa Formas", nivel avanzado/experto: el objetivo pasa a ser
+ * "figuras con el mismo número de lados" en vez de una sola imagen exacta.
+ * Devuelve la lista de stickers válidos (siempre al menos 1, nunca vacía) y
+ * el número de lados que los define, o null si la ronda no usa este modo.
+ */
+export function formasAttributeTargets({ themeId, theme, roundIndex, target }) {
+  if (themeId !== "formas" || roundIndex < CATCH_ADVANCED_ROUND_INDEX) return null;
+  const sides = CATCH_SHAPE_SIDES[target];
+  if (sides === undefined) return null;
+  const pool = [...new Set([...theme.target, ...theme.decoy])];
+  const validTargets = pool.filter((sticker) => CATCH_SHAPE_SIDES[sticker] === sides);
+  if (validTargets.length === 0) return null;
+  return { sides, validTargets };
 }
