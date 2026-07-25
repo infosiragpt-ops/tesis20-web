@@ -1,9 +1,14 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { readFileSync } from "node:fs";
 
 import {
+  celebrationAudioKey,
+  PERSISTENCE_CELEBRATION,
+  STREAK_CELEBRATIONS,
   SUCCESS_CELEBRATIONS,
   getCelebrationVoiceProfile,
+  pickStreakCelebration,
   pickSuccessCelebration,
 } from "../../src/nido/game/content/celebration-feedback.js";
 
@@ -34,6 +39,46 @@ test("la elección es estable y varía a lo largo de las rondas", () => {
     ),
   );
   assert.ok(ids.size >= 8);
+});
+
+// Un festejo con el texto interpolado (“¡3 respuestas seguidas!”) no se puede
+// grabar en estudio y volvería a sonar con la voz sintética del navegador justo
+// en el momento más emocionante. Todo lo que el niño pueda oír tiene que salir
+// de un catálogo cerrado y estar en el manifiesto profesional.
+test("cada festejo que el niño puede oír está grabado con la maestra", () => {
+  const manifest = JSON.parse(
+    readFileSync(
+      new URL("../../public/assets/nido/audio/manifest.json", import.meta.url),
+      "utf8",
+    ),
+  );
+  const recorded = [
+    ...SUCCESS_CELEBRATIONS,
+    ...STREAK_CELEBRATIONS,
+    PERSISTENCE_CELEBRATION,
+  ];
+
+  for (const celebration of recorded) {
+    assert.ok(
+      manifest.tracks[celebrationAudioKey(celebration.id)],
+      `La celebración “${celebration.id}” no tiene locución grabada.`,
+    );
+  }
+
+  const spokenById = new Map(
+    recorded.map((celebration) => [celebration.id, celebration.spokenText]),
+  );
+  for (let streak = 3; streak <= 30; streak += 1) {
+    for (let seed = 0; seed < 12; seed += 1) {
+      const streakCelebration = pickStreakCelebration(`reto-${seed}`, streak);
+      assert.equal(
+        streakCelebration.spokenText,
+        spokenById.get(streakCelebration.id),
+        `La racha de ${streak} habla un texto que nadie grabó.`,
+      );
+      assert.equal(streakCelebration.headline, `¡${streak} seguidas!`);
+    }
+  }
 });
 
 test("la voz mantiene ritmos infantiles seguros por edad", () => {

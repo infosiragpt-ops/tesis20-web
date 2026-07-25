@@ -27,10 +27,21 @@ import {
 } from "../src/nido/nido-curriculum.js";
 import { enumerateForestVoiceLines } from "../src/nido/game/content/forest-voice-lines.js";
 import {
-  CELEBRATION_AGE_ID,
-  NIDO_CELEBRATION_LINES,
-  NIDO_STREAK_LINES,
-} from "../src/nido/nido-celebration-lines.js";
+  celebrationAudioKey,
+  PERSISTENCE_CELEBRATION,
+  STREAK_CELEBRATIONS,
+  SUCCESS_CELEBRATIONS,
+} from "../src/nido/game/content/celebration-feedback.js";
+
+const ALL_CELEBRATIONS = [
+  ...SUCCESS_CELEBRATIONS,
+  ...STREAK_CELEBRATIONS,
+  PERSISTENCE_CELEBRATION,
+];
+
+// Las celebraciones se graban una sola vez con el perfil intermedio: el mismo
+// clip sirve a las tres edades porque es un festejo, no una instrucción.
+const CELEBRATION_AGE_ID = "4-5";
 
 const ROOT = process.cwd();
 const AUDIO_ROOT = path.join(ROOT, "public", "assets", "nido", "audio");
@@ -195,10 +206,14 @@ function enumerateAudioPlan() {
 
   // Frases de celebración: una sola versión (perfil 4-5) sirve a las tres
   // edades; el reproductor las busca por su id en `tracks`.
-  for (const line of [...NIDO_CELEBRATION_LINES, ...NIDO_STREAK_LINES]) {
+  for (const celebration of ALL_CELEBRATIONS) {
     addJob(
       jobsByHash,
-      { key: line.id, ageId: CELEBRATION_AGE_ID, text: line.text },
+      {
+        key: celebrationAudioKey(celebration.id),
+        ageId: CELEBRATION_AGE_ID,
+        text: celebration.spokenText,
+      },
       tracks,
     );
   }

@@ -10,10 +10,18 @@ import {
 } from "../src/nido/nido-curriculum.js";
 import { enumerateForestVoiceLines } from "../src/nido/game/content/forest-voice-lines.js";
 import {
-  CELEBRATION_AGE_ID,
-  NIDO_CELEBRATION_LINES,
-  NIDO_STREAK_LINES,
-} from "../src/nido/nido-celebration-lines.js";
+  celebrationAudioKey,
+  PERSISTENCE_CELEBRATION,
+  STREAK_CELEBRATIONS,
+  SUCCESS_CELEBRATIONS,
+} from "../src/nido/game/content/celebration-feedback.js";
+
+const CELEBRATION_AGE_ID = "4-5";
+const ALL_CELEBRATIONS = [
+  ...SUCCESS_CELEBRATIONS,
+  ...STREAK_CELEBRATIONS,
+  PERSISTENCE_CELEBRATION,
+];
 
 const EXPECTED_AREA_COUNT = 5;
 const MIN_CATEGORIES_PER_AREA = 5;
@@ -461,8 +469,8 @@ for (const audioPublicPath of bosqueAudioFiles) {
 // mientras el lote no exista narran con la voz del dispositivo, así que aquí
 // solo se exige coherencia, no existencia previa.
 let coveredCelebrationCount = 0;
-for (const line of [...NIDO_CELEBRATION_LINES, ...NIDO_STREAK_LINES]) {
-  const audioPublicPath = audioTracks[line.id];
+for (const celebration of ALL_CELEBRATIONS) {
+  const audioPublicPath = audioTracks[celebrationAudioKey(celebration.id)];
   if (typeof audioPublicPath !== "string" || !audioPublicPath) continue;
   coveredCelebrationCount += 1;
   const expectedAudioHash = createHash("sha256")
@@ -472,7 +480,7 @@ for (const line of [...NIDO_CELEBRATION_LINES, ...NIDO_STREAK_LINES]) {
         audioManifest.model,
         audioManifest.voiceId,
         CELEBRATION_AGE_ID,
-        line.text,
+        celebration.spokenText,
       ].join("\n"),
       "utf8",
     )
@@ -480,7 +488,7 @@ for (const line of [...NIDO_CELEBRATION_LINES, ...NIDO_STREAK_LINES]) {
     .slice(0, 28);
   check(
     audioPublicPath === `/assets/nido/audio/generated/${expectedAudioHash}.mp3`,
-    `Celebración “${line.id}” apunta a una locución desactualizada.`,
+    `Celebración “${celebration.id}” apunta a una locución desactualizada.`,
   );
   const relativePath = audioPublicPath.replace(/^\/+/, "");
   check(
@@ -506,7 +514,7 @@ if (failureCount > 0) {
       `(${generatedCategoryCount} generados), ${combinationCount} retos activos ` +
       `y ${optionCount} opciones verificadas con ${professionalAudioFiles.size} audios profesionales, ` +
       `${bosqueVoiceLines.length} líneas de Misión del Bosque (${bosqueAudioFiles.size} audios), ` +
-      `${coveredCelebrationCount}/${NIDO_CELEBRATION_LINES.length + NIDO_STREAK_LINES.length} celebraciones grabadas ` +
+      `${coveredCelebrationCount}/${ALL_CELEBRATIONS.length} celebraciones grabadas ` +
       `y ${assertionCount} controles.`,
   );
   if (pendingGeneratedVoices.size) {

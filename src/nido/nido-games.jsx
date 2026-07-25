@@ -25,7 +25,10 @@ import { STICKERS } from "./stickers/sticker-registry.jsx";
 import { CATCH_THEMES } from "./game/content/catch-mission.js";
 import { MEMORY_THEMES } from "./game/content/memory-mission.js";
 import {
+  celebrationAudioKey,
   getCelebrationVoiceProfile,
+  PERSISTENCE_CELEBRATION,
+  pickStreakCelebration,
   pickSuccessCelebration,
 } from "./game/content/celebration-feedback.js";
 import ArcadeHub from "./game/hub/ArcadeHub.jsx";
@@ -128,6 +131,9 @@ function createRouteStats(correct = 0) {
 }
 
 const CELEBRATION_DWELL_MS = 650;
+// Tope del elogio grabado: si el navegador nunca dispara `onended` (pestaña en
+// segundo plano, audio bloqueado), la fiesta sigue su curso igualmente.
+const CELEBRATION_PRAISE_CAP_MS = 6000;
 // El respaldo global debe ser mayor que la suma de los watchdogs internos:
 // nunca debe adelantar la ronda mientras “yupiii” o el elogio siguen sonando.
 const CELEBRATION_FAILSAFE_MS = 14000;
@@ -2026,6 +2032,7 @@ export function NidoGamesExperience({
 
   const audioRef = useRef(null);
   const feedbackAudioRef = useRef(null);
+  const praiseAudioRef = useRef(null);
   const audioContextRef = useRef(null);
   const feedbackNodesRef = useRef([]);
   const playbackRunRef = useRef(0);
@@ -2171,6 +2178,10 @@ export function NidoGamesExperience({
         feedbackAudioRef.current.pause();
         feedbackAudioRef.current.removeAttribute("src");
       }
+      if (praiseAudioRef.current) {
+        praiseAudioRef.current.pause();
+        praiseAudioRef.current.removeAttribute("src");
+      }
       feedbackNodesRef.current.forEach(({ oscillator, gain }) => {
         try {
           oscillator.stop();
@@ -2226,6 +2237,18 @@ export function NidoGamesExperience({
       },
       1050,
     );
+  };
+
+  // Corta el elogio grabado a mitad: se llama al cancelar la fiesta (avanzar,
+  // repetir la consigna o cambiar de juego) para que la maestra no se solape
+  // consigo misma en el reto siguiente.
+  const stopCelebrationPraise = () => {
+    const audio = praiseAudioRef.current;
+    if (!audio) return;
+    audio.pause();
+    audio.currentTime = 0;
+    audio.onended = null;
+    audio.onerror = null;
   };
 
   const stopFeedbackSound = () => {
@@ -2467,6 +2490,35 @@ export function NidoGamesExperience({
     targetChallenge,
     celebrationRunId,
   ) => {
+    // Primero la voz de estudio: el festejo grabado tiene la misma maestra que
+    // la consigna, así que la fiesta no rompe la ilusión con una voz robótica.
+    const praiseSrc = audioTracks[celebrationAudioKey(celebration.id)];
+    if (praiseSrc && praiseAudioRef.current) {
+      const played = await new Promise((resolve) => {
+        const audio = praiseAudioRef.current;
+        let settled = false;
+        const finish = (value) => {
+          if (settled) return;
+          settled = true;
+          window.clearTimeout(watchdog);
+          audio.onended = null;
+          audio.onerror = null;
+          resolve(value);
+        };
+        const watchdog = window.setTimeout(
+          () => finish(true),
+          CELEBRATION_PRAISE_CAP_MS,
+        );
+        audio.onended = () => finish(true);
+        audio.onerror = () => finish(false);
+        audio.src = praiseSrc;
+        audio.currentTime = 0;
+        audio.play().catch(() => finish(false));
+      });
+      if (celebrationRunRef.current !== celebrationRunId) return "cancelled";
+      if (played) return "ended";
+    }
+
     if (
       !("speechSynthesis" in window) ||
       typeof window.SpeechSynthesisUtterance !== "function"
@@ -2898,6 +2950,7 @@ export function NidoGamesExperience({
 
   const resetActivity = () => {
     clearAutoAdvance();
+    stopCelebrationPraise();
     celebrationRunRef.current += 1;
     window.clearTimeout(celebrationFailsafeRef.current);
     celebrationFailsafeRef.current = null;
@@ -3040,6 +3093,7 @@ export function NidoGamesExperience({
     setReplayingRoute(isReplay);
     setRouteComplete(false);
     setLatestReward(null);
+    stopCelebrationPraise();
     celebrationRunRef.current += 1;
     window.clearTimeout(celebrationFailsafeRef.current);
     celebrationFailsafeRef.current = null;
@@ -3134,6 +3188,7 @@ export function NidoGamesExperience({
     stopFeedbackSound();
     // Volver a escuchar la consigna pausa la fiesta: se cancela la frase de
     // celebración y su avance automático para no pisar a la narradora.
+    stopCelebrationPraise();
     celebrationRunRef.current += 1;
     clearAutoAdvance();
     void playInstruction();
@@ -3160,19 +3215,12 @@ export function NidoGamesExperience({
       );
       const celebration =
         nextStreak >= 3
-          ? {
-              ...baseCelebration,
-              headline: `¡${nextStreak} seguidas!`,
-              spokenText: `¡${nextStreak} respuestas seguidas! ¡Qué gran trabajo!`,
-              caption: "Tu racha encendió una fiesta de estrellas.",
-              burst: "stars",
-            }
+          ? pickStreakCelebration(
+              `${challenge.id}|${currentRound}|${routeStats.correct}`,
+              nextStreak,
+            )
           : incorrectAnswers.length
-            ? {
-                ...baseCelebration,
-                spokenText: "¡Lo lograste! ¡No te rendiste y encontraste la respuesta!",
-                caption: "Seguiste intentando hasta conseguirlo.",
-              }
+            ? { ...baseCelebration, ...PERSISTENCE_CELEBRATION }
             : baseCelebration;
       setRouteStats((current) => {
         return {
@@ -3218,6 +3266,7 @@ export function NidoGamesExperience({
 
   const handleNext = () => {
     clearAutoAdvance();
+    stopCelebrationPraise();
     celebrationRunRef.current += 1;
     window.clearTimeout(celebrationFailsafeRef.current);
     celebrationFailsafeRef.current = null;
@@ -3301,6 +3350,7 @@ export function NidoGamesExperience({
       <style data-nido-focus-renderer>{FOCUS_RENDERER_STYLES}</style>
       <audio ref={audioRef} preload="auto" aria-hidden="true" />
       <audio ref={feedbackAudioRef} preload="auto" aria-hidden="true" />
+      <audio ref={praiseAudioRef} preload="auto" aria-hidden="true" />
 
       <div className="nido-shell nido-games__shell">
         <header className="nido-games__heading">

@@ -114,6 +114,59 @@ export const SUCCESS_CELEBRATIONS = Object.freeze([
   }),
 ]);
 
+// Festejos de racha. El titular sí lleva el número de aciertos seguidos, pero
+// lo hablado se mantiene fijo: una frase con un número variable no se puede
+// grabar en estudio y volvería a caer en la voz sintética del navegador.
+export const STREAK_CELEBRATIONS = Object.freeze([
+  Object.freeze({
+    id: "racha-imparable",
+    spokenText: "¡Qué racha! ¡Estás imparable!",
+    caption: "Tu racha encendió una fiesta de estrellas.",
+    burst: "stars",
+    pitch: 1.21,
+    rateOffset: -0.02,
+  }),
+  Object.freeze({
+    id: "racha-estrella",
+    spokenText: "¡Una seguida de otra! ¡Eres una gran estrella!",
+    caption: "Cada acierto suma otra estrella a tu camino.",
+    burst: "sparkles",
+    pitch: 1.18,
+    rateOffset: -0.04,
+  }),
+  Object.freeze({
+    id: "racha-fuego",
+    spokenText: "¡Wooow! ¡No fallas ni una! ¡Sigue, sigue!",
+    caption: "Nadie te detiene: vas de acierto en acierto.",
+    burst: "confetti",
+    pitch: 1.23,
+    rateOffset: -0.03,
+  }),
+]);
+
+export function pickStreakCelebration(seed, streak) {
+  const index = celebrationSeed(`racha|${seed}`) % STREAK_CELEBRATIONS.length;
+  const celebration = STREAK_CELEBRATIONS[index];
+  return { ...celebration, headline: `¡${streak} seguidas!` };
+}
+
+// Festejo de quien llegó tras equivocarse: celebra la insistencia, no el
+// acierto limpio. Texto fijo para que también se grabe en estudio.
+export const PERSISTENCE_CELEBRATION = Object.freeze({
+  id: "no-te-rendiste",
+  spokenText: "¡Lo lograste! ¡No te rendiste y encontraste la respuesta!",
+  caption: "Seguiste intentando hasta conseguirlo.",
+  pitch: 1.15,
+  rateOffset: -0.02,
+});
+
+// Clave con la que cada festejo viaja en el manifiesto de audio. El prefijo
+// evita chocar con los ids de reto y la comparten generador, verificador y
+// reproductor: si cambia aquí, cambia en los tres a la vez.
+export function celebrationAudioKey(celebrationId) {
+  return `celebracion-${celebrationId}`;
+}
+
 const AGE_VOICE_PROFILES = Object.freeze({
   "2-3": Object.freeze({ rate: 0.83, pitchBoost: 0.02 }),
   "4-5": Object.freeze({ rate: 0.9, pitchBoost: 0.01 }),
