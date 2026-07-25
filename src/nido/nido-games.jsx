@@ -15,6 +15,10 @@ import {
   isNidoPathMoveAllowed,
   normalizeOrderLabel,
 } from "./nido-interaction-model.js";
+import {
+  usesDirectSceneActivity,
+  usesDirectTapActivity,
+} from "./nido-activity-routing.js";
 import { CelebrationBurst, NidoMascot } from "./illustrations/nido-mascot.jsx";
 import { createNidoIcon, NidoGlyph } from "./nido-icon-map";
 import { STICKERS } from "./stickers/sticker-registry.jsx";
@@ -480,25 +484,6 @@ function VisualToken({ item, compact = false }) {
   );
 }
 
-const DIRECT_TAP_KINDS = new Set([
-  "detective-clues",
-  "odd-one-out",
-  "real-or-imaginary",
-  "camouflage",
-  "shape-properties",
-  "hidden-character",
-  "character-clue",
-  "spoken-question",
-  "emotion-scene",
-]);
-
-const DIRECT_SCENE_KINDS = new Set([
-  ...DIRECT_TAP_KINDS,
-  "number-pattern",
-  "drawing-detail",
-  "difference",
-]);
-
 function optionPresentationLabel(challenge, option) {
   const label = String(option?.label ?? "");
   if (challenge.visual.kind !== "camouflage") return label;
@@ -886,7 +871,7 @@ function MechanicScene({
     <Picture item={option} compact key={option.id} />
   ));
 
-  if (DIRECT_TAP_KINDS.has(v.kind)) {
+  if (usesDirectTapActivity(challenge)) {
     return (
       <DirectTapScene
         challenge={challenge}
@@ -1006,12 +991,13 @@ function ChallengeScene({
 }) {
   const { visual } = challenge;
   const worldAsset = AREA_WORLD_ASSETS[challenge.areaId];
+  const directSceneActivity = usesDirectSceneActivity(challenge);
 
   return (
     <div
       className={[
         "nido-games__scene",
-        DIRECT_SCENE_KINDS.has(visual.kind) ? "is-direct-activity" : "",
+        directSceneActivity ? "is-direct-activity" : "",
       ]
         .filter(Boolean)
         .join(" ")}
@@ -1021,7 +1007,7 @@ function ChallengeScene({
         ...(visual.backgroundTone
           ? { "--scene-tone": visual.backgroundTone }
           : {}),
-        ...(DIRECT_SCENE_KINDS.has(visual.kind)
+        ...(directSceneActivity
           ? { gridColumn: "1 / -1" }
           : {}),
       }}
@@ -1851,7 +1837,7 @@ function PathActivity({
 function InteractiveChallenge(props) {
   const interactionType = getNidoInteractionType(props.challenge);
 
-  if (DIRECT_SCENE_KINDS.has(props.challenge.visual.kind)) return null;
+  if (usesDirectSceneActivity(props.challenge)) return null;
   if (interactionType === "drag") return <DragActivity {...props} />;
   if (interactionType === "order") return <OrderActivity {...props} />;
   if (interactionType === "match") return <MatchActivity {...props} />;

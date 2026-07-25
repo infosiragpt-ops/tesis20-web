@@ -1,5 +1,4 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 import {
@@ -17,6 +16,10 @@ import {
   isNidoPathMoveAllowed,
   normalizeOrderLabel,
 } from "../../src/nido/nido-interaction-model.js";
+import {
+  usesDirectSceneActivity,
+  usesDirectTapActivity,
+} from "../../src/nido/nido-activity-routing.js";
 
 test("las 29 rutas curriculares tienen una mecánica explícita", () => {
   const routes = NIDO_CURRICULUM.flatMap((area) =>
@@ -311,19 +314,7 @@ test("ordenar por tamaño nunca comienza ya resuelto", () => {
   }
 });
 
-test("las 11 rutas de tocar responden dentro de su propia escena", async () => {
-  const rendererSource = await readFile(
-    new URL("../../src/nido/nido-games.jsx", import.meta.url),
-    "utf8",
-  );
-  const directKinds = [
-    rendererSource.match(
-      /const DIRECT_TAP_KINDS = new Set\(\[([\s\S]*?)\]\);/,
-    )?.[1] ?? "",
-    rendererSource.match(
-      /const DIRECT_SCENE_KINDS = new Set\(\[([\s\S]*?)\]\);/,
-    )?.[1] ?? "",
-  ].join("\n");
+test("las 11 rutas de tocar responden dentro de su propia escena", () => {
   const tapRoutes = Object.entries(NIDO_ROUTE_INTERACTIONS).filter(
     ([, interaction]) => interaction === "tap",
   );
@@ -337,12 +328,46 @@ test("las 11 rutas de tocar responden dentro de su propia escena", async () => {
       ageId: "4-5",
       gameIndex: 0,
     });
-    assert.match(
-      directKinds,
-      new RegExp(`"${challenge.visual.kind}"`),
+    assert.equal(
+      usesDirectSceneActivity(challenge) ||
+        usesDirectTapActivity(challenge),
+      true,
       `${route} debe ser tocable dentro de su escena`,
     );
   }
+});
+
+test("las rutas de camino generadas siempre montan el tablero de recorrido", () => {
+  let pathChallenges = 0;
+
+  for (const age of NIDO_AGE_GROUPS) {
+    for (const area of NIDO_CURRICULUM) {
+      for (const category of area.categories) {
+        if (
+          category.strategy !== "matrix" ||
+          category.interaction !== "path"
+        ) {
+          continue;
+        }
+        for (let gameIndex = 0; gameIndex < 20; gameIndex += 1) {
+          const challenge = buildCurriculumChallenge({
+            areaId: area.id,
+            categoryId: category.id,
+            ageId: age.id,
+            gameIndex,
+          });
+          pathChallenges += 1;
+          assert.equal(
+            usesDirectSceneActivity(challenge),
+            false,
+            `${challenge.id} no debe saltarse PathActivity.`,
+          );
+        }
+      }
+    }
+  }
+
+  assert.equal(pathChallenges, 2400);
 });
 
 test("las opciones de gemelos describen la figura sin revelar la respuesta", () => {
