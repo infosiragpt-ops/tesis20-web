@@ -1,6 +1,6 @@
 {
-  "generatedVoices": 0,
-  "pendingVoices": 720,
-  "pendingCharacters": 80906,
+  "generatedVoices": 720,
+  "pendingVoices": 0,
+  "pendingCharacters": 0,
   "note": "Locuciones ya grabadas del catálogo generado (mecánica x tema). El verificador solo comprueba que este número nunca baje; el generador de voz lo sube tras cada lote."
 }

@@ -34,19 +34,23 @@ Antes de esta unificación, cinco pistas provenían de la página pública de Te
 
 Los juegos de `/nido` usan un catálogo independiente de narraciones locales:
 
-- Proveedor de generación: OpenRouter.
-- Modelo por defecto: `x-ai/grok-voice-tts-1.0`.
-- Voz femenina por defecto: `ara`.
-- Cobertura: 1.740 retos, con archivos deduplicados por texto y perfil de edad.
-- Entrega: MP3 estático desde `/assets/nido/audio/generated/`; la clave nunca llega al navegador.
+- Proveedor de generación: ElevenLabs.
+- Modelo por defecto: `eleven_multilingual_v2`.
+- Voz femenina por defecto: «Jhenny Cozy» (`EDitztUwd7lban76PAZs`), tierna, cálida y con la entonación más viva de las candidatas medidas.
+- Cobertura: todo el catálogo (29 rutas escritas a mano + 500 juegos generados, con locución compartida por texto), 219 líneas de Misión del Bosque y 11 frases de celebración, con archivos deduplicados por texto y perfil de edad.
+- Entrega: MP3 mono de 64 kbps normalizado a -16 LUFS desde `/assets/nido/audio/generated/`; la clave nunca llega al navegador.
 - Respaldo: si un archivo no está disponible, la interfaz intenta la voz del dispositivo y siempre conserva la consigna visible.
 
-Los perfiles cambian el ritmo y la redacción para `2–3`, `4–5` y `6` años. Los sonidos de acierto y error son archivos locales independientes para responder de inmediato.
+Los perfiles cambian el ritmo y la redacción para `2–3`, `4–5` y `6` años: la velocidad baja a 0,84 para los más pequeños y sube a 0,99 para los de seis. Los sonidos de acierto y error son archivos locales independientes para responder de inmediato.
+
+### Por qué esta voz
+
+La elección se midió, no se opinó. Frente a ocho candidatas, «Jhenny Cozy» resultó la de entonación más viva (variación de tono 0,29 y energía 0,63), justo lo que pide una maestra entusiasta para niños de 2 a 7 años, manteniendo la dicción intacta con `stability` 0,4 y `style` 0,45. Los perfiles por edad ajustan la velocidad (0,82 / 0,94 / 0,99) para que los más pequeños escuchen pausado y los de seis, fluido.
 
 Para regenerar:
 
 ```bash
-OPENROUTER_API_KEY=... npm run audio:nido
+ELEVENLABS_API_KEY=... npm run audio:nido
 ```
 
-La variable debe configurarse únicamente en un entorno seguro y nunca con el prefijo `VITE_`. El script reanuda por hash, valida cada MP3 con `ffprobe` cuando está disponible y actualiza `public/assets/nido/audio/manifest.json` solo después de completar el catálogo.
+La variable debe configurarse únicamente en un entorno seguro y nunca con el prefijo `VITE_`. El script reanuda por hash, nivela cada locución con `ffmpeg` (`loudnorm=I=-16:TP=-1.5:LRA=11`), la valida con `ffprobe` y actualiza `public/assets/nido/audio/manifest.json` solo después de completar el catálogo. Con `NIDO_TTS_LIMIT=4` genera un ensayo corto sin tocar el manifiesto ni los audios en uso.

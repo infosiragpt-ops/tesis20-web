@@ -9,6 +9,11 @@ import {
   buildCurriculumChallenge,
 } from "../src/nido/nido-curriculum.js";
 import { enumerateForestVoiceLines } from "../src/nido/game/content/forest-voice-lines.js";
+import {
+  CELEBRATION_AGE_ID,
+  NIDO_CELEBRATION_LINES,
+  NIDO_STREAK_LINES,
+} from "../src/nido/nido-celebration-lines.js";
 
 const EXPECTED_AREA_COUNT = 5;
 const MIN_CATEGORIES_PER_AREA = 5;
@@ -451,6 +456,39 @@ for (const audioPublicPath of bosqueAudioFiles) {
   );
 }
 
+// Frases de celebración: mismo contrato de estudio que los retos. Se graban
+// una sola vez (perfil 4-5) y el reproductor las busca por id en `tracks`;
+// mientras el lote no exista narran con la voz del dispositivo, así que aquí
+// solo se exige coherencia, no existencia previa.
+let coveredCelebrationCount = 0;
+for (const line of [...NIDO_CELEBRATION_LINES, ...NIDO_STREAK_LINES]) {
+  const audioPublicPath = audioTracks[line.id];
+  if (typeof audioPublicPath !== "string" || !audioPublicPath) continue;
+  coveredCelebrationCount += 1;
+  const expectedAudioHash = createHash("sha256")
+    .update(
+      [
+        audioManifest.generatorVersion,
+        audioManifest.model,
+        audioManifest.voiceId,
+        CELEBRATION_AGE_ID,
+        line.text,
+      ].join("\n"),
+      "utf8",
+    )
+    .digest("hex")
+    .slice(0, 28);
+  check(
+    audioPublicPath === `/assets/nido/audio/generated/${expectedAudioHash}.mp3`,
+    `Celebración “${line.id}” apunta a una locución desactualizada.`,
+  );
+  const relativePath = audioPublicPath.replace(/^\/+/, "");
+  check(
+    existsSync(path.join(AUDIO_PUBLIC_ROOT.pathname, relativePath)),
+    `No existe el archivo profesional de la celebración ${audioPublicPath}.`,
+  );
+}
+
 if (failureCount > 0) {
   console.error(
     `✗ Currículo Nido inválido: ${failureCount} de ${assertionCount} controles fallaron.`,
@@ -467,7 +505,8 @@ if (failureCount > 0) {
     `✓ Currículo Nido válido: ${areas.length} áreas, ${categoryCount} juegos ` +
       `(${generatedCategoryCount} generados), ${combinationCount} retos activos ` +
       `y ${optionCount} opciones verificadas con ${professionalAudioFiles.size} audios profesionales, ` +
-      `${bosqueVoiceLines.length} líneas de Misión del Bosque (${bosqueAudioFiles.size} audios) ` +
+      `${bosqueVoiceLines.length} líneas de Misión del Bosque (${bosqueAudioFiles.size} audios), ` +
+      `${coveredCelebrationCount}/${NIDO_CELEBRATION_LINES.length + NIDO_STREAK_LINES.length} celebraciones grabadas ` +
       `y ${assertionCount} controles.`,
   );
   if (pendingGeneratedVoices.size) {
