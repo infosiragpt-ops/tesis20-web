@@ -1312,7 +1312,9 @@ export function NidoGamesExperience({
         progressLabel: `${areaDone}/${areaItem.categories.length} rutas`,
         icon: <NidoGlyph name={areaItem.iconName} size={40} weight="duotone" />,
         onOpen: () => {
-          setSelectedArea(areaItem.id);
+          // handleAreaChange también fija la primera subcategoría del área:
+          // sin eso quedaría seleccionada una subcategoría de otra área.
+          handleAreaChange(areaItem.id);
           setGamesView("explorar");
         },
       };
@@ -1366,6 +1368,36 @@ export function NidoGamesExperience({
 
     return [bosqueTile, ...memoriaTiles, ...catchTiles, ...areaTiles];
   }, [arcadeProgress, bosqueRounds, progress, selectedAge]);
+
+  // Fila de tarjetas por materia: retos completados sobre el total del área.
+  const areaOverview = useMemo(
+    () =>
+      NIDO_CURRICULUM.map((areaItem) => {
+        const style = AREA_TILE_STYLE[areaItem.id] ?? AREA_TILE_STYLE.logica;
+        const total = areaItem.categories.length * NIDO_CURRICULUM_GAME_COUNT;
+        const done = areaItem.categories.reduce(
+          (sum, categoryItem) =>
+            sum +
+            Math.min(
+              NIDO_CURRICULUM_GAME_COUNT,
+              getProgressValue(progress, selectedAge, areaItem.id, categoryItem.id),
+            ),
+          0,
+        );
+        return {
+          id: areaItem.id,
+          name: areaItem.name,
+          iconName: areaItem.iconName,
+          routes: areaItem.categories.length,
+          accent: style.accent,
+          accentSoft: style.accentSoft,
+          done,
+          total,
+          percent: total > 0 ? Math.round((done / total) * 100) : 0,
+        };
+      }),
+    [progress, selectedAge],
+  );
 
   const resetActivity = () => {
     clearAutoAdvance();
@@ -1819,6 +1851,56 @@ export function NidoGamesExperience({
             <Play size={26} weight="fill" aria-hidden="true" />
             Jugar
           </button>
+        </section>
+
+        <section
+          className="nido-games__subjects"
+          aria-labelledby="nido-subjects-title"
+        >
+          <h2 id="nido-subjects-title" className="nido-games__subjects-title">
+            Materias del Nido
+          </h2>
+          <div className="nido-games__subjects-grid">
+            {areaOverview.map((areaItem) => (
+              <button
+                className="nido-games__subject-card"
+                type="button"
+                key={areaItem.id}
+                style={{
+                  "--area-accent": areaItem.accent,
+                  "--area-accent-soft": areaItem.accentSoft,
+                }}
+                onClick={() => {
+                  handleAreaChange(areaItem.id);
+                  setGamesView("explorar");
+                }}
+                aria-label={`${areaItem.name}: ${areaItem.done} de ${areaItem.total} retos completados`}
+              >
+                <span className="nido-games__subject-card-icon" aria-hidden="true">
+                  <NidoGlyph
+                    name={areaItem.iconName}
+                    size={34}
+                    weight="duotone"
+                  />
+                </span>
+                <strong className="nido-games__subject-card-name">
+                  {areaItem.name}
+                </strong>
+                <span className="nido-games__subject-card-count">
+                  {areaItem.done}/{areaItem.total} retos
+                </span>
+                <span
+                  className="nido-games__subject-card-bar"
+                  aria-hidden="true"
+                >
+                  <span style={{ width: `${areaItem.percent}%` }} />
+                </span>
+                <small className="nido-games__subject-card-routes">
+                  {areaItem.routes} rutas
+                </small>
+              </button>
+            ))}
+          </div>
         </section>
 
         <div

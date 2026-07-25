@@ -950,6 +950,110 @@
   border-bottom-width: 2px;
 }
 
+/* --- Fila de materias: retos completados por área --- */
+
+.nido-games__subjects {
+  margin-bottom: 22px;
+}
+
+.nido-games__subjects-title {
+  margin: 0 0 12px;
+  color: var(--nido-navy-soft);
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.nido-games__subjects-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.nido-games__subject-card {
+  display: grid;
+  gap: 7px;
+  justify-items: start;
+  padding: 16px 16px 14px;
+  border: 1px solid var(--nido-border);
+  border-bottom: 4px solid var(--area-accent);
+  border-radius: 20px;
+  background: var(--nido-white);
+  text-align: left;
+  cursor: pointer;
+  transition: transform 160ms ease, box-shadow 160ms ease;
+}
+
+.nido-games__subject-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 16px 30px rgba(16, 35, 63, 0.12);
+}
+
+.nido-games__subject-card-icon {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  background: var(--area-accent-soft);
+  color: var(--area-accent);
+}
+
+.nido-games__subject-card-name {
+  color: var(--nido-navy);
+  font-size: 0.98rem;
+  font-weight: 900;
+  line-height: 1.2;
+}
+
+.nido-games__subject-card-count {
+  color: var(--area-accent);
+  font-size: 0.84rem;
+  font-weight: 900;
+}
+
+.nido-games__subject-card-bar {
+  display: block;
+  width: 100%;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--area-accent-soft);
+  overflow: hidden;
+}
+
+.nido-games__subject-card-bar > span {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--area-accent);
+  transition: width 260ms ease;
+}
+
+.nido-games__subject-card-routes {
+  color: var(--nido-navy-soft);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+@media (max-width: 900px) {
+  .nido-games__subjects-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 520px) {
+  .nido-games__subjects-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nido-games__subject-card:hover {
+    transform: none;
+  }
+}
+
 .nido-games__view-toggle {
   display: flex;
   gap: 8px;
