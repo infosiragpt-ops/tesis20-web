@@ -4,21 +4,30 @@
 // premium: color saturado, tipografía redondeada gruesa, mascota expresiva,
 // feedback inmediato al pasar el cursor.
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 
 /**
+ * El filtro activo vive en el padre: la fila "Materias del Nido" también lo
+ * cambia, así que no puede haber dos fuentes de verdad.
+ *
  * @param {{
  *   tiles: Array<{
  *     id: string, title: string, tagline: string, category: string,
  *     accent: string, accentSoft: string, badge?: string,
- *     progressLabel?: string, icon: React.ReactNode, onOpen: () => void,
+ *     progressLabel?: string, icon: React.ReactNode,
+ *     onOpen: (event: React.MouseEvent) => void,
  *   }>,
  *   categories: Array<{ id: string, label: string }>,
+ *   activeCategory: string,
+ *   onCategoryChange: (categoryId: string) => void,
  * }} props
  */
-export default function ArcadeHub({ tiles, categories }) {
-  const [activeCategory, setActiveCategory] = useState("todos");
-
+export default function ArcadeHub({
+  tiles,
+  categories,
+  activeCategory,
+  onCategoryChange,
+}) {
   const visibleTiles = useMemo(
     () =>
       activeCategory === "todos"
@@ -39,7 +48,7 @@ export default function ArcadeHub({ tiles, categories }) {
           type="button"
           role="tab"
           aria-selected={activeCategory === "todos"}
-          onClick={() => setActiveCategory("todos")}
+          onClick={() => onCategoryChange("todos")}
         >
           Todos · {tiles.length}
         </button>
@@ -52,7 +61,7 @@ export default function ArcadeHub({ tiles, categories }) {
               type="button"
               role="tab"
               aria-selected={activeCategory === category.id}
-              onClick={() => setActiveCategory(category.id)}
+              onClick={() => onCategoryChange(category.id)}
               key={category.id}
             >
               {category.label} · {count}

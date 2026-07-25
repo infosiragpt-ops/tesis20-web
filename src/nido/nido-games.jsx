@@ -184,11 +184,17 @@ const REWARD_STICKERS = Object.freeze([
   { name: "Tooth", label: "Muelita" },
 ]);
 
+// Filtros de la Sala de juegos. Los cinco últimos coinciden con los id de área
+// del currículo, así la fila "Materias del Nido" puede filtrar el hub.
 const ARCADE_CATEGORIES = Object.freeze([
-  { id: "rutas", label: "Rutas por área" },
   { id: "aventura", label: "Aventura" },
   { id: "memoria", label: "Memoria" },
   { id: "atrapa", label: "Atrapa y cuenta" },
+  { id: "logica", label: "Lógica" },
+  { id: "matematicas", label: "Matemáticas" },
+  { id: "atencion", label: "Atención y memoria" },
+  { id: "habla", label: "Desarrollo del habla" },
+  { id: "ingles", label: "Inglés" },
 ]);
 
 const AREA_TILE_STYLE = Object.freeze({
@@ -330,10 +336,6 @@ function getProgressSummary(progress, ageId) {
 
 function findArea(areaId) {
   return NIDO_CURRICULUM.find((area) => area.id === areaId);
-}
-
-function getFirstCategoryId(areaId) {
-  return findArea(areaId)?.categories[0]?.id ?? "";
 }
 
 const SHAPES = new Set(["Circle", "Triangle", "Square", "Pentagon", "Hexagon", "Star"]);
@@ -743,7 +745,7 @@ export function NidoGamesExperience({
   const memoriaDialogRef = useRef(null);
   const [catchTheme, setCatchTheme] = useState(null);
   const catchDialogRef = useRef(null);
-  const [gamesView, setGamesView] = useState("arcade");
+  const [arcadeFilter, setArcadeFilter] = useState("todos");
   const albumDialogRef = useRef(null);
   const [routeComplete, setRouteComplete] = useState(false);
   const [feedbackEffect, setFeedbackEffect] = useState(null);
@@ -1292,33 +1294,53 @@ export function NidoGamesExperience({
     onStatus(`¡${missionLabel} completado! Ganaste el sticker ${reward.label}.`);
   };
 
-  // Tarjetas de la Sala de juegos: 5 áreas de rutas + Misión del Bosque +
-  // 5 mazos de Memoria + 5 mundos de Atrapa y Cuenta.
+  // Tarjetas de la Sala de juegos: las 29 rutas del currículo + Misión del
+  // Bosque + 5 mazos de Memoria + 5 mundos de Atrapa y Cuenta = 40 juegos.
+  // Cada tarjeta abre directamente su juego; no hay pantallas intermedias.
+  const routeTiles = useMemo(
+    () =>
+      NIDO_CURRICULUM.flatMap((areaItem) => {
+        const style = AREA_TILE_STYLE[areaItem.id] ?? AREA_TILE_STYLE.logica;
+        return areaItem.categories.map((categoryItem) => {
+          const done = getProgressValue(
+            progress,
+            selectedAge,
+            areaItem.id,
+            categoryItem.id,
+          );
+          const complete = done >= NIDO_CURRICULUM_GAME_COUNT;
+          return {
+            // Hay id de subcategoría repetidos entre áreas ("colores" está en
+            // Lógica y en Inglés): el área tiene que formar parte de la clave.
+            id: `ruta-${areaItem.id}-${categoryItem.id}`,
+            title: categoryItem.name,
+            tagline: categoryItem.description,
+            category: areaItem.id,
+            accent: style.accent,
+            accentSoft: style.accentSoft,
+            progressLabel: complete
+              ? "Completado"
+              : `Reto ${done + 1}/${NIDO_CURRICULUM_GAME_COUNT}`,
+            icon: (
+              <NidoGlyph
+                name={categoryItem.iconName}
+                size={40}
+                weight="duotone"
+              />
+            ),
+            // startCategory necesita el evento: guarda el botón pulsado para
+            // devolverle el foco al cerrar el juego.
+            onOpen: (event) =>
+              startCategory(categoryItem.id, event, areaItem.id),
+          };
+        });
+      }),
+    // routeRounds entra en las dependencias porque startCategory lo lee para
+    // calcular la ronda de rejugado; sin él las tarjetas guardarían un valor viejo.
+    [progress, routeRounds, selectedAge],
+  );
+
   const arcadeTiles = useMemo(() => {
-    const areaTiles = NIDO_CURRICULUM.map((areaItem) => {
-      const style = AREA_TILE_STYLE[areaItem.id] ?? AREA_TILE_STYLE.logica;
-      const areaDone = areaItem.categories.filter(
-        (categoryItem) =>
-          getProgressValue(progress, selectedAge, areaItem.id, categoryItem.id) >=
-          NIDO_CURRICULUM_GAME_COUNT,
-      ).length;
-      return {
-        id: `area-${areaItem.id}`,
-        title: areaItem.name,
-        tagline: areaItem.description,
-        category: "rutas",
-        accent: style.accent,
-        accentSoft: style.accentSoft,
-        progressLabel: `${areaDone}/${areaItem.categories.length} rutas`,
-        icon: <NidoGlyph name={areaItem.iconName} size={40} weight="duotone" />,
-        onOpen: () => {
-          // handleAreaChange también fija la primera subcategoría del área:
-          // sin eso quedaría seleccionada una subcategoría de otra área.
-          handleAreaChange(areaItem.id);
-          setGamesView("explorar");
-        },
-      };
-    });
 
     const bosqueTile = {
       id: "bosque",
@@ -1366,8 +1388,8 @@ export function NidoGamesExperience({
       };
     });
 
-    return [bosqueTile, ...memoriaTiles, ...catchTiles, ...areaTiles];
-  }, [arcadeProgress, bosqueRounds, progress, selectedAge]);
+    return [bosqueTile, ...memoriaTiles, ...catchTiles, ...routeTiles];
+  }, [arcadeProgress, bosqueRounds, routeTiles, selectedAge]);
 
   // Fila de tarjetas por materia: retos completados sobre el total del área.
   const areaOverview = useMemo(
@@ -1415,7 +1437,7 @@ export function NidoGamesExperience({
     resetActivity();
     setFocusMode(false);
     if (announce) {
-      onStatus("Juego cerrado. Regresaste a la selección de subcategorías.");
+      onStatus("Juego cerrado. Regresaste a la sala de juegos.");
     }
   };
 
@@ -1471,20 +1493,6 @@ export function NidoGamesExperience({
     onStatus(
       `Mostrando juegos diseñados para ${AGE_GROUPS.find((item) => item.id === ageId).label}.`,
     );
-  };
-
-  const handleAreaChange = (areaId) => {
-    const categoryId = getFirstCategoryId(areaId);
-    setSelectedArea(areaId);
-    setSelectedCategory(categoryId);
-    setCurrentGameIndex(
-      Math.min(
-        getProgressValue(progress, selectedAge, areaId, categoryId),
-        NIDO_CURRICULUM_GAME_COUNT - 1,
-      ),
-    );
-    resetActivity();
-    onStatus(`Área de ${findArea(areaId).name} seleccionada.`);
   };
 
   const startCategory = (categoryId, event, areaId = selectedArea) => {
@@ -1588,10 +1596,6 @@ export function NidoGamesExperience({
       areaName: followingArea.name,
     };
   }, [area, selectedArea, selectedCategory]);
-
-  const handleStart = (event) => {
-    startCategory(selectedCategory, event);
-  };
 
   const handleSpeak = () => {
     if (speaking) {
@@ -1749,8 +1753,7 @@ export function NidoGamesExperience({
             <h1 id="nido-games-title">Elige la edad para comenzar</h1>
             <p>
               Rutas de lógica, matemáticas, atención, memoria, habla e inglés.
-              Cada subcategoría contiene 20 retos jugables con narración
-              profesional.
+              Cada juego contiene 20 retos jugables con narración profesional.
             </p>
           </div>
           <div className="nido-games__heading-actions">
@@ -1863,18 +1866,23 @@ export function NidoGamesExperience({
           <div className="nido-games__subjects-grid">
             {areaOverview.map((areaItem) => (
               <button
-                className="nido-games__subject-card"
                 type="button"
                 key={areaItem.id}
                 style={{
                   "--area-accent": areaItem.accent,
                   "--area-accent-soft": areaItem.accentSoft,
                 }}
-                onClick={() => {
-                  handleAreaChange(areaItem.id);
-                  setGamesView("explorar");
-                }}
-                aria-label={`${areaItem.name}: ${areaItem.done} de ${areaItem.total} retos completados`}
+                className={`nido-games__subject-card ${
+                  arcadeFilter === areaItem.id ? "is-selected" : ""
+                }`}
+                aria-pressed={arcadeFilter === areaItem.id}
+                onClick={() =>
+                  // Segundo toque sobre la misma materia: vuelve a verlo todo.
+                  setArcadeFilter((current) =>
+                    current === areaItem.id ? "todos" : areaItem.id,
+                  )
+                }
+                aria-label={`${areaItem.name}: ${areaItem.done} de ${areaItem.total} retos completados. Filtrar la sala de juegos.`}
               >
                 <span className="nido-games__subject-card-icon" aria-hidden="true">
                   <NidoGlyph
@@ -1903,344 +1911,12 @@ export function NidoGamesExperience({
           </div>
         </section>
 
-        <div
-          className="nido-games__view-toggle"
-          role="tablist"
-          aria-label="Cómo quieres jugar"
-        >
-          <button
-            className={gamesView === "arcade" ? "is-selected" : ""}
-            type="button"
-            role="tab"
-            aria-selected={gamesView === "arcade"}
-            onClick={() => setGamesView("arcade")}
-          >
-            🎮 Sala de juegos
-          </button>
-          <button
-            className={gamesView === "camino" ? "is-selected" : ""}
-            type="button"
-            role="tab"
-            aria-selected={gamesView === "camino"}
-            onClick={() => setGamesView("camino")}
-          >
-            Camino de aprendizaje
-          </button>
-          <button
-            className={gamesView === "explorar" ? "is-selected" : ""}
-            type="button"
-            role="tab"
-            aria-selected={gamesView === "explorar"}
-            onClick={() => setGamesView("explorar")}
-          >
-            Explorar por áreas
-          </button>
-        </div>
-
-        {gamesView === "arcade" ? (
-          <ArcadeHub tiles={arcadeTiles} categories={ARCADE_CATEGORIES} />
-        ) : null}
-
-        {gamesView === "camino" ? (
-          <div className="nido-games__path" aria-label="Camino de aprendizaje">
-            {NIDO_CURRICULUM.map((areaItem) => {
-              const areaDone = areaItem.categories.filter(
-                (categoryItem) =>
-                  getProgressValue(
-                    progress,
-                    selectedAge,
-                    areaItem.id,
-                    categoryItem.id,
-                  ) >= NIDO_CURRICULUM_GAME_COUNT,
-              ).length;
-
-              return (
-                <section
-                  className="nido-games__path-area"
-                  data-area={areaItem.id}
-                  key={areaItem.id}
-                >
-                  <header className="nido-games__path-area-heading">
-                    <span aria-hidden="true">
-                      <NidoGlyph
-                        name={areaItem.iconName}
-                        size={26}
-                        weight="duotone"
-                      />
-                    </span>
-                    <strong>{areaItem.name}</strong>
-                    <small>
-                      {areaDone}/{areaItem.categories.length} rutas
-                    </small>
-                  </header>
-                  <ol className="nido-games__path-nodes">
-                    {areaItem.categories.map((categoryItem) => {
-                      const completed = getProgressValue(
-                        progress,
-                        selectedAge,
-                        areaItem.id,
-                        categoryItem.id,
-                      );
-                      const done = completed >= NIDO_CURRICULUM_GAME_COUNT;
-                      const isCurrent =
-                        pathCurrentId === `${areaItem.id}:${categoryItem.id}`;
-                      const nodeRound = getRoundValue(
-                        routeRounds,
-                        selectedAge,
-                        areaItem.id,
-                        categoryItem.id,
-                      );
-
-                      return (
-                        <li
-                          className={
-                            done
-                              ? "is-done"
-                              : isCurrent
-                                ? "is-current"
-                                : "is-pending"
-                          }
-                          key={categoryItem.id}
-                        >
-                          {isCurrent ? (
-                            <NidoMascot
-                              className="nido-games__path-mascot"
-                              pose="hola"
-                              size={72}
-                              aria-hidden="true"
-                            />
-                          ) : null}
-                          <button
-                            type="button"
-                            aria-label={`${done ? "Ruta completada" : isCurrent ? "Tu siguiente paso" : "Ruta"}: ${categoryItem.name}. ${completed} de 20 retos.`}
-                            onClick={(event) =>
-                              startCategory(categoryItem.id, event, areaItem.id)
-                            }
-                          >
-                            <span
-                              className="nido-games__path-node-icon"
-                              aria-hidden="true"
-                            >
-                              <NidoGlyph
-                                name={categoryItem.iconName}
-                                size={34}
-                                weight="duotone"
-                              />
-                              {done ? (
-                                <CheckCircle
-                                  className="nido-games__path-node-check"
-                                  size={22}
-                                  weight="fill"
-                                />
-                              ) : null}
-                            </span>
-                            <span className="nido-games__path-node-copy">
-                              <strong>{categoryItem.name}</strong>
-                              <small>
-                                {done
-                                  ? nodeRound > 0
-                                    ? `¡Completada! · Ronda ${nodeRound + 1} lista`
-                                    : "¡Completada! Toca para una ronda nueva"
-                                  : isCurrent
-                                    ? `Tu siguiente paso · ${completed}/20`
-                                    : `${completed}/20 retos`}
-                              </small>
-                            </span>
-                            <span
-                              className="nido-games__path-node-stars"
-                              aria-hidden="true"
-                            >
-                              <Star
-                                size={17}
-                                weight="fill"
-                                className={completed >= 7 ? "is-on" : ""}
-                              />
-                              <Star
-                                size={21}
-                                weight="fill"
-                                className={completed >= 14 ? "is-on" : ""}
-                              />
-                              <Star
-                                size={17}
-                                weight="fill"
-                                className={done ? "is-on" : ""}
-                              />
-                            </span>
-                          </button>
-                        </li>
-                      );
-                    })}
-                  </ol>
-                </section>
-              );
-            })}
-          </div>
-        ) : null}
-
-        {gamesView === "explorar" ? (
-        <div className="nido-games__learning">
-          <nav className="nido-games__areas" aria-label="Áreas de aprendizaje">
-            {NIDO_CURRICULUM.map((areaOption) => {
-              const areaCompleted = areaOption.categories.reduce(
-                (total, categoryItem) =>
-                  total +
-                  getProgressValue(
-                    progress,
-                    selectedAge,
-                    areaOption.id,
-                    categoryItem.id,
-                  ),
-                0,
-              );
-
-              return (
-                <button
-                  className={areaOption.id === selectedArea ? "is-selected" : ""}
-                  type="button"
-                  aria-pressed={areaOption.id === selectedArea}
-                  onClick={() => handleAreaChange(areaOption.id)}
-                  key={areaOption.id}
-                >
-                  <span>
-                    <NidoGlyph
-                      name={areaOption.iconName}
-                      size={29}
-                      weight="duotone"
-                      aria-hidden="true"
-                    />
-                  </span>
-                  <span>
-                    <strong>{areaOption.name}</strong>
-                    <small>
-                      {areaCompleted}/{areaOption.categories.length * 20} retos
-                    </small>
-                  </span>
-                </button>
-              );
-            })}
-          </nav>
-
-          <article className="nido-games__catalog" data-area={selectedArea}>
-            <header className="nido-games__catalog-header">
-              <span>
-                <NidoGlyph
-                  name={area.iconName}
-                  size={38}
-                  weight="duotone"
-                  aria-hidden="true"
-                />
-              </span>
-              <div>
-                <small>ÁREA DE APRENDIZAJE</small>
-                <h2>{area.name}</h2>
-                <p>{area.description}</p>
-              </div>
-              <img
-                src={AREA_WORLD_ASSETS[selectedArea].src}
-                alt={AREA_WORLD_ASSETS[selectedArea].alt}
-                loading="lazy"
-                decoding="async"
-              />
-            </header>
-
-            <div
-              className="nido-games__categories"
-              aria-label={`Subcategorías de ${area.name}`}
-            >
-              {area.categories.map((categoryItem, index) => {
-                const completed = getProgressValue(
-                  progress,
-                  selectedAge,
-                  selectedArea,
-                  categoryItem.id,
-                );
-                const tone = CATEGORY_TONES[index % CATEGORY_TONES.length];
-                const selected = categoryItem.id === selectedCategory;
-
-                return (
-                  <button
-                    className={selected ? "is-selected" : ""}
-                    style={{
-                      "--category-bg": tone.background,
-                      "--category-ink": tone.ink,
-                      "--category-track": tone.track,
-                    }}
-                    type="button"
-                    aria-haspopup="dialog"
-                    aria-label={`Abrir ${categoryItem.name}. ${completed} de 20 retos completados.`}
-                    onClick={(event) =>
-                      startCategory(categoryItem.id, event)
-                    }
-                    key={categoryItem.id}
-                  >
-                    <span className="nido-games__category-icon">
-                      <NidoGlyph
-                        name={categoryItem.iconName}
-                        size={44}
-                        weight="duotone"
-                        aria-hidden="true"
-                      />
-                    </span>
-                    <span className="nido-games__category-copy">
-                      <strong>{categoryItem.name}</strong>
-                      <small>{categoryItem.description}</small>
-                      <span
-                        className="nido-games__category-progress"
-                        role="progressbar"
-                        aria-label={`Progreso en ${categoryItem.name}`}
-                        aria-valuemin="0"
-                        aria-valuemax="20"
-                        aria-valuenow={completed}
-                      >
-                        <i style={{ width: `${(completed / 20) * 100}%` }} />
-                      </span>
-                    </span>
-                    <span className="nido-games__category-count">
-                      <span>
-                        <strong>{completed} / 20</strong>
-                        <small>{completed > 0 ? "Continuar" : "Jugar ahora"}</small>
-                      </span>
-                      <ArrowRight size={24} weight="bold" aria-hidden="true" />
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-
-            <footer className="nido-games__catalog-action">
-              <div>
-                <NidoGlyph
-                  name={category.iconName}
-                  size={34}
-                  weight="duotone"
-                  aria-hidden="true"
-                />
-                <span>
-                  <small>RUTA LISTA PARA JUGAR</small>
-                  <strong>{category.name}</strong>
-                  <span>
-                    {completedGames === NIDO_CURRICULUM_GAME_COUNT
-                      ? "La ruta reiniciará en el reto 1 de 20."
-                      : `Continuarás en el reto ${completedGames + 1} de 20.`}
-                  </span>
-                </span>
-              </div>
-              <button
-                type="button"
-                aria-haspopup="dialog"
-                onClick={handleStart}
-              >
-                <Play size={22} weight="fill" aria-hidden="true" />
-                {completedGames === 20
-                  ? "Repetir ruta"
-                  : completedGames > 0
-                    ? "Continuar ruta"
-                    : "Abrir ruta"}
-              </button>
-            </footer>
-          </article>
-        </div>
-        ) : null}
+        <ArcadeHub
+          tiles={arcadeTiles}
+          categories={ARCADE_CATEGORIES}
+          activeCategory={arcadeFilter}
+          onCategoryChange={setArcadeFilter}
+        />
       </div>
 
       {bosqueOpen && typeof document !== "undefined"
@@ -2416,7 +2092,7 @@ export function NidoGamesExperience({
                     className="nido-games__focus-close"
                     ref={focusCloseRef}
                     type="button"
-                    aria-label="Cerrar juego y volver a las subcategorías"
+                    aria-label="Cerrar juego y volver a la sala de juegos"
                     onClick={() => closeFocusedGame()}
                   >
                     <X size={30} weight="bold" aria-hidden="true" />
