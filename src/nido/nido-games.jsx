@@ -122,6 +122,52 @@ const AREA_WORLD_ASSETS = Object.freeze({
   },
 });
 
+// Cada área tiene una sola lámina, así que los 106 juegos de Lógica se veían
+// exactamente iguales. Dibujar cien fondos nuevos no cabe: las seis láminas
+// actuales ya pesan 1,8 MB de los 9 MiB que admite el despliegue. En vez de eso
+// cada pack temático encuadra un trozo distinto de la misma lámina —color,
+// acercamiento y desplazamiento propios—, así que las diez rutas de una materia
+// abren en diez escenografías distintas sin sumar un byte de imagen.
+//
+// El desplazamiento va en `transform` y no en `object-position`: la lámina es
+// 3:2 y el panel casi cuadrado, así que al recortar en `cover` solo sobra
+// imagen a los lados y `object-position` no tenía ni un píxel de recorrido
+// vertical.
+//
+// El margen para desplazar lo da solo el zoom: `cover` recorta *dentro* del
+// elemento, así que mover el elemento no descubre más lámina —descubre el
+// panel. Con el zoom centrado sobran (zoom − 1) / 2 por lado, y cada par se
+// queda en el 80 % de ese margen para que ningún encuadre deje una franja vacía.
+const SCENE_THEMES = Object.freeze({
+  mascotas: ["#f0954b", "1.55", "-22%, 14%"],
+  granja: ["#9aae3d", "1.42", "16%, -11%"],
+  jardin: ["#4fae63", "1.78", "-12%, -28%"],
+  mar: ["#2fa3a8", "1.5", "19%, 12%"],
+  cielo: ["#43b0e0", "1.62", "-25%, -18%"],
+  cocina: ["#e8664f", "1.34", "7%, 12%"],
+  casa: ["#c98a3f", "1.9", "26%, 28%"],
+  vehiculos: ["#3f8fd2", "1.46", "-19%, 3%"],
+  escuela: ["#5f7ae0", "1.3", "11%, -8%"],
+  juguetes: ["#dd5fae", "1.7", "-18%, 24%"],
+  formas: ["#7c6cf0", "1.52", "21%, -16%"],
+  caritas: ["#ef7aa8", "1.36", "-14%, -10%"],
+});
+
+const SCENE_THEME_IDS = Object.keys(SCENE_THEMES);
+
+function sceneTheme(categoryId) {
+  // Los generados se llaman `mecanica--pack`; el pack manda su escenografía.
+  const packTheme = SCENE_THEMES[categoryId.split("--")[1]];
+  if (packTheme) return packTheme;
+  // Los escritos a mano no tienen pack: se reparten una escenografía estable a
+  // partir del identificador para que dos rutas vecinas no repitan encuadre.
+  let hash = 7;
+  for (let index = 0; index < categoryId.length; index += 1) {
+    hash = (hash * 31 + categoryId.charCodeAt(index)) % 9973;
+  }
+  return SCENE_THEMES[SCENE_THEME_IDS[hash % SCENE_THEME_IDS.length]];
+}
+
 const DEFAULT_AUDIO_TRACKS = Object.freeze({});
 
 const DEFAULT_FEEDBACK_TRACKS = Object.freeze({
@@ -1023,10 +1069,24 @@ function MechanicScene({
       <VisualToken item={item} compact={items.length > 6} key={`${itemLabel(item)}-${index}`} />
     ))}{v.missingPosition ? <span className="nido-games__visual-question">?</span> : null}</div>;
   }
-  return <div className="nido-games__mechanic is-options">
-    <b>{v.clue?.sides ? `${v.clue.sides} lados` : v.clue?.name ?? v.family ?? v.topic ?? ""}</b>
-    <span>{pictures}</span>
-  </div>;
+  // Sin nada propio que enseñar, la escena se limitaba a repetir las opciones
+  // en miniatura: 3.600 retos con un panel que duplicaba lo que ya estaba al
+  // lado a tamaño grande. Cada caso enseña ahora su contenido real.
+  if (v.kind === "camouflage") {
+    return <div className="nido-games__camouflage" style={{ "--camouflage": v.backgroundTone }}>
+      <Picture item={challenge.options.find((option) => option.id === challenge.answerId)} />
+    </div>;
+  }
+  const heading = v.clue?.sides ? `${v.clue.sides} lados` : v.clue?.name ?? v.family ?? v.topic;
+  if (heading) {
+    return <div className="nido-games__clue">
+      <Picture item={{ iconName: challenge.iconMetadata.category }} />
+      <b>{heading}</b>
+    </div>;
+  }
+  // Queda el inglés puro (`touch the bird`), donde la palabra de la ronda ya se
+  // dibuja grande justo debajo: cualquier añadido sería ruido.
+  return v.word ? null : <div className="nido-games__mechanic is-options"><span>{pictures}</span></div>;
 }
 
 function ChallengeScene({
@@ -1042,6 +1102,7 @@ function ChallengeScene({
   const { visual } = challenge;
   const worldAsset = AREA_WORLD_ASSETS[challenge.areaId];
   const directSceneActivity = usesDirectSceneActivity(challenge);
+  const [themeTone, themeZoom, themeShift] = sceneTheme(challenge.categoryId);
 
   return (
     <div
@@ -1054,6 +1115,10 @@ function ChallengeScene({
       data-kind={visual.kind}
       data-age={challenge.ageId}
       style={{
+        "--scene-tone": themeTone,
+        "--scene-zoom": themeZoom,
+        "--scene-shift": themeShift,
+        // El camuflaje pinta su propio lienzo: ahí manda el reto, no el pack.
         ...(visual.backgroundTone
           ? { "--scene-tone": visual.backgroundTone }
           : {}),

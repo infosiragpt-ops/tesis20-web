@@ -306,6 +306,10 @@
 .nido-games__scene {
   --scene-tone: var(--a);
   position: relative;
+  /* `inline-size` y no `size`: el alto del panel sigue dependiendo del
+     contenido en el apilado móvil, pero el ancho ya sirve de referencia para
+     escalar lo que se dibuja dentro. */
+  container-type: inline-size;
   min-height: 190px;
   display: grid;
   place-items: center;
@@ -325,8 +329,10 @@
   height: 100%;
   inset: 0;
   object-fit: cover;
-  opacity: 0.2;
-  transform: scale(1.02);
+  opacity: 0.28;
+  /* El orden importa: con `scale()` delante, el desplazamiento saldría
+     multiplicado por el zoom y descubriría el borde de la lámina. */
+  transform: translate(var(--scene-shift, 0, 0)) scale(var(--scene-zoom, 1.02));
 }
 
 .nido-games__scene-content {
@@ -344,6 +350,53 @@
   flex-wrap: wrap;
   justify-content: center;
   gap: 7px;
+}
+
+/* Densidad de la escena. Los dibujos estaban clavados en 56 px dentro de un
+   panel de 440×455: la mitad de los retos enseñaban dos monigotes flotando en
+   un cuadro casi vacío. Ahora el tamaño sale de cuántos hay y del ancho real
+   del panel (`cqw`), y el `[data-age]` está solo para ganarle al tope de 56 px
+   que 2–3 años impone más abajo a todos los dibujos. Ojo: la lista de
+   contenedores es cerrada a propósito —`position-scene`, `is-sizes` o el
+   tablero de camino tienen cajas de tamaño fijo y un dibujo de 118 px las
+   reventaría. */
+.nido-games__focus-shell[data-age] .nido-games__scene-content > .nido-games__visual-sequence {
+  --token: min(118px, 26cqw);
+  gap: 12px;
+}
+
+.nido-games__focus-shell[data-age]
+  .nido-games__scene-content
+  > .nido-games__visual-sequence:has(> :nth-child(4)) {
+  --token: min(92px, 20cqw);
+}
+
+.nido-games__focus-shell[data-age]
+  .nido-games__scene-content
+  > .nido-games__visual-sequence:has(> :nth-child(7)) {
+  --token: min(70px, 15cqw);
+}
+
+.nido-games__focus-shell[data-age]
+  .nido-games__scene-content
+  > :is(.nido-games__clue, .nido-games__camouflage) {
+  --token: min(104px, 24cqw);
+}
+
+.nido-games__focus-shell[data-age]
+  .nido-games__scene-content
+  > :is(.nido-games__visual-sequence, .nido-games__clue, .nido-games__camouflage)
+  :is(.nido-games__picture, .nido-games__picture svg) {
+  width: var(--token);
+  height: var(--token);
+}
+
+/* El camuflaje es la única pista del «ojo de lince»: a 170×100 se leía como un
+   sello perdido en la lámina. */
+.nido-games__scene-content > .nido-games__camouflage {
+  width: min(320px, 76cqw);
+  height: min(200px, 48cqw);
+  border-radius: 18px;
 }
 
 .nido-games__visual-question {
@@ -364,6 +417,30 @@
   border-radius: 10px;
   background: #fff;
   box-shadow: 0 7px 16px rgba(16, 35, 63, 0.09);
+}
+
+/* La pista temática («Caritas», «La cocina») es lo único que enseña la escena
+   en esas rutas: se dibuja como cartel de la sala, no como etiqueta suelta. */
+.nido-games__focus-shell[data-age] .nido-games__scene-content > .nido-games__clue {
+  min-width: min(320px, 100%);
+  min-height: 0;
+  gap: 10px;
+  padding: 18px 22px;
+  border-style: solid;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: 0 12px 28px rgba(16, 35, 63, 0.13);
+  font-size: clamp(1rem, 3.2cqw, 1.55rem);
+}
+
+/* En los juegos de inglés la palabra de la ronda es la escena entera: sin
+   dibujo que la acompañe se lee como cartel, no como pie de foto. */
+.nido-games__scene-content:not(:has(> .nido-games__mechanic, > .nido-games__clue))
+  > .nido-games__scene-word {
+  padding: 12px 26px;
+  border-radius: 18px;
+  font-size: clamp(1.6rem, 7.5cqw, 3.1rem);
+  letter-spacing: 0.01em;
 }
 
 .nido-games__scene-repeat {
