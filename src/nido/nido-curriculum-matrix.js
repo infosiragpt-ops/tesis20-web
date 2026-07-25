@@ -740,15 +740,11 @@ const MATH_MECHANICS = Object.freeze([
   ),
   mechanic(
     "ordena-por-tamano",
-    "El más grande",
-    (p) => `Compara tamaños de ${p.plural} y elige el correcto.`,
-    (age) =>
-      tri(
-        age,
-        "Mira los tamaños… ¿cuál es el más grande? ¡Tócalo!",
-        "Compara los tres tamaños con calma. ¿Cuál es el más grande de todos?",
-        "Ordena mentalmente los tamaños de menor a mayor y toca el más pequeño de la fila.",
-      ),
+    "Ordena por tamaño",
+    (p) => `Coloca tres ${p.plural} en fila, del más pequeño al más grande.`,
+    // La consigna la devuelve `build`: cambia con la dirección del orden, y sin
+    // decirla el niño no sabría hacia dónde ordenar.
+    null,
     ({ pack: p, age, gameIndex, seed, h }) => {
       const target = p.items[(gameIndex + 4) % p.items.length];
       const sizes = [
@@ -756,18 +752,49 @@ const MATH_MECHANICS = Object.freeze([
         { id: "mediano", label: "mediano", scale: 1 },
         { id: "grande", label: "grande", scale: 1.4 },
       ];
-      const wantsSmall = age.id === "6";
-      const answer = wantsSmall ? sizes[0] : sizes[2];
-      const ordered = h.rotate(sizes, h.mix(seed, 7) % 3);
+      const ascending = gameIndex % 2 === 0;
+      const menorAMayor = "pequeño, mediano, grande";
+      const mayorAMenor = "grande, mediano, pequeño";
       return {
-        question: wantsSmall ? "¿Cuál es el más pequeño?" : "¿Cuál es el más grande?",
+        question: ascending
+          ? "Ordena de pequeño a grande."
+          : "Ordena de grande a pequeño.",
+        spoken: ascending
+          ? tri(
+              age,
+              "¡Como una escalerita! Pon primero el chiquito y al final el grandote.",
+              "Ordena los tres tamaños como una escalerita que sube: primero el pequeño, luego el mediano y al final el grande.",
+              "Arma la fila de menor a mayor: pequeño, mediano y grande. Cuando la tengas, comprueba el orden.",
+            )
+          : tri(
+              age,
+              "¡Como un tobogán! Pon primero el grandote y al final el chiquito.",
+              "Ordena los tres tamaños como una escalerita que baja: primero el grande, luego el mediano y al final el pequeño.",
+              "Arma la fila de mayor a menor: grande, mediano y pequeño. Cuando la tengas, comprueba el orden.",
+            ),
         visualType: "comparison",
-        visual: { kind: "size-order", itemIconName: target.iconName, items: ordered },
+        visual: {
+          kind: "size-order",
+          itemIconName: target.iconName,
+          items: h.rotate(sizes, h.mix(seed, 7) % 3),
+          direction: ascending ? "ascending" : "descending",
+        },
         choices: [
-          { ...answer, iconName: target.iconName },
-          ...sizes
-            .filter((entry) => entry.id !== answer.id)
-            .map((entry) => ({ ...entry, iconName: target.iconName })),
+          {
+            id: "orden-correcto",
+            label: ascending ? menorAMayor : mayorAMenor,
+            iconName: ascending ? "SortAscending" : "SortDescending",
+          },
+          {
+            id: "orden-inverso",
+            label: ascending ? mayorAMenor : menorAMayor,
+            iconName: ascending ? "SortDescending" : "SortAscending",
+          },
+          {
+            id: "orden-mezclado",
+            label: "mediano, pequeño, grande",
+            iconName: "ArrowsDownUp",
+          },
         ],
         correctIndex: 0,
       };
@@ -1653,10 +1680,74 @@ const AREA_PACK_IDS = Object.freeze({
   ingles: ["mascotas", "granja", "cocina", "casa", "escuela", "juguetes", "formas", "cielo", "jardin", "vehiculos"],
 });
 
+// Cómo se responde cada juego generado. No es decorativo: `match` exige que la
+// escena traiga una tarjeta guía (visual.model o visual.word), `order` solo
+// funciona con `size-order` y una respuesta escrita como secuencia, y `drag` y
+// `path` necesitan opciones con dibujo. Las mecánicas con `previewSeconds` se
+// quedan en `tap` o `match`, que son las dos actividades que saben esperar a
+// que termine el vistazo de memoria.
+const MECHANIC_INTERACTIONS = Object.freeze({
+  "logica/igual-al-modelo": "match",
+  "logica/el-intruso": "tap",
+  "logica/serie-ab": "drag",
+  "logica/serie-aab": "drag",
+  "logica/la-sombra": "match",
+  "logica/mismo-color": "match",
+  "logica/va-con-estos": "drag",
+  "logica/dos-pistas": "tap",
+  "logica/el-repetido": "tap",
+  "logica/el-que-falta-en-la-fila": "drag",
+  "matematicas/cuenta-y-toca": "tap",
+  "matematicas/donde-hay-mas": "tap",
+  "matematicas/donde-hay-menos": "tap",
+  "matematicas/si-se-va-uno": "drag",
+  "matematicas/junta-los-grupos": "drag",
+  "matematicas/numero-que-sigue": "drag",
+  "matematicas/cuenta-hacia-atras": "drag",
+  "matematicas/primero-o-ultimo": "tap",
+  "matematicas/ordena-por-tamano": "order",
+  "matematicas/misma-cantidad": "tap",
+  "atencion/memoriza-y-elige": "match",
+  "atencion/memoriza-el-color": "match",
+  "atencion/detalle-escondido": "tap",
+  "atencion/que-cambio-de-color": "tap",
+  "atencion/que-desaparecio": "tap",
+  "atencion/quien-se-escondio": "path",
+  "atencion/ojo-de-lince": "path",
+  "atencion/el-gemelo-exacto": "match",
+  "atencion/cuantos-dibujos-hay": "tap",
+  "atencion/dos-detalles": "tap",
+  "habla/de-que-color-es": "match",
+  "habla/uno-o-muchos": "tap",
+  "habla/palabra-larga": "tap",
+  "habla/palabra-corta": "tap",
+  "habla/cuantas-silabas": "tap",
+  "habla/el-o-la": "tap",
+  "habla/donde-esta": "path",
+  "habla/es-de-la-familia": "drag",
+  "habla/nombra-el-dibujo": "match",
+  "habla/grande-o-pequeno": "tap",
+  "ingles/touch-the-word": "match",
+  "ingles/listen-and-repeat": "match",
+  "ingles/english-colors": "match",
+  "ingles/english-numbers": "match",
+  "ingles/english-big-small": "tap",
+  "ingles/english-where": "path",
+  "ingles/english-one-many": "tap",
+  "ingles/english-same": "match",
+  "ingles/english-yes-no": "tap",
+  "ingles/english-shapes": "match",
+});
+
 const MECHANIC_BY_KEY = new Map();
 for (const [areaId, mechanics] of Object.entries(AREA_MECHANICS)) {
   mechanics.forEach((entry, index) => {
-    MECHANIC_BY_KEY.set(`${areaId}/${entry.id}`, { mechanic: entry, index });
+    const key = `${areaId}/${entry.id}`;
+    const interaction = MECHANIC_INTERACTIONS[key];
+    if (!interaction) {
+      throw new RangeError(`La mecánica ${key} no declara cómo se responde.`);
+    }
+    MECHANIC_BY_KEY.set(key, { mechanic: entry, index, interaction });
   });
 }
 
@@ -1687,6 +1778,7 @@ export function buildMatrixCategories(areaId, gameCount) {
           iconName: themePack.iconName,
           strategy: MATRIX_STRATEGY,
           description: entry.describe(themePack),
+          interaction: MECHANIC_INTERACTIONS[`${areaId}/${entry.id}`],
           gameCount,
           blueprint: Object.freeze({
             areaId,
@@ -1724,8 +1816,9 @@ export function buildMatrixDefinition({ blueprint, age, gameIndex, seed, helpers
 
   return {
     question: built.question,
-    spokenInstruction: built.spoken ?? found.mechanic.speak(age),
+    spokenInstruction: built.spoken ?? found.mechanic.speak?.(age) ?? "",
     coachingIndex: found.index,
+    interaction: found.interaction,
     visualType: built.visualType,
     visualKind: built.visual?.kind ?? `matrix-${found.mechanic.id}`,
     visual: built.visual,

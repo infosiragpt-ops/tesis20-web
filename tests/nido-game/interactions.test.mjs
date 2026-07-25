@@ -7,6 +7,7 @@ import {
   buildCurriculumChallenge,
 } from "../../src/nido/nido-curriculum.js";
 import {
+  NIDO_INTERACTION_META,
   NIDO_ROUTE_INTERACTIONS,
   buildInitialOrder,
   buildNidoPathLayout,
@@ -18,7 +19,9 @@ import {
 
 test("las 29 rutas curriculares tienen una mecánica explícita", () => {
   const routes = NIDO_CURRICULUM.flatMap((area) =>
-    area.categories.map((category) => `${area.id}:${category.id}`),
+    area.categories
+      .filter((category) => !category.strategy || category.strategy !== "matrix")
+      .map((category) => `${area.id}:${category.id}`),
   );
   assert.equal(routes.length, 29);
   assert.deepEqual(
@@ -52,10 +55,116 @@ test("cada edad recibe la mecánica definida para todas las rutas", () => {
           ageId: age.id,
           gameIndex: 0,
         });
+        // Las rutas escritas a mano la toman del mapa; las generadas la
+        // declaran en la propia categoría.
         assert.equal(
           getNidoInteractionType(challenge),
-          NIDO_ROUTE_INTERACTIONS[`${area.id}:${category.id}`],
+          category.interaction ??
+            NIDO_ROUTE_INTERACTIONS[`${area.id}:${category.id}`],
         );
+      }
+    }
+  }
+});
+
+test("cada juego generado declara una mecánica que sabe jugarse", () => {
+  const generated = NIDO_CURRICULUM.flatMap((area) =>
+    area.categories
+      .filter((category) => category.strategy === "matrix")
+      .map((category) => ({ area, category })),
+  );
+  assert.equal(generated.length, 500);
+
+  const seen = new Map();
+  for (const { area, category } of generated) {
+    assert.ok(
+      NIDO_INTERACTION_META[category.interaction],
+      `${area.id}:${category.id} declara una mecánica desconocida.`,
+    );
+    seen.set(
+      category.interaction,
+      (seen.get(category.interaction) ?? 0) + 1,
+    );
+  }
+
+  // Los quinientos juegos nuevos no pueden ser todos de tocar: el catálogo
+  // escrito a mano ya es interactivo y estos irían un paso por detrás.
+  assert.deepEqual(seen, new Map([
+    ["match", 140],
+    ["tap", 220],
+    ["drag", 90],
+    ["path", 40],
+    ["order", 10],
+  ]));
+});
+
+test("las mecánicas generadas reciben los datos que necesitan", () => {
+  for (const age of NIDO_AGE_GROUPS) {
+    for (const area of NIDO_CURRICULUM) {
+      for (const category of area.categories) {
+        if (category.strategy !== "matrix") continue;
+        for (const gameIndex of [0, 9, 19]) {
+          const challenge = buildCurriculumChallenge({
+            areaId: area.id,
+            categoryId: category.id,
+            ageId: age.id,
+            gameIndex,
+          });
+          const where = `${area.id}:${category.id}/${age.id}/${gameIndex}`;
+          const interaction = getNidoInteractionType(challenge);
+          const visual = challenge.visual;
+
+          if (interaction === "match") {
+            // Sin tarjeta guía, MatchActivity cae en un comodín "?" rotulado
+            // con la pregunta entera: ilegible para un niño de tres años.
+            assert.ok(
+              visual.model ?? visual.subject ?? visual.adult ?? visual.word,
+              `${where}: empareja sin tarjeta guía.`,
+            );
+          }
+
+          if (interaction === "order") {
+            assert.equal(visual.kind, "size-order", `${where}: orden sin piezas.`);
+            const correct = getCorrectOrderLabels(challenge);
+            assert.ok(correct.length >= 3, `${where}: orden sin secuencia.`);
+            assert.equal(
+              correct.length,
+              visual.items.length,
+              `${where}: la secuencia no coincide con las piezas.`,
+            );
+            const initial = buildInitialOrder(challenge).map((item) =>
+              normalizeOrderLabel(item.label ?? item.value),
+            );
+            assert.notDeepEqual(
+              initial,
+              correct.map(normalizeOrderLabel),
+              `${where}: el orden empieza ya resuelto.`,
+            );
+          }
+
+          if (interaction === "path") {
+            const layout = buildNidoPathLayout(challenge);
+            assert.equal(
+              layout.targets.length,
+              challenge.options.length,
+              `${where}: faltan destinos en el tablero.`,
+            );
+            assert.equal(
+              new Set(
+                layout.targets.map((target) => `${target.row}:${target.column}`),
+              ).size,
+              challenge.options.length,
+              `${where}: dos respuestas caen en la misma casilla.`,
+            );
+          }
+
+          if (interaction === "drag") {
+            assert.ok(
+              challenge.options.length >= 2,
+              `${where}: arrastrar necesita al menos dos piezas.`,
+            );
+          }
+        }
       }
     }
   }

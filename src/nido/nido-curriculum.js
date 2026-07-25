@@ -806,7 +806,9 @@ function makeChallenge(context, definition) {
     difficulty: age.difficulty,
     instructionStyle: age.instructionStyle,
     interaction:
-      NIDO_ROUTE_INTERACTIONS[`${area.id}:${categoryItem.id}`] ?? "tap",
+      definition.interaction ??
+      NIDO_ROUTE_INTERACTIONS[`${area.id}:${categoryItem.id}`] ??
+      "tap",
     question: definition.question,
     prompt: definition.question,
     spokenInstruction,

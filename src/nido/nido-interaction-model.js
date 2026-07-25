@@ -83,6 +83,11 @@ export function getNidoAgeInteractionProfile(ageId) {
 }
 
 export function getNidoInteractionType(challenge) {
+  // Las rutas escritas a mano están en el mapa de arriba; los juegos generados
+  // declaran su mecánica en el propio reto, así que no hace falta duplicar
+  // quinientas entradas aquí.
+  const declared = challenge?.interaction;
+  if (declared && NIDO_INTERACTION_META[declared]) return declared;
   return (
     NIDO_ROUTE_INTERACTIONS[
       `${challenge?.areaId ?? ""}:${challenge?.categoryId ?? ""}`
