@@ -527,17 +527,6 @@
   }
 }
 
-@keyframes nido-path-glow {
-  0%,
-  100% {
-    box-shadow: 0 10px 22px rgba(16, 35, 63, 0.08);
-  }
-
-  50% {
-    box-shadow: 0 10px 26px rgba(255, 111, 97, 0.35);
-  }
-}
-
 /* Álbum de stickers */
 
 .nido-games__album-dialog {

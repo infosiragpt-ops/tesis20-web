@@ -1163,35 +1163,6 @@
   animation-iteration-count: 2;
 }
 
-.nido-games__confetti i[data-shape="dot"] {
-  aspect-ratio: 1;
-  border-radius: 50%;
-}
-
-.nido-games__confetti i[data-shape="star"] {
-  aspect-ratio: 1;
-  clip-path: polygon(
-    50% 0,
-    62% 34%,
-    98% 36%,
-    70% 57%,
-    79% 94%,
-    50% 73%,
-    21% 94%,
-    30% 57%,
-    2% 36%,
-    38% 34%
-  );
-}
-
-.nido-games__confetti i[data-shape="candy"] {
-  aspect-ratio: 1.7;
-  border-radius: 50%;
-  box-shadow:
-    -5px 0 0 -2px rgba(255, 255, 255, 0.9),
-    5px 0 0 -2px rgba(255, 255, 255, 0.9);
-}
-
 @keyframes nido-bubble-burst {
   0% {
     transform: translate(-50%, -50%) scale(0.2);
@@ -1906,6 +1877,141 @@
   line-height: 1;
 }
 
+/* --- Vida de los runtimes interactivos -------------------------------------
+ *
+ * `tap` ya respiraba: sus botones entran escalonados, el dibujo se balancea
+ * solo, rebota al pasar por encima y hace «pop» al acertar. Los cuatro
+ * runtimes que llegaron después —arrastrar, emparejar, caminar y ordenar—
+ * heredaron el aspecto pero no el movimiento, así que en unos trescientos
+ * juegos las piezas aparecían de golpe y no se movían nunca más. Aquí se les
+ * da la misma vida reusando los fotogramas que ya existen: no cuesta peso
+ * nuevo y un niño ve el mismo lenguaje en los cinco modos de jugar.
+ */
+
+:is(
+    .nido-games__drag-pieces,
+    .nido-games__match-options,
+    .nido-games__order-track
+  )
+  > * {
+  animation: nido-pop-in 380ms cubic-bezier(0.2, 1.4, 0.4, 1) 140ms both;
+}
+
+:is(
+    .nido-games__drag-pieces,
+    .nido-games__match-options,
+    .nido-games__order-track
+  )
+  > *:nth-child(2) {
+  animation-delay: 210ms;
+}
+
+:is(
+    .nido-games__drag-pieces,
+    .nido-games__match-options,
+    .nido-games__order-track
+  )
+  > *:nth-child(3) {
+  animation-delay: 280ms;
+}
+
+:is(
+    .nido-games__drag-pieces,
+    .nido-games__match-options,
+    .nido-games__order-track
+  )
+  > *:nth-child(n + 4) {
+  animation-delay: 350ms;
+}
+
+/* El destino y la tarjeta guía entran los últimos: primero el niño ve qué
+   piezas tiene y solo después adónde van. */
+.nido-games__drop-zone,
+.nido-games__match-source,
+.nido-games__path-board {
+  animation: nido-rise-in 440ms cubic-bezier(0.2, 1.2, 0.4, 1) 300ms both;
+}
+
+/* Los dibujos respiran, como en `tap`. El desfase por posición par evita que
+   toda la pantalla lata a la vez, que resulta hipnótico y cansa. */
+:is(.nido-games__interactive-art, .nido-games__path-cell, .nido-games__match-source)
+  .nido-games__picture
+  :is(svg, img) {
+  animation: nido-idle-sway 3.4s ease-in-out infinite;
+  transform-origin: 50% 85%;
+}
+
+:is(.nido-games__drag-pieces, .nido-games__match-options)
+  > *:nth-child(even)
+  .nido-games__picture
+  :is(svg, img) {
+  animation-delay: 1.7s;
+}
+
+:is(.nido-games__interactive-option, .nido-games__match-option):not(:disabled):hover
+  .nido-games__picture
+  svg {
+  animation: nido-excited-bounce 520ms cubic-bezier(0.2, 1.4, 0.4, 1);
+}
+
+:is(.nido-games__interactive-option, .nido-games__match-option, .nido-games__drop-zone):active:not(:disabled) {
+  transform: scale(0.96);
+}
+
+/* Acertar y fallar tienen que sentirse en la pieza que el niño tocó, no solo
+   en el marcador de arriba. */
+:is(.nido-games__interactive-option, .nido-games__match-option).is-correct,
+.nido-games__drop-zone.is-complete {
+  animation: nido-answer-pop 420ms cubic-bezier(0.2, 1.4, 0.4, 1) both;
+}
+
+:is(.nido-games__interactive-option, .nido-games__match-option).is-error {
+  animation: nido-answer-wrong 320ms ease-out both;
+}
+
+/* El destino llama al dedo mientras hay una pieza en la mano. */
+.nido-games__drop-zone.is-ready {
+  animation: nido-drop-ready 1.1s ease-in-out infinite;
+}
+
+@keyframes nido-drop-ready {
+  0%,
+  100% {
+    transform: scale(1);
+    border-color: color-mix(in srgb, var(--a) 65%, #9fb3c6);
+  }
+
+  50% {
+    transform: scale(1.015);
+    border-color: var(--a);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nido-games__drag-pieces > *,
+  .nido-games__match-options > *,
+  .nido-games__order-track > *,
+  .nido-games__drop-zone,
+  .nido-games__drop-zone.is-ready,
+  .nido-games__drop-zone.is-complete,
+  .nido-games__match-source,
+  .nido-games__path-board,
+  .nido-games__interactive-option.is-correct,
+  .nido-games__interactive-option.is-error,
+  .nido-games__match-option.is-correct,
+  .nido-games__match-option.is-error,
+  .nido-games__interactive-art .nido-games__picture svg,
+  .nido-games__interactive-art .nido-games__picture img,
+  .nido-games__path-cell .nido-games__picture svg,
+  .nido-games__path-cell .nido-games__picture img,
+  .nido-games__match-source .nido-games__picture svg,
+  .nido-games__match-source .nido-games__picture img,
+  .nido-games__interactive-option:hover .nido-games__picture svg,
+  .nido-games__match-option:hover .nido-games__picture svg {
+    animation: none;
+  }
+}
+
 .nido-games__drag-activity,
 .nido-games__order-activity,
 .nido-games__match-activity,
@@ -2000,6 +2106,21 @@
   transform: scale(1.01);
 }
 
+/* La pieza ya está dentro del radio del imán: el destino deja de latir y se
+   queda abierto y quieto, que es la señal de «suelta aquí». */
+.nido-games__drop-zone.is-near {
+  animation: none;
+  border-style: solid;
+  border-color: #22885a;
+  background: #e9faf2;
+  transform: scale(1.04);
+  box-shadow: 0 0 0 6px rgba(34, 136, 90, 0.16);
+}
+
+.nido-games__drop-zone.is-near > span {
+  background: #22885a;
+}
+
 .nido-games__drop-zone.is-complete {
   border-style: solid;
   border-color: #22885a;
@@ -2030,7 +2151,12 @@
     #fff4df;
 }
 
+/* La pieza en la mano. `--drag-pull` va de 0 (lejos) a 1 (encima del destino) y
+   lo escribe el runtime en cada movimiento del dedo: la pieza se endereza,
+   crece y levanta más sombra a medida que se acerca, así el niño ve que va bien
+   antes de soltar. */
 .nido-games__drag-ghost {
+  --drag-pull: 0;
   position: fixed;
   z-index: 2147483646;
   width: 74px;
@@ -2040,9 +2166,26 @@
   border: 3px solid var(--a);
   border-radius: 18px;
   background: #fff;
-  box-shadow: 0 18px 34px rgba(16, 35, 63, 0.25);
+  box-shadow: 0 calc(18px + var(--drag-pull) * 12px)
+    calc(34px + var(--drag-pull) * 20px)
+    rgba(16, 35, 63, calc(0.25 + var(--drag-pull) * 0.12));
   pointer-events: none;
-  transform: translate(-50%, -50%) rotate(3deg) scale(1.08);
+  transform: translate(-50%, -50%) rotate(calc(4deg - var(--drag-pull) * 4deg))
+    scale(calc(1.06 + var(--drag-pull) * 0.16));
+}
+
+/* Sombra en el suelo: crece con el tirón y refuerza la sensación de altura. */
+.nido-games__drag-ghost::after {
+  content: "";
+  position: absolute;
+  bottom: calc(-16px - var(--drag-pull) * 6px);
+  left: 50%;
+  width: calc(46px + var(--drag-pull) * 20px);
+  height: 11px;
+  border-radius: 50%;
+  background: rgba(16, 35, 63, calc(0.16 + var(--drag-pull) * 0.1));
+  filter: blur(4px);
+  transform: translateX(-50%);
 }
 
 .nido-games__order-activity {
@@ -2068,10 +2211,27 @@
   box-shadow: 0 7px 0 rgba(16, 35, 63, 0.07);
 }
 
+.nido-games__order-piece {
+  position: relative;
+  touch-action: none;
+  user-select: none;
+}
+
 .nido-games__order-piece.is-picked {
   border-color: var(--a);
   background: var(--s);
   transform: translateY(-3px);
+}
+
+/* La pieza en la mano se levanta sobre la fila; las vecinas se apartan solas
+   porque el reordenado ya es en vivo. */
+.nido-games__order-piece.is-dragging {
+  z-index: 3;
+  border-color: var(--a);
+  background: var(--s);
+  box-shadow:
+    0 14px 0 color-mix(in srgb, var(--a) 20%, transparent),
+    0 18px 28px rgba(16, 35, 63, 0.2);
 }
 
 .nido-games__order-piece > button {
@@ -2217,12 +2377,129 @@
   background: linear-gradient(145deg, #eef9ff, #e8f0ff);
 }
 
+/* Emparejar. La tarjeta acertada viaja hasta la guía y se funde con ella: el
+   runtime mide el trayecto al vuelo y lo deja en `--merge-x` / `--merge-y`.
+   Poner un borde verde no explicaba *qué* se había emparejado; esto sí. */
+.nido-games__match-option.is-merging {
+  z-index: 4;
+  animation: nido-match-merge 640ms cubic-bezier(0.5, 0, 0.2, 1) 120ms both;
+}
+
+@keyframes nido-match-merge {
+  0% {
+    transform: translate(0, 0) scale(1);
+  }
+  20% {
+    transform: translate(0, 0) scale(1.1);
+  }
+  100% {
+    transform: translate(var(--merge-x, 0), var(--merge-y, 0)) scale(0.32);
+    opacity: 0;
+  }
+}
+
+/* Las demás parejas se apagan para que se lea el viaje. */
+.nido-games__match-options.is-merging > *:not(.is-merging) {
+  opacity: 0.32;
+  transition: opacity 220ms ease;
+}
+
+/* La guía recibe el golpe justo cuando la tarjeta llega. */
+.nido-games__match-source.is-merged {
+  animation: nido-match-absorb 480ms cubic-bezier(0.2, 1.5, 0.4, 1) 620ms both;
+}
+
+@keyframes nido-match-absorb {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 8px 0 rgba(16, 35, 63, 0.08);
+  }
+  38% {
+    transform: scale(1.12);
+    box-shadow:
+      0 8px 0 rgba(34, 136, 90, 0.3),
+      0 0 0 12px rgba(34, 136, 90, 0.16);
+  }
+  100% {
+    transform: scale(1.04);
+    box-shadow:
+      0 8px 0 rgba(34, 136, 90, 0.24),
+      0 0 0 5px rgba(34, 136, 90, 0.2);
+  }
+}
+
 .nido-games__match-connector {
+  position: relative;
+  height: 14px;
+  display: grid;
+  align-items: center;
   color: var(--a-dark);
-  font-size: 0.72rem;
-  font-weight: 950;
-  text-align: center;
-  white-space: nowrap;
+}
+
+/* La cuerda: de puntos mientras no se puede responder, continua en cuanto el
+   juego está listo. */
+.nido-games__match-connector::before {
+  content: "";
+  height: 3px;
+  border-radius: 3px;
+  background: repeating-linear-gradient(
+    90deg,
+    currentColor 0 5px,
+    transparent 5px 10px
+  );
+  opacity: 0.4;
+}
+
+.nido-games__match-connector.is-live::before {
+  background: currentColor;
+  opacity: 0.55;
+}
+
+/* El punto que corre de la guía a las opciones: dice hacia dónde mirar. */
+.nido-games__match-connector i {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0;
+  transform: translateY(-50%);
+}
+
+.nido-games__match-connector.is-live i {
+  animation: nido-match-travel 1.6s ease-in-out infinite;
+}
+
+@keyframes nido-match-travel {
+  0% {
+    left: 0;
+    opacity: 0;
+    transform: translateY(-50%) scale(0.6);
+  }
+  22% {
+    opacity: 1;
+    transform: translateY(-50%) scale(1);
+  }
+  78% {
+    opacity: 1;
+    transform: translateY(-50%) scale(1);
+  }
+  100% {
+    left: calc(100% - 9px);
+    opacity: 0;
+    transform: translateY(-50%) scale(0.6);
+  }
+}
+
+/* Al emparejar, el punto vuelve hacia la guía con la tarjeta. */
+.nido-games__match-connector.is-merged {
+  color: #22885a;
+}
+
+.nido-games__match-connector.is-merged i {
+  animation: nido-match-travel 640ms ease-in 120ms both reverse;
 }
 
 .nido-games__match-options {
@@ -2262,14 +2539,25 @@
   gap: 8px;
 }
 
+/* `--path-gap` y `--path-pad` existen para que el caminante pueda calcular su
+   posición: son los mismos valores que usa la cuadrícula y el móvil los aprieta,
+   así que tienen que viajar juntos o el personaje se desalinea. */
 .nido-games__path-board {
+  --path-gap: 3px;
+  --path-pad: 7px;
+  position: relative;
   width: min(100%, 330px);
   aspect-ratio: 1;
   display: grid;
+  /* Las filas eran implícitas y se ajustaban al contenido: en un tablero 3×3
+     salían 122 / 122 / 60 px, así que las casillas nunca fueron cuadradas y la
+     última fila quedaba aplastada. Fijarlas iguales cuadra la cuadrícula y deja
+     que el caminante calcule su posición con una sola medida. */
   grid-template-columns: repeat(var(--path-size), minmax(0, 1fr));
-  gap: 3px;
+  grid-template-rows: repeat(var(--path-size), minmax(0, 1fr));
+  gap: var(--path-gap);
   justify-self: center;
-  padding: 7px;
+  padding: var(--path-pad);
   border: 3px solid color-mix(in srgb, var(--a) 45%, #a4b6c7);
   border-radius: 18px;
   background: #f7fbff;
@@ -2330,19 +2618,58 @@
   height: clamp(22px, 4vw, 32px);
 }
 
+/* Rastro: las casillas ya pisadas quedan marcadas. Un niño que se pierde puede
+   ver por dónde ha venido, y el tablero deja de parecer siempre el mismo. */
+.nido-games__path-cell.is-visited {
+  background: color-mix(in srgb, var(--a) 22%, white);
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--a) 30%, transparent);
+}
+
+/* El caminante. Ya no es hijo de la casilla: se coloca sobre el tablero y se
+   mueve con `--path-row` / `--path-column`, que el runtime actualiza en cada
+   paso. El `100%` de `translate` es su propio ancho, o sea el de una casilla,
+   así que basta sumarle el hueco de la cuadrícula para caer clavado. */
 .nido-games__path-player {
   position: absolute;
-  z-index: 2;
+  z-index: 3;
+  top: var(--path-pad);
+  left: var(--path-pad);
+  width: calc(
+    (
+        100% - var(--path-pad) * 2 - (var(--path-size) - 1) * var(--path-gap)
+      ) / var(--path-size)
+  );
+  aspect-ratio: 1;
   display: grid;
   place-items: center;
-  inset: 8%;
   border-radius: 50%;
   background: #ffc94d;
   box-shadow:
     0 3px 0 #c48614,
     0 4px 10px rgba(16, 35, 63, 0.18);
   font-size: clamp(1rem, 4vw, 1.6rem);
-  transition: transform 140ms ease;
+  transform: translate(
+      calc(var(--path-column) * (100% + var(--path-gap))),
+      calc(var(--path-row) * (100% + var(--path-gap)))
+    )
+    scaleX(var(--path-facing, 1)) scale(0.84);
+  /* La curva rebota un poco al final: es la diferencia entre deslizarse y dar
+     un paso. */
+  transition: transform 300ms cubic-bezier(0.34, 1.32, 0.52, 1);
+}
+
+/* Halo bajo los pies para que no parezca pegado al fondo. */
+.nido-games__path-player::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: -14%;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--a) 26%, transparent) 0 60%,
+    transparent 72%
+  );
 }
 
 .nido-games__path-activity[data-kind="habitat-match"] .nido-games__path-player {
@@ -2506,9 +2833,9 @@
   }
 
   .nido-games__path-board {
+    --path-gap: 2px;
+    --path-pad: 4px;
     width: min(100%, 260px);
-    gap: 2px;
-    padding: 4px;
     border-radius: 13px;
   }
 
@@ -2548,8 +2875,20 @@
 @media (prefers-reduced-motion: reduce) {
   .nido-games__interactive-option,
   .nido-games__drop-zone,
-  .nido-games__path-player {
+  .nido-games__path-player,
+  .nido-games__match-connector i,
+  .nido-games__match-source.is-merged {
     animation: none;
+    transition: none;
+  }
+
+  /* La fusión sí se conserva, pero sin viaje: la tarjeta se apaga en su sitio.
+     Quitarla del todo dejaría el acierto sin ninguna respuesta visible. */
+  .nido-games__match-option.is-merging {
+    animation: nido-answer-pop 300ms ease both;
+  }
+
+  .nido-games__order-piece.is-dragging {
     transition: none;
   }
 }

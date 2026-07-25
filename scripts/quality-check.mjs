@@ -550,7 +550,14 @@ for (const buildAsset of buildAssets) {
   if (buildAsset.endsWith(".css")) {
     stylesheetBytes += bytes;
     if (isEagerAsset) initialStylesheetBytes += bytes;
-    check(bytes <= 85 * 1024, `${buildAsset} supera el máximo de 85 KiB por hoja.`);
+    // 2026-07-25: la hoja crítica conserva su tope de 85 KiB; las diferidas
+    // (hoy solo las de /nido) admiten 90 KiB desde la capa de vida de los
+    // cinco runtimes interactivos. Ver la nota del CSS total más abajo.
+    const sheetLimit = isEagerAsset ? 85 : 90;
+    check(
+      bytes <= sheetLimit * 1024,
+      `${buildAsset} supera el máximo de ${sheetLimit} KiB por hoja.`,
+    );
   }
   check(!buildAsset.endsWith(".map"), `No se deben publicar source maps: ${buildAsset}`);
 }
@@ -593,9 +600,17 @@ check(
 // 2026-07-25 (bis): 180 → 184 KiB por la hoja nueva de Misión del Bosque (HUD
 // de vidrio, bocadillo de Luma y mandos táctiles de ≥64 px): 2 KiB reales,
 // también diferidos en /nido.
+// 2026-07-25 (ter): 184 → 190 KiB por la capa de vida de los cinco runtimes
+// interactivos que comparten los 540 juegos: arrastre con imán y fantasma
+// (--drag-pull), reordenado FLIP, fusión de tarjetas en «match», personaje
+// interpolado con estela y orientación en «path». Antes de subir el tope se
+// barrió el CSS muerto (hero e ilustración ya retirados del marcado, keyframes
+// huérfanos, formas de confeti sin uso): −2,1 KiB reales. La hoja de /nido
+// queda en 85,5 KiB y el total en 184,6 KiB; el CSS inicial sigue clavado en
+// 85 KiB porque todo esto viaja en la ruta diferida de /nido.
 check(
-  stylesheetBytes <= 184 * 1024,
-  `El CSS total con rutas diferidas no debe superar 184 KiB (${Math.ceil(stylesheetBytes / 1024)} KiB).`,
+  stylesheetBytes <= 190 * 1024,
+  `El CSS total con rutas diferidas no debe superar 190 KiB (${Math.ceil(stylesheetBytes / 1024)} KiB).`,
 );
 check(deployBytesWithoutAudioAndPdf <= 9 * 1024 * 1024, `El build sin audios/PDF supera 9 MiB (${(deployBytesWithoutAudioAndPdf / 1024 / 1024).toFixed(2)} MiB).`);
 

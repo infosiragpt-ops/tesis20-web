@@ -1,4 +1,12 @@
-import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
+import {
+  lazy,
+  Suspense,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { createPortal } from "react-dom";
 import {
   buildCurriculumChallenge,
@@ -1130,6 +1138,43 @@ function InteractiveOption({
   );
 }
 
+// Iconos del destino de arrastre. Antes eran emojis del sistema (➕ 🎨 📏 🧺
+// 🍽️): cada teléfono los dibuja distinto y el destino desentonaba con la
+// ilustración del juego. Los glifos propios se pintan con `currentColor`.
+const PlusCircle = createNidoIcon("PlusCircle");
+const PaintBrush = createNidoIcon("PaintBrush");
+const ArrowsDownUp = createNidoIcon("ArrowsDownUp");
+const CirclesThreePlus = createNidoIcon("CirclesThreePlus");
+const Heart = createNidoIcon("Heart");
+const ArrowDown = createNidoIcon("ArrowDown");
+
+// El destino atrae la pieza cuando el dedo se acerca. Sin imán, un niño de tres
+// años suelta a un centímetro del borde y el juego le contesta que ha fallado:
+// el error es de puntería, no de razonamiento, y no es lo que queremos medir.
+// `MAGNET` es hasta dónde se nota el tirón; `HALO`, hasta dónde cuenta soltar.
+const DRAG_MAGNET_RADIUS = 118;
+const DRAG_DROP_HALO = 46;
+const DRAG_START_THRESHOLD = 8;
+
+// La captura de puntero lanza `NotFoundError` si el puntero ya no está activo
+// (el dedo se levantó fuera de la ventana, el navegador canceló el gesto). No
+// es un fallo del juego: solo significa que ya no hay nada que capturar.
+function capturePointer(node, pointerId, capture) {
+  try {
+    if (capture) node?.setPointerCapture?.(pointerId);
+    else node?.releasePointerCapture?.(pointerId);
+  } catch {
+    /* puntero ya inactivo */
+  }
+}
+
+// Distancia del punto al rectángulo (0 si está dentro).
+function distanceToRect(rect, x, y) {
+  const dx = Math.max(rect.left - x, 0, x - rect.right);
+  const dy = Math.max(rect.top - y, 0, y - rect.bottom);
+  return Math.hypot(dx, dy);
+}
+
 function DragActivity({
   challenge,
   selectedAnswer,
@@ -1139,111 +1184,160 @@ function DragActivity({
 }) {
   const [pickedId, setPickedId] = useState("");
   const [draggingId, setDraggingId] = useState("");
-  const [ghost, setGhost] = useState(null);
-  const pointerDragRef = useRef(null);
+  const [near, setNear] = useState(false);
+  const dropRef = useRef(null);
+  const ghostRef = useRef(null);
+  const dragRef = useRef(null);
   const suppressClickRef = useRef(false);
 
   useEffect(() => {
     if (pickedId && incorrectAnswers.includes(pickedId)) setPickedId("");
   }, [incorrectAnswers, pickedId]);
 
+  // La posición del fantasma se escribe directamente en el nodo, sin pasar por
+  // el estado: en una tablet modesta un `setState` por cada `pointermove`
+  // arrastra el dedo a tirones, y aquí lo único que cambia son dos píxeles.
+  const paintGhost = (position) => {
+    const node = ghostRef.current;
+    if (!node || !position) return false;
+    node.style.left = `${position.x}px`;
+    node.style.top = `${position.y}px`;
+    node.style.setProperty("--drag-pull", position.pull.toFixed(3));
+    return true;
+  };
+
+  // El fantasma nace en el primer `pointermove`, así que su posición inicial
+  // solo puede pintarse cuando React ya lo ha montado.
+  useLayoutEffect(() => {
+    if (draggingId) paintGhost(dragRef.current?.last);
+  }, [draggingId]);
+
+  const endDrag = () => {
+    dragRef.current = null;
+    setDraggingId("");
+    setNear(false);
+  };
+
   const submit = (optionId) => {
     if (!optionId || locked || incorrectAnswers.includes(optionId)) return;
     setPickedId("");
-    setDraggingId("");
-    setGhost(null);
+    endDrag();
     onAnswer(optionId);
   };
 
   const pointerStart = (event, optionId) => {
-    if (event.pointerType === "mouse" || locked) return;
-    pointerDragRef.current = {
+    if (locked || event.button > 0 || incorrectAnswers.includes(optionId)) return;
+    dragRef.current = {
       optionId,
       pointerId: event.pointerId,
       startX: event.clientX,
       startY: event.clientY,
       moved: false,
+      // El rectángulo se congela al empezar: el destino crece cuando la pieza
+      // se acerca, y remedirlo en cada movimiento realimentaría ese crecimiento.
+      zone: dropRef.current?.getBoundingClientRect() ?? null,
+      last: null,
     };
-    event.currentTarget.setPointerCapture?.(event.pointerId);
+    capturePointer(event.currentTarget, event.pointerId, true);
   };
 
   const pointerMove = (event) => {
-    const drag = pointerDragRef.current;
+    const drag = dragRef.current;
     if (!drag || drag.pointerId !== event.pointerId) return;
-    const distance = Math.hypot(
-      event.clientX - drag.startX,
-      event.clientY - drag.startY,
-    );
-    if (distance > 9) {
+    if (
+      !drag.moved &&
+      Math.hypot(event.clientX - drag.startX, event.clientY - drag.startY) <
+        DRAG_START_THRESHOLD
+    ) {
+      return;
+    }
+    if (!drag.moved) {
       drag.moved = true;
       suppressClickRef.current = true;
       setDraggingId(drag.optionId);
-      setGhost({ x: event.clientX, y: event.clientY });
     }
+
+    let x = event.clientX;
+    let y = event.clientY;
+    let pull = 0;
+    if (drag.zone) {
+      const distance = distanceToRect(drag.zone, x, y);
+      if (distance < DRAG_MAGNET_RADIUS) {
+        pull = 1 - distance / DRAG_MAGNET_RADIUS;
+        // Tirón parcial: la pieza sigue obedeciendo al dedo y solo se inclina
+        // hacia el destino, para que se sienta ayuda y no que se le escapa.
+        x += (drag.zone.left + drag.zone.width / 2 - x) * pull * 0.5;
+        y += (drag.zone.top + drag.zone.height / 2 - y) * pull * 0.5;
+      }
+    }
+    drag.last = { x, y, pull };
+    paintGhost(drag.last);
+
+    const isNear = pull > 0.2;
+    if (isNear !== near) setNear(isNear);
   };
 
   const pointerEnd = (event) => {
-    const drag = pointerDragRef.current;
+    const drag = dragRef.current;
     if (!drag || drag.pointerId !== event.pointerId) return;
-    pointerDragRef.current = null;
-    event.currentTarget.releasePointerCapture?.(event.pointerId);
-    const overDropZone = document
-      .elementFromPoint(event.clientX, event.clientY)
-      ?.closest("[data-nido-drop-zone]");
-    if (drag.moved && overDropZone) submit(drag.optionId);
+    capturePointer(event.currentTarget, event.pointerId, false);
+    const dropped =
+      drag.moved &&
+      drag.zone &&
+      distanceToRect(drag.zone, event.clientX, event.clientY) < DRAG_DROP_HALO;
+    endDrag();
+    if (dropped) submit(drag.optionId);
     else if (drag.moved) setPickedId(drag.optionId);
-    setDraggingId("");
-    setGhost(null);
     window.setTimeout(() => {
       suppressClickRef.current = false;
     }, 0);
   };
 
   const pointerCancel = (event) => {
-    const drag = pointerDragRef.current;
+    const drag = dragRef.current;
     if (!drag || drag.pointerId !== event.pointerId) return;
-    pointerDragRef.current = null;
-    event.currentTarget.releasePointerCapture?.(event.pointerId);
-    setDraggingId("");
-    setGhost(null);
+    capturePointer(event.currentTarget, event.pointerId, false);
+    endDrag();
     suppressClickRef.current = false;
   };
 
   const pickedOption = challenge.options.find(
     (option) => option.id === (draggingId || pickedId),
   );
+  const solved = selectedAnswer === challenge.answerId;
   const dropCopy =
     {
       "add-one": {
-        icon: "➕",
+        Icon: PlusCircle,
         idle: "Añade al grupo",
         help: "Lleva el número que completa el grupo",
       },
       "color-pattern": {
-        icon: "🎨",
+        Icon: PaintBrush,
         idle: "Completa el hueco",
         help: "Lleva el color que continúa la serie",
       },
       "size-pair": {
-        icon: "📏",
+        Icon: ArrowsDownUp,
         idle: "Cesta de tamaños",
         help: "Lleva aquí el tamaño que te pidieron",
       },
       "quantity-groups": {
-        icon: "🧺",
+        Icon: CirclesThreePlus,
         idle: "Bandeja de cantidades",
         help: "Lleva aquí el grupo correcto",
       },
       "animal-food": {
-        icon: "🍽️",
+        Icon: Heart,
         idle: `Plato de ${challenge.visual.subject?.label ?? "comida"}`,
         help: "Dale al animal el alimento correcto",
       },
     }[challenge.visual.kind] ?? {
-      icon: "⇣",
+      Icon: ArrowDown,
       idle: "Suelta aquí",
       help: "Arrastra o toca una pieza y luego este destino",
     };
+  const DropIcon = solved ? CheckCircle : dropCopy.Icon;
 
   return (
     <div
@@ -1267,13 +1361,6 @@ function DragActivity({
             ]
               .filter(Boolean)
               .join(" ")}
-            draggable={!locked && !incorrectAnswers.includes(option.id)}
-            onDragStart={(event) => {
-              event.dataTransfer.effectAllowed = "move";
-              event.dataTransfer.setData("text/plain", option.id);
-              setDraggingId(option.id);
-            }}
-            onDragEnd={() => setDraggingId("")}
             onPointerDown={(event) => pointerStart(event, option.id)}
             onPointerMove={pointerMove}
             onPointerUp={pointerEnd}
@@ -1290,46 +1377,38 @@ function DragActivity({
         className={[
           "nido-games__drop-zone",
           pickedId || draggingId ? "is-ready" : "",
-          selectedAnswer === challenge.answerId ? "is-complete" : "",
+          near ? "is-near" : "",
+          solved ? "is-complete" : "",
         ]
           .filter(Boolean)
           .join(" ")}
         type="button"
+        ref={dropRef}
         data-nido-drop-zone
-        disabled={locked && selectedAnswer !== challenge.answerId}
+        disabled={locked && !solved}
         aria-label={
           pickedId
             ? `Soltar ${pickedOption?.label ?? "la pieza"} en el destino`
             : "Destino de las piezas. Primero elige o arrastra una pieza."
         }
-        onDragOver={(event) => {
-          event.preventDefault();
-          event.dataTransfer.dropEffect = "move";
-        }}
-        onDrop={(event) => {
-          event.preventDefault();
-          submit(event.dataTransfer.getData("text/plain") || draggingId);
-        }}
         onClick={() => submit(pickedId)}
       >
         <span aria-hidden="true">
-          {selectedAnswer === challenge.answerId ? "✓" : dropCopy.icon}
+          <DropIcon size={26} weight="fill" />
         </span>
         <strong>
-          {selectedAnswer === challenge.answerId
+          {solved
             ? "¡Encajó perfecto!"
-            : pickedId
-              ? "Toca para soltar"
-              : dropCopy.idle}
+            : near
+              ? "¡Suelta ya!"
+              : pickedId
+                ? "Toca para soltar"
+                : dropCopy.idle}
         </strong>
         <small>{dropCopy.help}</small>
       </button>
-      {ghost && pickedOption ? (
-        <span
-          className="nido-games__drag-ghost"
-          style={{ left: ghost.x, top: ghost.y }}
-          aria-hidden="true"
-        >
+      {draggingId && pickedOption ? (
+        <span className="nido-games__drag-ghost" ref={ghostRef} aria-hidden="true">
           <OptionArtwork challenge={challenge} option={pickedOption} />
         </span>
       ) : null}
@@ -1351,6 +1430,43 @@ function OrderActivity({
   const [pickedIndex, setPickedIndex] = useState(-1);
   const [dragIndex, setDragIndex] = useState(-1);
   const [attempt, setAttempt] = useState(0);
+  const trackRef = useRef(null);
+  const rectsRef = useRef(new Map());
+  const orderDragRef = useRef(null);
+
+  // FLIP. Antes de reordenar apuntamos dónde estaba cada pieza; después de que
+  // React las recoloque, las devolvemos a su sitio con un `transform` y las
+  // soltamos. Sin esto el hueco se abre de golpe y el niño no llega a ver qué
+  // pieza se ha movido, que es justo lo que el juego le está pidiendo entender.
+  const rememberRects = () => {
+    const track = trackRef.current;
+    if (!track) return;
+    const map = new Map();
+    for (const node of track.children) {
+      map.set(node.dataset.orderId, node.getBoundingClientRect());
+    }
+    rectsRef.current = map;
+  };
+
+  useLayoutEffect(() => {
+    const track = trackRef.current;
+    const previous = rectsRef.current;
+    if (!track || !previous.size) return;
+    rectsRef.current = new Map();
+    for (const node of track.children) {
+      const before = previous.get(node.dataset.orderId);
+      if (!before) continue;
+      const after = node.getBoundingClientRect();
+      const dx = before.left - after.left;
+      const dy = before.top - after.top;
+      if (!dx && !dy) continue;
+      node.style.transition = "none";
+      node.style.transform = `translate(${dx}px, ${dy}px)`;
+      void node.offsetWidth; // fuerza el reflujo antes de soltar la transición
+      node.style.transition = "transform 260ms cubic-bezier(0.2, 1.1, 0.4, 1)";
+      node.style.transform = "";
+    }
+  }, [items]);
 
   if (!isSizeOrder) {
     return (
@@ -1366,6 +1482,7 @@ function OrderActivity({
 
   const moveItem = (from, to) => {
     if (locked || from === to || from < 0 || to < 0) return;
+    rememberRects();
     setItems((current) => {
       const next = [...current];
       const [moved] = next.splice(from, 1);
@@ -1373,6 +1490,63 @@ function OrderActivity({
       return next;
     });
     setPickedIndex(-1);
+  };
+
+  // Arrastre por puntero, no `draggable` nativo: el arrastre del navegador pinta
+  // su propio fantasma translúcido, no existe en táctil y no deja reordenar en
+  // vivo. Aquí la fila se recoloca en cuanto el dedo cruza a la vecina.
+  const orderPointerDown = (event, index) => {
+    if (locked || event.button > 0) return;
+    // Las flechas de la fila son botones: ahí manda el toque, no el arrastre.
+    if (event.target.closest?.("[data-order-controls]")) return;
+    orderDragRef.current = {
+      index,
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      moved: false,
+    };
+    capturePointer(event.currentTarget, event.pointerId, true);
+  };
+
+  const orderPointerMove = (event) => {
+    const drag = orderDragRef.current;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+    if (
+      !drag.moved &&
+      Math.hypot(event.clientX - drag.startX, event.clientY - drag.startY) <
+        DRAG_START_THRESHOLD
+    ) {
+      return;
+    }
+    if (!drag.moved) {
+      drag.moved = true;
+      setDragIndex(drag.index);
+    }
+    const track = trackRef.current;
+    if (!track) return;
+    const over = [...track.children].findIndex((node) => {
+      const rect = node.getBoundingClientRect();
+      return (
+        event.clientX >= rect.left &&
+        event.clientX <= rect.right &&
+        event.clientY >= rect.top - 24 &&
+        event.clientY <= rect.bottom + 24
+      );
+    });
+    if (over >= 0 && over !== drag.index) {
+      moveItem(drag.index, over);
+      drag.index = over;
+      setDragIndex(over);
+    }
+  };
+
+  const orderPointerEnd = (event) => {
+    const drag = orderDragRef.current;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+    orderDragRef.current = null;
+    capturePointer(event.currentTarget, event.pointerId, false);
+    setDragIndex(-1);
   };
 
   const choosePosition = (index) => {
@@ -1408,24 +1582,27 @@ function OrderActivity({
       data-age={challenge.ageId}
       data-mechanic="order"
     >
-      <div className="nido-games__order-track" role="list" aria-label="Piezas para ordenar">
+      <div
+        className="nido-games__order-track"
+        ref={trackRef}
+        role="list"
+        aria-label="Piezas para ordenar"
+      >
         {items.map((item, index) => (
           <div
             className={[
               "nido-games__order-piece",
               pickedIndex === index ? "is-picked" : "",
+              dragIndex === index ? "is-dragging" : "",
             ]
               .filter(Boolean)
               .join(" ")}
             role="listitem"
-            draggable={!locked}
-            onDragStart={() => setDragIndex(index)}
-            onDragOver={(event) => event.preventDefault()}
-            onDrop={(event) => {
-              event.preventDefault();
-              moveItem(dragIndex, index);
-              setDragIndex(-1);
-            }}
+            data-order-id={item.interactionId}
+            onPointerDown={(event) => orderPointerDown(event, index)}
+            onPointerMove={orderPointerMove}
+            onPointerUp={orderPointerEnd}
+            onPointerCancel={orderPointerEnd}
             key={item.interactionId}
           >
             <button
@@ -1440,7 +1617,7 @@ function OrderActivity({
               />
               <strong>{item.label}</strong>
             </button>
-            <span>
+            <span data-order-controls>
               <button
                 type="button"
                 aria-label={`Mover ${item.label} a la izquierda`}
@@ -1489,6 +1666,9 @@ function MatchActivity({
   const [sourceSelected, setSourceSelected] = useState(
     ageProfile.sourceStartsSelected,
   );
+  const [mergingId, setMergingId] = useState("");
+  const sourceRef = useRef(null);
+  const optionRefs = useRef(new Map());
   const memoryReady = !memoryVisible;
   const matchReady = previewSeconds ? memoryReady : sourceSelected;
   const source =
@@ -1507,47 +1687,56 @@ function MatchActivity({
     {
       "teddy-bow-match": {
         source: "Osito modelo",
-        connector: "🎀 →",
       },
       "mask-match": {
         source: "Modelo secreto",
-        connector: "🧠 →",
       },
       "twin-match": {
         source: "Gemelo para recordar",
-        connector: "👀 →",
       },
       "animal-young": {
         source: "Animal adulto",
-        connector: "🐾 →",
       },
       "english-colors": {
         source: "Muestra de color",
-        connector: "🎨 →",
       },
       "english-animals": {
         source: "Animal misterioso",
-        connector: "🔊 →",
       },
       "english-numbers": {
         source: "Número y cantidad",
-        connector: "🔢 →",
       },
       "english-family": {
         source: "Miembro de la familia",
-        connector: "🏠 →",
       },
       "english-objects": {
         source: "Objeto de la misión",
-        connector: "🔎 →",
       },
-    }[visual.kind] ?? {
-      source: "Tarjeta guía",
-      connector: "● ─ →",
-    };
+    }[visual.kind] ?? { source: "Tarjeta guía" };
 
+  // Emparejar tiene que verse como emparejar. Al acertar, la tarjeta elegida
+  // viaja hasta la guía y se funde con ella: el niño ve *qué* ha unido, no solo
+  // un borde que se pone verde. El recorrido se mide en el momento del acierto
+  // porque las dos tarjetas cambian de sitio según el ancho de la pantalla.
   const chooseMatch = (optionId) => {
     if (!matchReady || locked) return;
+    if (optionId === challenge.answerId) {
+      const card = optionRefs.current.get(optionId);
+      const guide = sourceRef.current;
+      if (card && guide) {
+        const from = card.getBoundingClientRect();
+        const to = guide.getBoundingClientRect();
+        card.style.setProperty(
+          "--merge-x",
+          `${Math.round(to.left + to.width / 2 - (from.left + from.width / 2))}px`,
+        );
+        card.style.setProperty(
+          "--merge-y",
+          `${Math.round(to.top + to.height / 2 - (from.top + from.height / 2))}px`,
+        );
+        setMergingId(optionId);
+      }
+    }
     onAnswer(optionId);
     if (
       optionId !== challenge.answerId &&
@@ -1568,10 +1757,12 @@ function MatchActivity({
         className={[
           "nido-games__match-source",
           matchReady ? "is-selected" : "",
+          mergingId ? "is-merged" : "",
         ]
           .filter(Boolean)
           .join(" ")}
         type="button"
+        ref={sourceRef}
         aria-pressed={matchReady}
         aria-label={
           previewSeconds
@@ -1603,10 +1794,32 @@ function MatchActivity({
           </>
         )}
       </button>
-      <span className="nido-games__match-connector" aria-hidden="true">
-        {matchReady ? matchTheme.connector : "○ ─ ?"}
+      {/* El puente entre la guía y las opciones. Antes era una ristra de
+          emojis (🎀 → / 🧠 → / 👀 →) distinta en cada tema: se veía diferente en
+          cada teléfono y no comunicaba nada. Ahora es una línea dibujada por la
+          que corre un punto cuando el juego está listo para responder. */}
+      <span
+        className={[
+          "nido-games__match-connector",
+          matchReady ? "is-live" : "",
+          mergingId ? "is-merged" : "",
+        ]
+          .filter(Boolean)
+          .join(" ")}
+        aria-hidden="true"
+      >
+        <i />
       </span>
-      <div className="nido-games__match-options" role="group" aria-label="Posibles parejas">
+      <div
+        className={[
+          "nido-games__match-options",
+          mergingId ? "is-merging" : "",
+        ]
+          .filter(Boolean)
+          .join(" ")}
+        role="group"
+        aria-label="Posibles parejas"
+      >
         {challenge.options.map((option) => (
           <InteractiveOption
             challenge={challenge}
@@ -1614,7 +1827,16 @@ function MatchActivity({
             selectedAnswer={selectedAnswer}
             incorrectAnswers={incorrectAnswers}
             locked={locked || !matchReady}
-            className="nido-games__match-option"
+            className={[
+              "nido-games__match-option",
+              mergingId === option.id ? "is-merging" : "",
+            ]
+              .filter(Boolean)
+              .join(" ")}
+            ref={(node) => {
+              if (node) optionRefs.current.set(option.id, node);
+              else optionRefs.current.delete(option.id);
+            }}
             onClick={() => chooseMatch(option.id)}
             key={option.id}
           />
@@ -1682,6 +1904,12 @@ function PathActivity({
       player: "🐣",
     };
   const [position, setPosition] = useState(layout.start);
+  // Hacia dónde mira el personaje (1 derecha, -1 izquierda) y el rastro de
+  // casillas ya pisadas: sin ellos el tablero no cuenta ninguna historia.
+  const [facing, setFacing] = useState(1);
+  const [visited, setVisited] = useState(
+    () => new Set([`${layout.start.row}:${layout.start.column}`]),
+  );
   const [pathStatus, setPathStatus] = useState(
     `${pathTheme.playerLabel} empieza en la fila ${layout.start.row + 1}, columna ${layout.start.column + 1}.`,
   );
@@ -1732,6 +1960,12 @@ function PathActivity({
       optionId && optionId !== challenge.answerId ? layout.start : next;
     positionRef.current = resolvedPosition;
     setPosition(resolvedPosition);
+    if (columnDelta) setFacing(columnDelta > 0 ? 1 : -1);
+    setVisited((current) => {
+      const nextVisited = new Set(current);
+      nextVisited.add(`${resolvedPosition.row}:${resolvedPosition.column}`);
+      return nextVisited;
+    });
     if (optionId) {
       setPathStatus(
         optionId === challenge.answerId
@@ -1766,7 +2000,12 @@ function PathActivity({
     >
       <div
         className="nido-games__path-board"
-        style={{ "--path-size": layout.size }}
+        style={{
+          "--path-size": layout.size,
+          "--path-row": position.row,
+          "--path-column": position.column,
+          "--path-facing": facing,
+        }}
         ref={boardRef}
         role="application"
         tabIndex={0}
@@ -1781,7 +2020,6 @@ function PathActivity({
           const option = challenge.options.find(
             (candidate) => candidate.id === optionId,
           );
-          const isPlayer = position.row === row && position.column === column;
           const obstacle = obstacleKeys.has(key);
           const attempted = option && incorrectAnswers.includes(option.id);
           return (
@@ -1791,6 +2029,7 @@ function PathActivity({
                 option ? "is-target" : "",
                 obstacle ? "is-obstacle" : "",
                 attempted ? "is-attempted" : "",
+                visited.has(key) && !option ? "is-visited" : "",
                 option?.id === selectedAnswer ? "is-selected" : "",
               ]
                 .filter(Boolean)
@@ -1804,14 +2043,16 @@ function PathActivity({
                   <OptionArtwork challenge={challenge} option={option} compact />
                 </span>
               ) : null}
-              {isPlayer ? (
-                <span className="nido-games__path-player">
-                  {pathTheme.player}
-                </span>
-              ) : null}
             </span>
           );
         })}
+        {/* El personaje vive fuera de la cuadrícula, sobre ella. Cuando era hijo
+            de la casilla desaparecía de una y aparecía en la otra: un salto seco
+            que no se lee como caminar. Ahora es un único nodo que se desplaza
+            con una transición, así que el niño ve el recorrido. */}
+        <span className="nido-games__path-player" aria-hidden="true">
+          {pathTheme.player}
+        </span>
       </div>
       <p className="sr-only" role="status" aria-live="polite" aria-atomic="true">
         {pathStatus}
@@ -1885,7 +2126,15 @@ function ChallengeActivity(props) {
         memorySeconds={memorySeconds}
         replayMemory={() => setMemoryRun((current) => current + 1)}
       />
-      <InteractiveChallenge {...props} memoryVisible={memoryVisible} />
+      {/* La `key` remonta el runtime en cada reto. Sin ella React reutilizaba
+          los mismos nodos: el estado del reto anterior (la pieza en la mano, la
+          casilla del caminante, el orden ya movido) se colaba en el siguiente y
+          las animaciones de entrada solo se veían en el primero de los veinte. */}
+      <InteractiveChallenge
+        {...props}
+        memoryVisible={memoryVisible}
+        key={challenge.id}
+      />
     </>
   );
 }
