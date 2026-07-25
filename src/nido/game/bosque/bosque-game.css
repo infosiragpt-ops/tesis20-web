@@ -1,12 +1,21 @@
-/* Misión del Bosque: escenario canvas + HUD accesible + controles táctiles
-   grandes (≥64 px) con feedback inmediato. */
+/* Misión del Bosque: escenario canvas + HUD de vidrio + controles táctiles
+   grandes (≥64 px) con feedback inmediato. La interfaz flota sobre el juego,
+   así que todo panel lleva sombra propia y contraste suficiente para leerse
+   igual sobre cielo claro que sobre hierba. */
 
 .bosque {
+  --ink: #12263f;
+  --gold: #ffc94d;
+  --coral: #ff6f61;
+  --leaf: #46b982;
+  --panel: rgba(255, 255, 255, 0.94);
+
   width: 100%;
   height: 100%;
   display: grid;
   place-items: center;
-  background: #0d1b30;
+  background: radial-gradient(circle at 50% 30%, #16304f, #0a1424 70%);
+  font-family: "Avenir Next", "Arial Rounded MT Bold", system-ui, sans-serif;
 }
 
 .bosque__stage {
@@ -16,9 +25,13 @@
   overflow: hidden;
   border-radius: 18px;
   background: #dff4ec;
-  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.45);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.08),
+    0 24px 70px rgba(0, 0, 0, 0.5);
 }
 
+/* Caja propia del lienzo. En apaisado cubre todo el escenario; en vertical se
+   convierte en una fila más de la rejilla y conserva ella la relación 16:9. */
 .bosque__world {
   position: absolute;
   inset: 0;
@@ -37,13 +50,12 @@
 .bosque__hud {
   position: absolute;
   z-index: 3;
-  top: 10px;
-  left: 10px;
-  right: 10px;
+  top: 12px;
+  left: 12px;
+  right: 12px;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 10px;
-  min-width: 0;
   pointer-events: none;
 }
 
@@ -51,31 +63,84 @@
   pointer-events: auto;
 }
 
-.bosque__hud-exit,
-.bosque__hud-buttons button {
-  flex: 0 0 auto;
-  width: 46px;
-  height: 46px;
+.bosque__hud-left,
+.bosque__hud-buttons {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.bosque__icon-button {
+  width: 44px;
+  height: 44px;
+  flex: none;
   display: grid;
   place-items: center;
-  border: 3px solid rgba(16, 35, 63, 0.2);
+  padding: 0;
+  border: 0;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.95);
-  color: #10233f;
-  font-size: 1.05rem;
-  font-weight: 900;
+  background: var(--panel);
+  color: var(--ink);
   cursor: pointer;
+  box-shadow:
+    inset 0 -3px 0 rgba(18, 38, 63, 0.12),
+    0 4px 14px rgba(10, 26, 46, 0.28);
+  transition: transform 120ms ease, background 120ms ease;
+}
+
+.bosque__icon-button:hover {
+  background: #ffffff;
+  transform: translateY(-1px);
+}
+
+.bosque__icon-button:active {
+  transform: translateY(1px);
+}
+
+.bosque__icon-button svg,
+.bosque__touch svg {
+  width: 22px;
+  height: 22px;
+  display: block;
+}
+
+.bosque__start svg {
+  width: 26px;
+  height: 26px;
 }
 
 .bosque__hud-round {
-  flex: 0 0 auto;
+  display: grid;
+  gap: 5px;
   padding: 8px 14px;
+  border-radius: 14px;
+  background: var(--panel);
+  color: var(--ink);
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  box-shadow: 0 4px 14px rgba(10, 26, 46, 0.25);
+}
+
+.bosque__hud-round strong {
+  font-size: 0.95rem;
+}
+
+.bosque__hud-round i {
+  display: block;
+  height: 4px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.92);
-  color: #10233f;
-  font-size: 0.78rem;
-  font-weight: 900;
-  white-space: nowrap;
+  background: rgba(18, 38, 63, 0.14);
+}
+
+.bosque__hud-round i::after {
+  content: "";
+  display: block;
+  width: var(--progress, 0%);
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--leaf), var(--gold));
+  transition: width 400ms ease;
 }
 
 .bosque__hud-target {
@@ -84,62 +149,90 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: 8px;
   flex-wrap: wrap;
 }
 
 .bosque__hud-instruction {
-  padding: 8px 16px;
+  padding: 10px 20px;
   border-radius: 999px;
-  background: rgba(16, 35, 63, 0.88);
+  background: linear-gradient(180deg, rgba(24, 52, 86, 0.94), rgba(14, 32, 56, 0.94));
   color: #ffffff;
-  font-size: 0.9rem;
-  font-weight: 900;
+  font-size: 0.95rem;
+  font-weight: 800;
   white-space: nowrap;
+  box-shadow: 0 6px 18px rgba(10, 26, 46, 0.35);
 }
 
 .bosque__hud-fruits {
   display: flex;
-  gap: 4px;
-  padding: 6px 10px;
+  gap: 5px;
+  padding: 7px 11px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.92);
+  background: var(--panel);
+  box-shadow: 0 4px 14px rgba(10, 26, 46, 0.25);
 }
 
 .bosque__hud-fruits i {
-  width: 16px;
-  height: 16px;
-  border: 2px solid #dc5048;
+  width: 15px;
+  height: 15px;
+  border: 2.5px solid rgba(216, 67, 60, 0.55);
   border-radius: 50%;
   background: transparent;
+  transition: background 200ms ease, transform 200ms ease;
 }
 
 .bosque__hud-fruits i.is-filled {
-  background: #ff6f61;
+  border-color: #d8433c;
+  background: radial-gradient(circle at 32% 30%, #ff9b8f, #d8433c);
+  transform: scale(1.12);
 }
 
-.bosque__hud-buttons {
-  flex: 0 0 auto;
-  display: flex;
-  gap: 8px;
-}
+/* --- Subtítulo: bocadillo de Luma ---
+   Va arriba, bajo el HUD: la cámara mantiene a Niko en el centro de la
+   pantalla, así que cualquier posición baja o central le taparía la cara. */
 
 .bosque__subtitle {
   position: absolute;
   z-index: 2;
   left: 50%;
-  bottom: 108px;
-  max-width: min(86%, 640px);
+  top: 74px;
+  max-width: min(78%, 620px);
   margin: 0;
-  padding: 10px 18px;
+  padding: 11px 20px 11px 14px;
+  display: flex;
+  align-items: center;
+  gap: 11px;
   transform: translateX(-50%);
-  border-radius: 16px;
-  background: rgba(16, 35, 63, 0.82);
-  color: #ffffff;
-  font-size: 0.92rem;
+  border-radius: 20px;
+  background: rgba(255, 253, 246, 0.96);
+  color: var(--ink);
+  font-size: 0.94rem;
   font-weight: 700;
-  text-align: center;
-  line-height: 1.4;
+  line-height: 1.35;
+  text-align: left;
+  text-wrap: balance;
+  box-shadow: 0 10px 30px rgba(10, 26, 46, 0.35);
+}
+
+.bosque__subtitle::after {
+  content: "";
+  position: absolute;
+  left: 30px;
+  top: -9px;
+  width: 20px;
+  height: 12px;
+  clip-path: polygon(30% 0, 100% 100%, 0 100%);
+  background: rgba(255, 253, 246, 0.96);
+}
+
+.bosque__subtitle-avatar {
+  width: 30px;
+  height: 30px;
+  flex: none;
+  border-radius: 50%;
+  background: radial-gradient(circle at 34% 30%, #fffdf2, #ffd07a);
+  box-shadow: 0 0 0 3px rgba(255, 201, 77, 0.35);
 }
 
 /* --- Controles táctiles --- */
@@ -147,31 +240,40 @@
 .bosque__touch {
   position: absolute;
   z-index: 3;
-  left: 14px;
-  right: 14px;
-  bottom: 14px;
+  left: max(14px, env(safe-area-inset-left));
+  right: max(14px, env(safe-area-inset-right));
+  bottom: max(14px, env(safe-area-inset-bottom));
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
+  gap: 12px;
   pointer-events: none;
 }
 
 .bosque__touch button {
   pointer-events: auto;
-  border: 3px solid rgba(16, 35, 63, 0.25);
-  background: rgba(255, 255, 255, 0.92);
-  color: #10233f;
-  font-weight: 900;
+  border: 0;
+  border-radius: 22px;
+  background: var(--panel);
+  color: var(--ink);
+  font-size: 0.78rem;
+  font-weight: 800;
   cursor: pointer;
   user-select: none;
   -webkit-user-select: none;
   touch-action: none;
-  transition: transform 90ms ease, background 90ms ease;
+  box-shadow:
+    inset 0 -4px 0 rgba(18, 38, 63, 0.16),
+    0 6px 18px rgba(10, 26, 46, 0.3);
+  transition: transform 90ms ease, filter 90ms ease;
 }
 
 .bosque__touch button:active {
-  transform: scale(0.94);
-  background: #ffe9d9;
+  transform: translateY(3px);
+  filter: brightness(1.06);
+  box-shadow:
+    inset 0 -1px 0 rgba(18, 38, 63, 0.16),
+    0 3px 10px rgba(10, 26, 46, 0.3);
 }
 
 .bosque__touch-move {
@@ -180,10 +282,11 @@
 }
 
 .bosque__touch-move button {
-  width: 72px;
-  height: 72px;
+  width: 68px;
+  height: 68px;
+  display: grid;
+  place-items: center;
   border-radius: 50%;
-  font-size: 1.5rem;
 }
 
 .bosque__touch-actions {
@@ -192,63 +295,64 @@
   gap: 10px;
 }
 
-.bosque__touch-jump {
-  width: 92px;
-  height: 92px;
-  border-radius: 50%;
-  background: #ffc94d !important;
-  border-color: rgba(122, 86, 28, 0.4) !important;
-  font-size: 0.95rem;
-}
-
 .bosque__touch-drop,
 .bosque__touch-grab {
-  min-height: 64px;
+  min-height: 66px;
   min-width: 84px;
   display: inline-flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 2px;
-  padding: 6px 14px;
-  border-radius: 20px;
-  font-size: 0.8rem;
+  padding: 8px 14px;
 }
 
-.bosque__touch-drop span,
-.bosque__touch-grab span {
-  font-size: 1.15rem;
-  line-height: 1;
-}
-
-.bosque__touch-grab {
-  background: #46b982 !important;
-  border-color: rgba(16, 92, 57, 0.35) !important;
+/* Los dos mandos principales se escriben con el contenedor delante para ganarle
+   en especificidad a `.bosque__touch button`: recoger y saltar tienen que ser
+   reconocibles por su color, no por el texto, para quien aún no sabe leer. */
+.bosque__touch .bosque__touch-grab {
+  background: linear-gradient(180deg, #5fcf99, #359c6e);
   color: #ffffff;
+  box-shadow:
+    inset 0 -4px 0 rgba(14, 78, 50, 0.45),
+    0 6px 18px rgba(20, 110, 70, 0.4);
+}
+
+.bosque__touch .bosque__touch-jump {
+  width: 92px;
+  height: 92px;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #ffd977, #f3b02c);
+  font-size: 1rem;
+  box-shadow:
+    inset 0 -5px 0 rgba(150, 100, 12, 0.4),
+    0 8px 22px rgba(190, 140, 30, 0.42);
 }
 
 .bosque__touch-drop:disabled {
-  opacity: 0.4;
+  opacity: 0.38;
   cursor: default;
 }
 
 .bosque__touch-drop:disabled:active {
   transform: none;
-  background: rgba(255, 255, 255, 0.92);
+  filter: none;
 }
 
+/* Con ratón fino el teclado manda (flechas, espacio, E, Q: se explica en la
+   portada). Ocultamos los botones para no ensuciar la escena. */
 @media (hover: hover) and (pointer: fine) {
-  .bosque__touch-move {
-    opacity: 0.35;
+  .bosque__touch {
+    display: none;
   }
+}
 
-  .bosque__touch-jump {
-    opacity: 0.5;
-  }
-
-  .bosque__touch-drop,
-  .bosque__touch-grab {
-    opacity: 0.55;
+/* Pero basta con que el aparato tenga algún puntero grueso para devolverlos:
+   un portátil táctil o una tableta con lápiz declaran ratón fino y, sin esta
+   regla, un niño que juega tocando la pantalla se quedaría sin mandos. */
+@media (any-pointer: coarse) {
+  .bosque__touch {
+    display: flex;
   }
 }
 
@@ -263,45 +367,55 @@
   align-content: center;
   gap: 12px;
   padding: 24px;
-  background: rgba(13, 27, 48, 0.82);
+  background:
+    radial-gradient(circle at 50% 35%, rgba(24, 56, 92, 0.7), rgba(8, 18, 34, 0.93));
   color: #ffffff;
   text-align: center;
+  backdrop-filter: blur(3px);
 }
 
 .bosque__intro-kicker {
-  color: #ffc94d;
-  font-size: 0.78rem;
+  color: var(--gold);
+  font-size: 0.76rem;
   font-weight: 900;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
 }
 
 .bosque__overlay h2 {
   margin: 0;
-  font-size: clamp(1.6rem, 4vw, 2.6rem);
-  font-family: "Arial Rounded MT Bold", "Avenir Next", sans-serif;
+  font-size: clamp(1.6rem, 4vw, 2.7rem);
+  line-height: 1.1;
+  text-wrap: balance;
 }
 
 .bosque__overlay p {
-  max-width: 460px;
+  max-width: 440px;
   margin: 0;
   font-size: 0.95rem;
   line-height: 1.5;
-  opacity: 0.9;
+  opacity: 0.88;
+  text-wrap: pretty;
 }
 
 .bosque__start {
   min-height: 68px;
-  padding: 0 40px;
+  margin-top: 4px;
+  padding: 0 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
   border: 0;
-  border-bottom: 6px solid rgba(122, 37, 30, 0.55);
   border-radius: 22px;
-  background: linear-gradient(180deg, #ff8577, #ff6f61);
+  background: linear-gradient(180deg, #ff9b8f, #e8544b);
   color: #ffffff;
   font-size: 1.25rem;
   font-weight: 900;
   cursor: pointer;
-  box-shadow: 0 16px 36px rgba(220, 80, 72, 0.45);
+  box-shadow:
+    inset 0 -6px 0 rgba(122, 37, 30, 0.5),
+    0 16px 36px rgba(220, 80, 72, 0.42);
   transition: transform 140ms ease;
 }
 
@@ -311,18 +425,25 @@
 
 .bosque__start:active {
   transform: translateY(3px);
-  border-bottom-width: 2px;
+  box-shadow:
+    inset 0 -2px 0 rgba(122, 37, 30, 0.5),
+    0 8px 20px rgba(220, 80, 72, 0.42);
 }
 
 .bosque__secondary {
   min-height: 50px;
   padding: 0 22px;
-  border: 2px solid rgba(255, 255, 255, 0.7);
+  border: 2px solid rgba(255, 255, 255, 0.55);
   border-radius: 15px;
   background: transparent;
   color: #ffffff;
-  font-weight: 900;
+  font-weight: 800;
   cursor: pointer;
+  transition: background 140ms ease;
+}
+
+.bosque__secondary:hover {
+  background: rgba(255, 255, 255, 0.14);
 }
 
 .bosque__intro-audio {
@@ -342,12 +463,12 @@
 .bosque__intro-audio input {
   width: 20px;
   height: 20px;
-  accent-color: #ffc94d;
+  accent-color: var(--gold);
 }
 
 .bosque__overlay small {
   font-size: 0.72rem;
-  opacity: 0.65;
+  opacity: 0.6;
 }
 
 .bosque__summary {
@@ -357,14 +478,16 @@
 
 .bosque__summary span {
   display: grid;
-  min-width: 120px;
+  min-width: 124px;
   padding: 14px;
   border-radius: 18px;
   background: rgba(255, 255, 255, 0.12);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
 }
 
 .bosque__summary strong {
-  font-size: 1.7rem;
+  font-size: 1.8rem;
+  color: var(--gold);
 }
 
 .bosque__summary small {
@@ -372,10 +495,16 @@
   opacity: 0.85;
 }
 
-/* Botones con foco visible (teclado) */
 .bosque button:focus-visible {
-  outline: 3px solid #ffc94d;
-  outline-offset: 2px;
+  outline: 3px solid var(--gold);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bosque *,
+  .bosque *::after {
+    transition-duration: 1ms !important;
+  }
 }
 
 @media (max-width: 700px) {
@@ -385,41 +514,65 @@
   }
 
   .bosque__hud-instruction {
-    font-size: 0.72rem;
+    padding: 8px 14px;
+    font-size: 0.76rem;
+  }
+
+  .bosque__hud-round {
+    font-size: 0.64rem;
+  }
+
+  .bosque__icon-button {
+    width: 40px;
+    height: 40px;
   }
 
   .bosque__subtitle {
-    bottom: 118px;
+    top: 62px;
+    max-width: 88%;
+    padding: 9px 14px 9px 10px;
     font-size: 0.78rem;
   }
 
+  .bosque__subtitle-avatar {
+    width: 24px;
+    height: 24px;
+  }
+
   .bosque__touch-actions {
-    gap: 6px;
+    gap: 7px;
   }
 
   .bosque__touch-drop,
   .bosque__touch-grab {
-    min-height: 54px;
-    min-width: 62px;
-    padding: 4px 8px;
+    min-height: 56px;
+    min-width: 64px;
+    padding: 5px 8px;
     font-size: 0.66rem;
   }
 
-  .bosque__touch-jump {
+  .bosque__touch svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .bosque__touch .bosque__touch-jump {
     width: 76px;
     height: 76px;
-    font-size: 0.8rem;
+    font-size: 0.82rem;
   }
 
   .bosque__touch-move button {
-    width: 60px;
-    height: 60px;
+    width: 58px;
+    height: 58px;
   }
 }
 
 /*
- * En vertical, interfaz y mundo ocupan filas distintas. El canvas conserva su
- * relación 16:9: no se deforma y ningún control tapa a Niko ni a las frutas.
+ * En vertical la interfaz deja de flotar sobre el juego y pasa a filas propias:
+ * HUD arriba, mundo, bocadillo y mandos abajo. El lienzo conserva su relación
+ * 16:9 dentro de `.bosque__world`, así que no se deforma y ningún control tapa
+ * a Niko ni a las frutas en una pantalla estrecha.
  */
 @media (max-width: 700px) and (orientation: portrait) {
   .bosque__stage {
@@ -427,7 +580,7 @@
     height: 100%;
     max-height: 100dvh;
     display: grid;
-    grid-template-rows: auto auto minmax(0, 1fr) auto;
+    grid-template-rows: auto minmax(0, auto) minmax(0, 1fr) auto;
     aspect-ratio: auto;
     border-radius: 0;
     background: linear-gradient(180deg, #dff4ec, #f6fbef);
@@ -449,42 +602,37 @@
     right: auto;
     align-self: start;
     display: grid;
-    grid-template-columns: 46px minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, auto) minmax(0, 1fr);
     grid-template-areas:
-      "exit round buttons"
-      "target target target";
-    gap: 6px;
-    margin:
-      max(8px, env(safe-area-inset-top))
-      8px
-      8px;
+      "left buttons"
+      "target target";
+    gap: 8px;
+    margin: max(8px, env(safe-area-inset-top)) 10px 6px;
   }
 
-  .bosque__hud-exit {
-    grid-area: exit;
+  .bosque__hud-left {
+    grid-area: left;
   }
 
-  .bosque__hud-round {
-    grid-area: round;
-    justify-self: start;
+  .bosque__hud-buttons {
+    grid-area: buttons;
+    justify-self: end;
   }
 
   .bosque__hud-target {
     grid-area: target;
   }
 
-  .bosque__hud-buttons {
-    grid-area: buttons;
-  }
-
+  /* Fuera del lienzo el bocadillo ya no tapa a nadie: recupera el rabito
+     apuntando hacia el mundo, que ahora queda encima. */
   .bosque__subtitle {
     position: relative;
     grid-row: 3;
     left: auto;
-    bottom: auto;
+    top: auto;
     align-self: start;
     justify-self: center;
-    width: min(92%, 520px);
+    width: min(94%, 520px);
     max-width: none;
     margin: 10px auto 0;
     transform: none;
@@ -497,11 +645,7 @@
     right: auto;
     bottom: auto;
     align-self: end;
-    gap: 10px;
-    margin:
-      8px
-      12px
-      max(12px, env(safe-area-inset-bottom));
+    margin: 8px 12px max(12px, env(safe-area-inset-bottom));
   }
 
   .bosque__overlay {

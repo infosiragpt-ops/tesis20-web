@@ -573,9 +573,15 @@ check(
 // variadas. La matriz del catálogo vive en un chunk cacheable propio; todo
 // permanece en rutas diferidas de /nido y se conservan intactos los límites
 // inicial de 450 KiB y de 250 KiB por chunk.
+// 2026-07-25 (quater): 740 → 755 KiB por el rediseño del escenario de Misión
+// del Bosque: parallax de cinco capas cacheadas en lienzos fuera de pantalla,
+// luz de contorno y sombras de contacto, partículas y glifos SVG propios en el
+// HUD. Son 13 KiB medidos (BosqueGame pasa de 27 a 40 KiB) en un chunk que solo
+// se descarga al abrir ese juego, muy por debajo de su tope de 250 KiB; el
+// JavaScript inicial sigue clavado en 450 KiB.
 check(
-  javascriptBytes <= 740 * 1024,
-  `El JavaScript total con rutas diferidas no debe superar 740 KiB (${Math.ceil(javascriptBytes / 1024)} KiB).`,
+  javascriptBytes <= 755 * 1024,
+  `El JavaScript total con rutas diferidas no debe superar 755 KiB (${Math.ceil(javascriptBytes / 1024)} KiB).`,
 );
 check(
   initialStylesheetBytes > 0 && initialStylesheetBytes <= 85 * 1024,
@@ -584,9 +590,12 @@ check(
 // 2026-07-25: 160 → 180 KiB para las escenas diferenciadas de las 40 tarjetas,
 // las celebraciones y los layouts verticales de Catch/Bosque. Todo permanece
 // diferido en /nido; el CSS inicial y cada hoja conservan su límite de 85 KiB.
+// 2026-07-25 (bis): 180 → 184 KiB por la hoja nueva de Misión del Bosque (HUD
+// de vidrio, bocadillo de Luma y mandos táctiles de ≥64 px): 2 KiB reales,
+// también diferidos en /nido.
 check(
-  stylesheetBytes <= 180 * 1024,
-  `El CSS total con rutas diferidas no debe superar 180 KiB (${Math.ceil(stylesheetBytes / 1024)} KiB).`,
+  stylesheetBytes <= 184 * 1024,
+  `El CSS total con rutas diferidas no debe superar 184 KiB (${Math.ceil(stylesheetBytes / 1024)} KiB).`,
 );
 check(deployBytesWithoutAudioAndPdf <= 9 * 1024 * 1024, `El build sin audios/PDF supera 9 MiB (${(deployBytesWithoutAudioAndPdf / 1024 / 1024).toFixed(2)} MiB).`);
 

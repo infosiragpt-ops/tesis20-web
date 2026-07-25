@@ -28,12 +28,12 @@ import {
   tryAgainText,
 } from "../content/forest-voice-lines.js";
 import {
-  drawBackground,
+  createScenery,
   drawBasket,
   drawBush,
   drawFruit,
-  drawGround,
   drawLuma,
+  drawMotes,
   drawNiko,
   drawParticles,
   drawPlatform,
@@ -45,12 +45,60 @@ import "./bosque-game.css";
 const WORLD = Object.freeze({ width: 1900, groundY: 470 });
 const BASKET = Object.freeze({ x: 1700, y: 400, w: 120, h: 66 });
 const GRAB_RADIUS = 56;
+const CONFETTI = ["#ff6f61", "#ffc94d", "#46b982", "#4b8ff7", "#9873e7"];
 const CELEBRATION_LEAD_IN_MS = 540;
 const CELEBRATION_DWELL_MS = 700;
 const CELEBRATION_WATCHDOG_MS = 12_000;
 
 const wait = (milliseconds) =>
   new Promise((resolve) => window.setTimeout(resolve, milliseconds));
+
+/**
+ * Glifos propios del HUD. Se dibujan con `currentColor` en vez de emoji: los
+ * emoji cambian de forma, color y peso óptico en cada sistema operativo, y el
+ * juego necesita una iconografía estable. Tampoco añaden peso de librería.
+ */
+function Glyph({ name }) {
+  const paths = {
+    close: "M7 7l10 10M17 7L7 17",
+    music: "M9 18V6l10-2v12",
+    mute: "M9 18V6l10-2v12M4 4l16 16",
+    speaker: "M4 10v4h3l4 3V7L7 10H4zm11-1a4 4 0 0 1 0 6m3-9a8 8 0 0 1 0 12",
+    pause: "M9 5v14M15 5v14",
+    play: "M8 5l11 7-11 7z",
+    left: "M15 5l-7 7 7 7",
+    right: "M9 5l7 7-7 7",
+    down: "M12 5v13m0 0l-5-5m5 5l5-5",
+    hand: "M8 12V6a1.6 1.6 0 0 1 3.2 0v5m0-1V4.6a1.6 1.6 0 0 1 3.2 0V11m0-1.4a1.6 1.6 0 0 1 3.2 0V15a5 5 0 0 1-5 5h-1.6a5 5 0 0 1-4.3-2.4L4 14a1.7 1.7 0 0 1 2.7-2L8 13.4",
+  };
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path
+        d={paths[name]}
+        fill={name === "play" ? "currentColor" : "none"}
+        stroke="currentColor"
+        strokeWidth="2.4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+/** Nubecilla de polvo bajo los pies (saltar, aterrizar, correr). */
+function puffDust(state, x, y, count, power) {
+  for (let index = 0; index < count; index += 1) {
+    state.particles.push({
+      kind: "dust",
+      x: x + (Math.random() - 0.5) * 22,
+      y: y - 2,
+      vx: (Math.random() - 0.5) * 150 * power,
+      vy: -Math.random() * 55 * power,
+      size: 3 + Math.random() * 4 * power,
+      life: 0.7,
+    });
+  }
+}
 
 /**
  * @param {{
@@ -82,7 +130,8 @@ export default function BosqueGame({
   const [missionSummary, setMissionSummary] = useState(null);
 
   const canvasRef = useRef(null);
-  const stageRef = useRef(null);
+  const worldRef = useRef(null);
+  const sceneryRef = useRef(null);
   const loopRef = useRef(null);
   const audioRef = useRef(null);
   const busRef = useRef(null);
@@ -199,6 +248,11 @@ export default function BosqueGame({
         basketGlow: false,
         reducedMotion: Boolean(reduced),
         pose: "idle",
+        // Sensación de juego: aplastado al aterrizar, sacudida de cámara y
+        // temporizador del rastro de polvo al correr.
+        squash: 0,
+        shake: 0,
+        dustT: 0,
       };
       setHud({ carried: 0, delivered: 0 });
       busRef.current?.emit(GAME_TO_PLATFORM.LEVEL_STARTED, {
@@ -220,18 +274,20 @@ export default function BosqueGame({
         });
         state.basketGlow = true;
         state.pose = "celebrate";
+        state.shake = state.reducedMotion ? 0 : 6;
         audioRef.current?.sfx("success");
-        for (let index = 0; index < 26; index += 1) {
+        for (let index = 0; index < 34; index += 1) {
           state.particles.push({
+            kind: index % 2 ? "star" : "spark",
             x: BASKET.x + BASKET.w / 2,
             y: BASKET.y,
-            vx: (Math.random() - 0.5) * 300,
-            vy: -Math.random() * 380,
+            vx: (Math.random() - 0.5) * 320,
+            vy: -120 - Math.random() * 320,
             size: 3 + Math.random() * 4,
+            spin: Math.random() * 6,
+            spinRate: (Math.random() - 0.5) * 14,
             life: 1,
-            color: ["#ff6f61", "#ffc94d", "#46b982", "#4b8ff7", "#9873e7"][
-              index % 5
-            ],
+            color: CONFETTI[index % CONFETTI.length],
           });
         }
         phaseRef.current = "celebrating";
@@ -299,10 +355,11 @@ export default function BosqueGame({
         }
         audioRef.current?.sfx("try");
         state.pose = "tryAgain";
-        // Sin castigo: las frutas vuelven al campo cerca de la cesta.
+        // Sin castigo: las frutas de la cesta (no las que lleva en brazos)
+        // vuelven al campo, cerca de la cesta, para volver a intentarlo.
         let returned = 0;
         for (const fruit of state.fruits) {
-          if (fruit.collected && returned < state.delivered) {
+          if (fruit.collected && !fruit.held && returned < state.delivered) {
             fruit.collected = false;
             fruit.x = 1150 + returned * 90 + Math.random() * 40;
             fruit.y = WORLD.groundY - 26;
@@ -335,14 +392,26 @@ export default function BosqueGame({
       if (!state) return;
       state.time += dt;
 
-      // Partículas siempre avanzan (celebraciones incluidas)
+      // Partículas siempre avanzan (celebraciones incluidas). El polvo no cae:
+      // se queda flotando y se disipa donde se levantó.
       for (const particle of state.particles) {
         particle.x += particle.vx * dt;
         particle.y += particle.vy * dt;
-        particle.vy += 700 * dt;
-        particle.life -= dt * 0.9;
+        if (particle.kind === "dust") {
+          particle.vx *= 0.94;
+          particle.vy *= 0.9;
+          particle.life -= dt * 1.9;
+        } else {
+          particle.vy += 700 * dt;
+          particle.spin = (particle.spin ?? 0) + (particle.spinRate ?? 0) * dt;
+          particle.life -= dt * 0.9;
+        }
       }
       state.particles = state.particles.filter((particle) => particle.life > 0);
+
+      // Amortiguación del aplastado y de la sacudida de cámara.
+      state.squash = Math.max(0, state.squash - dt * 4.5);
+      state.shake = Math.max(0, state.shake - dt * 26);
 
       if (phaseRef.current !== "playing") {
         inputRef.current.jumpPressed = false;
@@ -367,7 +436,29 @@ export default function BosqueGame({
         },
       );
       input.jumpPressed = false;
-      if (events.jumped) audioRef.current?.sfx("jump");
+
+      // Despegue y aterrizaje: polvo, aplastado y una sacudida mínima. Es lo
+      // que separa un salto "de prototipo" de uno que se siente con peso.
+      const feetX = state.body.x + state.body.w / 2;
+      const feetY = state.body.y + state.body.h;
+      if (events.jumped) {
+        audioRef.current?.sfx("jump");
+        state.squash = 0.5;
+        if (!state.reducedMotion) puffDust(state, feetX, feetY, 5, 1);
+      }
+      if (events.landed) {
+        state.squash = 1;
+        state.shake = state.reducedMotion ? 0 : 3.5;
+        if (!state.reducedMotion) puffDust(state, feetX, feetY, 8, 1.3);
+      }
+      // Rastro de polvo mientras corre por el suelo.
+      if (state.body.onGround && Math.abs(state.body.vx) > 140) {
+        state.dustT -= dt;
+        if (state.dustT <= 0) {
+          state.dustT = 0.09;
+          if (!state.reducedMotion) puffDust(state, feetX, feetY, 1, 0.55);
+        }
+      }
 
       // Pose del personaje
       if (!state.body.onGround) {
@@ -398,21 +489,28 @@ export default function BosqueGame({
           }
         }
         if (nearestFruit) {
+          // `held` distingue "en brazos" de "ya en la cesta": sin esa marca,
+          // soltar una fruta podía devolver al campo una entregada.
           nearestFruit.collected = true;
+          nearestFruit.held = true;
           state.carried += 1;
           state.pose = "grab";
+          state.squash = 0.4;
           audioRef.current?.sfx("collect");
           busRef.current?.emit(GAME_TO_PLATFORM.OBJECT_COLLECTED, {
             carried: state.carried,
           });
-          for (let index = 0; index < 7; index += 1) {
+          for (let index = 0; index < 9; index += 1) {
             state.particles.push({
+              kind: "star",
               x: nearestFruit.x,
               y: nearestFruit.y,
-              vx: (Math.random() - 0.5) * 200,
-              vy: -Math.random() * 240,
-              size: 2.5 + Math.random() * 3,
-              life: 0.8,
+              vx: (Math.random() - 0.5) * 210,
+              vy: -60 - Math.random() * 220,
+              size: 2 + Math.random() * 2.6,
+              spin: Math.random() * 6,
+              spinRate: (Math.random() - 0.5) * 12,
+              life: 0.85,
               color: "#ffc94d",
             });
           }
@@ -432,6 +530,9 @@ export default function BosqueGame({
         setPhase("counting");
         const toDeliver = state.carried;
         state.carried = 0;
+        // Las frutas en brazos pasan a estar en la cesta (dejan de ser
+        // recuperables con "Soltar").
+        for (const fruit of state.fruits) fruit.held = false;
         let counted = 0;
         state.counting = window.setInterval(() => {
           const current = stateRef.current;
@@ -439,6 +540,21 @@ export default function BosqueGame({
           counted += 1;
           current.delivered += 1;
           audioRef.current?.sfx(counted === toDeliver ? "deposit" : "count");
+          // Un destello por fruta contada: el conteo se ve, no solo se oye.
+          for (let index = 0; index < 5; index += 1) {
+            current.particles.push({
+              kind: "star",
+              x: BASKET.x + BASKET.w / 2,
+              y: BASKET.y - 4,
+              vx: (Math.random() - 0.5) * 130,
+              vy: -90 - Math.random() * 120,
+              size: 2 + Math.random() * 2,
+              spin: Math.random() * 6,
+              spinRate: (Math.random() - 0.5) * 10,
+              life: 0.7,
+              color: "#ffc94d",
+            });
+          }
           setHud({ carried: 0, delivered: current.delivered });
           setSubtitle(
             `${NUMBER_WORDS[Math.min(current.delivered, 10)]}…`,
@@ -451,12 +567,14 @@ export default function BosqueGame({
         }, 620);
       }
 
-      // Cámara con seguimiento suave
+      // Cámara con seguimiento suave y anticipación: al correr se adelanta en
+      // la dirección de marcha para que se vea a dónde vas, no de dónde vienes.
+      const lookahead = state.body.facing * 105 * Math.min(1, Math.abs(state.body.vx) / 240);
       const targetCam = Math.max(
         0,
-        Math.min(px - VIEW_W / 2, WORLD.width - VIEW_W),
+        Math.min(px + lookahead - VIEW_W / 2, WORLD.width - VIEW_W),
       );
-      state.cameraX += (targetCam - state.cameraX) * Math.min(1, dt * 6);
+      state.cameraX += (targetCam - state.cameraX) * Math.min(1, dt * 4.2);
     },
     [evaluateDelivery, profile.walkOnly],
   );
@@ -467,10 +585,28 @@ export default function BosqueGame({
     if (!canvas || !state) return;
     const ctx = canvas.getContext("2d");
     const t = state.time;
+    const reduced = state.reducedMotion;
+    if (!sceneryRef.current) {
+      sceneryRef.current = createScenery({
+        groundY: WORLD.groundY,
+        scale: Math.min(2, Math.max(1, canvas.width / VIEW_W)),
+      });
+    }
+    const scenery = sceneryRef.current;
 
-    ctx.setTransform(canvas.width / VIEW_W, 0, 0, canvas.height / VIEW_H, 0, 0);
-    drawBackground(ctx, state.cameraX, t, state.reducedMotion);
-    drawGround(ctx, WORLD, state.cameraX);
+    // Sacudida de cámara: se aplica al fotograma entero, decorado incluido.
+    const shakeX = state.shake ? (Math.random() - 0.5) * state.shake : 0;
+    const shakeY = state.shake ? (Math.random() - 0.5) * state.shake : 0;
+    ctx.setTransform(
+      canvas.width / VIEW_W,
+      0,
+      0,
+      canvas.height / VIEW_H,
+      shakeX * (canvas.width / VIEW_W),
+      shakeY * (canvas.height / VIEW_H),
+    );
+
+    scenery.drawBack(ctx, state.cameraX, t, reduced);
 
     ctx.save();
     ctx.translate(-state.cameraX, 0);
@@ -478,10 +614,10 @@ export default function BosqueGame({
       0,
       state.platforms.length - state.obstacles.length,
     )) {
-      drawPlatform(ctx, platform);
+      drawPlatform(ctx, platform, WORLD.groundY);
     }
     for (const obstacle of state.obstacles) {
-      drawBush(ctx, obstacle, WORLD.groundY, t, state.reducedMotion);
+      drawBush(ctx, obstacle, WORLD.groundY, t, reduced);
     }
     drawBasket(
       ctx,
@@ -490,6 +626,7 @@ export default function BosqueGame({
       round.target,
       state.basketGlow,
       t,
+      WORLD.groundY,
     );
     const shouldHighlight =
       helpVisible &&
@@ -500,26 +637,42 @@ export default function BosqueGame({
     for (const fruit of state.fruits) {
       const highlighted = !fruit.collected && highlightBudget > 0;
       if (highlighted) highlightBudget -= 1;
-      drawFruit(ctx, fruit, t, highlighted, state.reducedMotion);
+      drawFruit(ctx, fruit, t, highlighted, reduced, WORLD.groundY);
     }
+    drawNiko(
+      ctx,
+      state.body,
+      state.pose,
+      t,
+      state.carried,
+      WORLD.groundY,
+      state.squash,
+    );
     drawParticles(ctx, state.particles);
-    drawNiko(ctx, state.body, state.pose, t, state.carried);
-    const lumaX =
-      phaseRef.current === "briefing"
-        ? state.body.x + state.body.w / 2 + 80
-        : state.cameraX + VIEW_W - 90;
+    ctx.restore();
+
+    // Motas de polen y maleza en primer plano: profundidad por delante de los
+    // actores, antes del acabado de color.
+    drawMotes(ctx, state.cameraX, t, reduced);
+    scenery.drawForeground(ctx, state.cameraX, t, reduced);
+    scenery.drawGrade(ctx);
+
+    // Luma vive en coordenadas de pantalla: acompaña siempre, no se pierde
+    // detrás de la cámara.
     drawLuma(
       ctx,
-      lumaX,
-      170,
+      phaseRef.current === "briefing"
+        ? state.body.x + state.body.w / 2 + 90 - state.cameraX
+        : VIEW_W - 92,
+      164,
       phaseRef.current === "celebrating"
         ? "cheer"
         : window.speechSynthesis?.speaking
           ? "talk"
           : "idle",
       t,
+      reduced,
     );
-    ctx.restore();
   }, [helpVisible, round.target]);
 
   // El loop llama siempre a la versión más reciente de update/render (refs):
@@ -547,6 +700,32 @@ export default function BosqueGame({
       loopRef.current = null;
     };
   }, [phase]);
+
+  // Resolución del lienzo según el tamaño real y la densidad de pantalla, en
+  // vez de un 1920×1080 fijo: nítido en escritorio y sin pintar píxeles de más
+  // en tabletas modestas. Las capas cacheadas se reconstruyen solo cuando
+  // cambia el tramo de escala, no en cada píxel de arrastre.
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const world = worldRef.current;
+    if (!canvas || !world) return undefined;
+    let currentScale = 0;
+    const resize = () => {
+      const cssWidth = world.clientWidth || VIEW_W;
+      const dpr = window.devicePixelRatio || 1;
+      const scale = Math.min(2, Math.max(1, (cssWidth * dpr) / VIEW_W));
+      const bucket = Math.round(scale * 4) / 4;
+      if (bucket === currentScale) return;
+      currentScale = bucket;
+      canvas.width = Math.round(VIEW_W * bucket);
+      canvas.height = Math.round(VIEW_H * bucket);
+      sceneryRef.current = null;
+    };
+    resize();
+    const observer = new ResizeObserver(resize);
+    observer.observe(world);
+    return () => observer.disconnect();
+  }, []);
 
   // Arranque de ronda al entrar a briefing (y en la primera partida).
   useEffect(() => {
@@ -622,9 +801,10 @@ export default function BosqueGame({
     const state = stateRef.current;
     if (!state || state.carried <= 0 || phaseRef.current !== "playing") return;
     state.carried -= 1;
-    const fruit = state.fruits.find((item) => item.collected);
+    const fruit = state.fruits.find((item) => item.held);
     if (fruit) {
       fruit.collected = false;
+      fruit.held = false;
       fruit.x = state.body.x + state.body.w / 2 + state.body.facing * -46;
       fruit.y = WORLD.groundY - 26;
     }
@@ -695,9 +875,11 @@ export default function BosqueGame({
   const progressCount = hud.delivered + hud.carried;
 
   return (
-    <div className="bosque" ref={stageRef} data-age={ageId}>
+    <div className="bosque" data-age={ageId}>
       <div className="bosque__stage">
-        <div className="bosque__world">
+        {/* El lienzo vive en su propia caja: en vertical la interfaz ocupa
+            filas aparte y `.bosque__world` conserva la relación 16:9. */}
+        <div className="bosque__world" ref={worldRef}>
           <canvas
             className="bosque__canvas"
             ref={canvasRef}
@@ -710,19 +892,31 @@ export default function BosqueGame({
         {phase !== "intro" && phase !== "missionComplete" ? (
           <>
             <header className="bosque__hud">
-              <button
-                className="bosque__hud-exit"
-                type="button"
-                aria-label="Salir del juego"
-                onClick={() => onExit?.()}
-              >
-                ✕
-              </button>
-              <div className="bosque__hud-round">
-                Ronda {roundIndex + 1} / {FOREST_ROUNDS}
+              <div className="bosque__hud-left">
+                <button
+                  className="bosque__icon-button"
+                  type="button"
+                  aria-label="Salir del juego"
+                  onClick={() => onExit?.()}
+                >
+                  <Glyph name="close" />
+                </button>
+                <div className="bosque__hud-round">
+                  <span>
+                    Ronda <strong>{roundIndex + 1}</strong>/{FOREST_ROUNDS}
+                  </span>
+                  <i
+                    aria-hidden="true"
+                    style={{
+                      "--progress": `${(roundIndex / FOREST_ROUNDS) * 100}%`,
+                    }}
+                  />
+                </div>
               </div>
+
               <div
                 className="bosque__hud-target"
+                role="status"
                 aria-label={`Meta: ${round.target}. Llevas ${progressCount}.`}
               >
                 <span className="bosque__hud-instruction">
@@ -739,8 +933,10 @@ export default function BosqueGame({
                   </span>
                 ) : null}
               </div>
+
               <div className="bosque__hud-buttons">
                 <button
+                  className="bosque__icon-button"
                   type="button"
                   aria-label={
                     audioPrefs.music ? "Silenciar música" : "Activar música"
@@ -752,9 +948,10 @@ export default function BosqueGame({
                     setAudioPrefs((current) => ({ ...current, music: next }));
                   }}
                 >
-                  {audioPrefs.music ? "♪" : "♪̸"}
+                  <Glyph name={audioPrefs.music ? "music" : "mute"} />
                 </button>
                 <button
+                  className="bosque__icon-button"
                   type="button"
                   aria-label="Repetir instrucción"
                   onClick={() =>
@@ -764,31 +961,41 @@ export default function BosqueGame({
                     )
                   }
                 >
-                  🔊
+                  <Glyph name="speaker" />
                 </button>
                 <button
+                  className="bosque__icon-button"
                   type="button"
                   aria-label={paused ? "Continuar" : "Pausa"}
                   onClick={togglePause}
                 >
-                  {paused ? "▶" : "❚❚"}
+                  <Glyph name={paused ? "play" : "pause"} />
                 </button>
               </div>
             </header>
 
             {subtitle ? (
               <p className="bosque__subtitle" role="status">
-                {subtitle}
+                <span className="bosque__subtitle-avatar" aria-hidden="true" />
+                <span>{subtitle}</span>
               </p>
             ) : null}
 
-            <div className="bosque__touch" aria-hidden="false">
+            <div className="bosque__touch">
               <div className="bosque__touch-move">
-                <button type="button" aria-label="Ir a la izquierda" {...touchHold("left")}>
-                  ◀
+                <button
+                  type="button"
+                  aria-label="Ir a la izquierda"
+                  {...touchHold("left")}
+                >
+                  <Glyph name="left" />
                 </button>
-                <button type="button" aria-label="Ir a la derecha" {...touchHold("right")}>
-                  ▶
+                <button
+                  type="button"
+                  aria-label="Ir a la derecha"
+                  {...touchHold("right")}
+                >
+                  <Glyph name="right" />
                 </button>
               </div>
               <div className="bosque__touch-actions">
@@ -799,8 +1006,17 @@ export default function BosqueGame({
                   disabled={hud.carried === 0}
                   onClick={dropFruit}
                 >
-                  <span aria-hidden="true">↓</span>
+                  <Glyph name="down" />
                   Soltar
+                </button>
+                <button
+                  className="bosque__touch-grab"
+                  type="button"
+                  aria-label="Recoger fruta"
+                  {...touchHold("grab")}
+                >
+                  <Glyph name="hand" />
+                  Recoger
                 </button>
                 <button
                   className="bosque__touch-jump"
@@ -809,15 +1025,6 @@ export default function BosqueGame({
                   {...touchHold("jump")}
                 >
                   Saltar
-                </button>
-                <button
-                  className="bosque__touch-grab"
-                  type="button"
-                  aria-label="Recoger fruta"
-                  {...touchHold("grab")}
-                >
-                  <span aria-hidden="true">✋</span>
-                  Recoger
                 </button>
               </div>
             </div>
@@ -837,7 +1044,8 @@ export default function BosqueGame({
               type="button"
               onClick={handleStart}
             >
-              ▶ Comenzar
+              <Glyph name="play" />
+              Comenzar
             </button>
             <div className="bosque__intro-audio">
               <label>
@@ -886,7 +1094,8 @@ export default function BosqueGame({
           <div className="bosque__overlay bosque__pause">
             <h2>Pausa</h2>
             <button className="bosque__start" type="button" onClick={togglePause}>
-              ▶ Continuar
+              <Glyph name="play" />
+              Continuar
             </button>
             <button
               className="bosque__secondary"
@@ -917,7 +1126,8 @@ export default function BosqueGame({
               type="button"
               onClick={handleReplayMission}
             >
-              ▶ Jugar otra vez
+              <Glyph name="play" />
+              Jugar otra vez
             </button>
             <button
               className="bosque__secondary"
