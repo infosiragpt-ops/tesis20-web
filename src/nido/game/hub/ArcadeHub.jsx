@@ -1,10 +1,4 @@
-// Sala de Juegos: hub estilo portal de arcade (grid denso de tarjetas
-// grandes y coloridas, filtros por categoría, tarjeta destacada) inspirado
-// en el lenguaje visual de portales de minijuegos y apps educativas
-// premium: color saturado, tipografía redondeada gruesa, mascota expresiva,
-// feedback inmediato al pasar el cursor.
-
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 
 // El catálogo pasó de 40 a más de 500 juegos: pintarlos todos de golpe llena la
 // pantalla de tarjetas que nadie va a mirar y ralentiza el desplazamiento en
@@ -18,21 +12,19 @@ function normalize(value) {
     .toLocaleLowerCase("es");
 }
 
+// FNV-1a: variaciones estables por juego, sin estado ni aleatoriedad.
+function hashGameId(value) {
+  let hash = 2166136261;
+  for (let index = 0; index < value.length; index += 1) {
+    hash ^= value.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return hash >>> 0;
+}
+
 /**
- * El filtro activo vive en el padre: la fila "Materias del Nido" también lo
- * cambia, así que no puede haber dos fuentes de verdad.
- *
- * @param {{
- *   tiles: Array<{
- *     id: string, title: string, tagline: string, category: string,
- *     accent: string, accentSoft: string, badge?: string,
- *     progressLabel?: string, icon: React.ReactNode,
- *     onOpen: (event: React.MouseEvent) => void,
- *   }>,
- *   categories: Array<{ id: string, label: string }>,
- *   activeCategory: string,
- *   onCategoryChange: (categoryId: string) => void,
- * }} props
+ * El filtro sigue viviendo en el padre para compartir estado con
+ * "Materias del Nido"; la API de apertura de cada tile no cambia.
  */
 export default function ArcadeHub({
   tiles,
@@ -40,8 +32,23 @@ export default function ArcadeHub({
   activeCategory,
   onCategoryChange,
 }) {
+  const uid = useId().replaceAll(":", "");
+  const panelId = `arcade-panel-${uid}`;
+  const searchId = `arcade-search-${uid}`;
   const [query, setQuery] = useState("");
   const [pageCount, setPageCount] = useState(1);
+  const filters = useMemo(
+    () => [
+      { id: "todos", label: "Todos", count: tiles.length },
+      ...categories
+        .map((category) => ({
+          ...category,
+          count: tiles.filter((tile) => tile.category === category.id).length,
+        }))
+        .filter(({ count }) => count),
+    ],
+    [categories, tiles],
+  );
 
   const visibleTiles = useMemo(() => {
     const search = normalize(query).trim();
@@ -61,45 +68,77 @@ export default function ArcadeHub({
 
   const shownTiles = visibleTiles.slice(0, pageCount * PAGE_SIZE);
   const remaining = visibleTiles.length - shownTiles.length;
+  const activeFilter =
+    filters.find(({ id }) => id === activeCategory) ?? filters[0];
+
+  const moveThroughFilters = (event) => {
+    if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+    const tabs = [...event.currentTarget.querySelectorAll('[role="tab"]')];
+    const current = tabs.indexOf(document.activeElement);
+    if (current < 0) return;
+
+    event.preventDefault();
+    const next =
+      event.key === "Home"
+        ? 0
+        : event.key === "End"
+          ? tabs.length - 1
+          : (current + (event.key === "ArrowRight" ? 1 : -1) + tabs.length) %
+            tabs.length;
+    tabs[next].focus();
+    tabs[next].click();
+  };
 
   return (
     <div className="arcade">
-      <div
-        className="arcade__filters"
-        role="tablist"
-        aria-label="Filtrar juegos por categoría"
-      >
-        <button
-          className={activeCategory === "todos" ? "is-selected" : ""}
-          type="button"
-          role="tab"
-          aria-selected={activeCategory === "todos"}
-          onClick={() => onCategoryChange("todos")}
+      <div className="arcade__heading">
+        <span className="arcade__heading-mark" aria-hidden="true" />
+        <span className="arcade__heading-copy">
+          <small>Tu próxima aventura</small>
+          <strong>Elige, juega y conquista un reto</strong>
+        </span>
+        <span className="arcade__count" aria-live="polite">
+          <strong>{visibleTiles.length}</strong>
+          <small>{visibleTiles.length === 1 ? "juego" : "juegos"}</small>
+        </span>
+      </div>
+
+      <div className="arcade__filter-rail">
+        <div
+          className="arcade__filters"
+          role="tablist"
+          aria-label="Filtrar juegos por categoría"
+          onKeyDown={moveThroughFilters}
         >
-          Todos · {tiles.length}
-        </button>
-        {categories.map((category) => {
-          const count = tiles.filter((tile) => tile.category === category.id).length;
-          if (!count) return null;
-          return (
-            <button
-              className={activeCategory === category.id ? "is-selected" : ""}
-              type="button"
-              role="tab"
-              aria-selected={activeCategory === category.id}
-              onClick={() => onCategoryChange(category.id)}
-              key={category.id}
-            >
-              {category.label} · {count}
-            </button>
-          );
-        })}
+          {filters.map((filter) => {
+            const selected = activeCategory === filter.id;
+            return (
+              <button
+                id={`arcade-tab-${uid}-${filter.id}`}
+                className={selected ? "is-selected" : ""}
+                type="button"
+                role="tab"
+                aria-selected={selected}
+                aria-controls={panelId}
+                aria-label={`${filter.label}: ${filter.count} ${
+                  filter.count === 1 ? "juego" : "juegos"
+                }`}
+                tabIndex={selected ? 0 : -1}
+                onClick={() => onCategoryChange(filter.id)}
+                key={filter.id}
+              >
+                <span>{filter.label}</span>
+                <strong>{filter.count}</strong>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       <div className="arcade__search">
-        <label htmlFor="arcade-search">Buscar un juego</label>
+        <label htmlFor={searchId}>Buscar un juego</label>
         <input
-          id="arcade-search"
+          id={searchId}
           type="search"
           value={query}
           placeholder="Escribe: contar, sombra, colors…"
@@ -113,53 +152,89 @@ export default function ArcadeHub({
         </span>
       </div>
 
-      <div className="arcade__grid" aria-label="Juegos disponibles">
-        {shownTiles.map((tile) => (
+      <div
+        id={panelId}
+        className="arcade__panel"
+        role="tabpanel"
+        aria-labelledby={`arcade-tab-${uid}-${activeFilter.id}`}
+      >
+        <div className="arcade__grid" aria-label="Juegos disponibles">
+          {shownTiles.map((tile) => {
+            const seed = hashGameId(`${tile.category}|${tile.id}`);
+            const categoryLabel =
+              filters.find(({ id }) => id === tile.category)?.label ??
+              tile.category;
+
+            return (
+              <button
+                className="arcade__tile"
+                type="button"
+                data-game-id={tile.id}
+                data-category={tile.category}
+                data-variant={seed % 6}
+                style={{
+                  "--tile-accent": tile.accent,
+                  "--tile-soft": tile.accentSoft,
+                }}
+                aria-label={[
+                  tile.title,
+                  tile.tagline,
+                  tile.progressLabel,
+                  "Abrir juego",
+                ]
+                  .filter(Boolean)
+                  .join(". ")}
+                onClick={tile.onOpen}
+                key={tile.id}
+              >
+                <span className="arcade__tile-world" aria-hidden="true" />
+                <span className="arcade__tile-topline">
+                  <span className="arcade__tile-category">{categoryLabel}</span>
+                  <span className="arcade__tile-number" aria-hidden="true">
+                    {String(tiles.indexOf(tile) + 1).padStart(2, "0")}
+                  </span>
+                </span>
+                {tile.badge ? (
+                  <span className="arcade__tile-badge">{tile.badge}</span>
+                ) : null}
+                <span className="arcade__tile-hero" aria-hidden="true">
+                  <span className="arcade__tile-icon">{tile.icon}</span>
+                </span>
+                <span className="arcade__tile-copy">
+                  <strong>{tile.title}</strong>
+                  <small>{tile.tagline}</small>
+                </span>
+                <span className="arcade__tile-footer">
+                  {tile.progressLabel ? (
+                    <span className="arcade__tile-progress">
+                      <span>{tile.progressLabel}</span>
+                    </span>
+                  ) : null}
+                  <span className="arcade__tile-play" aria-hidden="true">
+                    Jugar
+                  </span>
+                </span>
+              </button>
+            );
+          })}
+        </div>
+        {remaining > 0 ? (
           <button
-            className="arcade__tile"
+            className="arcade__more"
             type="button"
-            data-game-id={tile.id}
-            style={{
-              "--tile-accent": tile.accent,
-              "--tile-accent-soft": tile.accentSoft,
-            }}
-            onClick={tile.onOpen}
-            key={tile.id}
+            onClick={() => setPageCount((count) => count + 1)}
           >
-            <span className="arcade__tile-glow" aria-hidden="true" />
-            {tile.badge ? <span className="arcade__tile-badge">{tile.badge}</span> : null}
-            <span className="arcade__tile-icon" aria-hidden="true">
-              {tile.icon}
-            </span>
-            <span className="arcade__tile-copy">
-              <strong>{tile.title}</strong>
-              <small>{tile.tagline}</small>
-            </span>
-            {tile.progressLabel ? (
-              <span className="arcade__tile-progress">{tile.progressLabel}</span>
-            ) : null}
-            <span className="arcade__tile-play" aria-hidden="true">▶</span>
+            Ver más juegos · quedan {remaining}
           </button>
-        ))}
+        ) : null}
+        {!visibleTiles.length ? (
+          <p className="arcade__empty">
+            {query.trim()
+              ? "Ningún juego se llama así. Prueba con otra palabra."
+              : "No hay juegos en esta categoría todavía."}
+          </p>
+        ) : null}
       </div>
-
-      {remaining > 0 ? (
-        <button
-          className="arcade__more"
-          type="button"
-          onClick={() => setPageCount((count) => count + 1)}
-        >
-          Ver más juegos · quedan {remaining}
-        </button>
-      ) : null}
-
-      {!visibleTiles.length ? (
-        <p className="arcade__empty">
-          {query.trim()
-            ? `Ningún juego se llama así. Prueba con otra palabra.`
-            : "No hay juegos en esta categoría todavía."}
-        </p>
-      ) : null}
     </div>
   );
 }

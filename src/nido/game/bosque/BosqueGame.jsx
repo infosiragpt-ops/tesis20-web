@@ -45,6 +45,12 @@ import "./bosque-game.css";
 const WORLD = Object.freeze({ width: 1900, groundY: 470 });
 const BASKET = Object.freeze({ x: 1700, y: 400, w: 120, h: 66 });
 const GRAB_RADIUS = 56;
+const CELEBRATION_LEAD_IN_MS = 540;
+const CELEBRATION_DWELL_MS = 700;
+const CELEBRATION_WATCHDOG_MS = 12_000;
+
+const wait = (milliseconds) =>
+  new Promise((resolve) => window.setTimeout(resolve, milliseconds));
 
 /**
  * @param {{
@@ -91,6 +97,7 @@ export default function BosqueGame({
     grabPressed: false,
     grabHeld: false,
   });
+  const celebrationRunRef = useRef(0);
   const phaseRef = useRef("intro");
   phaseRef.current = phase;
 
@@ -108,7 +115,10 @@ export default function BosqueGame({
 
   const speak = useCallback((text, opts) => {
     setSubtitle(text);
-    audioRef.current?.speak(text, opts);
+    return (
+      audioRef.current?.speak(text, opts) ??
+      Promise.resolve({ status: "skipped" })
+    );
   }, []);
 
   // Narra con audio profesional pregrabado cuando existe (mismo manifiesto
@@ -116,7 +126,10 @@ export default function BosqueGame({
   // dispositivo entra como respaldo automático dentro de audioDirector.speak.
   const narrate = useCallback(
     (text, key, opts) => {
-      speak(text, { ...opts, audioSrc: bosqueTracksRef.current[key] });
+      return speak(text, {
+        ...opts,
+        audioSrc: bosqueTracksRef.current[key],
+      });
     },
     [speak],
   );
@@ -146,6 +159,7 @@ export default function BosqueGame({
 
     return () => {
       active = false;
+      celebrationRunRef.current += 1;
       window.clearInterval(stateRef.current?.counting);
       loopRef.current?.destroy();
       loopRef.current = null;
@@ -207,7 +221,6 @@ export default function BosqueGame({
         state.basketGlow = true;
         state.pose = "celebrate";
         audioRef.current?.sfx("success");
-        window.setTimeout(() => audioRef.current?.sfx("celebrate"), 350);
         for (let index = 0; index < 26; index += 1) {
           state.particles.push({
             x: BASKET.x + BASKET.w / 2,
@@ -221,26 +234,57 @@ export default function BosqueGame({
             ],
           });
         }
+        phaseRef.current = "celebrating";
         setPhase("celebrating");
-        narrate(successText(levelUp), successKey(ageId, levelUp));
         const completedRound = roundIndex + 1;
+        const celebrationRun = celebrationRunRef.current + 1;
+        celebrationRunRef.current = celebrationRun;
         onRoundComplete?.(completedRound);
         busRef.current?.emit(GAME_TO_PLATFORM.LEVEL_COMPLETED, {
           round: completedRound,
         });
-        window.setTimeout(() => {
-          if (!stateRef.current) return;
+
+        void (async () => {
+          await wait(CELEBRATION_LEAD_IN_MS);
+          if (
+            celebrationRunRef.current !== celebrationRun ||
+            !stateRef.current
+          ) {
+            return;
+          }
+
+          await narrate(successText(levelUp), successKey(ageId, levelUp), {
+            watchdogMs: CELEBRATION_WATCHDOG_MS,
+          });
+          if (
+            celebrationRunRef.current !== celebrationRun ||
+            !stateRef.current
+          ) {
+            return;
+          }
+
+          audioRef.current?.sfx("celebrate");
+          await wait(CELEBRATION_DWELL_MS);
+          if (
+            celebrationRunRef.current !== celebrationRun ||
+            !stateRef.current
+          ) {
+            return;
+          }
+
           if (completedRound >= FOREST_ROUNDS) {
             const summary = adapterRef.current.summary();
             setMissionSummary(summary);
+            phaseRef.current = "missionComplete";
             setPhase("missionComplete");
             narrate(missionCompleteText, missionCompleteKey(ageId));
             onMissionComplete?.(summary);
           } else {
             setRoundIndex(completedRound);
+            phaseRef.current = "briefing";
             setPhase("briefing");
           }
-        }, 2300);
+        })();
       } else if (state.delivered > targetRound.target) {
         const { help } = adapterRef.current.recordError();
         busRef.current?.emit(GAME_TO_PLATFORM.ANSWER_SUBMITTED, {
@@ -653,13 +697,15 @@ export default function BosqueGame({
   return (
     <div className="bosque" ref={stageRef} data-age={ageId}>
       <div className="bosque__stage">
-        <canvas
-          className="bosque__canvas"
-          ref={canvasRef}
-          width={VIEW_W * 2}
-          height={VIEW_H * 2}
-          aria-label="Escenario del bosque"
-        />
+        <div className="bosque__world">
+          <canvas
+            className="bosque__canvas"
+            ref={canvasRef}
+            width={VIEW_W * 2}
+            height={VIEW_H * 2}
+            aria-label="Escenario del bosque"
+          />
+        </div>
 
         {phase !== "intro" && phase !== "missionComplete" ? (
           <>

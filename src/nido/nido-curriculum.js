@@ -338,13 +338,13 @@ const ANIMALS = Object.freeze([
   { id: "dog", label: "perro", english: "dog", iconName: "Dog" },
   { id: "cat", label: "gato", english: "cat", iconName: "Cat" },
   { id: "horse", label: "caballo", english: "horse", iconName: "Horse" },
-  { id: "duck", label: "pato", english: "duck", iconName: "Bird" },
+  { id: "duck", label: "pato", english: "duck", iconName: "Duck" },
   { id: "fish", label: "pez", english: "fish", iconName: "FishSimple" },
   { id: "cow", label: "vaca", english: "cow", iconName: "Cow" },
   { id: "rabbit", label: "conejo", english: "rabbit", iconName: "Rabbit" },
   { id: "butterfly", label: "mariposa", english: "butterfly", iconName: "Butterfly" },
-  { id: "lion", label: "león", english: "lion", iconName: "PawPrint" },
-  { id: "turtle", label: "tortuga", english: "turtle", iconName: "PawPrint" },
+  { id: "lion", label: "león", english: "lion", iconName: "Lion" },
+  { id: "turtle", label: "tortuga", english: "turtle", iconName: "Turtle" },
 ]);
 
 const LOGIC_FAMILIES = Object.freeze([
@@ -390,19 +390,19 @@ const REAL_AND_IMAGINARY = Object.freeze([
   {
     real: { id: "dog", label: "perro", iconName: "Dog" },
     imaginary: [
-      { id: "unicorn", label: "unicornio", iconName: "Horse" },
-      { id: "dragon", label: "dragón", iconName: "Fire" },
+      { id: "unicorn", label: "unicornio", iconName: "Unicorn" },
+      { id: "dragon", label: "dragón", iconName: "Dragon" },
     ],
   },
   {
     real: { id: "butterfly", label: "mariposa", iconName: "Butterfly" },
     imaginary: [
-      { id: "winged-lion", label: "león con alas", iconName: "PawPrint" },
-      { id: "three-headed-bird", label: "ave de tres cabezas", iconName: "Bird" },
+      { id: "winged-lion", label: "león con alas", iconName: "WingedLion" },
+      { id: "three-headed-bird", label: "ave de tres cabezas", iconName: "ThreeHeadedBird" },
     ],
   },
   {
-    real: { id: "turtle", label: "tortuga", iconName: "PawPrint" },
+    real: { id: "turtle", label: "tortuga", iconName: "Turtle" },
     imaginary: [
       { id: "flying-fish", label: "pez que camina", iconName: "FishSimple" },
       { id: "talking-moon", label: "luna que habla", iconName: "Moon" },
@@ -465,7 +465,7 @@ const CHARACTER_CLUES = Object.freeze([
   {
     id: "turtle",
     label: "tortuga",
-    iconName: "PawPrint",
+    iconName: "Turtle",
     clue: "Camina despacio y lleva caparazón.",
   },
 ]);
@@ -476,8 +476,8 @@ const ANIMAL_YOUNG = Object.freeze([
   { article: "la", adult: "gallina", young: "pollito", adultIcon: "Bird", youngIcon: "Bird" },
   { article: "el", adult: "perro", young: "cachorro", adultIcon: "Dog", youngIcon: "Dog" },
   { article: "el", adult: "gato", young: "gatito", adultIcon: "Cat", youngIcon: "Cat" },
-  { article: "la", adult: "oveja", young: "cordero", adultIcon: "PawPrint", youngIcon: "PawPrint" },
-  { article: "el", adult: "pato", young: "patito", adultIcon: "Bird", youngIcon: "Bird" },
+  { article: "la", adult: "oveja", young: "cordero", adultIcon: "Sheep", youngIcon: "Sheep" },
+  { article: "el", adult: "pato", young: "patito", adultIcon: "Duck", youngIcon: "Duck" },
   { article: "el", adult: "conejo", young: "gazapo", adultIcon: "Rabbit", youngIcon: "Rabbit" },
 ]);
 
@@ -506,9 +506,9 @@ const EMOTIONS = Object.freeze([
 const ANIMAL_FOODS = Object.freeze([
   { article: "el", animal: "conejo", animalIcon: "Rabbit", food: "zanahoria", foodIcon: "Carrot" },
   { article: "la", animal: "vaca", animalIcon: "Cow", food: "pasto", foodIcon: "Plant" },
-  { article: "el", animal: "panda", animalIcon: "PawPrint", food: "bambú", foodIcon: "Plant" },
-  { article: "el", animal: "mono", animalIcon: "PawPrint", food: "plátano", foodIcon: "BowlFood" },
-  { article: "la", animal: "ardilla", animalIcon: "PawPrint", food: "nuez", foodIcon: "BowlFood" },
+  { article: "el", animal: "panda", animalIcon: "Panda", food: "bambú", foodIcon: "Plant" },
+  { article: "el", animal: "mono", animalIcon: "Monkey", food: "plátano", foodIcon: "BowlFood" },
+  { article: "la", animal: "ardilla", animalIcon: "Squirrel", food: "nuez", foodIcon: "BowlFood" },
   { article: "la", animal: "mariposa", animalIcon: "Butterfly", food: "néctar", foodIcon: "Flower" },
   { article: "el", animal: "caballo", animalIcon: "Horse", food: "heno", foodIcon: "Plant" },
   { article: "el", animal: "gato", animalIcon: "Cat", food: "pescado", foodIcon: "FishSimple" },
@@ -530,10 +530,10 @@ const HABITATS = Object.freeze([
   { article: "el", animal: "ave", animalIcon: "Bird", habitat: "nido", habitatPhrase: "un nido", habitatIcon: "Bird" },
   { article: "la", animal: "abeja", animalIcon: "Bug", habitat: "colmena", habitatPhrase: "una colmena", habitatIcon: "Hexagon" },
   { article: "el", animal: "conejo", animalIcon: "Rabbit", habitat: "madriguera", habitatPhrase: "una madriguera", habitatIcon: "CircleDashed" },
-  { article: "el", animal: "león", animalIcon: "PawPrint", habitat: "sabana", habitatPhrase: "la sabana", habitatIcon: "SunHorizon" },
-  { article: "la", animal: "rana", animalIcon: "PawPrint", habitat: "estanque", habitatPhrase: "un estanque", habitatIcon: "Drop" },
-  { article: "el", animal: "oso polar", animalIcon: "PawPrint", habitat: "hielo", habitatPhrase: "el hielo", habitatIcon: "Snowflake" },
-  { article: "el", animal: "mono", animalIcon: "PawPrint", habitat: "selva", habitatPhrase: "la selva", habitatIcon: "TreePalm" },
+  { article: "el", animal: "león", animalIcon: "Lion", habitat: "sabana", habitatPhrase: "la sabana", habitatIcon: "SunHorizon" },
+  { article: "la", animal: "rana", animalIcon: "Frog", habitat: "estanque", habitatPhrase: "un estanque", habitatIcon: "Drop" },
+  { article: "el", animal: "oso polar", animalIcon: "PolarBear", habitat: "hielo", habitatPhrase: "el hielo", habitatIcon: "Snowflake" },
+  { article: "el", animal: "mono", animalIcon: "Monkey", habitat: "selva", habitatPhrase: "la selva", habitatIcon: "TreePalm" },
 ]);
 
 const ENGLISH_VOCABULARY = Object.freeze({
@@ -569,15 +569,15 @@ const ENGLISH_VOCABULARY = Object.freeze({
     iconName: "NumberCircleOne",
   })),
   "english-family": [
-    ["mother", "mamá", "Person"],
-    ["father", "papá", "Person"],
-    ["sister", "hermana", "Person"],
-    ["brother", "hermano", "Person"],
-    ["grandmother", "abuela", "Person"],
-    ["grandfather", "abuelo", "Person"],
-    ["aunt", "tía", "Person"],
-    ["uncle", "tío", "Person"],
-    ["cousin", "primo o prima", "Person"],
+    ["mother", "mamá", "FamilyMother"],
+    ["father", "papá", "FamilyFather"],
+    ["sister", "hermana", "FamilySister"],
+    ["brother", "hermano", "FamilyBrother"],
+    ["grandmother", "abuela", "FamilyGrandmother"],
+    ["grandfather", "abuelo", "FamilyGrandfather"],
+    ["aunt", "tía", "FamilyAunt"],
+    ["uncle", "tío", "FamilyUncle"],
+    ["cousin", "primo o prima", "FamilyCousin"],
     ["family", "familia", "UsersThree"],
   ].map(([english, spanish, iconName]) => ({
     id: english,
@@ -1342,32 +1342,39 @@ function attentionChallenge(context) {
       seed,
       5,
     );
+    const markLabel =
+      {
+        dot: "un punto",
+        line: "una línea",
+        "small-circle": "un círculo pequeño",
+        corner: "una esquina",
+      }[mark] ?? "una marca";
     const answer = makeOptions(
       [
         {
           id: `${shape.id}-${color.id}-${mark}`,
-          label: "El gemelo exacto",
+          label: `${shape.label} ${color.label} con ${markLabel}`,
           iconName: shape.iconName,
           tone: color.tone,
           meta: { mark },
         },
         {
           id: `${otherShape.id}-${color.id}-${mark}`,
-          label: "Cambia la forma",
+          label: `${otherShape.label} ${color.label} con ${markLabel}`,
           iconName: otherShape.iconName,
           tone: color.tone,
           meta: { mark },
         },
         {
           id: `${shape.id}-${otherColor.id}-${mark}`,
-          label: "Cambia el color",
+          label: `${shape.label} ${otherColor.label} con ${markLabel}`,
           iconName: shape.iconName,
           tone: otherColor.tone,
           meta: { mark },
         },
         {
           id: `${shape.id}-${color.id}-different-mark`,
-          label: "Cambia la marca",
+          label: `${shape.label} ${color.label} con una equis`,
           iconName: shape.iconName,
           tone: color.tone,
           meta: { mark: "different-mark" },

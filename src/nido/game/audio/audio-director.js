@@ -8,6 +8,30 @@
 const PREFS_KEY = "tesis20.nido.bosque-audio";
 
 const PENTATONIC = [261.63, 293.66, 329.63, 392.0, 440.0, 523.25];
+const MIN_NARRATION_WATCHDOG_MS = 6_000;
+const MAX_NARRATION_WATCHDOG_MS = 30_000;
+
+function narrationWatchdogMs(text, rate, requestedMs) {
+  if (Number.isFinite(requestedMs) && requestedMs > 0) {
+    return Math.min(
+      MAX_NARRATION_WATCHDOG_MS,
+      Math.max(MIN_NARRATION_WATCHDOG_MS, requestedMs),
+    );
+  }
+
+  const words = String(text ?? "")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean).length;
+  const safeRate = Math.max(0.6, Number(rate) || 0.9);
+  return Math.min(
+    MAX_NARRATION_WATCHDOG_MS,
+    Math.max(
+      MIN_NARRATION_WATCHDOG_MS,
+      Math.ceil((words * 650) / safeRate + 3_500),
+    ),
+  );
+}
 
 function loadPrefs() {
   try {
@@ -26,7 +50,16 @@ function loadPrefs() {
  *   start: () => void,
  *   playMusic: () => void,
  *   sfx: (name: "jump"|"collect"|"deposit"|"success"|"try"|"celebrate"|"count") => void,
- *   speak: (text: string, opts?: { onEnd?: () => void, audioSrc?: string }) => void,
+ *   speak: (
+ *     text: string,
+ *     opts?: {
+ *       onEnd?: (result: { status: string }) => void,
+ *       audioSrc?: string,
+ *       rate?: number,
+ *       pitch?: number,
+ *       watchdogMs?: number,
+ *     }
+ *   ) => Promise<{ status: "ended"|"error"|"watchdog"|"skipped"|"interrupted"|"cancelled" }>,
  *   stopSpeech: () => void,
  *   setMusicEnabled: (on: boolean) => void,
  *   setVoiceEnabled: (on: boolean) => void,
@@ -47,6 +80,7 @@ export function createAudioDirector() {
   let prefs = loadPrefs();
   let narrationAudio = null;
   let narrationRunId = 0;
+  let activeNarration = null;
 
   const persist = () => {
     try {
@@ -96,6 +130,69 @@ export function createAudioDirector() {
       Math.max(target, 0.0001),
       ctx.currentTime + (down ? 0.25 : 0.9),
     );
+  };
+
+  const settleNarration = (runId, status, { notify = true } = {}) => {
+    const active = activeNarration;
+    if (!active || active.runId !== runId || active.settled) return false;
+
+    active.settled = true;
+    window.clearTimeout(active.watchdogTimer);
+    active.watchdogTimer = null;
+    if (narrationAudio && active.mode === "audio") {
+      narrationAudio.onended = null;
+      narrationAudio.onerror = null;
+    }
+    activeNarration = null;
+    speaking = false;
+    duckMusic(false);
+    const result = { status };
+    try {
+      if (notify) active.onEnd?.(result);
+    } finally {
+      active.resolve(result);
+    }
+    return true;
+  };
+
+  const stopActiveNarration = (status, { notify = false } = {}) => {
+    const active = activeNarration;
+    if (!active) {
+      narrationAudio?.pause();
+      window.speechSynthesis?.cancel();
+      speaking = false;
+      duckMusic(false);
+      return;
+    }
+
+    settleNarration(active.runId, status, { notify });
+    narrationAudio?.pause();
+    window.speechSynthesis?.cancel();
+  };
+
+  const armNarrationWatchdog = (active, durationMs) => {
+    if (!active || active.settled) return;
+    window.clearTimeout(active.watchdogTimer);
+    const safeDuration = Math.max(1, durationMs);
+    active.watchdogRemainingMs = safeDuration;
+    active.watchdogDeadline = Date.now() + safeDuration;
+    active.watchdogTimer = window.setTimeout(() => {
+      if (activeNarration?.runId !== active.runId) return;
+      settleNarration(active.runId, "watchdog");
+      narrationAudio?.pause();
+      window.speechSynthesis?.cancel();
+    }, safeDuration);
+  };
+
+  const pauseNarrationWatchdog = () => {
+    const active = activeNarration;
+    if (!active || active.settled) return;
+    active.watchdogRemainingMs = Math.max(
+      1,
+      active.watchdogDeadline - Date.now(),
+    );
+    window.clearTimeout(active.watchdogTimer);
+    active.watchdogTimer = null;
   };
 
   const SFX = {
@@ -152,95 +249,124 @@ export function createAudioDirector() {
         // El silencio de un efecto no interrumpe el juego.
       }
     },
-    speak(text, { onEnd, audioSrc } = {}) {
+    speak(
+      text,
+      {
+        onEnd,
+        audioSrc,
+        rate = 0.9,
+        pitch = 1.08,
+        watchdogMs,
+      } = {},
+    ) {
+      stopActiveNarration("interrupted");
       narrationRunId += 1;
       const runId = narrationRunId;
-      if (narrationAudio) narrationAudio.pause();
+      const safeRate = Math.min(1.5, Math.max(0.6, Number(rate) || 0.9));
+      const safePitch = Math.min(1.5, Math.max(0.7, Number(pitch) || 1.08));
+      const timeoutMs = narrationWatchdogMs(text, safeRate, watchdogMs);
 
-      const speakWithDeviceVoice = () => {
-        if (!prefs.voice || !("speechSynthesis" in window)) {
-          if (runId === narrationRunId) finish();
+      return new Promise((resolve) => {
+        const active = {
+          runId,
+          mode: null,
+          onEnd,
+          resolve,
+          settled: false,
+          paused: false,
+          watchdogTimer: null,
+          watchdogDeadline: 0,
+          watchdogRemainingMs: timeoutMs,
+        };
+        activeNarration = active;
+
+        if (!prefs.voice) {
+          settleNarration(runId, "skipped");
           return;
         }
-        window.speechSynthesis.cancel();
-        const utterance = new window.SpeechSynthesisUtterance(text);
-        const preferredVoiceNames = [
-          "paulina",
-          "monica",
-          "luciana",
-          "elvira",
-          "sabina",
-          "google español",
-        ];
-        const spanishVoices = window.speechSynthesis
-          .getVoices()
-          .filter((voice) => voice.lang.toLowerCase().startsWith("es"));
-        const preferredVoice = spanishVoices.find((voice) => {
-          const normalizedName = voice.name
-            .normalize("NFD")
-            .replace(/[\u0300-\u036f]/g, "")
-            .toLowerCase();
-          return preferredVoiceNames.some((name) =>
-            normalizedName.includes(name),
-          );
-        });
-        utterance.voice = preferredVoice ?? spanishVoices[0] ?? null;
-        utterance.lang = preferredVoice?.lang ?? "es-PE";
-        utterance.rate = 0.9;
-        utterance.pitch = 1.08;
-        utterance.onend = () => {
-          if (runId === narrationRunId) finish();
+
+        speaking = true;
+        duckMusic(true);
+        armNarrationWatchdog(active, timeoutMs);
+
+        const speakWithDeviceVoice = () => {
+          if (activeNarration?.runId !== runId) return;
+          if (
+            !prefs.voice ||
+            !("speechSynthesis" in window) ||
+            typeof window.SpeechSynthesisUtterance !== "function"
+          ) {
+            settleNarration(runId, "error");
+            return;
+          }
+
+          active.mode = "speech";
+          window.speechSynthesis.cancel();
+          const utterance = new window.SpeechSynthesisUtterance(text);
+          const preferredVoiceNames = [
+            "paulina",
+            "monica",
+            "luciana",
+            "elvira",
+            "sabina",
+            "google español",
+          ];
+          const spanishVoices = window.speechSynthesis
+            .getVoices()
+            .filter((voice) => voice.lang.toLowerCase().startsWith("es"));
+          const preferredVoice = spanishVoices.find((voice) => {
+            const normalizedName = voice.name
+              .normalize("NFD")
+              .replace(/[\u0300-\u036f]/g, "")
+              .toLowerCase();
+            return preferredVoiceNames.some((name) =>
+              normalizedName.includes(name),
+            );
+          });
+          utterance.voice = preferredVoice ?? spanishVoices[0] ?? null;
+          utterance.lang = preferredVoice?.lang ?? "es-PE";
+          utterance.rate = safeRate;
+          utterance.pitch = safePitch;
+          utterance.onend = () => settleNarration(runId, "ended");
+          utterance.onerror = () => settleNarration(runId, "error");
+          window.speechSynthesis.speak(utterance);
         };
-        utterance.onerror = () => {
-          if (runId === narrationRunId) finish();
+
+        if (!audioSrc) {
+          speakWithDeviceVoice();
+          return;
+        }
+
+        // Narración profesional pregrabada, con respaldo a la voz del
+        // dispositivo si el archivo no existe o falla al reproducirse.
+        if (!narrationAudio) narrationAudio = new Audio();
+        const audio = narrationAudio;
+        active.mode = "audio";
+        let fallbackStarted = false;
+        const fallbackToDevice = () => {
+          if (
+            fallbackStarted ||
+            activeNarration?.runId !== runId ||
+            active.settled
+          ) {
+            return;
+          }
+          fallbackStarted = true;
+          audio.pause();
+          audio.onended = null;
+          audio.onerror = null;
+          speakWithDeviceVoice();
         };
-        window.speechSynthesis.speak(utterance);
-      };
-
-      const finish = () => {
-        if (!speaking) return;
-        speaking = false;
-        duckMusic(false);
-        onEnd?.();
-      };
-
-      if (!prefs.voice) {
-        onEnd?.();
-        return;
-      }
-
-      speaking = true;
-      duckMusic(true);
-
-      if (!audioSrc) {
-        speakWithDeviceVoice();
-        return;
-      }
-
-      // Narración profesional pregrabada, con respaldo silencioso a la voz
-      // del dispositivo si el archivo no existe o falla al reproducirse.
-      if (!narrationAudio) narrationAudio = new Audio();
-      const audio = narrationAudio;
-      let fallbackStarted = false;
-      const fallbackToDevice = () => {
-        if (fallbackStarted || runId !== narrationRunId) return;
-        fallbackStarted = true;
-        speakWithDeviceVoice();
-      };
-      audio.src = audioSrc;
-      audio.currentTime = 0;
-      audio.onended = () => {
-        if (runId === narrationRunId) finish();
-      };
-      audio.onerror = fallbackToDevice;
-      void audio.play().catch(fallbackToDevice);
+        audio.src = audioSrc;
+        audio.currentTime = 0;
+        audio.onended = () => settleNarration(runId, "ended");
+        audio.onerror = fallbackToDevice;
+        void audio.play().catch(fallbackToDevice);
+      });
     },
     stopSpeech() {
       narrationRunId += 1;
-      narrationAudio?.pause();
-      window.speechSynthesis?.cancel();
-      speaking = false;
-      duckMusic(false);
+      stopActiveNarration("cancelled");
     },
     setMusicEnabled(on) {
       prefs = { ...prefs, music: on };
@@ -258,24 +384,40 @@ export function createAudioDirector() {
       persist();
       if (!on) {
         narrationRunId += 1;
-        narrationAudio?.pause();
-        window.speechSynthesis?.cancel();
+        stopActiveNarration("cancelled");
       }
     },
     prefs: () => ({ ...prefs }),
     suspend() {
-      narrationRunId += 1;
-      narrationAudio?.pause();
-      window.speechSynthesis?.cancel();
+      const active = activeNarration;
+      if (active && !active.paused) {
+        active.paused = true;
+        pauseNarrationWatchdog();
+        if (active.mode === "audio") narrationAudio?.pause();
+        else if (active.mode === "speech") window.speechSynthesis?.pause();
+      }
       if (ctx?.state === "running") void ctx.suspend().catch(() => {});
     },
     resume() {
+      const active = activeNarration;
+      if (active?.paused) {
+        active.paused = false;
+        armNarrationWatchdog(active, active.watchdogRemainingMs);
+        if (active.mode === "audio") {
+          void narrationAudio
+            ?.play()
+            .catch(() => settleNarration(active.runId, "error"));
+        } else if (active.mode === "speech") {
+          window.speechSynthesis?.resume();
+        }
+      }
       if (ctx?.state === "suspended") void ctx.resume().catch(() => {});
     },
     destroy() {
       narrationRunId += 1;
       window.clearInterval(musicTimer);
       musicTimer = null;
+      stopActiveNarration("cancelled");
       if (narrationAudio) {
         narrationAudio.pause();
         narrationAudio.removeAttribute("src");

@@ -16,13 +16,26 @@ import {
   formasAttributeTargets,
   huertoTargetSwitch,
 } from "../content/catch-mission.js";
+import {
+  getCelebrationVoiceProfile,
+  pickSuccessCelebration,
+} from "../content/celebration-feedback.js";
 import { STICKERS } from "../../stickers/sticker-registry.jsx";
 import "./catch-game.css";
 
-const STAGE_HEIGHT = 560;
-const BASKET_Y = 500;
+const DEFAULT_STAGE_WIDTH = 720;
+const DEFAULT_STAGE_HEIGHT = 540;
 const BASKET_WIDTH = 92;
+const BASKET_HEIGHT = 60;
+const BASKET_BOTTOM_DESKTOP = 34;
+const BASKET_BOTTOM_PORTRAIT = 112;
 const ITEM_SIZE = 56;
+const CELEBRATION_LEAD_IN_MS = 540;
+const CELEBRATION_DWELL_MS = 700;
+const CELEBRATION_WATCHDOG_MS = 12_000;
+
+const wait = (milliseconds) =>
+  new Promise((resolve) => window.setTimeout(resolve, milliseconds));
 
 function mulberry(seed) {
   let a = seed >>> 0;
@@ -62,12 +75,22 @@ export default function CatchGame({
   const [missionSummary, setMissionSummary] = useState(null);
   const [tick, setTick] = useState(0);
   const [feedback, setFeedback] = useState(null);
-  const [stageWidth, setStageWidth] = useState(720);
+  const [celebration, setCelebration] = useState(null);
 
   const audioRef = useRef(null);
   const adapterRef = useRef(null);
   const loopRef = useRef(null);
   const stageRef = useRef(null);
+  const stageMetricsRef = useRef({
+    width: DEFAULT_STAGE_WIDTH,
+    height: DEFAULT_STAGE_HEIGHT,
+    basketY:
+      DEFAULT_STAGE_HEIGHT - BASKET_BOTTOM_DESKTOP - BASKET_HEIGHT,
+    basketWidth: BASKET_WIDTH,
+    basketHeight: BASKET_HEIGHT,
+    itemSize: ITEM_SIZE,
+  });
+  const celebrationRunRef = useRef(0);
   const phaseRef = useRef("intro");
   phaseRef.current = phase;
 
@@ -102,8 +125,11 @@ export default function CatchGame({
   const currentTargetRef = useRef(round.target);
   const targetSwitchedRef = useRef(false);
 
-  const speak = useCallback((text) => {
-    audioRef.current?.speak(text);
+  const speak = useCallback((text, opts) => {
+    return (
+      audioRef.current?.speak(text, opts) ??
+      Promise.resolve({ status: "skipped" })
+    );
   }, []);
 
   useEffect(() => {
@@ -112,6 +138,7 @@ export default function CatchGame({
     setAudioPrefs(audio.prefs());
     adapterRef.current = createDifficultyAdapter({ maxLevel: 0 });
     return () => {
+      celebrationRunRef.current += 1;
       loopRef.current?.destroy();
       loopRef.current = null;
       audio.destroy();
@@ -120,18 +147,48 @@ export default function CatchGame({
   }, []);
 
   useEffect(() => {
-    const measure = () => setStageWidth(stageRef.current?.clientWidth ?? 720);
+    const measure = () => {
+      const stage = stageRef.current;
+      if (!stage) return;
+      const width = Math.max(1, stage.clientWidth);
+      const height = Math.max(1, stage.clientHeight);
+      const portrait = width <= 700 && height > width;
+      const basketBottom = portrait
+        ? BASKET_BOTTOM_PORTRAIT
+        : BASKET_BOTTOM_DESKTOP;
+      const metrics = {
+        width,
+        height,
+        basketY: Math.max(0, height - basketBottom - BASKET_HEIGHT),
+        basketWidth: BASKET_WIDTH,
+        basketHeight: BASKET_HEIGHT,
+        itemSize: ITEM_SIZE,
+      };
+      stageMetricsRef.current = metrics;
+      stateRef.current.basketX = Math.max(
+        0,
+        Math.min(width - metrics.basketWidth, stateRef.current.basketX),
+      );
+      setTick((current) => current + 1);
+    };
     measure();
+    const observer =
+      typeof ResizeObserver === "function" ? new ResizeObserver(measure) : null;
+    if (observer && stageRef.current) observer.observe(stageRef.current);
     window.addEventListener("resize", measure);
-    return () => window.removeEventListener("resize", measure);
+    return () => {
+      observer?.disconnect();
+      window.removeEventListener("resize", measure);
+    };
   }, []);
 
   const setupRound = useCallback(
     (index) => {
       const targetRound = createCatchRound({ themeId: theme.id, ageId, roundIndex: index });
+      const metrics = stageMetricsRef.current;
       stateRef.current = {
         items: [],
-        basketX: stageWidth / 2 - BASKET_WIDTH / 2,
+        basketX: metrics.width / 2 - metrics.basketWidth / 2,
         spawnT: 0,
         spawnSeed: mulberry(
           Array.from(`${theme.id}|${ageId}|${index}`).reduce(
@@ -145,35 +202,69 @@ export default function CatchGame({
       currentTargetRef.current = targetRound.target;
       targetSwitchedRef.current = false;
       setCaught(0);
+      setCelebration(null);
     },
-    [ageId, stageWidth, theme.id],
+    [ageId, theme.id],
   );
 
   const evaluateRound = useCallback(() => {
+    if (phaseRef.current !== "playing") return;
+
     audioRef.current?.sfx("success");
-    window.setTimeout(() => audioRef.current?.sfx("celebrate"), 300);
-    const { levelUp } = adapterRef.current.recordSuccess();
+    adapterRef.current.recordSuccess();
+    phaseRef.current = "celebrating";
     setPhase("celebrating");
-    speak(levelUp ? "¡Excelente! Un reto más grande viene." : "¡Muy bien atrapado!");
     const completedRound = roundIndex + 1;
+    const celebrationRun = celebrationRunRef.current + 1;
+    celebrationRunRef.current = celebrationRun;
+    const celebration = pickSuccessCelebration(
+      `atrapa:${theme.id}:${ageId}:${completedRound}`,
+      adapterRef.current.summary().successes,
+    );
+    setCelebration(celebration);
+    const voiceProfile = getCelebrationVoiceProfile(ageId, celebration);
     onRoundComplete?.(completedRound);
-    window.setTimeout(() => {
+
+    void (async () => {
+      await wait(CELEBRATION_LEAD_IN_MS);
+      if (celebrationRunRef.current !== celebrationRun) return;
+
+      await speak(celebration.spokenText, {
+        ...voiceProfile,
+        watchdogMs: CELEBRATION_WATCHDOG_MS,
+      });
+      if (celebrationRunRef.current !== celebrationRun) return;
+
+      audioRef.current?.sfx("celebrate");
+      await wait(CELEBRATION_DWELL_MS);
+      if (celebrationRunRef.current !== celebrationRun) return;
+
       if (completedRound >= CATCH_ROUNDS) {
         const summary = adapterRef.current.summary();
         setMissionSummary(summary);
+        phaseRef.current = "missionComplete";
         setPhase("missionComplete");
-        speak("¡Atrapa y cuenta completado! Qué buena puntería.");
+        void speak("¡Atrapa y cuenta completado! Qué buena puntería.");
         onMissionComplete?.(summary);
       } else {
         setRoundIndex(completedRound);
+        phaseRef.current = "briefing";
         setPhase("briefing");
       }
-    }, 1600);
-  }, [onMissionComplete, onRoundComplete, roundIndex, speak]);
+    })();
+  }, [
+    ageId,
+    onMissionComplete,
+    onRoundComplete,
+    roundIndex,
+    speak,
+    theme.id,
+  ]);
 
   const update = useCallback(
     (dt) => {
       const state = stateRef.current;
+      const metrics = stageMetricsRef.current;
       state.time += dt;
 
       if (phaseRef.current !== "playing") return;
@@ -181,7 +272,10 @@ export default function CatchGame({
       const speed = 340;
       if (inputRef.current.left) state.basketX -= speed * dt;
       if (inputRef.current.right) state.basketX += speed * dt;
-      state.basketX = Math.max(0, Math.min(stageWidth - BASKET_WIDTH, state.basketX));
+      state.basketX = Math.max(
+        0,
+        Math.min(metrics.width - metrics.basketWidth, state.basketX),
+      );
 
       // Objetivos válidos de esta ronda: por defecto el objetivo actual de
       // Huerto (que puede haber cambiado a mitad de ronda); Cielo suma un
@@ -203,7 +297,8 @@ export default function CatchGame({
           const isDecoy = random() < round.decoyChance;
           const pool = isDecoy ? decoyPool : activeTargets;
           const sticker = pool[Math.floor(random() * pool.length)];
-          const laneWidth = Math.max(1, stageWidth - ITEM_SIZE - 32) / spawnCount;
+          const laneWidth =
+            Math.max(1, metrics.width - metrics.itemSize - 32) / spawnCount;
           const x = 16 + slot * laneWidth + random() * laneWidth;
           state.items.push({
             id: `${Date.now()}-${slot}-${Math.floor(random() * 100000)}`,
@@ -216,14 +311,17 @@ export default function CatchGame({
         }
       }
 
-      const basketCenterX = state.basketX + BASKET_WIDTH / 2;
+      const basketCenterX = state.basketX + metrics.basketWidth / 2;
       const survivors = [];
       let targetSwitched = false;
       for (const item of state.items) {
         item.y += round.fallSpeed * dt;
-        const itemCenterX = item.x + ITEM_SIZE / 2;
-        const withinBasketX = Math.abs(itemCenterX - basketCenterX) < BASKET_WIDTH / 2;
-        const withinBasketY = item.y + ITEM_SIZE >= BASKET_Y && item.y < BASKET_Y + 40;
+        const itemCenterX = item.x + metrics.itemSize / 2;
+        const withinBasketX =
+          Math.abs(itemCenterX - basketCenterX) < metrics.basketWidth / 2;
+        const withinBasketY =
+          item.y + metrics.itemSize >= metrics.basketY &&
+          item.y < metrics.basketY + metrics.basketHeight;
 
         if (withinBasketX && withinBasketY) {
           if (item.isTarget) {
@@ -264,7 +362,7 @@ export default function CatchGame({
           }
           continue;
         }
-        if (item.y < STAGE_HEIGHT + ITEM_SIZE) survivors.push(item);
+        if (item.y < metrics.height + metrics.itemSize) survivors.push(item);
       }
       // Si el objetivo cambió a mitad de ronda, limpiamos lo que caía con
       // el objetivo anterior para que no queden dos reglas mezcladas en
@@ -272,16 +370,17 @@ export default function CatchGame({
       state.items = targetSwitched ? [] : survivors;
       setTick((current) => current + 1);
     },
-    [attributeMode, evaluateRound, round, roundIndex, secondaryTarget, speak, stageWidth, theme],
+    [attributeMode, evaluateRound, round, roundIndex, secondaryTarget, speak, theme],
   );
 
   const render = useCallback(() => {}, []);
+  const updateRef = useRef(update);
+  updateRef.current = update;
 
   useEffect(() => {
     if (phase === "intro" || loopRef.current) return undefined;
-    const updateRef2 = update;
     const loop = createGameLoop({
-      update: (dt) => updateRef2(dt),
+      update: (dt) => updateRef.current(dt),
       render,
       onAutoPause: () => {
         setPaused(true);
@@ -376,6 +475,7 @@ export default function CatchGame({
   });
 
   void tick;
+  const stageMetrics = stageMetricsRef.current;
   const activeTarget = currentTargetRef.current ?? round.target;
   const displayTargets = attributeMode
     ? attributeMode.validTargets.map((sticker) => ({ sticker, badge: null }))
@@ -471,7 +571,11 @@ export default function CatchGame({
               })}
               <div
                 className="catch__basket"
-                style={{ transform: `translateX(${stateRef.current.basketX}px)`, width: BASKET_WIDTH }}
+                style={{
+                  transform: `translateX(${stateRef.current.basketX}px)`,
+                  top: stageMetrics.basketY,
+                  width: stageMetrics.basketWidth,
+                }}
               >
                 <svg viewBox="0 0 92 60" width="100%" height="100%" aria-hidden="true">
                   <path
@@ -489,6 +593,33 @@ export default function CatchGame({
               <button type="button" aria-label="Ir a la izquierda" {...touchHold("left")}>◀</button>
               <button type="button" aria-label="Ir a la derecha" {...touchHold("right")}>▶</button>
             </div>
+
+            {phase === "celebrating" && celebration ? (
+              <div
+                className={`catch__celebration is-${celebration.burst}`}
+                role="status"
+                aria-live="polite"
+              >
+                <div className="catch__celebration-particles" aria-hidden="true">
+                  {Array.from({ length: 18 }, (_, index) => (
+                    <i
+                      key={index}
+                      style={{
+                        "--particle-index": index,
+                        "--particle-x": `${8 + ((index * 29) % 84)}%`,
+                      }}
+                    />
+                  ))}
+                </div>
+                <div className="catch__celebration-card">
+                  <span className="catch__celebration-stars" aria-hidden="true">
+                    ★ ✦ ★
+                  </span>
+                  <strong>{celebration.headline}</strong>
+                  <small>{celebration.caption}</small>
+                </div>
+              </div>
+            ) : null}
           </>
         ) : null}
 

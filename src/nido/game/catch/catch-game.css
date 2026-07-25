@@ -27,10 +27,12 @@
   display: flex;
   align-items: center;
   gap: 10px;
+  min-width: 0;
 }
 
 .catch__hud-exit,
 .catch__hud-buttons button {
+  flex: 0 0 auto;
   width: 48px;
   height: 48px;
   display: grid;
@@ -44,16 +46,19 @@
 }
 
 .catch__hud-round {
+  flex: 0 0 auto;
   padding: 7px 12px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.92);
   color: #10233f;
   font-size: 0.72rem;
   font-weight: 900;
+  white-space: nowrap;
 }
 
 .catch__hud-target {
   flex: 1;
+  min-width: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -92,6 +97,7 @@
 }
 
 .catch__hud-buttons {
+  flex: 0 0 auto;
   display: flex;
   gap: 8px;
 }
@@ -150,7 +156,6 @@
 
 .catch__basket {
   position: absolute;
-  bottom: 34px;
   left: 0;
   height: 60px;
   will-change: transform;
@@ -181,6 +186,119 @@
 
 .catch__touch button:active {
   transform: scale(0.94);
+}
+
+/* La fiesta permanece visible durante toda la frase de felicitación. */
+.catch__celebration {
+  position: absolute;
+  z-index: 4;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  pointer-events: none;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.58), transparent 58%);
+}
+
+.catch__celebration-particles {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.catch__celebration-particles i {
+  --particle-color: #ff6f61;
+  position: absolute;
+  top: 53%;
+  left: var(--particle-x);
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  background: var(--particle-color);
+  animation: catch-celebration-burst 1.65s
+    cubic-bezier(0.16, 0.78, 0.28, 1) infinite;
+  animation-delay: calc(var(--particle-index) * -83ms);
+}
+
+.catch__celebration-particles i:nth-child(5n + 2) {
+  --particle-color: #ffc94d;
+}
+
+.catch__celebration-particles i:nth-child(5n + 3) {
+  --particle-color: #46b982;
+}
+
+.catch__celebration-particles i:nth-child(5n + 4) {
+  --particle-color: #4b8ff7;
+}
+
+.catch__celebration-particles i:nth-child(5n) {
+  --particle-color: #9873e7;
+}
+
+.catch__celebration-card {
+  position: relative;
+  z-index: 1;
+  width: min(82%, 430px);
+  display: grid;
+  justify-items: center;
+  gap: 5px;
+  padding: clamp(20px, 4vw, 34px);
+  border-radius: 32px;
+  background: rgba(255, 255, 255, 0.96);
+  color: #10233f;
+  text-align: center;
+  box-shadow: 0 22px 60px rgba(16, 35, 63, 0.3);
+  animation: catch-celebration-card 620ms ease-out both;
+}
+
+.catch__celebration-stars {
+  color: #ffb921;
+  font-size: clamp(1.35rem, 4vw, 2rem);
+  letter-spacing: 0.16em;
+}
+
+.catch__celebration-card strong {
+  font-family: "Arial Rounded MT Bold", "Avenir Next", sans-serif;
+  font-size: clamp(1.65rem, 5vw, 3rem);
+  line-height: 1.05;
+}
+
+.catch__celebration-card small {
+  max-width: 32ch;
+  color: #425570;
+  font-size: clamp(0.78rem, 1.6vw, 1rem);
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+@keyframes catch-celebration-burst {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 26px, 0) rotate(0deg) scale(0.2);
+  }
+
+  55% {
+    opacity: 1;
+    transform: translate3d(0, -150px, 0) rotate(220deg) scale(1);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate3d(0, 150px, 0) rotate(520deg) scale(0.72);
+  }
+}
+
+@keyframes catch-celebration-card {
+  from {
+    opacity: 0;
+    transform: scale(0.65);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -278,9 +396,88 @@
   outline-offset: 2px;
 }
 
+@media (max-width: 700px) and (orientation: portrait) {
+  .catch__stage {
+    width: 100%;
+    height: 100%;
+    max-height: 100dvh;
+    aspect-ratio: auto;
+    border-radius: 0;
+  }
+
+  .catch__hud {
+    top: max(8px, env(safe-area-inset-top));
+    left: 8px;
+    right: 8px;
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr) auto;
+    grid-template-areas:
+      "exit round buttons"
+      "target target target";
+    gap: 6px;
+  }
+
+  .catch__hud-exit {
+    grid-area: exit;
+  }
+
+  .catch__hud-round {
+    grid-area: round;
+    justify-self: start;
+    padding: 7px 9px;
+    font-size: 0.67rem;
+  }
+
+  .catch__hud-target {
+    grid-area: target;
+    min-height: 42px;
+    gap: 6px;
+    padding: 5px 10px;
+    font-size: 0.82rem;
+  }
+
+  .catch__hud-buttons {
+    grid-area: buttons;
+    gap: 4px;
+  }
+
+  .catch__hud-exit,
+  .catch__hud-buttons button {
+    width: 44px;
+    height: 44px;
+    border-width: 2px;
+    font-size: 0.92rem;
+  }
+
+  .catch__touch {
+    left: 16px;
+    right: 16px;
+    bottom: max(18px, env(safe-area-inset-bottom));
+  }
+
+  .catch__overlay {
+    overflow-y: auto;
+    padding:
+      max(24px, env(safe-area-inset-top))
+      20px
+      max(24px, env(safe-area-inset-bottom));
+  }
+
+  .catch__summary {
+    width: min(100%, 320px);
+  }
+
+  .catch__summary span {
+    min-width: 0;
+    flex: 1;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .catch__item.is-good,
-  .catch__item.is-bad {
+  .catch__item.is-bad,
+  .catch__celebration-particles i,
+  .catch__celebration-card {
     animation: none;
   }
 }

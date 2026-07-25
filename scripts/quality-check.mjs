@@ -566,24 +566,27 @@ check(
 // (matriz de mecánicas × packs temáticos). Son ~41 KiB minificados para 500
 // juegos nuevos —unos 80 bytes por juego— y viven enteros en el chunk diferido
 // de /nido, que sigue por debajo de su tope de 250 KiB por chunk.
-// 2026-07 (ter): 700 → 712 KiB por el pase de acabado de los stickers (brillo,
-// sombra y detalles con encanto en ~55 ilustraciones SVG) y la celebración
-// hablada con frases variadas. Todo en el chunk diferido de /nido (232 KiB de
-// su tope de 250); el JavaScript inicial sigue clavado en 450 KiB.
+// 2026-07 (ter): 700 → 740 KiB por el pase de acabado de los stickers (brillo,
+// sombra y detalles con encanto en ~55 ilustraciones SVG), las actividades
+// táctiles especializadas, la secuenciación de audio sin cortes, los retratos
+// semánticos, las escenas diferenciadas y la celebración hablada con frases
+// variadas. La matriz del catálogo vive en un chunk cacheable propio; todo
+// permanece en rutas diferidas de /nido y se conservan intactos los límites
+// inicial de 450 KiB y de 250 KiB por chunk.
 check(
-  javascriptBytes <= 712 * 1024,
-  `El JavaScript total con rutas diferidas no debe superar 712 KiB (${Math.ceil(javascriptBytes / 1024)} KiB).`,
+  javascriptBytes <= 740 * 1024,
+  `El JavaScript total con rutas diferidas no debe superar 740 KiB (${Math.ceil(javascriptBytes / 1024)} KiB).`,
 );
 check(
   initialStylesheetBytes > 0 && initialStylesheetBytes <= 85 * 1024,
   `El CSS inicial debe estar entre 1 y 85 KiB (${Math.ceil(initialStylesheetBytes / 1024)} KiB).`,
 );
-// 2026-07: 136 → 160 KiB al convertir Nido en plataforma de juegos completa
-// (capa ilustrada, camino de aprendizaje, álbum de premios y celebraciones).
-// Todo es CSS diferido de la ruta /nido; el CSS inicial mantiene 85 KiB.
+// 2026-07-25: 160 → 180 KiB para las escenas diferenciadas de las 40 tarjetas,
+// las celebraciones y los layouts verticales de Catch/Bosque. Todo permanece
+// diferido en /nido; el CSS inicial y cada hoja conservan su límite de 85 KiB.
 check(
-  stylesheetBytes <= 160 * 1024,
-  `El CSS total con rutas diferidas no debe superar 160 KiB (${Math.ceil(stylesheetBytes / 1024)} KiB).`,
+  stylesheetBytes <= 180 * 1024,
+  `El CSS total con rutas diferidas no debe superar 180 KiB (${Math.ceil(stylesheetBytes / 1024)} KiB).`,
 );
 check(deployBytesWithoutAudioAndPdf <= 9 * 1024 * 1024, `El build sin audios/PDF supera 9 MiB (${(deployBytesWithoutAudioAndPdf / 1024 / 1024).toFixed(2)} MiB).`);
 

@@ -1,5 +1,6 @@
 import {
   Cheeks,
+  Eyes,
   LINE,
   OUTLINE,
   Shade,
@@ -156,6 +157,77 @@ function StudentSticker({ size = 48, ...rest }) {
   );
 }
 
+const FAMILY_LOOKS = Object.freeze({
+  mother: { hair: "#7b4428", shirt: "#ff8177", style: "long", accent: "flower" },
+  father: { hair: "#3f3028", shirt: "#4b8ff7", style: "short", accent: "glasses" },
+  sister: { hair: "#9b592f", shirt: "#9873e7", style: "long", accent: "bow" },
+  brother: { hair: "#573b2a", shirt: "#46b982", style: "short", accent: "cap" },
+  grandmother: { hair: "#d8d9df", shirt: "#c26fd8", style: "bun", accent: "glasses" },
+  grandfather: { hair: "#d8d9df", shirt: "#5c82bd", style: "short", accent: "moustache" },
+  aunt: { hair: "#522f25", shirt: "#ef6c9b", style: "long", accent: "earrings" },
+  uncle: { hair: "#342923", shirt: "#e6a53c", style: "short", accent: "beard" },
+  cousin: { hair: "#b96d34", shirt: "#29bfc3", style: "short", accent: "freckles" },
+});
+
+function FamilyPortraitSticker({ variant, size = 48, ...rest }) {
+  const look = FAMILY_LOOKS[variant] ?? FAMILY_LOOKS.cousin;
+  const older = variant === "grandmother" || variant === "grandfather";
+  const child = variant === "sister" || variant === "brother" || variant === "cousin";
+  const skin = variant === "aunt" || variant === "uncle" ? "#c9865b" : "#f2c49d";
+
+  return (
+    <StickerBase size={size} {...rest}>
+      <path
+        d={child ? "M14 61 Q17 44 32 43 Q47 44 50 61 Z" : "M10 62 Q14 42 32 41 Q50 42 54 62 Z"}
+        fill={look.shirt}
+        {...OUTLINE}
+      />
+      <circle cx="32" cy="28" r={child ? 17 : 19} fill={skin} {...OUTLINE} />
+      {look.style === "long" ? (
+        <path d="M14 34 Q9 14 22 8 Q32 1 45 9 Q56 18 49 43 L43 36 L43 19 Q32 25 20 19 L20 38 Z" fill={look.hair} {...OUTLINE} />
+      ) : (
+        <path d="M14 25 Q15 8 32 7 Q49 8 51 25 Q43 17 35 19 Q25 20 17 16 Z" fill={look.hair} {...OUTLINE} />
+      )}
+      {look.style === "bun" ? (
+        <circle cx="45" cy="9" r="8" fill={look.hair} {...OUTLINE} />
+      ) : null}
+      <Eyes lx={25} rx={39} y={28} r={2.1} />
+      <Smile x={32} y={36} w={9} curve={3.5} />
+      <Cheeks lx={20} rx={44} y={35} r={2.5} />
+      {older ? (
+        <g fill="none" stroke="#8f654f" strokeWidth="1.2" strokeLinecap="round">
+          <path d="M21 33 L17 34 M43 33 L47 34" />
+          <path d="M24 39 Q32 42 40 39" />
+        </g>
+      ) : null}
+      {look.accent === "glasses" ? (
+        <g fill="none" stroke="#10233f" strokeWidth="1.8">
+          <circle cx="24.5" cy="28" r="5" />
+          <circle cx="39.5" cy="28" r="5" />
+          <path d="M29.5 28 H34.5" />
+        </g>
+      ) : null}
+      {look.accent === "flower" ? <text x="46" y="17" fontSize="13">✿</text> : null}
+      {look.accent === "bow" ? <path d="M13 12 Q5 7 7 18 L15 16 L23 20 L24 8 L16 12 Z" fill="#ff6f61" {...OUTLINE} strokeWidth={1.7} /> : null}
+      {look.accent === "cap" ? <path d="M13 17 Q21 5 38 8 L46 16 Q31 13 15 21 Z" fill="#ffc94d" {...OUTLINE} /> : null}
+      {look.accent === "moustache" ? <path d="M23 34 Q28 31 32 35 Q36 31 41 34 Q38 39 32 36 Q26 39 23 34 Z" fill="#a8a9ad" /> : null}
+      {look.accent === "earrings" ? <g fill="#ffc94d"><circle cx="14" cy="31" r="2.5" /><circle cx="50" cy="31" r="2.5" /></g> : null}
+      {look.accent === "beard" ? <path d="M20 35 Q32 48 44 35 Q43 47 32 50 Q21 47 20 35 Z" fill="#342923" fillOpacity=".8" /> : null}
+      {look.accent === "freckles" ? <g fill="#9d5b42"><circle cx="20" cy="33" r=".8" /><circle cx="23" cy="34" r=".8" /><circle cx="41" cy="34" r=".8" /><circle cx="44" cy="33" r=".8" /></g> : null}
+    </StickerBase>
+  );
+}
+
+const FamilyMotherSticker = (props) => <FamilyPortraitSticker variant="mother" {...props} />;
+const FamilyFatherSticker = (props) => <FamilyPortraitSticker variant="father" {...props} />;
+const FamilySisterSticker = (props) => <FamilyPortraitSticker variant="sister" {...props} />;
+const FamilyBrotherSticker = (props) => <FamilyPortraitSticker variant="brother" {...props} />;
+const FamilyGrandmotherSticker = (props) => <FamilyPortraitSticker variant="grandmother" {...props} />;
+const FamilyGrandfatherSticker = (props) => <FamilyPortraitSticker variant="grandfather" {...props} />;
+const FamilyAuntSticker = (props) => <FamilyPortraitSticker variant="aunt" {...props} />;
+const FamilyUncleSticker = (props) => <FamilyPortraitSticker variant="uncle" {...props} />;
+const FamilyCousinSticker = (props) => <FamilyPortraitSticker variant="cousin" {...props} />;
+
 function MaskHappySticker({ size = 48, tint, ...rest }) {
   return (
     <StickerBase size={size} {...rest}>
@@ -181,5 +253,14 @@ export const PEOPLE_STICKERS = Object.freeze({
   SmileyXEyes: SmileyXEyesSticker,
   Baby: BabySticker,
   Student: StudentSticker,
+  FamilyMother: FamilyMotherSticker,
+  FamilyFather: FamilyFatherSticker,
+  FamilySister: FamilySisterSticker,
+  FamilyBrother: FamilyBrotherSticker,
+  FamilyGrandmother: FamilyGrandmotherSticker,
+  FamilyGrandfather: FamilyGrandfatherSticker,
+  FamilyAunt: FamilyAuntSticker,
+  FamilyUncle: FamilyUncleSticker,
+  FamilyCousin: FamilyCousinSticker,
   MaskHappy: MaskHappySticker,
 });

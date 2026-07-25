@@ -20,6 +20,10 @@ import { createNidoIcon, NidoGlyph } from "./nido-icon-map";
 import { STICKERS } from "./stickers/sticker-registry.jsx";
 import { CATCH_THEMES } from "./game/content/catch-mission.js";
 import { MEMORY_THEMES } from "./game/content/memory-mission.js";
+import {
+  getCelebrationVoiceProfile,
+  pickSuccessCelebration,
+} from "./game/content/celebration-feedback.js";
 import ArcadeHub from "./game/hub/ArcadeHub.jsx";
 import "./game/hub/arcade-hub.css";
 
@@ -119,14 +123,10 @@ function createRouteStats(correct = 0) {
   };
 }
 
-// El avance tras acertar ya no es un cronómetro fijo: espera a que terminen la
-// fanfarria y la frase de celebración (antes el «¡Yupi!» se cortaba a la
-// mitad). Estos topes cubren los casos sin audio y una síntesis de voz que
-// nunca avisa que terminó.
-const ADVANCE_AFTER_VOICE_MS = 450;
-const ADVANCE_WITHOUT_VOICE_MS = 1700;
-const CELEBRATION_SAFETY_MS = 7000;
-const FEEDBACK_SOUND_CAP_MS = 2600;
+const CELEBRATION_DWELL_MS = 650;
+// El respaldo global debe ser mayor que la suma de los watchdogs internos:
+// nunca debe adelantar la ronda mientras “yupiii” o el elogio siguen sonando.
+const CELEBRATION_FAILSAFE_MS = 14000;
 const ROUNDS_KEY = "tesis20.nido.route-rounds";
 const ALBUM_KEY = "tesis20.nido.sticker-album";
 const BOSQUE_KEY = "tesis20.nido.bosque-rondas";
@@ -286,27 +286,6 @@ const BUBBLE_PIECES = Object.freeze(
     };
   }),
 );
-
-// Frases de celebración: cortas, entusiastas y distintas en cada acierto para
-// que la voz nunca suene igual dos veces seguidas. Las de racha se reservan
-// para tres o más aciertos al hilo. Cada frase tiene id estable para grabarla
-// en el próximo lote de estudio; mientras tanto la dice la voz del
-// dispositivo con tono de fiesta.
-const CELEBRATION_LINES = Object.freeze([
-  { id: "celebracion-1", text: "¡Lo lograsteee! ¡Muy bien!" },
-  { id: "celebracion-2", text: "¡Yupiii! ¡Eres increíble!" },
-  { id: "celebracion-3", text: "¡Bravo, bravísimo!" },
-  { id: "celebracion-4", text: "¡Sí, sí, sí! ¡Esa era!" },
-  { id: "celebracion-5", text: "¡Qué bien te salió! ¡Sigue así!" },
-  { id: "celebracion-6", text: "¡Wooow! ¡Lo encontraste!" },
-  { id: "celebracion-7", text: "¡Genial! ¡Eres una estrella!" },
-  { id: "celebracion-8", text: "¡Aplausos! ¡Lo hiciste genial!" },
-]);
-const CELEBRATION_STREAK_LINES = Object.freeze([
-  { id: "racha-1", text: "¡Increíble! ¡Llevas una racha ganadora!" },
-  { id: "racha-2", text: "¡Imparable! ¡Otra estrella para tu colección!" },
-  { id: "racha-3", text: "¡Wooow, qué racha! ¡Sigue, sigue, sigue!" },
-]);
 
 function createInitialProgress() {
   return Object.fromEntries(
@@ -501,14 +480,423 @@ function VisualToken({ item, compact = false }) {
   );
 }
 
-function MechanicScene({ challenge, memoryVisible, memorySeconds, replayMemory, selectedAnswer }) {
+const DIRECT_TAP_KINDS = new Set([
+  "detective-clues",
+  "odd-one-out",
+  "real-or-imaginary",
+  "camouflage",
+  "shape-properties",
+  "hidden-character",
+  "character-clue",
+  "spoken-question",
+  "emotion-scene",
+]);
+
+const DIRECT_SCENE_KINDS = new Set([
+  ...DIRECT_TAP_KINDS,
+  "number-pattern",
+  "drawing-detail",
+  "difference",
+]);
+
+function optionPresentationLabel(challenge, option) {
+  const label = String(option?.label ?? "");
+  if (challenge.visual.kind !== "camouflage") return label;
+  return label.replace(/\s+escondido(?=\s|$)/i, "");
+}
+
+function SceneChoice({
+  challenge,
+  option,
+  selectedAnswer,
+  incorrectAnswers,
+  locked,
+  onAnswer,
+  className = "",
+  ariaLabel,
+  style,
+  children,
+}) {
+  const chosen = option.id === selectedAnswer;
+  const correct = chosen && option.id === challenge.answerId;
+  const incorrect = incorrectAnswers.includes(option.id);
+  const hinted =
+    !locked &&
+    incorrectAnswers.length >= 2 &&
+    option.id === challenge.answerId;
+
+  return (
+    <button
+      className={[
+        "nido-games__scene-choice",
+        "nido-games__interactive-option",
+        className,
+        chosen ? "is-selected" : "",
+        correct ? "is-correct" : "",
+        incorrect ? "is-error" : "",
+        hinted ? "is-hint" : "",
+      ]
+        .filter(Boolean)
+        .join(" ")}
+      type="button"
+      aria-pressed={chosen}
+      aria-label={`${ariaLabel ?? optionPresentationLabel(challenge, option)}${
+        incorrect ? ". Opción ya intentada." : ""
+      }`}
+      style={{
+        gridTemplateColumns: "1fr",
+        placeItems: "center",
+        minHeight: 48,
+        padding: 4,
+        textAlign: "center",
+        ...style,
+      }}
+      disabled={incorrect || (locked && !chosen)}
+      onClick={() => onAnswer(option.id)}
+    >
+      {children}
+    </button>
+  );
+}
+
+function DirectTapScene({
+  challenge,
+  selectedAnswer,
+  incorrectAnswers,
+  onAnswer,
+  locked,
+}) {
+  const visual = challenge.visual;
+  const isCamouflage = visual.kind === "camouflage";
+  const correctSelected = selectedAnswer === challenge.answerId;
+  const answer = challenge.options.find(
+    (option) => option.id === challenge.answerId,
+  );
+  const prompt = {
+    "odd-one-out": `Familia: ${visual.family}`,
+    "real-or-imaginary": `🌍 ${visual.topic}`,
+    "shape-properties": visual.clue?.sides
+      ? `${visual.clue.sides} lados`
+      : visual.clue?.name,
+    "hidden-character": visual.clue,
+    "character-clue": visual.clue,
+    "spoken-question": "🔊 Escucha la pregunta y toca el objeto",
+    "emotion-scene": visual.context,
+    camouflage: "🔎 Busca la figura dentro del camuflaje",
+  }[visual.kind];
+
+  return (
+    <div
+      className="nido-games__mechanic is-options"
+      data-direct-kind={visual.kind}
+      style={{
+        width: "min(460px, 100%)",
+        gap: 7,
+        padding: isCamouflage ? 9 : 4,
+        borderRadius: 18,
+        background: isCamouflage
+          ? visual.backgroundTone
+          : "rgba(255,255,255,.68)",
+      }}
+    >
+      {visual.kind === "detective-clues" ? (
+        <span
+          role="group"
+          aria-label="Pistas del detective"
+          style={{ justifyContent: "center", gap: 6 }}
+        >
+          {visual.clues.map((clue) => (
+            <VisualToken item={clue} key={`${clue.type}-${clue.value}`} />
+          ))}
+        </span>
+      ) : null}
+      {visual.kind === "hidden-character" ? (
+        <Picture item={correctSelected ? answer : visual.cover} />
+      ) : visual.kind === "emotion-scene" ? (
+        correctSelected ? (
+          <Picture item={answer} />
+        ) : (
+          <span aria-hidden="true" style={{ fontSize: "2rem" }}>
+            🎭
+          </span>
+        )
+      ) : null}
+      {prompt ? <b>{prompt}</b> : null}
+      <span
+        role="group"
+        aria-label="Objetos tocables de la escena"
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit,minmax(88px,1fr))",
+          gap: 7,
+          width: "100%",
+        }}
+      >
+        {challenge.options.map((option) => {
+          const presentationLabel = optionPresentationLabel(
+            challenge,
+            option,
+          );
+          return (
+            <SceneChoice
+              challenge={challenge}
+              option={option}
+              selectedAnswer={selectedAnswer}
+              incorrectAnswers={incorrectAnswers}
+              locked={locked}
+              onAnswer={onAnswer}
+              ariaLabel={`${presentationLabel} dentro de la escena`}
+              style={
+                isCamouflage
+                  ? {
+                      minHeight: 76,
+                      borderColor: "rgba(255,255,255,.62)",
+                      background: "transparent",
+                    }
+                  : undefined
+              }
+              key={option.id}
+            >
+              <Picture
+                item={{ ...option, label: presentationLabel }}
+              />
+              {isCamouflage ? null : <small>{presentationLabel}</small>}
+            </SceneChoice>
+          );
+        })}
+      </span>
+    </div>
+  );
+}
+
+function NumberPatternActivity({
+  challenge,
+  selectedAnswer,
+  incorrectAnswers,
+  onAnswer,
+  locked,
+}) {
+  const selectedOption = challenge.options.find(
+    (option) => option.id === selectedAnswer,
+  );
+  const completed = selectedAnswer === challenge.answerId;
+
+  return (
+    <div
+      className="nido-games__pattern-activity nido-games__order-activity"
+      data-age={challenge.ageId}
+      data-mechanic="order"
+    >
+      <div
+        className="nido-games__pattern-track nido-games__visual-sequence"
+        role="group"
+        aria-label={`Serie: ${challenge.visual.items.join(", ")}. Falta el número final.`}
+      >
+        {challenge.visual.items.map((item, index) => (
+          <VisualToken item={item} key={`${item}-${index}`} />
+        ))}
+        <span
+          className={[
+            "nido-games__pattern-slot",
+            "nido-games__visual-question",
+            selectedOption ? "is-ready" : "",
+            completed ? "is-complete" : "",
+          ]
+            .filter(Boolean)
+            .join(" ")}
+          style={{ minWidth: 76, minHeight: 64 }}
+          aria-label={`Espacio final${
+            selectedOption ? ` con ${selectedOption.label}` : " vacío"
+          }`}
+        >
+          <span aria-hidden="true">
+            {selectedOption ? (
+              <OptionArtwork challenge={challenge} option={selectedOption} />
+            ) : (
+              "?"
+            )}
+          </span>
+          <small>
+            {completed
+              ? "¡Patrón completo!"
+              : selectedOption
+                ? "Prueba otro número"
+                : "Número que sigue"}
+          </small>
+        </span>
+      </div>
+      <div
+        className="nido-games__pattern-options nido-games__drag-pieces"
+        role="group"
+        aria-label="Números para completar el patrón"
+      >
+        {challenge.options.map((option) => (
+          <SceneChoice
+            challenge={challenge}
+            option={option}
+            selectedAnswer={selectedAnswer}
+            incorrectAnswers={incorrectAnswers}
+            locked={locked}
+            onAnswer={onAnswer}
+            className="nido-games__pattern-choice"
+            key={option.id}
+          >
+            <OptionArtwork challenge={challenge} option={option} />
+          </SceneChoice>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function DrawingDetailScene({
+  challenge,
+  selectedAnswer,
+  incorrectAnswers,
+  onAnswer,
+  locked,
+}) {
+  const visual = challenge.visual;
+  const target = challenge.options.find(
+    (option) => option.id === challenge.answerId,
+  );
+  const others = challenge.options.filter(
+    (option) => option.id !== challenge.answerId,
+  );
+  const count = Math.max(4, Number(visual.detailCount) || 4);
+  const targetIndex = Math.abs(Number(challenge.seed) || 0) % count;
+
+  return (
+    <div
+      className="nido-games__detail"
+      data-scene={visual.sceneId}
+      role="group"
+      aria-label="Dibujo con detalles tocables"
+    >
+      {Array.from({ length: count }, (_, index) => {
+        const option =
+          index === targetIndex ? target : others[index % others.length];
+        if (!option) return null;
+        return (
+          <SceneChoice
+            challenge={challenge}
+            option={option}
+            selectedAnswer={selectedAnswer}
+            incorrectAnswers={incorrectAnswers}
+            locked={locked}
+            onAnswer={onAnswer}
+            ariaLabel={`${option.label} dentro del dibujo`}
+            key={`${option.id}-${index}`}
+          >
+            <Picture item={option} />
+          </SceneChoice>
+        );
+      })}
+    </div>
+  );
+}
+
+function DifferenceScene({
+  challenge,
+  selectedAnswer,
+  incorrectAnswers,
+  onAnswer,
+  locked,
+}) {
+  const visual = challenge.visual;
+  const changedDescription = {
+    color: "tiene un color diferente",
+    position: "está en otra posición",
+    size: "tiene otro tamaño",
+    missing: "ya no aparece",
+  }[visual.changeType];
+
+  return (
+    <div className="nido-games__difference">
+      {["A", "B"].map((panel) => (
+        <span data-scene={panel === "A" ? visual.sceneA : visual.sceneB} key={panel}>
+          <b>Escena {panel}</b>
+          <i
+            role="group"
+            aria-label={
+              panel === "B"
+                ? "Elementos tocables de la escena B"
+                : "Escena A de referencia"
+            }
+          >
+            {challenge.options.map((option) => {
+              const changed =
+                panel === "B" && option.id === challenge.answerId;
+              if (panel === "A") {
+                return (
+                  <span
+                    className="nido-games__scene-reference"
+                    role="img"
+                    aria-label={`${option.label} en la escena A`}
+                    key={option.id}
+                  >
+                    <Picture item={option} compact />
+                  </span>
+                );
+              }
+              return (
+                <SceneChoice
+                  challenge={challenge}
+                  option={option}
+                  selectedAnswer={selectedAnswer}
+                  incorrectAnswers={incorrectAnswers}
+                  locked={locked}
+                  onAnswer={onAnswer}
+                  className={
+                    changed ? `is-${visual.changeType}` : ""
+                  }
+                  ariaLabel={`${option.label} en la escena ${panel}${
+                    changed ? `; ${changedDescription}` : ""
+                  }`}
+                  key={option.id}
+                >
+                  {changed && visual.changeType === "missing" ? (
+                    <em aria-hidden="true">?</em>
+                  ) : (
+                    <Picture item={option} compact />
+                  )}
+                </SceneChoice>
+              );
+            })}
+          </i>
+        </span>
+      ))}
+    </div>
+  );
+}
+
+function MechanicScene({
+  challenge,
+  memoryVisible,
+  memorySeconds,
+  replayMemory,
+  selectedAnswer,
+  incorrectAnswers,
+  onAnswer,
+  locked,
+}) {
   const v = challenge.visual;
-  const answer = challenge.options.find((option) => option.id === challenge.answerId);
   const items = getVisualItems(v);
   const pictures = challenge.options.map((option) => (
     <Picture item={option} compact key={option.id} />
   ));
 
+  if (DIRECT_TAP_KINDS.has(v.kind)) {
+    return (
+      <DirectTapScene
+        challenge={challenge}
+        selectedAnswer={selectedAnswer}
+        incorrectAnswers={incorrectAnswers}
+        onAnswer={onAnswer}
+        locked={locked}
+      />
+    );
+  }
   if (v.groups) {
     return <div className="nido-games__mechanic is-groups">{v.groups.map((group, index) => (
       <span key={group.id}><b>Grupo {index + 1}</b><CountPicture {...group} /></span>
@@ -533,22 +921,37 @@ function MechanicScene({ challenge, memoryVisible, memorySeconds, replayMemory, 
     </div>;
   }
   if (v.kind === "difference") {
-    return <div className="nido-games__difference">{["A", "B"].map((panel) => (
-      <span key={panel}><b>Escena {panel}</b><i>{challenge.options.map((option) => {
-        const changed = panel === "B" && option.id === challenge.answerId;
-        return changed && v.changeType === "missing" ? <em key={option.id}>?</em> : (
-          <span className={changed ? `is-${v.changeType}` : ""} key={option.id}><Picture item={option} compact /></span>
-        );
-      })}</i></span>
-    ))}</div>;
+    return (
+      <DifferenceScene
+        challenge={challenge}
+        selectedAnswer={selectedAnswer}
+        incorrectAnswers={incorrectAnswers}
+        onAnswer={onAnswer}
+        locked={locked}
+      />
+    );
   }
   if (v.kind === "drawing-detail") {
-    const target = challenge.options.find((option) => option.id === `option-${v.targetId}`);
-    const others = challenge.options.filter((option) => option !== target);
-    const count = Math.max(4, Number(v.detailCount) || 4);
-    return <div className="nido-games__detail">{Array.from({ length: count }, (_, index) => (
-      <Picture item={index === challenge.seed % count ? target : others[index % others.length]} compact key={index} />
-    ))}</div>;
+    return (
+      <DrawingDetailScene
+        challenge={challenge}
+        selectedAnswer={selectedAnswer}
+        incorrectAnswers={incorrectAnswers}
+        onAnswer={onAnswer}
+        locked={locked}
+      />
+    );
+  }
+  if (v.kind === "number-pattern") {
+    return (
+      <NumberPatternActivity
+        challenge={challenge}
+        selectedAnswer={selectedAnswer}
+        incorrectAnswers={incorrectAnswers}
+        onAnswer={onAnswer}
+        locked={locked}
+      />
+    );
   }
   if (v.previewSeconds) {
     const revealed = memoryVisible || selectedAnswer;
@@ -558,21 +961,10 @@ function MechanicScene({ challenge, memoryVisible, memorySeconds, replayMemory, 
       <><strong role="status">🙈 Pista oculta</strong><button type="button" onClick={replayMemory}>Ver otra vez</button></>
     )}</div>;
   }
-  if (v.kind === "hidden-character") {
-    return <div className="nido-games__hidden">
-      <span>{selectedAnswer ? <Picture item={answer} /> : "?"}</span>
-      <Picture item={v.cover} /><b>{v.clue}</b>
-    </div>;
-  }
   if (v.kind === "add-one") {
     return <div className="nido-games__mechanic is-add">
       <CountPicture count={v.count} iconName={v.itemIconName} /><b>+</b>
       <CountPicture count={v.addedCount} iconName={v.itemIconName} />
-    </div>;
-  }
-  if (v.kind === "camouflage") {
-    return <div className="nido-games__camouflage" style={{ "--camouflage": v.backgroundTone }}>
-      <Picture item={{ ...answer, scale: 1.5 }} />
     </div>;
   }
   if (v.subject || v.adult) {
@@ -605,6 +997,9 @@ function MechanicScene({ challenge, memoryVisible, memorySeconds, replayMemory, 
 function ChallengeScene({
   challenge,
   selectedAnswer,
+  incorrectAnswers,
+  onAnswer,
+  locked,
   memoryVisible,
   memorySeconds,
   replayMemory,
@@ -614,14 +1009,22 @@ function ChallengeScene({
 
   return (
     <div
-      className="nido-games__scene"
+      className={[
+        "nido-games__scene",
+        DIRECT_SCENE_KINDS.has(visual.kind) ? "is-direct-activity" : "",
+      ]
+        .filter(Boolean)
+        .join(" ")}
       data-kind={visual.kind}
       data-age={challenge.ageId}
-      style={
-        visual.backgroundTone
+      style={{
+        ...(visual.backgroundTone
           ? { "--scene-tone": visual.backgroundTone }
-          : undefined
-      }
+          : {}),
+        ...(DIRECT_SCENE_KINDS.has(visual.kind)
+          ? { gridColumn: "1 / -1" }
+          : {}),
+      }}
       aria-label="Pista visual del reto"
     >
       {worldAsset ? (
@@ -638,11 +1041,16 @@ function ChallengeScene({
           memoryVisible={memoryVisible}
           replayMemory={replayMemory}
           selectedAnswer={selectedAnswer}
+          incorrectAnswers={incorrectAnswers}
+          onAnswer={onAnswer}
+          locked={locked}
         />
         {visual.word ? (
           <strong className="nido-games__scene-word">{String(visual.word)}</strong>
         ) : null}
-        {visual.repeatWord ? (
+        {visual.repeatWord &&
+        (visual.kind !== "emotion-scene" ||
+          selectedAnswer === challenge.answerId) ? (
           <span className="nido-games__scene-repeat">
             Escucha y repite: <strong>{String(visual.repeatWord)}</strong>
           </span>
@@ -812,12 +1220,45 @@ function DragActivity({
   const pickedOption = challenge.options.find(
     (option) => option.id === (draggingId || pickedId),
   );
+  const dropCopy =
+    {
+      "add-one": {
+        icon: "➕",
+        idle: "Añade al grupo",
+        help: "Lleva el número que completa el grupo",
+      },
+      "color-pattern": {
+        icon: "🎨",
+        idle: "Completa el hueco",
+        help: "Lleva el color que continúa la serie",
+      },
+      "size-pair": {
+        icon: "📏",
+        idle: "Cesta de tamaños",
+        help: "Lleva aquí el tamaño que te pidieron",
+      },
+      "quantity-groups": {
+        icon: "🧺",
+        idle: "Bandeja de cantidades",
+        help: "Lleva aquí el grupo correcto",
+      },
+      "animal-food": {
+        icon: "🍽️",
+        idle: `Plato de ${challenge.visual.subject?.label ?? "comida"}`,
+        help: "Dale al animal el alimento correcto",
+      },
+    }[challenge.visual.kind] ?? {
+      icon: "⇣",
+      idle: "Suelta aquí",
+      help: "Arrastra o toca una pieza y luego este destino",
+    };
 
   return (
     <div
       className="nido-games__drag-activity"
       data-age={challenge.ageId}
       data-mechanic="drag"
+      data-kind={challenge.visual.kind}
     >
       <div className="nido-games__drag-pieces" role="group" aria-label="Piezas para arrastrar">
         {challenge.options.map((option) => (
@@ -880,16 +1321,16 @@ function DragActivity({
         onClick={() => submit(pickedId)}
       >
         <span aria-hidden="true">
-          {selectedAnswer === challenge.answerId ? "✓" : "⇣"}
+          {selectedAnswer === challenge.answerId ? "✓" : dropCopy.icon}
         </span>
         <strong>
           {selectedAnswer === challenge.answerId
             ? "¡Encajó perfecto!"
             : pickedId
               ? "Toca para soltar"
-              : "Suelta aquí"}
+              : dropCopy.idle}
         </strong>
-        <small>Arrastra o toca una pieza y luego este destino</small>
+        <small>{dropCopy.help}</small>
       </button>
       {ghost && pickedOption ? (
         <span
@@ -1070,6 +1511,48 @@ function MatchActivity({
           label: visual.word,
         }
       : { iconName: "Question", label: challenge.question });
+  const matchTheme =
+    {
+      "teddy-bow-match": {
+        source: "Osito modelo",
+        connector: "🎀 →",
+      },
+      "mask-match": {
+        source: "Modelo secreto",
+        connector: "🧠 →",
+      },
+      "twin-match": {
+        source: "Gemelo para recordar",
+        connector: "👀 →",
+      },
+      "animal-young": {
+        source: "Animal adulto",
+        connector: "🐾 →",
+      },
+      "english-colors": {
+        source: "Muestra de color",
+        connector: "🎨 →",
+      },
+      "english-animals": {
+        source: "Animal misterioso",
+        connector: "🔊 →",
+      },
+      "english-numbers": {
+        source: "Número y cantidad",
+        connector: "🔢 →",
+      },
+      "english-family": {
+        source: "Miembro de la familia",
+        connector: "🏠 →",
+      },
+      "english-objects": {
+        source: "Objeto de la misión",
+        connector: "🔎 →",
+      },
+    }[visual.kind] ?? {
+      source: "Tarjeta guía",
+      connector: "● ─ →",
+    };
 
   const chooseMatch = (optionId) => {
     if (!matchReady || locked) return;
@@ -1087,6 +1570,7 @@ function MatchActivity({
       className="nido-games__match-activity"
       data-age={challenge.ageId}
       data-mechanic="match"
+      data-kind={visual.kind}
     >
       <button
         className={[
@@ -1119,7 +1603,7 @@ function MatchActivity({
           </>
         ) : (
           <>
-            <small>Tarjeta guía</small>
+            <small>{matchTheme.source}</small>
             <Picture item={source} />
             <strong>
               {itemLabel(source) || visual.repeatWord || "Busca su pareja"}
@@ -1128,7 +1612,7 @@ function MatchActivity({
         )}
       </button>
       <span className="nido-games__match-connector" aria-hidden="true">
-        {matchReady ? "● ─ ─ →" : "○ ─ ─ ?"}
+        {matchReady ? matchTheme.connector : "○ ─ ?"}
       </span>
       <div className="nido-games__match-options" role="group" aria-label="Posibles parejas">
         {challenge.options.map((option) => (
@@ -1163,9 +1647,51 @@ function PathActivity({
   locked,
 }) {
   const layout = useMemo(() => buildNidoPathLayout(challenge), [challenge]);
+  const pathTheme =
+    {
+      "position-scene": {
+        playerLabel: "objeto",
+        obstacle: "🧱",
+        obstacleLabel: "un muro",
+        instruction: "Lleva el objeto hasta la posición correcta",
+        player: (
+          <NidoGlyph
+            name={challenge.visual.subjectIconName}
+            size={34}
+            weight="duotone"
+          />
+        ),
+      },
+      "habitat-match": {
+        playerLabel: challenge.visual.subject?.label ?? "animal",
+        obstacle: "🪨",
+        obstacleLabel: "una roca",
+        instruction: `Guía a ${challenge.visual.subject?.label ?? "el animal"} hasta su hogar`,
+        player: <Picture item={challenge.visual.subject} compact />,
+      },
+      "english-actions": {
+        playerLabel: "explorador",
+        obstacle: "⭐",
+        obstacleLabel: "una estrella",
+        instruction: "Guía al explorador hasta la acción correcta en inglés",
+        player: (
+          <NidoGlyph
+            name={challenge.visual.iconName}
+            size={34}
+            weight="duotone"
+          />
+        ),
+      },
+    }[challenge.visual.kind] ?? {
+      playerLabel: "pollito",
+      obstacle: "🌳",
+      obstacleLabel: "un árbol",
+      instruction: "Lleva al pollito hasta la tarjeta correcta",
+      player: "🐣",
+    };
   const [position, setPosition] = useState(layout.start);
   const [pathStatus, setPathStatus] = useState(
-    `El pollito empieza en la fila ${layout.start.row + 1}, columna ${layout.start.column + 1}.`,
+    `${pathTheme.playerLabel} empieza en la fila ${layout.start.row + 1}, columna ${layout.start.column + 1}.`,
   );
   const positionRef = useRef(layout.start);
   const boardRef = useRef(null);
@@ -1200,7 +1726,7 @@ function PathActivity({
       );
       setPathStatus(
         obstacle
-          ? "Hay un árbol en ese camino. Prueba otra dirección."
+          ? `Hay ${pathTheme.obstacleLabel} en ese camino. Prueba otra dirección.`
           : "Llegaste al borde del tablero. Prueba otra dirección.",
       );
       return;
@@ -1244,6 +1770,7 @@ function PathActivity({
       className="nido-games__path-activity"
       data-age={challenge.ageId}
       data-mechanic="path"
+      data-kind={challenge.visual.kind}
     >
       <div
         className="nido-games__path-board"
@@ -1279,14 +1806,16 @@ function PathActivity({
               aria-hidden="true"
               key={key}
             >
-              {obstacle ? "🌳" : null}
+              {obstacle ? pathTheme.obstacle : null}
               {option ? (
                 <span title={option.label}>
                   <OptionArtwork challenge={challenge} option={option} compact />
                 </span>
               ) : null}
               {isPlayer ? (
-                <span className="nido-games__path-player">🐣</span>
+                <span className="nido-games__path-player">
+                  {pathTheme.player}
+                </span>
               ) : null}
             </span>
           );
@@ -1310,8 +1839,10 @@ function PathActivity({
         </button>
       </div>
       <p>
-        Lleva al pollito hasta la tarjeta correcta
-        {layout.obstacles.length ? " sin chocar con los árboles." : "."}
+        {pathTheme.instruction}
+        {layout.obstacles.length
+          ? ` sin chocar con ${pathTheme.obstacleLabel}.`
+          : "."}
       </p>
     </div>
   );
@@ -1320,6 +1851,7 @@ function PathActivity({
 function InteractiveChallenge(props) {
   const interactionType = getNidoInteractionType(props.challenge);
 
+  if (DIRECT_SCENE_KINDS.has(props.challenge.visual.kind)) return null;
   if (interactionType === "drag") return <DragActivity {...props} />;
   if (interactionType === "order") return <OrderActivity {...props} />;
   if (interactionType === "match") return <MatchActivity {...props} />;
@@ -1354,6 +1886,9 @@ function ChallengeActivity(props) {
       <ChallengeScene
         challenge={challenge}
         selectedAnswer={selectedAnswer}
+        incorrectAnswers={props.incorrectAnswers}
+        onAnswer={props.onAnswer}
+        locked={props.locked}
         memoryVisible={memoryVisible}
         memorySeconds={memorySeconds}
         replayMemory={() => setMemoryRun((current) => current + 1)}
@@ -1392,6 +1927,11 @@ function ChallengeAnswers({
         const visualOnly =
           numericValue !== null &&
           String(numericValue) === String(option.label);
+        const presentationLabel = optionPresentationLabel(challenge, option);
+        const presentationOption =
+          presentationLabel === option.label
+            ? option
+            : { ...option, label: presentationLabel };
 
         return (
           <button
@@ -1411,7 +1951,7 @@ function ChallengeAnswers({
             style={option.tone ? { "--option-tone": option.tone } : undefined}
             type="button"
             aria-pressed={chosen}
-            aria-label={`${option.label}${incorrect ? ". Opción ya intentada." : ""}`}
+            aria-label={`${presentationLabel}${incorrect ? ". Opción ya intentada." : ""}`}
             disabled={incorrect || (locked && !chosen)}
             onClick={() => onAnswer(option.id)}
             key={option.id}
@@ -1430,10 +1970,10 @@ function ChallengeAnswers({
                 numericValue !== undefined ? (
                 <strong>{numericValue}</strong>
               ) : (
-                <Picture item={option} />
+                <Picture item={presentationOption} />
               )}
             </span>
-            {visualOnly ? null : <span>{option.label}</span>}
+            {visualOnly ? null : <span>{presentationLabel}</span>}
             {correct || incorrect ? (
               correct ? (
                 <CheckCircle
@@ -1496,6 +2036,7 @@ export function NidoGamesExperience({
   const albumDialogRef = useRef(null);
   const [routeComplete, setRouteComplete] = useState(false);
   const [feedbackEffect, setFeedbackEffect] = useState(null);
+  const [celebrationBusy, setCelebrationBusy] = useState(false);
 
   const audioRef = useRef(null);
   const feedbackAudioRef = useRef(null);
@@ -1503,15 +2044,17 @@ export function NidoGamesExperience({
   const feedbackNodesRef = useRef([]);
   const playbackRunRef = useRef(0);
   const feedbackSoundRunRef = useRef(0);
-  const celebrationRunRef = useRef(0);
   const feedbackTimerRef = useRef(null);
   const feedbackRunRef = useRef(0);
+  const feedbackSoundCompletionRef = useRef(null);
+  const celebrationRunRef = useRef(0);
+  const celebrationFailsafeRef = useRef(null);
   const focusDialogRef = useRef(null);
   const focusCloseRef = useRef(null);
   const focusTitleRef = useRef(null);
-  const focusNextRef = useRef(null);
   const routeSuccessRef = useRef(null);
   const autoAdvanceTimerRef = useRef(null);
+  const answerLockRef = useRef(false);
   const previousFocusRef = useRef(null);
 
   const age = AGE_GROUPS.find((item) => item.id === selectedAge);
@@ -1607,11 +2150,33 @@ export function NidoGamesExperience({
     };
   }, []);
 
+  useEffect(() => {
+    const preloaders = [...new Set(Object.values(feedbackTracks))]
+      .filter(Boolean)
+      .map((src) => {
+        const audio = new Audio();
+        audio.preload = "auto";
+        audio.src = src;
+        audio.load();
+        return audio;
+      });
+    return () => {
+      preloaders.forEach((audio) => {
+        audio.pause();
+        audio.removeAttribute("src");
+      });
+    };
+  }, [feedbackTracks]);
+
   useEffect(
     () => () => {
       playbackRunRef.current += 1;
       feedbackSoundRunRef.current += 1;
+      celebrationRunRef.current += 1;
       window.clearTimeout(autoAdvanceTimerRef.current);
+      window.clearTimeout(celebrationFailsafeRef.current);
+      feedbackSoundCompletionRef.current?.resolve(false);
+      feedbackSoundCompletionRef.current = null;
       if (audioRef.current) {
         audioRef.current.pause();
         audioRef.current.removeAttribute("src");
@@ -1630,7 +2195,6 @@ export function NidoGamesExperience({
         gain.disconnect();
       });
       feedbackNodesRef.current = [];
-      celebrationRunRef.current += 1;
       window.speechSynthesis?.cancel();
       window.clearTimeout(feedbackTimerRef.current);
       if (audioContextRef.current?.state !== "closed") {
@@ -1657,25 +2221,35 @@ export function NidoGamesExperience({
     setFeedbackEffect(null);
   };
 
-  const showFeedbackEffect = (type, phrase = "") => {
+  const showFeedbackEffect = (type, celebration = null) => {
     window.clearTimeout(feedbackTimerRef.current);
     feedbackRunRef.current += 1;
-    setFeedbackEffect({ type, phrase, runId: feedbackRunRef.current });
+    setFeedbackEffect({
+      type,
+      celebration,
+      runId: feedbackRunRef.current,
+    });
+    if (type === "success") {
+      feedbackTimerRef.current = null;
+      return;
+    }
     feedbackTimerRef.current = window.setTimeout(
       () => {
         setFeedbackEffect(null);
         feedbackTimerRef.current = null;
       },
-      // El acierto dura lo que dura la fiesta: fanfarria + frase hablada.
-      type === "success" ? 3200 : 1050,
+      1050,
     );
   };
 
   const stopFeedbackSound = () => {
+    feedbackSoundCompletionRef.current?.resolve(false);
+    feedbackSoundCompletionRef.current = null;
     feedbackSoundRunRef.current += 1;
     if (feedbackAudioRef.current) {
       feedbackAudioRef.current.pause();
       feedbackAudioRef.current.currentTime = 0;
+      feedbackAudioRef.current.onended = null;
       feedbackAudioRef.current.onerror = null;
     }
     feedbackNodesRef.current.forEach(({ oscillator, gain }) => {
@@ -1694,7 +2268,7 @@ export function NidoGamesExperience({
   const playFeedbackTone = (type, runId) => {
     const AudioContextConstructor =
       window.AudioContext || window.webkitAudioContext;
-    if (!AudioContextConstructor) return;
+    if (!AudioContextConstructor) return 0;
 
     if (!audioContextRef.current || audioContextRef.current.state === "closed") {
       audioContextRef.current = new AudioContextConstructor();
@@ -1756,49 +2330,111 @@ export function NidoGamesExperience({
     } else {
       playNotes();
     }
+    return type === "success" ? 650 : 520;
   };
 
-  // `onEnded` avisa cuando la fanfarria terminó de sonar de verdad, pase lo
-  // que pase: fin del mp3, tono sintetizado o silencio total. La celebración
-  // hablada espera esa señal para no pisar al «¡Yupi!» grabado.
-  const playFeedbackSound = (type, onEnded) => {
+  // La promesa se resuelve cuando la fanfarria termina de sonar de verdad:
+  // fin del mp3, tono sintetizado o silencio total. La celebración hablada
+  // espera esa señal para no pisar al «¡Yupi!» grabado.
+  const playFeedbackSound = (type) => {
     stopFeedbackSound();
     const runId = feedbackSoundRunRef.current;
-    let reported = false;
-    const reportEnd = () => {
-      if (reported || feedbackSoundRunRef.current !== runId) return;
-      reported = true;
-      onEnded?.();
-    };
-    // Tope duro: si el mp3 nunca dispara `ended` (carga colgada, pestaña en
-    // segundo plano), la cadena de celebración continúa igual.
-    window.setTimeout(reportEnd, FEEDBACK_SOUND_CAP_MS);
+    return new Promise((resolve) => {
+      let settled = false;
+      let fallbackStarted = false;
+      const settle = (completed) => {
+        if (settled) return;
+        settled = true;
+        window.clearTimeout(watchdog);
+        if (feedbackSoundCompletionRef.current?.runId === runId) {
+          feedbackSoundCompletionRef.current = null;
+        }
+        resolve(completed);
+      };
+      const watchdog = window.setTimeout(
+        () => settle(true),
+        type === "success" ? 4000 : 2500,
+      );
+      feedbackSoundCompletionRef.current = { runId, resolve: settle };
 
-    const feedbackAudio = feedbackAudioRef.current;
-    if (!feedbackAudio) {
-      playFeedbackTone(type, runId);
-      window.setTimeout(reportEnd, 750);
-      return;
-    }
+      const fallbackOnce = () => {
+        if (
+          fallbackStarted ||
+          feedbackSoundRunRef.current !== runId ||
+          settled
+        ) {
+          return;
+        }
+        fallbackStarted = true;
+        const duration = playFeedbackTone(type, runId);
+        window.setTimeout(
+          () => settle(true),
+          Math.max(duration + 120, 420),
+        );
+      };
 
-    let fallbackStarted = false;
-    const fallbackOnce = () => {
-      if (fallbackStarted || feedbackSoundRunRef.current !== runId) return;
-      fallbackStarted = true;
-      playFeedbackTone(type, runId);
-      window.setTimeout(reportEnd, 750);
-    };
+      const feedbackAudio = feedbackAudioRef.current;
+      if (!feedbackAudio) {
+        fallbackOnce();
+        return;
+      }
 
-    feedbackAudio.src =
-      feedbackTracks[type] ?? DEFAULT_FEEDBACK_TRACKS[type];
-    feedbackAudio.currentTime = 0;
-    feedbackAudio.volume = type === "success" ? 0.78 : 0.62;
-    feedbackAudio.onended = reportEnd;
-    feedbackAudio.onerror = fallbackOnce;
-    void feedbackAudio.play().catch(fallbackOnce);
+      feedbackAudio.src =
+        feedbackTracks[type] ?? DEFAULT_FEEDBACK_TRACKS[type];
+      feedbackAudio.currentTime = 0;
+      feedbackAudio.volume = type === "success" ? 0.68 : 0.58;
+      feedbackAudio.onended = () => settle(true);
+      feedbackAudio.onerror = fallbackOnce;
+      void feedbackAudio.play().catch(fallbackOnce);
+    });
   };
 
-  const speakWithBrowserFallback = (
+  const findPreferredSpanishVoice = () => {
+    const preferredVoiceNames = [
+      "paulina",
+      "monica",
+      "luciana",
+      "elvira",
+      "sabina",
+      "soledad",
+      "paloma",
+      "google español",
+    ];
+    const spanishVoices = window.speechSynthesis
+      ?.getVoices()
+      .filter((voice) => voice.lang.toLowerCase().startsWith("es"));
+    const preferredVoice = spanishVoices?.find((voice) => {
+      const normalizedName = voice.name
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase();
+      return preferredVoiceNames.some((name) =>
+        normalizedName.includes(name),
+      );
+    });
+    return preferredVoice ?? spanishVoices?.[0] ?? null;
+  };
+
+  const waitForPreferredSpanishVoice = () => {
+    const currentVoice = findPreferredSpanishVoice();
+    const synthesis = window.speechSynthesis;
+    if (currentVoice || !synthesis) return Promise.resolve(currentVoice);
+
+    return new Promise((resolve) => {
+      let settled = false;
+      const finish = () => {
+        if (settled) return;
+        settled = true;
+        window.clearTimeout(timeout);
+        synthesis.removeEventListener?.("voiceschanged", finish);
+        resolve(findPreferredSpanishVoice());
+      };
+      const timeout = window.setTimeout(finish, 900);
+      synthesis.addEventListener?.("voiceschanged", finish, { once: true });
+    });
+  };
+
+  const speakWithBrowserFallback = async (
     text,
     runId,
     targetChallenge = challenge,
@@ -1814,28 +2450,10 @@ export function NidoGamesExperience({
       return;
     }
 
+    const preferredVoice = await waitForPreferredSpanishVoice();
+    if (playbackRunRef.current !== runId) return;
     const utterance = new window.SpeechSynthesisUtterance(text);
-    const preferredVoiceNames = [
-      "paulina",
-      "monica",
-      "luciana",
-      "elvira",
-      "sabina",
-      "google español",
-    ];
-    const spanishVoices = window.speechSynthesis
-      .getVoices()
-      .filter((voice) => voice.lang.toLowerCase().startsWith("es"));
-    const preferredVoice = spanishVoices.find((voice) => {
-      const normalizedName = voice.name
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .toLowerCase();
-      return preferredVoiceNames.some((name) =>
-        normalizedName.includes(name),
-      );
-    });
-    utterance.voice = preferredVoice ?? spanishVoices[0] ?? null;
+    utterance.voice = preferredVoice;
     utterance.lang = preferredVoice?.lang ?? "es-PE";
     utterance.rate =
       { "2-3": 0.87, "4-5": 0.93, 6: 0.99 }[targetChallenge.ageId] ??
@@ -1858,87 +2476,62 @@ export function NidoGamesExperience({
     onStatus("Reproduciendo la indicación con la voz del dispositivo.");
   };
 
-  // La celebración tiene voz propia: más aguda, más rápida y distinta en cada
-  // acierto, para que suene a fiesta y no a timbre. `onDone` dispara el avance
-  // al siguiente reto, así la frase nunca se corta a la mitad; el tope de
-  // seguridad garantiza que el juego avanza aunque la síntesis falle sin
-  // avisar.
-  const speakCelebration = (line, variation, onDone) => {
-    celebrationRunRef.current += 1;
-    const runId = celebrationRunRef.current;
-    let finished = false;
-    let safetyTimer = null;
-    const finish = () => {
-      if (finished || celebrationRunRef.current !== runId) return;
-      finished = true;
-      window.clearTimeout(safetyTimer);
-      onDone();
-    };
-    safetyTimer = window.setTimeout(finish, CELEBRATION_SAFETY_MS);
+  const speakCelebrationPraise = async (
+    celebration,
+    targetChallenge,
+    celebrationRunId,
+  ) => {
+    if (
+      !("speechSynthesis" in window) ||
+      typeof window.SpeechSynthesisUtterance !== "function"
+    ) {
+      return "unavailable";
+    }
 
-    const speakWithDeviceVoice = () => {
-      if (
-        !("speechSynthesis" in window) ||
-        typeof window.SpeechSynthesisUtterance !== "function"
-      ) {
-        window.setTimeout(finish, ADVANCE_WITHOUT_VOICE_MS);
-        return;
-      }
-      const utterance = new window.SpeechSynthesisUtterance(line.text);
-      // Misma narradora preferida que en las consignas: cambiar de voz entre
-      // la instrucción y la celebración rompería al personaje.
-      const preferredVoiceNames = [
-        "paulina",
-        "monica",
-        "luciana",
-        "elvira",
-        "sabina",
-        "google español",
-      ];
-      const spanishVoices = window.speechSynthesis
-        .getVoices()
-        .filter((voice) => voice.lang.toLowerCase().startsWith("es"));
-      const preferredVoice =
-        spanishVoices.find((voice) =>
-          preferredVoiceNames.some((name) =>
-            voice.name
-              .normalize("NFD")
-              .replace(/[̀-ͯ]/g, "")
-              .toLowerCase()
-              .includes(name),
-          ),
-        ) ?? spanishVoices[0] ?? null;
+    const preferredVoice = await waitForPreferredSpanishVoice();
+    if (celebrationRunRef.current !== celebrationRunId) return "cancelled";
+    return new Promise((resolve) => {
+      const utterance = new window.SpeechSynthesisUtterance(
+        celebration.spokenText,
+      );
+      const voiceProfile = getCelebrationVoiceProfile(
+        targetChallenge.ageId,
+        celebration,
+      );
       utterance.voice = preferredVoice;
       utterance.lang = preferredVoice?.lang ?? "es-PE";
-      // Entusiasmo real: registro agudo y ritmo vivo, con variación por
-      // acierto para que dos celebraciones seguidas no suenen iguales.
-      utterance.rate = 1.02 + (variation % 3) * 0.04;
-      utterance.pitch = 1.26 + (variation % 4) * 0.05;
-      utterance.onend = finish;
-      utterance.onerror = finish;
+      utterance.rate = voiceProfile.rate;
+      utterance.pitch = voiceProfile.pitch;
+      utterance.volume = 0.96;
+
+      let settled = false;
+      const estimatedDuration = Math.min(
+        7500,
+        Math.max(
+          2600,
+          celebration.spokenText.trim().split(/\s+/).length * 520,
+        ),
+      );
+      const finish = (status) => {
+        if (settled) return;
+        settled = true;
+        window.clearTimeout(watchdog);
+        resolve(status);
+      };
+      const watchdog = window.setTimeout(
+        () => finish("watchdog"),
+        estimatedDuration,
+      );
+      utterance.onend = () => finish("ended");
+      utterance.onerror = () => finish("error");
+
+      if (celebrationRunRef.current !== celebrationRunId) {
+        finish("cancelled");
+        return;
+      }
       window.speechSynthesis.cancel();
       window.speechSynthesis.speak(utterance);
-    };
-
-    // Si el próximo lote de estudio ya grabó esta frase, suena la narradora
-    // profesional; mientras tanto la dice el dispositivo.
-    const recordedSrc = audioTracks[line.id];
-    if (recordedSrc && audioRef.current) {
-      const audio = audioRef.current;
-      let fallbackStarted = false;
-      const fallbackOnce = () => {
-        if (fallbackStarted || celebrationRunRef.current !== runId) return;
-        fallbackStarted = true;
-        speakWithDeviceVoice();
-      };
-      audio.src = recordedSrc;
-      audio.currentTime = 0;
-      audio.onended = finish;
-      audio.onerror = fallbackOnce;
-      void audio.play().catch(fallbackOnce);
-      return;
-    }
-    speakWithDeviceVoice();
+    });
   };
 
   const playInstruction = async (targetChallenge = challenge) => {
@@ -1959,7 +2552,7 @@ export function NidoGamesExperience({
       const fallbackOnce = () => {
         if (fallbackStarted || playbackRunRef.current !== runId) return;
         fallbackStarted = true;
-        speakWithBrowserFallback(text, runId, targetChallenge);
+        void speakWithBrowserFallback(text, runId, targetChallenge);
       };
       audio.src = audioSrc;
       audio.currentTime = 0;
@@ -2319,6 +2912,11 @@ export function NidoGamesExperience({
 
   const resetActivity = () => {
     clearAutoAdvance();
+    celebrationRunRef.current += 1;
+    window.clearTimeout(celebrationFailsafeRef.current);
+    celebrationFailsafeRef.current = null;
+    answerLockRef.current = false;
+    setCelebrationBusy(false);
     setSelectedAnswer("");
     setIncorrectAnswers([]);
     setRouteStats(createRouteStats());
@@ -2456,6 +3054,11 @@ export function NidoGamesExperience({
     setReplayingRoute(isReplay);
     setRouteComplete(false);
     setLatestReward(null);
+    celebrationRunRef.current += 1;
+    window.clearTimeout(celebrationFailsafeRef.current);
+    celebrationFailsafeRef.current = null;
+    answerLockRef.current = false;
+    setCelebrationBusy(false);
     clearFeedbackEffect();
     stopFeedbackSound();
     setFocusMode(true);
@@ -2493,7 +3096,50 @@ export function NidoGamesExperience({
     };
   }, [area, selectedArea, selectedCategory]);
 
+  const finishSuccessCelebration = (celebrationRunId) => {
+    if (celebrationRunRef.current !== celebrationRunId) return;
+    celebrationRunRef.current += 1;
+    window.clearTimeout(celebrationFailsafeRef.current);
+    celebrationFailsafeRef.current = null;
+    setCelebrationBusy(false);
+    clearFeedbackEffect();
+    onStatus("Celebración terminada. Preparando el siguiente reto.");
+    clearAutoAdvance();
+    autoAdvanceTimerRef.current = window.setTimeout(() => {
+      autoAdvanceTimerRef.current = null;
+      handleNext();
+    }, 120);
+  };
+
+  const runSuccessCelebration = async (
+    celebration,
+    targetChallenge = challenge,
+  ) => {
+    const celebrationRunId = celebrationRunRef.current + 1;
+    celebrationRunRef.current = celebrationRunId;
+    setCelebrationBusy(true);
+    window.clearTimeout(celebrationFailsafeRef.current);
+    celebrationFailsafeRef.current = window.setTimeout(
+      () => finishSuccessCelebration(celebrationRunId),
+      CELEBRATION_FAILSAFE_MS,
+    );
+
+    await playFeedbackSound("success");
+    if (celebrationRunRef.current !== celebrationRunId) return;
+    await speakCelebrationPraise(
+      celebration,
+      targetChallenge,
+      celebrationRunId,
+    );
+    if (celebrationRunRef.current !== celebrationRunId) return;
+    await new Promise((resolve) =>
+      window.setTimeout(resolve, CELEBRATION_DWELL_MS),
+    );
+    finishSuccessCelebration(celebrationRunId);
+  };
+
   const handleSpeak = () => {
+    if (celebrationBusy) return;
     if (speaking) {
       stopInstruction({ announce: true });
       return;
@@ -2508,14 +3154,41 @@ export function NidoGamesExperience({
   };
 
   const handleAnswer = (answerId) => {
-    if (answerIsCorrect || incorrectAnswers.includes(answerId)) return;
+    if (
+      answerLockRef.current ||
+      answerIsCorrect ||
+      incorrectAnswers.includes(answerId)
+    ) {
+      return;
+    }
     stopInstruction();
     setSelectedAnswer(answerId);
 
     if (answerId === challenge.answerId) {
+      answerLockRef.current = true;
+      const nextStreak =
+        incorrectAnswers.length === 0 ? routeStats.streak + 1 : 0;
+      const baseCelebration = pickSuccessCelebration(
+        `${challenge.id}|${currentRound}|${routeStats.correct}`,
+        nextStreak,
+      );
+      const celebration =
+        nextStreak >= 3
+          ? {
+              ...baseCelebration,
+              headline: `¡${nextStreak} seguidas!`,
+              spokenText: `¡${nextStreak} respuestas seguidas! ¡Qué gran trabajo!`,
+              caption: "Tu racha encendió una fiesta de estrellas.",
+              burst: "stars",
+            }
+          : incorrectAnswers.length
+            ? {
+                ...baseCelebration,
+                spokenText: "¡Lo lograste! ¡No te rendiste y encontraste la respuesta!",
+                caption: "Seguiste intentando hasta conseguirlo.",
+              }
+            : baseCelebration;
       setRouteStats((current) => {
-        const nextStreak =
-          incorrectAnswers.length === 0 ? current.streak + 1 : 0;
         return {
           ...current,
           correct: current.correct + 1,
@@ -2534,29 +3207,11 @@ export function NidoGamesExperience({
           },
         },
       }));
-      // Fiesta en cadena: fanfarria con «¡Yupi!» completa, después una frase
-      // de ánimo distinta cada vez (las de racha a partir de 3 seguidas), y
-      // solo cuando la voz termina se pasa al siguiente reto. Nada se corta.
-      const streakNow =
-        incorrectAnswers.length === 0 ? routeStats.streak + 1 : 0;
-      const pool =
-        streakNow >= 3 ? CELEBRATION_STREAK_LINES : CELEBRATION_LINES;
-      const lineIndex = (currentGameIndex + streakNow) % pool.length;
-      const line = pool[lineIndex];
-      showFeedbackEffect("success", line.text);
-      playFeedbackSound("success", () => {
-        speakCelebration(line, currentGameIndex + streakNow, () => {
-          clearAutoAdvance();
-          autoAdvanceTimerRef.current = window.setTimeout(() => {
-            autoAdvanceTimerRef.current = null;
-            handleNext();
-          }, ADVANCE_AFTER_VOICE_MS);
-        });
-      });
-      navigator.vibrate?.([50, 60, 90]);
-      onStatus(`${line.text} Respuesta correcta.`);
-      window.requestAnimationFrame(() => focusNextRef.current?.focus());
+      showFeedbackEffect("success", celebration);
+      navigator.vibrate?.([45, 35, 90]);
+      onStatus(`${celebration.headline} Respuesta correcta. Celebrando contigo.`);
       clearAutoAdvance();
+      void runSuccessCelebration(celebration, challenge);
     } else {
       setIncorrectAnswers((current) => [...current, answerId]);
       setRouteStats((current) => ({
@@ -2565,7 +3220,7 @@ export function NidoGamesExperience({
         streak: 0,
       }));
       showFeedbackEffect("error");
-      playFeedbackSound("error");
+      void playFeedbackSound("error");
       navigator.vibrate?.([25, 40, 25]);
       onStatus(
         incorrectAnswers.length >= 1
@@ -2577,10 +3232,14 @@ export function NidoGamesExperience({
 
   const handleNext = () => {
     clearAutoAdvance();
+    celebrationRunRef.current += 1;
+    window.clearTimeout(celebrationFailsafeRef.current);
+    celebrationFailsafeRef.current = null;
+    answerLockRef.current = false;
+    setCelebrationBusy(false);
     stopFeedbackSound();
     // Un toque manual en «Siguiente reto» interrumpe la frase de celebración
     // pendiente; sus temporizadores quedan invalidados por el runId.
-    celebrationRunRef.current += 1;
     window.speechSynthesis?.cancel();
     const nextCompleted = Math.max(completedGames, currentGameIndex + 1);
     setProgress((current) => ({
@@ -3003,11 +3662,14 @@ export function NidoGamesExperience({
                     className={`nido-games__focus-audio ${speaking ? "is-speaking" : ""}`}
                     type="button"
                     aria-label={
-                      speaking
+                      celebrationBusy
+                        ? "La celebración está terminando"
+                        : speaking
                         ? "Detener narración automática"
                         : "Repetir narración de la consigna"
                     }
                     aria-pressed={speaking}
+                    disabled={celebrationBusy}
                     onClick={handleSpeak}
                   >
                     {speaking ? (
@@ -3015,7 +3677,13 @@ export function NidoGamesExperience({
                     ) : (
                       <SpeakerHigh size={25} weight="fill" aria-hidden="true" />
                     )}
-                    <span>{speaking ? "Detener" : "Repetir audio"}</span>
+                    <span>
+                      {celebrationBusy
+                        ? "Celebrando"
+                        : speaking
+                          ? "Detener"
+                          : "Repetir audio"}
+                    </span>
                   </button>
                 </header>
 
@@ -3213,7 +3881,15 @@ export function NidoGamesExperience({
 
                     {feedbackEffect ? (
                       <div
-                        className={`nido-games__focus-feedback is-${feedbackEffect.type}`}
+                        className={[
+                          "nido-games__focus-feedback",
+                          `is-${feedbackEffect.type}`,
+                          feedbackEffect.celebration?.burst
+                            ? `is-${feedbackEffect.celebration.burst}`
+                            : "",
+                        ]
+                          .filter(Boolean)
+                          .join(" ")}
                         key={feedbackEffect.runId}
                         aria-hidden="true"
                       >
@@ -3230,6 +3906,7 @@ export function NidoGamesExperience({
                                   "--bubble-dx": piece.dx,
                                   "--bubble-dy": piece.dy,
                                 }}
+                                data-shape={piece.shape}
                                 key={index}
                               />
                             ))}
@@ -3238,14 +3915,28 @@ export function NidoGamesExperience({
                         <div className="nido-games__focus-feedback-card">
                           {feedbackEffect.type === "success" ? (
                             <>
+                              <div
+                                className="nido-games__celebration-orbit"
+                                aria-hidden="true"
+                              >
+                                {Array.from({ length: 8 }, (_, index) => (
+                                  <i key={index} />
+                                ))}
+                              </div>
                               <div className="nido-games__focus-stars">
                                 <Star size={42} weight="fill" />
                                 <Star size={58} weight="fill" />
                                 <Star size={42} weight="fill" />
                               </div>
                               <NidoMascot pose="cheer" size={90} />
-                              <strong>{feedbackEffect.phrase || "¡Yupi!"}</strong>
-                              <small>¡Tirirí! Respuesta correcta</small>
+                              <strong>
+                                {feedbackEffect.celebration?.headline ??
+                                  "¡Lo lograste!"}
+                              </strong>
+                              <small>
+                                {feedbackEffect.celebration?.caption ??
+                                  "¡Tirirí! Respuesta correcta"}
+                              </small>
                             </>
                           ) : (
                             <>
@@ -3263,18 +3954,22 @@ export function NidoGamesExperience({
                         {!selectedAnswer
                           ? "Elige una respuesta. Las opciones incorrectas quedarán descartadas."
                           : answerIsCorrect
-                            ? "¡Yupi! Encontraste la respuesta correcta."
+                            ? celebrationBusy
+                              ? `${feedbackEffect?.celebration?.headline ?? "¡Lo lograste!"} Esperamos a que termine la celebración.`
+                              : "¡Celebración completada! Abriendo el siguiente reto."
                             : `Esa opción no es correcta. ${incorrectAnswers.length === 1 ? "Prueba con otra." : "Sigue observando: ya descartaste varias opciones."}`}
                       </p>
                       <button
-                        ref={focusNextRef}
                         type="button"
                         onClick={handleNext}
-                        disabled={!answerIsCorrect}
+                        disabled={!answerIsCorrect || celebrationBusy}
                       >
-                        {currentGameIndex < NIDO_CURRICULUM_GAME_COUNT - 1
-                          ? "Siguiente reto"
-                          : "Finalizar ruta"}
+                        {celebrationBusy
+                          ? "Celebrando…"
+                          : currentGameIndex <
+                              NIDO_CURRICULUM_GAME_COUNT - 1
+                            ? "Siguiente reto"
+                            : "Finalizar ruta"}
                         <ArrowRight size={22} weight="bold" aria-hidden="true" />
                       </button>
                     </div>

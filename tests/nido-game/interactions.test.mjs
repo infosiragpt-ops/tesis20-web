@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 import {
@@ -170,6 +171,26 @@ test("las mecánicas generadas reciben los datos que necesitan", () => {
   }
 });
 
+test("cada una de las 29 rutas conserva una identidad visual propia", () => {
+  const visualKinds = [];
+  for (const area of NIDO_CURRICULUM) {
+    for (const category of area.categories) {
+      if (category.strategy === "matrix") continue;
+      visualKinds.push(
+        buildCurriculumChallenge({
+          areaId: area.id,
+          categoryId: category.id,
+          ageId: "4-5",
+          gameIndex: 1,
+        }).visual.kind,
+      );
+    }
+  }
+
+  assert.equal(visualKinds.length, 29);
+  assert.equal(new Set(visualKinds).size, 29);
+});
+
 test("los recorridos crecen por edad y todos sus destinos son únicos", () => {
   const expected = {
     "2-3": { size: 3, obstacles: 0 },
@@ -286,6 +307,56 @@ test("ordenar por tamaño nunca comienza ya resuelto", () => {
       const correct = getCorrectOrderLabels(challenge).map(normalizeOrderLabel);
       assert.equal(initial.length, correct.length);
       assert.notDeepEqual(initial, correct);
+    }
+  }
+});
+
+test("las 11 rutas de tocar responden dentro de su propia escena", async () => {
+  const rendererSource = await readFile(
+    new URL("../../src/nido/nido-games.jsx", import.meta.url),
+    "utf8",
+  );
+  const directKinds = [
+    rendererSource.match(
+      /const DIRECT_TAP_KINDS = new Set\(\[([\s\S]*?)\]\);/,
+    )?.[1] ?? "",
+    rendererSource.match(
+      /const DIRECT_SCENE_KINDS = new Set\(\[([\s\S]*?)\]\);/,
+    )?.[1] ?? "",
+  ].join("\n");
+  const tapRoutes = Object.entries(NIDO_ROUTE_INTERACTIONS).filter(
+    ([, interaction]) => interaction === "tap",
+  );
+
+  assert.equal(tapRoutes.length, 11);
+  for (const [route] of tapRoutes) {
+    const [areaId, categoryId] = route.split(":");
+    const challenge = buildCurriculumChallenge({
+      areaId,
+      categoryId,
+      ageId: "4-5",
+      gameIndex: 0,
+    });
+    assert.match(
+      directKinds,
+      new RegExp(`"${challenge.visual.kind}"`),
+      `${route} debe ser tocable dentro de su escena`,
+    );
+  }
+});
+
+test("las opciones de gemelos describen la figura sin revelar la respuesta", () => {
+  for (const age of NIDO_AGE_GROUPS) {
+    for (let gameIndex = 0; gameIndex < 20; gameIndex += 1) {
+      const challenge = buildCurriculumChallenge({
+        areaId: "atencion",
+        categoryId: "encuentra-al-gemelo",
+        ageId: age.id,
+        gameIndex,
+      });
+      for (const option of challenge.options) {
+        assert.doesNotMatch(option.label, /exacto|cambia/i);
+      }
     }
   }
 });

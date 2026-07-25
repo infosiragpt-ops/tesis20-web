@@ -14,10 +14,20 @@ import {
   MEMORY_THEMES,
   pickBonusSidesQuestion,
 } from "../content/memory-mission.js";
+import {
+  getCelebrationVoiceProfile,
+  pickSuccessCelebration,
+} from "../content/celebration-feedback.js";
 import { STICKERS } from "../../stickers/sticker-registry.jsx";
 import "./memoria-game.css";
 
 const AGE_LABEL = { "2-3": "2–3 años", "4-5": "4–5 años", 6: "6 años" };
+const CELEBRATION_LEAD_IN_MS = 540;
+const CELEBRATION_DWELL_MS = 700;
+const CELEBRATION_WATCHDOG_MS = 12_000;
+
+const wait = (milliseconds) =>
+  new Promise((resolve) => window.setTimeout(resolve, milliseconds));
 
 /**
  * @param {{
@@ -58,6 +68,7 @@ export default function MemoriaGame({
   const mismatchTimerRef = useRef(null);
   const peekTimerRef = useRef(null);
   const mismatchStreakRef = useRef(0);
+  const celebrationRunRef = useRef(0);
 
   useEffect(() => {
     const audio = createAudioDirector();
@@ -65,6 +76,7 @@ export default function MemoriaGame({
     setAudioPrefs(audio.prefs());
     adapterRef.current = createDifficultyAdapter({ maxLevel: 0 });
     return () => {
+      celebrationRunRef.current += 1;
       window.clearTimeout(previewTimerRef.current);
       window.clearTimeout(mismatchTimerRef.current);
       window.clearTimeout(peekTimerRef.current);
@@ -73,8 +85,11 @@ export default function MemoriaGame({
     };
   }, []);
 
-  const speak = useCallback((text) => {
-    audioRef.current?.speak(text);
+  const speak = useCallback((text, opts) => {
+    return (
+      audioRef.current?.speak(text, opts) ??
+      Promise.resolve({ status: "skipped" })
+    );
   }, []);
 
   const setupRound = useCallback(
@@ -125,8 +140,9 @@ export default function MemoriaGame({
       if (completedRound >= MEMORY_ROUNDS) {
         const summary = adapterRef.current.summary();
         setMissionSummary(summary);
+        setLocked(true);
         setPhase("missionComplete");
-        speak("¡Memoria mágica completada! Qué buena memoria tienes.");
+        void speak("¡Memoria mágica completada! Qué buena memoria tienes.");
         onMissionComplete?.(summary);
       } else {
         setRoundIndex(completedRound);
@@ -136,20 +152,89 @@ export default function MemoriaGame({
     [onMissionComplete, speak],
   );
 
+  const celebrateCompletedRound = useCallback(
+    async ({
+      completedRound,
+      bonus,
+      intruderFound = false,
+      perfect = false,
+    }) => {
+      const celebrationRun = celebrationRunRef.current + 1;
+      celebrationRunRef.current = celebrationRun;
+      const celebration = pickSuccessCelebration(
+        `memoria:${theme.id}:${ageId}:${completedRound}:${perfect ? "perfecta" : "completa"}`,
+        adapterRef.current.summary().successes,
+      );
+      const voiceProfile = getCelebrationVoiceProfile(ageId, celebration);
+      const praise = intruderFound
+        ? `¡Encontraste también al intruso! ${celebration.spokenText}`
+        : celebration.spokenText;
+
+      setLocked(true);
+      await wait(CELEBRATION_LEAD_IN_MS);
+      if (celebrationRunRef.current !== celebrationRun) return;
+
+      await speak(praise, {
+        ...voiceProfile,
+        watchdogMs: CELEBRATION_WATCHDOG_MS,
+      });
+      if (celebrationRunRef.current !== celebrationRun) return;
+
+      audioRef.current?.sfx("celebrate");
+      await wait(CELEBRATION_DWELL_MS);
+      if (celebrationRunRef.current !== celebrationRun) return;
+
+      if (bonus) {
+        setBonusQuestion({ ...bonus, completedRound });
+        void speak(
+          `Antes de seguir, una pregunta extra: ¿cuál figura tiene más lados, la ${bonus.optionA} o la ${bonus.optionB}?`,
+        );
+        return;
+      }
+
+      advanceAfterRound(completedRound);
+    },
+    [advanceAfterRound, ageId, speak, theme.id],
+  );
+
   const handleBonusAnswer = (chosenSticker) => {
     if (!bonusQuestion) return;
     const { answer, completedRound } = bonusQuestion;
     setBonusQuestion(null);
-    if (chosenSticker === answer) {
+    const correct = chosenSticker === answer;
+    const celebrationRun = celebrationRunRef.current + 1;
+    celebrationRunRef.current = celebrationRun;
+    let feedbackText;
+    let voiceProfile;
+
+    if (correct) {
       audioRef.current?.sfx("success");
-      speak("¡Exacto! Esa figura tiene más lados. ¡Gran razonamiento!");
+      const celebration = pickSuccessCelebration(
+        `memoria-bonus:${theme.id}:${ageId}:${completedRound}`,
+        adapterRef.current.summary().successes,
+      );
+      voiceProfile = getCelebrationVoiceProfile(ageId, celebration);
+      feedbackText = `¡Exacto! Esa figura tiene más lados. ${celebration.spokenText}`;
     } else {
       const sidesAnswer = MEMORY_SHAPE_SIDES[answer];
-      speak(
-        `Casi. La figura con más lados tenía ${sidesAnswer}. ¡La próxima la encontrarás!`,
-      );
+      feedbackText = `Casi. La figura con más lados tenía ${sidesAnswer}. ¡La próxima la encontrarás!`;
     }
-    window.setTimeout(() => advanceAfterRound(completedRound), 1400);
+
+    void (async () => {
+      if (correct) await wait(CELEBRATION_LEAD_IN_MS);
+      if (celebrationRunRef.current !== celebrationRun) return;
+
+      await speak(feedbackText, {
+        ...voiceProfile,
+        watchdogMs: CELEBRATION_WATCHDOG_MS,
+      });
+      if (celebrationRunRef.current !== celebrationRun) return;
+
+      if (correct) audioRef.current?.sfx("celebrate");
+      await wait(CELEBRATION_DWELL_MS);
+      if (celebrationRunRef.current !== celebrationRun) return;
+      advanceAfterRound(completedRound);
+    })();
   };
 
   const handleFlip = (card) => {
@@ -169,9 +254,6 @@ export default function MemoriaGame({
         audioRef.current?.sfx("collect");
         setCelebrateId(first.pairId);
         window.setTimeout(() => setCelebrateId(null), 650);
-        if (first.isIntruder) {
-          speak("¡Ese no era del cole, pero lo encontraste igual! Buen ojo.");
-        }
         const nextMatched = new Set(matchedIds);
         nextMatched.add(first.pairId);
         setMatchedIds(nextMatched);
@@ -179,25 +261,28 @@ export default function MemoriaGame({
         const totalPairs = board.length / 2;
         if (nextMatched.size >= totalPairs) {
           audioRef.current?.sfx("success");
-          window.setTimeout(() => audioRef.current?.sfx("celebrate"), 300);
           const completedRound = roundIndex + 1;
-          speak(moves <= totalPairs ? "¡Memoria perfecta! Sigamos." : "¡Encontraste todas las parejas!");
           onRoundComplete?.(completedRound);
 
           const bonusEligible =
             theme.specialRule?.type === "bonusSides" && roundIndex >= theme.specialRule.fromRoundIndex;
           const bonus = bonusEligible ? pickBonusSidesQuestion(board) : null;
-
-          if (bonus) {
-            window.setTimeout(() => {
-              speak(
-                `Antes de seguir, una pregunta extra: ¿cuál figura tiene más lados, la ${bonus.optionA} o la ${bonus.optionB}?`,
-              );
-              setBonusQuestion({ ...bonus, completedRound });
-            }, 1500);
-          } else {
-            window.setTimeout(() => advanceAfterRound(completedRound), 1500);
-          }
+          void celebrateCompletedRound({
+            completedRound,
+            bonus,
+            intruderFound: first.isIntruder,
+            perfect: moves + 1 <= totalPairs,
+          });
+        } else if (first.isIntruder) {
+          const celebrationRun = celebrationRunRef.current + 1;
+          celebrationRunRef.current = celebrationRun;
+          setLocked(true);
+          void speak(
+            "¡Ese no era del cole, pero lo encontraste igual! ¡Buen ojo!",
+            { watchdogMs: CELEBRATION_WATCHDOG_MS },
+          ).then(() => {
+            if (celebrationRunRef.current === celebrationRun) setLocked(false);
+          });
         }
       } else {
         adapterRef.current?.recordError();

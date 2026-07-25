@@ -42,6 +42,14 @@ export default defineConfig({
             return "vendor-react";
           }
 
+          // La matriz de 500 juegos es contenido estático y cambia con mucha
+          // menos frecuencia que el motor. Mantenerla en un chunk propio
+          // evita que la ruta diferida de Nido supere el presupuesto por
+          // archivo y mejora la reutilización de caché entre despliegues.
+          if (id.includes("/src/nido/nido-curriculum-matrix.js")) {
+            return "nido-curriculum-matrix";
+          }
+
           return undefined;
         },
       },

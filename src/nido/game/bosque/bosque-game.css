@@ -15,7 +15,14 @@
   aspect-ratio: 16 / 9;
   overflow: hidden;
   border-radius: 18px;
+  background: #dff4ec;
   box-shadow: 0 24px 70px rgba(0, 0, 0, 0.45);
+}
+
+.bosque__world {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
 }
 
 .bosque__canvas {
@@ -29,12 +36,14 @@
 
 .bosque__hud {
   position: absolute;
+  z-index: 3;
   top: 10px;
   left: 10px;
   right: 10px;
   display: flex;
   align-items: center;
   gap: 10px;
+  min-width: 0;
   pointer-events: none;
 }
 
@@ -44,6 +53,7 @@
 
 .bosque__hud-exit,
 .bosque__hud-buttons button {
+  flex: 0 0 auto;
   width: 46px;
   height: 46px;
   display: grid;
@@ -58,12 +68,14 @@
 }
 
 .bosque__hud-round {
+  flex: 0 0 auto;
   padding: 8px 14px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.92);
   color: #10233f;
   font-size: 0.78rem;
   font-weight: 900;
+  white-space: nowrap;
 }
 
 .bosque__hud-target {
@@ -107,12 +119,14 @@
 }
 
 .bosque__hud-buttons {
+  flex: 0 0 auto;
   display: flex;
   gap: 8px;
 }
 
 .bosque__subtitle {
   position: absolute;
+  z-index: 2;
   left: 50%;
   bottom: 108px;
   max-width: min(86%, 640px);
@@ -132,6 +146,7 @@
 
 .bosque__touch {
   position: absolute;
+  z-index: 3;
   left: 14px;
   right: 14px;
   bottom: 14px;
@@ -241,6 +256,7 @@
 
 .bosque__overlay {
   position: absolute;
+  z-index: 5;
   inset: 0;
   display: grid;
   place-items: center;
@@ -398,5 +414,101 @@
   .bosque__touch-move button {
     width: 60px;
     height: 60px;
+  }
+}
+
+/*
+ * En vertical, interfaz y mundo ocupan filas distintas. El canvas conserva su
+ * relación 16:9: no se deforma y ningún control tapa a Niko ni a las frutas.
+ */
+@media (max-width: 700px) and (orientation: portrait) {
+  .bosque__stage {
+    width: 100%;
+    height: 100%;
+    max-height: 100dvh;
+    display: grid;
+    grid-template-rows: auto auto minmax(0, 1fr) auto;
+    aspect-ratio: auto;
+    border-radius: 0;
+    background: linear-gradient(180deg, #dff4ec, #f6fbef);
+  }
+
+  .bosque__world {
+    position: relative;
+    grid-row: 2;
+    inset: auto;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+  }
+
+  .bosque__hud {
+    position: relative;
+    grid-row: 1;
+    top: auto;
+    left: auto;
+    right: auto;
+    align-self: start;
+    display: grid;
+    grid-template-columns: 46px minmax(0, 1fr) auto;
+    grid-template-areas:
+      "exit round buttons"
+      "target target target";
+    gap: 6px;
+    margin:
+      max(8px, env(safe-area-inset-top))
+      8px
+      8px;
+  }
+
+  .bosque__hud-exit {
+    grid-area: exit;
+  }
+
+  .bosque__hud-round {
+    grid-area: round;
+    justify-self: start;
+  }
+
+  .bosque__hud-target {
+    grid-area: target;
+  }
+
+  .bosque__hud-buttons {
+    grid-area: buttons;
+  }
+
+  .bosque__subtitle {
+    position: relative;
+    grid-row: 3;
+    left: auto;
+    bottom: auto;
+    align-self: start;
+    justify-self: center;
+    width: min(92%, 520px);
+    max-width: none;
+    margin: 10px auto 0;
+    transform: none;
+  }
+
+  .bosque__touch {
+    position: relative;
+    grid-row: 4;
+    left: auto;
+    right: auto;
+    bottom: auto;
+    align-self: end;
+    gap: 10px;
+    margin:
+      8px
+      12px
+      max(12px, env(safe-area-inset-bottom));
+  }
+
+  .bosque__overlay {
+    overflow-y: auto;
+    padding:
+      max(24px, env(safe-area-inset-top))
+      20px
+      max(24px, env(safe-area-inset-bottom));
   }
 }

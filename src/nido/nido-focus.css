@@ -659,6 +659,7 @@
 }
 
 .nido-games__focus-dialog .nido-games__focus-success {
+  position: relative;
   min-height: 0;
   display: grid;
   place-items: center;
@@ -668,9 +669,18 @@
   overflow-y: auto;
   border-radius: 22px;
   background:
-    radial-gradient(circle, color-mix(in srgb, #ffc94d 25%, transparent), transparent 42%),
-    var(--s);
+    linear-gradient(
+      rgba(255, 255, 255, 0.77),
+      color-mix(in srgb, var(--s) 88%, rgba(255, 255, 255, 0.8))
+    ),
+    url("/assets/nido/worlds/celebration-festival-v1.jpg") center / cover
+      no-repeat;
   text-align: center;
+}
+
+.nido-games__focus-dialog .nido-games__focus-success > * {
+  position: relative;
+  z-index: 1;
 }
 
 .nido-games__focus-dialog .nido-games__focus-success > svg {
@@ -1150,6 +1160,36 @@
   animation-name: nido-bubble-burst;
   animation-timing-function: cubic-bezier(0.16, 0.8, 0.3, 1);
   animation-fill-mode: both;
+  animation-iteration-count: 2;
+}
+
+.nido-games__confetti i[data-shape="dot"] {
+  aspect-ratio: 1;
+  border-radius: 50%;
+}
+
+.nido-games__confetti i[data-shape="star"] {
+  aspect-ratio: 1;
+  clip-path: polygon(
+    50% 0,
+    62% 34%,
+    98% 36%,
+    70% 57%,
+    79% 94%,
+    50% 73%,
+    21% 94%,
+    30% 57%,
+    2% 36%,
+    38% 34%
+  );
+}
+
+.nido-games__confetti i[data-shape="candy"] {
+  aspect-ratio: 1.7;
+  border-radius: 50%;
+  box-shadow:
+    -5px 0 0 -2px rgba(255, 255, 255, 0.9),
+    5px 0 0 -2px rgba(255, 255, 255, 0.9);
 }
 
 @keyframes nido-bubble-burst {
@@ -1186,6 +1226,164 @@
 .nido-games__focus-feedback-card {
   position: relative;
   z-index: 2;
+}
+
+.nido-games__focus-feedback.is-success {
+  background:
+    radial-gradient(circle at 20% 15%, rgba(255, 201, 77, 0.44), transparent 24%),
+    radial-gradient(circle at 82% 76%, rgba(152, 115, 231, 0.42), transparent 28%),
+    rgba(16, 35, 63, 0.5);
+  backdrop-filter: blur(3px);
+}
+
+.nido-games__focus-feedback.is-success .nido-games__focus-feedback-card {
+  min-width: min(330px, 88vw);
+  max-width: 430px;
+  gap: 6px;
+  padding: 22px 30px 25px;
+  overflow: visible;
+  background:
+    radial-gradient(circle at 50% -15%, rgba(255, 255, 255, 0.5), transparent 45%),
+    linear-gradient(145deg, #3fc083, #167751);
+  box-shadow:
+    0 26px 70px rgba(16, 35, 63, 0.36),
+    inset 0 2px 0 rgba(255, 255, 255, 0.35);
+}
+
+.nido-games__focus-feedback.is-candy .nido-games__focus-feedback-card {
+  background:
+    radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.48), transparent 30%),
+    linear-gradient(145deg, #ff7f72, #d64b69 58%, #8f52d9);
+}
+
+.nido-games__focus-feedback.is-balloons .nido-games__focus-feedback-card {
+  background:
+    radial-gradient(circle at 70% 15%, rgba(255, 255, 255, 0.46), transparent 28%),
+    linear-gradient(145deg, #4b8ff7, #6751cf);
+}
+
+.nido-games__focus-feedback.is-stars .nido-games__focus-feedback-card {
+  background:
+    radial-gradient(circle at 50% 0%, rgba(255, 245, 180, 0.66), transparent 36%),
+    linear-gradient(145deg, #efae27, #e16b32);
+}
+
+.nido-games__focus-feedback.is-sparkles .nido-games__focus-feedback-card {
+  background:
+    radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.52), transparent 28%),
+    linear-gradient(145deg, #29bfc3, #417bdc);
+}
+
+.nido-games__focus-feedback.is-ribbons .nido-games__focus-feedback-card,
+.nido-games__focus-feedback.is-high-five .nido-games__focus-feedback-card {
+  background:
+    radial-gradient(circle at 82% 16%, rgba(255, 255, 255, 0.48), transparent 28%),
+    linear-gradient(145deg, #9b6be9, #6a43be);
+}
+
+.nido-games__celebration-orbit {
+  position: absolute;
+  z-index: -1;
+  inset: -48px;
+  pointer-events: none;
+}
+
+.nido-games__celebration-orbit i {
+  --orbit-x: 0px;
+  --orbit-y: 0px;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 18px;
+  height: 18px;
+  border: 4px solid #fff;
+  border-radius: 50%;
+  background: #ffc94d;
+  box-shadow: 0 5px 12px rgba(16, 35, 63, 0.2);
+  animation: nido-celebration-orbit 1.4s ease-in-out infinite alternate;
+}
+
+.nido-games__celebration-orbit i:nth-child(1) {
+  --orbit-x: -175px;
+  --orbit-y: -82px;
+  background: #ff6f61;
+}
+
+.nido-games__celebration-orbit i:nth-child(2) {
+  --orbit-x: -90px;
+  --orbit-y: -128px;
+  width: 13px;
+  height: 13px;
+  background: #ffc94d;
+  animation-delay: -0.3s;
+}
+
+.nido-games__celebration-orbit i:nth-child(3) {
+  --orbit-x: 72px;
+  --orbit-y: -132px;
+  background: #46b982;
+  animation-delay: -0.7s;
+}
+
+.nido-games__celebration-orbit i:nth-child(4) {
+  --orbit-x: 168px;
+  --orbit-y: -72px;
+  width: 14px;
+  height: 14px;
+  background: #4b8ff7;
+  animation-delay: -0.45s;
+}
+
+.nido-games__celebration-orbit i:nth-child(5) {
+  --orbit-x: 178px;
+  --orbit-y: 74px;
+  background: #9873e7;
+  animation-delay: -0.9s;
+}
+
+.nido-games__celebration-orbit i:nth-child(6) {
+  --orbit-x: 70px;
+  --orbit-y: 132px;
+  width: 12px;
+  height: 12px;
+  background: #ff6f61;
+  animation-delay: -0.15s;
+}
+
+.nido-games__celebration-orbit i:nth-child(7) {
+  --orbit-x: -82px;
+  --orbit-y: 132px;
+  background: #ffc94d;
+  animation-delay: -0.6s;
+}
+
+.nido-games__celebration-orbit i:nth-child(8) {
+  --orbit-x: -174px;
+  --orbit-y: 66px;
+  width: 14px;
+  height: 14px;
+  background: #29c7c9;
+  animation-delay: -1.05s;
+}
+
+@keyframes nido-celebration-orbit {
+  from {
+    opacity: 0.72;
+    transform: translate(
+        calc(-50% + var(--orbit-x)),
+        calc(-50% + var(--orbit-y))
+      )
+      scale(0.82);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate(
+        calc(-50% + var(--orbit-x)),
+        calc(-50% + var(--orbit-y) - 8px)
+      )
+      scale(1.18);
+  }
 }
 
 .nido-games__success-art {
@@ -1291,7 +1489,8 @@
   .nido-games__focus-milestones svg.is-reached,
   .nido-games__answers > button.is-correct,
   .nido-games__success-burst,
-  .nido-games__success-art > svg:last-child {
+  .nido-games__success-art > svg:last-child,
+  .nido-games__celebration-orbit i {
     animation: none;
   }
 
@@ -1807,6 +2006,30 @@
   background: #e9faf2;
 }
 
+.nido-games__drag-activity[data-kind="color-pattern"] .nido-games__drop-zone {
+  background:
+    radial-gradient(circle at 14% 22%, #ff8d87 0 7px, transparent 8px),
+    radial-gradient(circle at 88% 70%, #62bce9 0 9px, transparent 10px),
+    linear-gradient(135deg, #fff8dd, #f1eaff);
+}
+
+.nido-games__drag-activity[data-kind="animal-food"] .nido-games__drop-zone {
+  border-radius: 19px 19px 42px 42px;
+  background: linear-gradient(#fff 0 46%, #ffe2a8 47% 100%);
+}
+
+.nido-games__drag-activity[data-kind="size-pair"] .nido-games__drop-zone {
+  background:
+    repeating-linear-gradient(90deg, transparent 0 19px, #e4b83b 20px 22px),
+    #fff8d9;
+}
+
+.nido-games__drag-activity[data-kind="quantity-groups"] .nido-games__drop-zone {
+  background:
+    repeating-linear-gradient(45deg, transparent 0 13px, rgba(139, 88, 38, 0.1) 14px 17px),
+    #fff4df;
+}
+
 .nido-games__drag-ghost {
   position: fixed;
   z-index: 2147483646;
@@ -1963,6 +2186,37 @@
     0 0 0 4px color-mix(in srgb, var(--a) 14%, transparent);
 }
 
+.nido-games__match-activity:is([data-kind="mask-match"], [data-kind="twin-match"])
+  .nido-games__match-source {
+  background: radial-gradient(circle at 50% 38%, #fff, #eee8ff 72%);
+}
+
+.nido-games__match-activity[data-kind="animal-young"]
+  .nido-games__match-source {
+  background:
+    radial-gradient(circle at 18% 16%, #fff 0 8%, transparent 9%),
+    linear-gradient(#dff4ff 0 42%, #e5f5c7 43%);
+}
+
+.nido-games__match-activity[data-kind="english-colors"]
+  .nido-games__match-source {
+  background: conic-gradient(#ffe3df, #fff0b8, #dff7e8, #e2efff, #eee5ff, #ffe3df);
+}
+
+.nido-games__match-activity[data-kind="english-family"]
+  .nido-games__match-source {
+  background: linear-gradient(145deg, #fff7e7, #ffe8e0);
+}
+
+.nido-games__match-activity:is(
+    [data-kind="english-animals"],
+    [data-kind="english-numbers"],
+    [data-kind="english-objects"]
+  )
+  .nido-games__match-source {
+  background: linear-gradient(145deg, #eef9ff, #e8f0ff);
+}
+
 .nido-games__match-connector {
   color: var(--a-dark);
   font-size: 0.72rem;
@@ -2022,6 +2276,24 @@
   box-shadow: inset 0 0 0 4px #fff;
 }
 
+.nido-games__path-activity[data-kind="position-scene"] .nido-games__path-board {
+  background:
+    linear-gradient(90deg, rgba(112, 157, 205, 0.08) 50%, transparent 50%),
+    #f2f7ff;
+}
+
+.nido-games__path-activity[data-kind="habitat-match"] .nido-games__path-board {
+  background:
+    radial-gradient(circle at 18% 18%, rgba(255, 255, 255, 0.72) 0 9%, transparent 10%),
+    linear-gradient(#bde9ff 0 34%, #dff2b9 35% 100%);
+}
+
+.nido-games__path-activity[data-kind="english-actions"] .nido-games__path-board {
+  background:
+    radial-gradient(circle at 82% 16%, #fff8b8 0 6%, transparent 7%),
+    linear-gradient(145deg, #eaf6ff, #f7eaff);
+}
+
 .nido-games__path-cell {
   position: relative;
   min-width: 0;
@@ -2071,6 +2343,20 @@
     0 4px 10px rgba(16, 35, 63, 0.18);
   font-size: clamp(1rem, 4vw, 1.6rem);
   transition: transform 140ms ease;
+}
+
+.nido-games__path-activity[data-kind="habitat-match"] .nido-games__path-player {
+  background: #77d18f;
+  box-shadow:
+    0 3px 0 #2e8754,
+    0 4px 10px rgba(16, 35, 63, 0.18);
+}
+
+.nido-games__path-activity[data-kind="english-actions"] .nido-games__path-player {
+  background: #9e83ed;
+  box-shadow:
+    0 3px 0 #6145ac,
+    0 4px 10px rgba(16, 35, 63, 0.18);
 }
 
 .nido-games__path-controls {
@@ -2235,6 +2521,7 @@
     min-height: 48px;
     border-radius: 12px;
   }
+
 }
 
 @media (max-width: 380px) {
