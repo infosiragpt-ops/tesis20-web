@@ -7,7 +7,7 @@ import { createAudioDirector } from "../audio/audio-director.js";
 import { createDifficultyAdapter } from "../learning/difficulty.js";
 import {
   createMemoryBoard,
-  MEMORY_AGE_PROFILES,
+  memoryDifficultyForRound,
   MEMORY_ROUNDS,
   MEMORY_THEMES,
 } from "../content/memory-mission.js";
@@ -35,8 +35,6 @@ export default function MemoriaGame({
     () => MEMORY_THEMES.find((item) => item.id === themeId) ?? MEMORY_THEMES[0],
     [themeId],
   );
-  const profile = MEMORY_AGE_PROFILES[ageId] ?? MEMORY_AGE_PROFILES["2-3"];
-
   const [phase, setPhase] = useState("intro");
   const [roundIndex, setRoundIndex] = useState(Math.min(initialRound, MEMORY_ROUNDS - 1));
   const [board, setBoard] = useState([]);
@@ -81,12 +79,13 @@ export default function MemoriaGame({
       setLocked(true);
       setPreviewing(true);
       window.clearTimeout(previewTimerRef.current);
+      const { previewMs } = memoryDifficultyForRound(ageId, index);
       previewTimerRef.current = window.setTimeout(() => {
         setLocked(false);
         setPreviewing(false);
-      }, profile.previewMs);
+      }, previewMs);
     },
-    [ageId, profile.previewMs, theme.id],
+    [ageId, theme.id],
   );
 
   useEffect(() => {
@@ -151,10 +150,11 @@ export default function MemoriaGame({
         audioRef.current?.sfx("try");
         setLocked(true);
         window.clearTimeout(mismatchTimerRef.current);
+        const { mismatchMs } = memoryDifficultyForRound(ageId, roundIndex);
         mismatchTimerRef.current = window.setTimeout(() => {
           setFlipped([]);
           setLocked(false);
-        }, profile.mismatchMs);
+        }, mismatchMs);
       }
     }
   };

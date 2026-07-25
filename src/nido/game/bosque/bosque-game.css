@@ -174,7 +174,7 @@
 .bosque__touch-actions {
   display: flex;
   align-items: flex-end;
-  gap: 12px;
+  gap: 10px;
 }
 
 .bosque__touch-jump {
@@ -186,11 +186,40 @@
   font-size: 0.95rem;
 }
 
-.bosque__touch-drop {
+.bosque__touch-drop,
+.bosque__touch-grab {
   min-height: 64px;
-  padding: 0 20px;
+  min-width: 84px;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 6px 14px;
   border-radius: 20px;
-  font-size: 0.9rem;
+  font-size: 0.8rem;
+}
+
+.bosque__touch-drop span,
+.bosque__touch-grab span {
+  font-size: 1.15rem;
+  line-height: 1;
+}
+
+.bosque__touch-grab {
+  background: #46b982 !important;
+  border-color: rgba(16, 92, 57, 0.35) !important;
+  color: #ffffff;
+}
+
+.bosque__touch-drop:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.bosque__touch-drop:disabled:active {
+  transform: none;
+  background: rgba(255, 255, 255, 0.92);
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -200,6 +229,11 @@
 
   .bosque__touch-jump {
     opacity: 0.5;
+  }
+
+  .bosque__touch-drop,
+  .bosque__touch-grab {
+    opacity: 0.55;
   }
 }
 
@@ -341,5 +375,28 @@
   .bosque__subtitle {
     bottom: 118px;
     font-size: 0.78rem;
+  }
+
+  .bosque__touch-actions {
+    gap: 6px;
+  }
+
+  .bosque__touch-drop,
+  .bosque__touch-grab {
+    min-height: 54px;
+    min-width: 62px;
+    padding: 4px 8px;
+    font-size: 0.66rem;
+  }
+
+  .bosque__touch-jump {
+    width: 76px;
+    height: 76px;
+    font-size: 0.8rem;
+  }
+
+  .bosque__touch-move button {
+    width: 60px;
+    height: 60px;
   }
 }

@@ -66,6 +66,23 @@ export const FOREST_AGE_PROFILES = Object.freeze({
   },
 });
 
+/**
+ * Piso de dificultad determinado por el número de ronda: reparte las bandas
+ * de nivel de cada edad en partes iguales a lo largo de las 20 rondas, para
+ * que la ronda 12 de 20 sea objetivamente más difícil que la ronda 1 aunque
+ * el jugador no haya encadenado aciertos (el sistema adaptativo puede subir
+ * el nivel más rápido si acierta seguido, pero nunca queda por debajo de
+ * este piso).
+ *
+ * @param {number} roundIndex 0..FOREST_ROUNDS-1
+ * @param {number} maxLevel nivel máximo de la edad (profile.maxLevel)
+ */
+export function roundDifficultyFloor(roundIndex, maxLevel) {
+  if (maxLevel <= 0) return 0;
+  const band = Math.floor((roundIndex / FOREST_ROUNDS) * (maxLevel + 1));
+  return Math.min(maxLevel, Math.max(0, band));
+}
+
 function mulberry(seed) {
   let a = seed >>> 0;
   return () => {
@@ -121,6 +138,12 @@ export function createForestRound({ ageId, roundIndex, level = 0 }) {
     operation = "count";
   }
 
+  // Escalado suave dentro de cada nivel: además del salto por bandas, cada
+  // ronda añade un poco más de terreno que recorrer, para que el avance se
+  // sienta continuo y no solo en saltos bruscos cada 7-10 rondas.
+  const roundBonusObstacles = Math.floor(roundIndex / 7);
+  const roundBonusPlatforms = Math.floor(roundIndex / 10);
+
   return {
     target,
     parts,
@@ -128,8 +151,8 @@ export function createForestRound({ ageId, roundIndex, level = 0 }) {
     instructionText,
     spokenText,
     fruitCount: Math.min(10, target + 2 + Math.floor(random() * 2)),
-    platformCount: levelDef.platforms,
-    obstacleCount: levelDef.obstacles,
+    platformCount: levelDef.platforms + roundBonusPlatforms,
+    obstacleCount: levelDef.obstacles + roundBonusObstacles,
     helpAlways: profile.helpAlways,
   };
 }

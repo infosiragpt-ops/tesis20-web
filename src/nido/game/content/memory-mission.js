@@ -45,14 +45,60 @@ export const MEMORY_THEMES = Object.freeze([
   },
 ]);
 
-// Pares por edad: más pequeños, mazos más cortos y con más tiempo de vista.
+// Rango por edad: la ronda 1 arranca suave (menos parejas, más tiempo de
+// vista) y la ronda 20 llega al nivel ya afinado de siempre (mismos valores
+// que antes de introducir el escalado), para que la dificultad se sienta
+// progresiva sin superar nunca el techo ya validado por edad.
 export const MEMORY_AGE_PROFILES = Object.freeze({
-  "2-3": { pairCount: 3, previewMs: 2600, mismatchMs: 1100 },
-  "4-5": { pairCount: 6, previewMs: 1800, mismatchMs: 850 },
-  6: { pairCount: 8, previewMs: 1200, mismatchMs: 650 },
+  "2-3": {
+    minPairCount: 2,
+    maxPairCount: 3,
+    startPreviewMs: 3400,
+    endPreviewMs: 2600,
+    startMismatchMs: 1500,
+    endMismatchMs: 1100,
+  },
+  "4-5": {
+    minPairCount: 3,
+    maxPairCount: 6,
+    startPreviewMs: 2600,
+    endPreviewMs: 1800,
+    startMismatchMs: 1150,
+    endMismatchMs: 850,
+  },
+  6: {
+    minPairCount: 4,
+    maxPairCount: 8,
+    startPreviewMs: 2000,
+    endPreviewMs: 1200,
+    startMismatchMs: 900,
+    endMismatchMs: 650,
+  },
 });
 
 export const MEMORY_ROUNDS = 20;
+
+/**
+ * Dificultad efectiva de una ronda: interpola entre el inicio suave y el
+ * techo ya afinado de la edad según el avance dentro de las 20 rondas.
+ *
+ * @param {keyof typeof MEMORY_AGE_PROFILES} ageId
+ * @param {number} roundIndex 0..MEMORY_ROUNDS-1
+ */
+export function memoryDifficultyForRound(ageId, roundIndex) {
+  const profile = MEMORY_AGE_PROFILES[ageId] ?? MEMORY_AGE_PROFILES["2-3"];
+  const progress = Math.min(1, Math.max(0, roundIndex / (MEMORY_ROUNDS - 1)));
+  const pairCount = Math.round(
+    profile.minPairCount + progress * (profile.maxPairCount - profile.minPairCount),
+  );
+  const previewMs = Math.round(
+    profile.startPreviewMs - progress * (profile.startPreviewMs - profile.endPreviewMs),
+  );
+  const mismatchMs = Math.round(
+    profile.startMismatchMs - progress * (profile.startMismatchMs - profile.endMismatchMs),
+  );
+  return { pairCount, previewMs, mismatchMs };
+}
 
 function mulberry(seed) {
   let a = seed >>> 0;
@@ -91,9 +137,9 @@ function shuffle(items, random) {
  */
 export function createMemoryBoard({ themeId, ageId, roundIndex }) {
   const theme = MEMORY_THEMES.find((item) => item.id === themeId) ?? MEMORY_THEMES[0];
-  const profile = MEMORY_AGE_PROFILES[ageId] ?? MEMORY_AGE_PROFILES["2-3"];
+  const { pairCount: roundPairCount } = memoryDifficultyForRound(ageId, roundIndex);
   const random = mulberry(hashText(`memoria|${themeId}|${ageId}|${roundIndex}`));
-  const pairCount = Math.min(profile.pairCount, theme.stickers.length);
+  const pairCount = Math.min(roundPairCount, theme.stickers.length);
   const chosen = shuffle(theme.stickers, random).slice(0, pairCount);
   const cards = shuffle(
     chosen.flatMap((sticker, index) => [

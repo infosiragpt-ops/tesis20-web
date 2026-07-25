@@ -8,7 +8,6 @@ import { createAudioDirector } from "../audio/audio-director.js";
 import { createGameLoop } from "../core/game-loop.js";
 import { createDifficultyAdapter } from "../learning/difficulty.js";
 import {
-  CATCH_AGE_PROFILES,
   CATCH_ROUNDS,
   CATCH_THEMES,
   createCatchRound,
@@ -51,8 +50,6 @@ export default function CatchGame({
     () => CATCH_THEMES.find((item) => item.id === themeId) ?? CATCH_THEMES[0],
     [themeId],
   );
-  const profile = CATCH_AGE_PROFILES[ageId] ?? CATCH_AGE_PROFILES["2-3"];
-
   const [phase, setPhase] = useState("intro");
   const [paused, setPaused] = useState(false);
   const [roundIndex, setRoundIndex] = useState(Math.min(initialRound, CATCH_ROUNDS - 1));

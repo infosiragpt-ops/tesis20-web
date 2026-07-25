@@ -178,8 +178,10 @@ export function drawBasket(ctx, basket, delivered, target, glow, t) {
 }
 
 /**
- * Niko, explorador jugable. Poses: idle | walk | run | jump | fall | carry |
- * celebrate | tryAgain (AnimationRegistry sustituible).
+ * Niko, explorador jugable. Poses: idle | walk | run | jump | fall | grab |
+ * celebrate | tryAgain (AnimationRegistry sustituible). Proporciones chibi
+ * (cabeza grande, cuerpo pequeño) con sombreado por gradiente para un look
+ * de mascota más pulido.
  */
 export function drawNiko(ctx, body, pose, t, carrying) {
   const cx = body.x + body.w / 2;
@@ -187,142 +189,231 @@ export function drawNiko(ctx, body, pose, t, carrying) {
   const facing = body.facing;
   const runPhase = Math.sin(t * 14);
   const walking = pose === "walk" || pose === "run";
+  const grabbing = pose === "grab";
 
   ctx.save();
   ctx.translate(cx, bottom);
   ctx.scale(facing, 1);
 
   // Sombra
-  ctx.fillStyle = "rgba(16,35,63,0.15)";
+  ctx.fillStyle = "rgba(16,35,63,0.16)";
   ctx.beginPath();
-  ctx.ellipse(0, 2, 24, 6, 0, 0, Math.PI * 2);
+  ctx.ellipse(0, 2, 25, 6, 0, 0, Math.PI * 2);
   ctx.fill();
 
-  const squash = pose === "jump" ? -4 : pose === "fall" ? 3 : 0;
+  const squash = pose === "jump" ? -4 : pose === "fall" ? 3 : grabbing ? 3 : 0;
+  const lean = grabbing ? 6 : 0;
 
-  // Piernas
+  // Piernas con zapatillas redondeadas
+  const legSwing = walking ? runPhase * 10 : 0;
+  const jumpTuck = pose === "jump" || pose === "fall" ? -8 : 0;
+  const legs = [
+    { x: -8 + legSwing * 0.6, y: jumpTuck ? -12 : -2 },
+    { x: 8 - legSwing * 0.6, y: jumpTuck ? -14 : -2 },
+  ];
   ctx.strokeStyle = INK;
   ctx.lineWidth = 7;
   ctx.lineCap = "round";
-  const legSwing = walking ? runPhase * 10 : 0;
-  const jumpTuck = pose === "jump" || pose === "fall" ? -8 : 0;
-  ctx.beginPath();
-  ctx.moveTo(-8, -26);
-  ctx.lineTo(-8 + legSwing * 0.6, jumpTuck ? -12 : -2);
-  ctx.moveTo(8, -26);
-  ctx.lineTo(8 - legSwing * 0.6, jumpTuck ? -14 : -2);
-  ctx.stroke();
+  for (const leg of legs) {
+    ctx.beginPath();
+    ctx.moveTo(leg.x * 0.3, -26);
+    ctx.lineTo(leg.x, leg.y);
+    ctx.stroke();
+  }
+  ctx.fillStyle = "#3a4a63";
+  for (const leg of legs) {
+    ctx.beginPath();
+    ctx.ellipse(leg.x + facing * 3, leg.y + 1, 7, 4.5, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = INK;
+    ctx.lineWidth = 1.6;
+    ctx.stroke();
+  }
 
-  // Cuerpo (polo coral)
-  ctx.fillStyle = "#ff6f61";
+  // Cuerpo (polo con gradiente coral)
+  const bodyGradient = ctx.createLinearGradient(-17, -62 + squash, 17, -22 + squash);
+  bodyGradient.addColorStop(0, "#ff8a7e");
+  bodyGradient.addColorStop(1, "#dc5048");
+  ctx.fillStyle = bodyGradient;
   ctx.strokeStyle = INK;
   ctx.lineWidth = 3;
-  roundRect(ctx, -17, -62 + squash, 34, 40, 13);
+  roundRect(ctx, -18 + lean * 0.15, -63 + squash, 35, 42, 14);
   ctx.fill();
+  ctx.stroke();
+  // Franja/cuello simple para dar textura de prenda
+  ctx.strokeStyle = "rgba(255,255,255,0.35)";
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(-10 + lean * 0.15, -60 + squash);
+  ctx.lineTo(-10 + lean * 0.15, -26 + squash);
   ctx.stroke();
 
-  // Mochila
+  // Mochila con detalle de bolsillo y estrellita
   ctx.fillStyle = "#ffc94d";
-  roundRect(ctx, -30, -58 + squash, 12, 26, 6);
+  ctx.strokeStyle = INK;
+  ctx.lineWidth = 2.6;
+  roundRect(ctx, -31, -58 + squash, 13, 28, 6);
   ctx.fill();
   ctx.stroke();
+  ctx.fillStyle = "#e8a936";
+  roundRect(ctx, -29, -50 + squash, 9, 9, 3);
+  ctx.fill();
 
   // Brazos
+  ctx.strokeStyle = INK;
   ctx.lineWidth = 6;
+  ctx.lineCap = "round";
   if (pose === "celebrate") {
     const wave = Math.sin(t * 10) * 6;
     ctx.beginPath();
-    ctx.moveTo(-15, -52);
-    ctx.lineTo(-26, -74 - wave);
-    ctx.moveTo(15, -52);
-    ctx.lineTo(26, -74 + wave);
+    ctx.moveTo(-15, -52 + squash);
+    ctx.lineTo(-26, -74 - wave + squash);
+    ctx.moveTo(15, -52 + squash);
+    ctx.lineTo(26, -74 + wave + squash);
+    ctx.stroke();
+  } else if (grabbing) {
+    // Un brazo se extiende hacia adelante-abajo, como agarrando algo.
+    ctx.beginPath();
+    ctx.moveTo(14, -52 + squash);
+    ctx.lineTo(30, -34 + squash);
+    ctx.moveTo(-14, -52 + squash);
+    ctx.lineTo(-8, -40 + squash);
     ctx.stroke();
   } else if (carrying > 0) {
     ctx.beginPath();
-    ctx.moveTo(-15, -52);
-    ctx.lineTo(-6, -66);
-    ctx.moveTo(15, -52);
-    ctx.lineTo(6, -66);
+    ctx.moveTo(-15, -52 + squash);
+    ctx.lineTo(-6, -66 + squash);
+    ctx.moveTo(15, -52 + squash);
+    ctx.lineTo(6, -66 + squash);
     ctx.stroke();
   } else {
     const armSwing = walking ? runPhase * 8 : 0;
     ctx.beginPath();
-    ctx.moveTo(-15, -52);
-    ctx.lineTo(-20 - armSwing * 0.4, -34);
-    ctx.moveTo(15, -52);
-    ctx.lineTo(20 + armSwing * 0.4, -34);
+    ctx.moveTo(-15, -52 + squash);
+    ctx.lineTo(-20 - armSwing * 0.4, -34 + squash);
+    ctx.moveTo(15, -52 + squash);
+    ctx.lineTo(20 + armSwing * 0.4, -34 + squash);
     ctx.stroke();
   }
 
-  // Cabeza
+  // Cabeza grande (proporción chibi) con sombreado
   const headBob = walking ? Math.abs(runPhase) * 1.6 : Math.sin(t * 2) * 1.2;
-  ctx.fillStyle = "#f6c9a0";
+  const headY = -83 + squash - headBob;
+  const headR = 23;
+  const headX = lean;
+  const headGradient = ctx.createRadialGradient(
+    headX - 7,
+    headY - 7,
+    3,
+    headX,
+    headY,
+    headR,
+  );
+  headGradient.addColorStop(0, "#ffd9b3");
+  headGradient.addColorStop(1, "#f0b689");
+  ctx.fillStyle = headGradient;
+  ctx.strokeStyle = INK;
+  ctx.lineWidth = 3;
   ctx.beginPath();
-  ctx.arc(0, -78 + squash - headBob, 19, 0, Math.PI * 2);
+  ctx.arc(headX, headY, headR, 0, Math.PI * 2);
   ctx.fill();
   ctx.stroke();
-  // Pelo
-  ctx.fillStyle = "#6b4226";
+
+  // Orejas pequeñas
+  ctx.fillStyle = "#f0b689";
   ctx.beginPath();
-  ctx.arc(0, -84 + squash - headBob, 17, Math.PI, 0);
+  ctx.ellipse(headX - headR + 3, headY + 3, 3.4, 5, 0, 0, Math.PI * 2);
+  ctx.ellipse(headX + headR - 3, headY + 3, 3.4, 5, 0, 0, Math.PI * 2);
   ctx.fill();
+
+  // Pelo con volumen, mechón y brillo
+  ctx.fillStyle = "#5b3a22";
+  ctx.beginPath();
+  ctx.moveTo(headX - headR - 1, headY - 2);
+  ctx.quadraticCurveTo(headX - headR - 4, headY - 22, headX - 6, headY - 24);
+  ctx.quadraticCurveTo(headX + 2, headY - 30, headX + 10, headY - 24);
+  ctx.quadraticCurveTo(headX + headR + 5, headY - 20, headX + headR + 1, headY - 1);
+  ctx.quadraticCurveTo(headX + 6, headY - 15, headX, headY - 12);
+  ctx.quadraticCurveTo(headX - 6, headY - 16, headX - headR - 1, headY - 2);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = INK;
+  ctx.lineWidth = 2.4;
+  ctx.stroke();
+  // Mechoncito
+  ctx.strokeStyle = "#5b3a22";
+  ctx.lineWidth = 4;
+  ctx.lineCap = "round";
+  ctx.beginPath();
+  ctx.moveTo(headX + 3, headY - 26);
+  ctx.quadraticCurveTo(headX + 9, headY - 32, headX + 6, headY - 22);
+  ctx.stroke();
+  // Brillo del pelo
+  ctx.strokeStyle = "rgba(255,255,255,0.4)";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(headX - 6, headY - 14, 8, Math.PI * 1.1, Math.PI * 1.5);
+  ctx.stroke();
+
   // Cara
   const blink = Math.sin(t * 0.9) > 0.985;
+  const eyeY = headY - 2;
   ctx.fillStyle = INK;
   if (pose === "tryAgain") {
     ctx.beginPath();
-    ctx.arc(6, -80 + squash - headBob, 2.4, 0, Math.PI * 2);
+    ctx.arc(headX + 7, eyeY, 2.6, 0, Math.PI * 2);
     ctx.fill();
     ctx.strokeStyle = INK;
-    ctx.lineWidth = 2;
+    ctx.lineWidth = 2.2;
     ctx.beginPath();
-    ctx.arc(8, -70 + squash - headBob, 4, Math.PI * 0.15, Math.PI * 0.85, true);
+    ctx.arc(headX + 9, eyeY + 10, 4.4, Math.PI * 0.15, Math.PI * 0.85, true);
     ctx.stroke();
   } else {
     if (blink) {
       ctx.strokeStyle = INK;
-      ctx.lineWidth = 2;
+      ctx.lineWidth = 2.2;
       ctx.beginPath();
-      ctx.moveTo(3, -80 + squash - headBob);
-      ctx.lineTo(9, -80 + squash - headBob);
+      ctx.moveTo(headX + 3, eyeY);
+      ctx.lineTo(headX + 10, eyeY);
       ctx.stroke();
     } else {
       ctx.beginPath();
-      ctx.arc(6, -80 + squash - headBob, 2.6, 0, Math.PI * 2);
+      ctx.arc(headX + 7, eyeY, 3, 0, Math.PI * 2);
       ctx.fill();
       ctx.fillStyle = "#ffffff";
       ctx.beginPath();
-      ctx.arc(6.9, -80.9 + squash - headBob, 0.9, 0, Math.PI * 2);
+      ctx.arc(headX + 8.2, eyeY - 1.1, 1.1, 0, Math.PI * 2);
       ctx.fill();
     }
     ctx.strokeStyle = INK;
-    ctx.lineWidth = 2.2;
+    ctx.lineWidth = 2.4;
     ctx.beginPath();
-    const smile = pose === "celebrate" ? 6 : 4;
-    ctx.arc(7, -72 + squash - headBob, smile, Math.PI * 0.1, Math.PI * 0.9);
+    const smile = pose === "celebrate" || grabbing ? 6.5 : 4.5;
+    ctx.arc(headX + 8, eyeY + 11, smile, Math.PI * 0.1, Math.PI * 0.9);
     ctx.stroke();
-    ctx.fillStyle = "rgba(255,179,171,0.6)";
+    ctx.fillStyle = "rgba(255,148,138,0.55)";
     ctx.beginPath();
-    ctx.arc(13, -73 + squash - headBob, 3, 0, Math.PI * 2);
+    ctx.arc(headX + 15, eyeY + 8, 3.6, 0, Math.PI * 2);
     ctx.fill();
   }
 
-  // Fruta cargada sobre la cabeza
+  // Fruta cargada sobre la cabeza, con un pequeño brillo
   if (carrying > 0) {
-    ctx.fillStyle = "#ff6f61";
-    ctx.strokeStyle = INK;
-    ctx.lineWidth = 2.4;
-    for (let index = 0; index < Math.min(carrying, 5); index += 1) {
+    const count = Math.min(carrying, 5);
+    for (let index = 0; index < count; index += 1) {
+      const fx = (index - count / 2 + 0.5) * 16;
+      const fy = -120 + squash - index * 2;
+      ctx.fillStyle = "#ff6f61";
+      ctx.strokeStyle = INK;
+      ctx.lineWidth = 2.4;
       ctx.beginPath();
-      ctx.arc(
-        (index - Math.min(carrying, 5) / 2 + 0.5) * 16,
-        -108 + squash - index * 2,
-        10,
-        0,
-        Math.PI * 2,
-      );
+      ctx.arc(fx, fy, 10, 0, Math.PI * 2);
       ctx.fill();
       ctx.stroke();
+      ctx.fillStyle = "rgba(255,255,255,0.55)";
+      ctx.beginPath();
+      ctx.arc(fx - 3, fy - 3, 2.4, 0, Math.PI * 2);
+      ctx.fill();
     }
   }
 

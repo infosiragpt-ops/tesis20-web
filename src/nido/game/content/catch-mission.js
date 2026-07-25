@@ -50,13 +50,66 @@ export const CATCH_THEMES = Object.freeze([
   },
 ]);
 
+// Rango por edad: la ronda 1 cae despacio y con pocos señuelos; la ronda 20
+// llega al nivel ya afinado de siempre (mismos valores que antes del
+// escalado), igual que en Misión del Bosque y Memoria Mágica.
 export const CATCH_AGE_PROFILES = Object.freeze({
-  "2-3": { targets: [1, 2], fallSpeed: 70, spawnGapMs: 1900, decoyChance: 0.15 },
-  "4-5": { targets: [2, 3, 4], fallSpeed: 95, spawnGapMs: 1500, decoyChance: 0.32 },
-  6: { targets: [3, 4, 5, 6], fallSpeed: 125, spawnGapMs: 1150, decoyChance: 0.45 },
+  "2-3": {
+    targets: [1, 2],
+    startFallSpeed: 55,
+    endFallSpeed: 70,
+    startSpawnGapMs: 2400,
+    endSpawnGapMs: 1900,
+    startDecoyChance: 0.05,
+    endDecoyChance: 0.15,
+  },
+  "4-5": {
+    targets: [2, 3, 4],
+    startFallSpeed: 75,
+    endFallSpeed: 95,
+    startSpawnGapMs: 1900,
+    endSpawnGapMs: 1500,
+    startDecoyChance: 0.15,
+    endDecoyChance: 0.32,
+  },
+  6: {
+    targets: [3, 4, 5, 6],
+    startFallSpeed: 95,
+    endFallSpeed: 125,
+    startSpawnGapMs: 1500,
+    endSpawnGapMs: 1150,
+    startDecoyChance: 0.25,
+    endDecoyChance: 0.45,
+  },
 });
 
 export const CATCH_ROUNDS = 20;
+
+/**
+ * Dificultad efectiva de una ronda: interpola entre el arranque suave y el
+ * techo ya afinado de la edad según el avance dentro de las 20 rondas.
+ *
+ * @param {keyof typeof CATCH_AGE_PROFILES} ageId
+ * @param {number} roundIndex 0..CATCH_ROUNDS-1
+ */
+export function catchDifficultyForRound(ageId, roundIndex) {
+  const profile = CATCH_AGE_PROFILES[ageId] ?? CATCH_AGE_PROFILES["2-3"];
+  const progress = Math.min(1, Math.max(0, roundIndex / (CATCH_ROUNDS - 1)));
+  const fallSpeed = Math.round(
+    profile.startFallSpeed + progress * (profile.endFallSpeed - profile.startFallSpeed),
+  );
+  const spawnGapMs = Math.round(
+    profile.startSpawnGapMs -
+      progress * (profile.startSpawnGapMs - profile.endSpawnGapMs),
+  );
+  const decoyChance = Number(
+    (
+      profile.startDecoyChance +
+      progress * (profile.endDecoyChance - profile.startDecoyChance)
+    ).toFixed(3),
+  );
+  return { fallSpeed, spawnGapMs, decoyChance };
+}
 
 const NUMBER_WORDS = ["cero", "una", "dos", "tres", "cuatro", "cinco", "seis"];
 
@@ -88,6 +141,7 @@ function hashText(value) {
 export function createCatchRound({ themeId, ageId, roundIndex }) {
   const theme = CATCH_THEMES.find((item) => item.id === themeId) ?? CATCH_THEMES[0];
   const profile = CATCH_AGE_PROFILES[ageId] ?? CATCH_AGE_PROFILES["2-3"];
+  const { fallSpeed, spawnGapMs, decoyChance } = catchDifficultyForRound(ageId, roundIndex);
   const random = mulberry(hashText(`atrapa|${themeId}|${ageId}|${roundIndex}`));
   const target = theme.target[Math.floor(random() * theme.target.length)];
   const count = profile.targets[Math.floor(random() * profile.targets.length)];
@@ -95,9 +149,9 @@ export function createCatchRound({ themeId, ageId, roundIndex }) {
   return {
     target,
     count,
-    fallSpeed: profile.fallSpeed,
-    spawnGapMs: profile.spawnGapMs,
-    decoyChance: profile.decoyChance,
+    fallSpeed,
+    spawnGapMs,
+    decoyChance,
     instructionText: `Atrapa ${count} ${target}`,
     spokenText: `¡Prepárate! Atrapa ${NUMBER_WORDS[count]} ${count === 1 ? "vez" : "veces"} lo que caiga igual a este dibujo. ¡Vamos!`,
   };

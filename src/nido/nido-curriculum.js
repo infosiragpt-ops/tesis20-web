@@ -695,6 +695,24 @@ function makeOptions(values, correctIndex, seed) {
   };
 }
 
+/**
+ * Cantidad de opciones visibles para un reto, según la edad y el número de
+ * juego dentro de la categoría (0..GAME_COUNT-1). El techo por edad es el
+ * mismo de siempre (age.difficulty + 1, tope 4, alineado con
+ * check-nido-curriculum.mjs), pero los primeros juegos arrancan en el
+ * mínimo (2 opciones) y solo alcanzan el techo hacia el final de las 20
+ * rondas, para que la dificultad suba de forma perceptible sin superar
+ * nunca el límite ya validado por edad.
+ */
+function optionCountForRound(age, gameIndex) {
+  const maxCount = Math.min(age.difficulty + 1, 4);
+  const minCount = 2;
+  if (maxCount <= minCount) return maxCount;
+  const progress = gameIndex / (GAME_COUNT - 1);
+  const ramped = minCount + Math.round(progress * (maxCount - minCount));
+  return Math.min(maxCount, Math.max(minCount, ramped));
+}
+
 function makeChallenge(context, definition) {
   const { area, categoryItem, age, gameIndex, seed, round = 0 } = context;
   const baseSpokenInstruction =
@@ -720,7 +738,7 @@ function makeChallenge(context, definition) {
   };
   const coachingLines = ageCoaching[age.id];
   const spokenInstruction = `${baseSpokenInstruction} ${coachingLines[gameIndex % coachingLines.length]}`;
-  const maximumOptionCount = Math.min(age.difficulty + 1, 4);
+  const maximumOptionCount = optionCountForRound(age, gameIndex);
   const correctOption = definition.options.find(
     (option) => option.id === definition.answerId,
   );

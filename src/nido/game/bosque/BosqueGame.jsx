@@ -12,6 +12,7 @@ import {
   FOREST_AGE_PROFILES,
   FOREST_ROUNDS,
   layoutForestRound,
+  roundDifficultyFloor,
 } from "../content/forest-mission.js";
 import { createDifficultyAdapter } from "../learning/difficulty.js";
 import {
@@ -43,6 +44,7 @@ import "./bosque-game.css";
 
 const WORLD = Object.freeze({ width: 1900, groundY: 470 });
 const BASKET = Object.freeze({ x: 1700, y: 400, w: 120, h: 66 });
+const GRAB_RADIUS = 56;
 
 /**
  * @param {{
@@ -86,6 +88,8 @@ export default function BosqueGame({
     right: false,
     jumpPressed: false,
     jumpHeld: false,
+    grabPressed: false,
+    grabHeld: false,
   });
   const phaseRef = useRef("intro");
   phaseRef.current = phase;
@@ -95,10 +99,12 @@ export default function BosqueGame({
   // (briefingKey) siempre coincida con el texto que generó `round`.
   const roundLevelRef = useRef(0);
   const round = useMemo(() => {
-    const level = adapterRef.current?.level() ?? 0;
+    const adaptiveLevel = adapterRef.current?.level() ?? 0;
+    const floor = roundDifficultyFloor(roundIndex, profile.maxLevel);
+    const level = Math.max(adaptiveLevel, floor);
     roundLevelRef.current = level;
     return createForestRound({ ageId, roundIndex, level });
-  }, [ageId, roundIndex]);
+  }, [ageId, roundIndex, profile.maxLevel]);
 
   const speak = useCallback((text, opts) => {
     setSubtitle(text);
@@ -328,24 +334,37 @@ export default function BosqueGame({
         state.pose = "idle";
       }
 
-      // Recoger frutas por contacto
+      // Recoger es una acción deliberada: el niño debe acercarse y presionar
+      // "Recoger" (no basta con caminar encima). Se agarra la fruta más
+      // cercana dentro del radio de alcance.
       const px = state.body.x + state.body.w / 2;
       const py = state.body.y + state.body.h / 2;
-      for (const fruit of state.fruits) {
-        if (fruit.collected) continue;
-        const dx = fruit.x - px;
-        const dy = fruit.y - py;
-        if (dx * dx + dy * dy < 42 * 42) {
-          fruit.collected = true;
+      if (input.grabPressed) {
+        input.grabPressed = false;
+        let nearestFruit = null;
+        let nearestDistanceSq = GRAB_RADIUS * GRAB_RADIUS;
+        for (const fruit of state.fruits) {
+          if (fruit.collected) continue;
+          const dx = fruit.x - px;
+          const dy = fruit.y - py;
+          const distanceSq = dx * dx + dy * dy;
+          if (distanceSq < nearestDistanceSq) {
+            nearestFruit = fruit;
+            nearestDistanceSq = distanceSq;
+          }
+        }
+        if (nearestFruit) {
+          nearestFruit.collected = true;
           state.carried += 1;
+          state.pose = "grab";
           audioRef.current?.sfx("collect");
           busRef.current?.emit(GAME_TO_PLATFORM.OBJECT_COLLECTED, {
             carried: state.carried,
           });
           for (let index = 0; index < 7; index += 1) {
             state.particles.push({
-              x: fruit.x,
-              y: fruit.y,
+              x: nearestFruit.x,
+              y: nearestFruit.y,
               vx: (Math.random() - 0.5) * 200,
               vy: -Math.random() * 240,
               size: 2.5 + Math.random() * 3,
@@ -355,6 +374,8 @@ export default function BosqueGame({
           }
           setHud({ carried: state.carried, delivered: state.delivered });
         }
+        // Si no hay fruta al alcance, no pasa nada: intentar "Recoger" al
+        // caminar no es un error, así que no suena ningún aviso.
       }
 
       // Entregar en la cesta
@@ -521,6 +542,9 @@ export default function BosqueGame({
         input.jumpHeld = true;
         event.preventDefault();
       } else if (event.key === "e" || event.key === "E") {
+        if (!input.grabHeld) input.grabPressed = true;
+        input.grabHeld = true;
+      } else if (event.key === "q" || event.key === "Q") {
         dropFruit();
       } else if (event.key === "Escape") {
         event.preventDefault();
@@ -539,6 +563,7 @@ export default function BosqueGame({
         input.right = false;
       else if (event.key === " " || event.key === "ArrowUp")
         input.jumpHeld = false;
+      else if (event.key === "e" || event.key === "E") input.grabHeld = false;
     };
     window.addEventListener("keydown", down);
     window.addEventListener("keyup", up);
@@ -596,21 +621,28 @@ export default function BosqueGame({
     setPhase("briefing");
   };
 
+  // "jump" y "grab" son acciones de un solo disparo (press): mantener el
+  // dedo apoyado no las repite. "left"/"right" son estados sostenidos.
+  const oneShotKeys = { jump: "jumpHeld", grab: "grabHeld" };
+
   const touchHold = (key) => ({
     onPointerDown: (event) => {
       event.preventDefault();
       event.currentTarget.setPointerCapture?.(event.pointerId);
-      if (key === "jump") {
-        if (!inputRef.current.jumpHeld) inputRef.current.jumpPressed = true;
-        inputRef.current.jumpHeld = true;
+      const heldField = oneShotKeys[key];
+      if (heldField) {
+        if (!inputRef.current[heldField]) inputRef.current[`${key}Pressed`] = true;
+        inputRef.current[heldField] = true;
       } else inputRef.current[key] = true;
     },
     onPointerUp: () => {
-      if (key === "jump") inputRef.current.jumpHeld = false;
+      const heldField = oneShotKeys[key];
+      if (heldField) inputRef.current[heldField] = false;
       else inputRef.current[key] = false;
     },
     onPointerCancel: () => {
-      if (key === "jump") inputRef.current.jumpHeld = false;
+      const heldField = oneShotKeys[key];
+      if (heldField) inputRef.current[heldField] = false;
       else inputRef.current[key] = false;
     },
   });
@@ -714,16 +746,16 @@ export default function BosqueGame({
                 </button>
               </div>
               <div className="bosque__touch-actions">
-                {hud.carried > 0 ? (
-                  <button
-                    className="bosque__touch-drop"
-                    type="button"
-                    aria-label="Soltar una fruta"
-                    onClick={dropFruit}
-                  >
-                    Soltar
-                  </button>
-                ) : null}
+                <button
+                  className="bosque__touch-drop"
+                  type="button"
+                  aria-label="Soltar una fruta"
+                  disabled={hud.carried === 0}
+                  onClick={dropFruit}
+                >
+                  <span aria-hidden="true">↓</span>
+                  Soltar
+                </button>
                 <button
                   className="bosque__touch-jump"
                   type="button"
@@ -731,6 +763,15 @@ export default function BosqueGame({
                   {...touchHold("jump")}
                 >
                   Saltar
+                </button>
+                <button
+                  className="bosque__touch-grab"
+                  type="button"
+                  aria-label="Recoger fruta"
+                  {...touchHold("grab")}
+                >
+                  <span aria-hidden="true">✋</span>
+                  Recoger
                 </button>
               </div>
             </div>
@@ -783,7 +824,7 @@ export default function BosqueGame({
               </label>
             </div>
             <small>
-              Teclado: flechas o A/D · espacio salta · E suelta · Esc pausa
+              Teclado: flechas o A/D · espacio salta · E recoge · Q suelta · Esc pausa
             </small>
             <button
               className="bosque__secondary"
