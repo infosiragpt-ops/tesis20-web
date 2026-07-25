@@ -1127,7 +1127,10 @@
   }
 }
 
-.nido-games__confetti {
+/* Explosión de burbujas al acertar: salen del centro en todas las
+   direcciones, crecen y «revientan» desvaneciéndose. El brillo interior las
+   hace leerse como pompas de jabón y no como puntos planos. */
+.nido-games__bubbles {
   position: absolute;
   z-index: 1;
   inset: 0;
@@ -1135,20 +1138,23 @@
   pointer-events: none;
 }
 
-.nido-games__confetti i {
+.nido-games__bubbles i {
   position: absolute;
-  top: -24px;
-  aspect-ratio: 1 / 1.4;
-  border-radius: 3px;
+  top: 52%;
+  left: 50%;
+  border-radius: 50%;
   opacity: 0;
-  animation-name: nido-confetti-fall;
-  animation-timing-function: cubic-bezier(0.3, 0.4, 0.6, 1);
+  box-shadow:
+    inset -3px -4px 0 rgba(16, 35, 63, 0.14),
+    inset 3px 4px 0 rgba(255, 255, 255, 0.6);
+  animation-name: nido-bubble-burst;
+  animation-timing-function: cubic-bezier(0.16, 0.8, 0.3, 1);
   animation-fill-mode: both;
 }
 
-@keyframes nido-confetti-fall {
+@keyframes nido-bubble-burst {
   0% {
-    transform: translateY(0) rotate(var(--confetti-tilt, 0deg));
+    transform: translate(-50%, -50%) scale(0.2);
     opacity: 0;
   }
 
@@ -1156,9 +1162,24 @@
     opacity: 1;
   }
 
+  70% {
+    transform:
+      translate(
+        calc(-50% + var(--bubble-dx, 0px) * 0.8),
+        calc(-50% + var(--bubble-dy, 0px) * 0.8)
+      )
+      scale(1);
+    opacity: 1;
+  }
+
   100% {
-    transform: translateY(620px) rotate(calc(var(--confetti-tilt, 0deg) + 260deg));
-    opacity: 0.85;
+    transform:
+      translate(
+        calc(-50% + var(--bubble-dx, 0px)),
+        calc(-50% + var(--bubble-dy, 0px))
+      )
+      scale(1.4);
+    opacity: 0;
   }
 }
 
@@ -1266,7 +1287,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .nido-games__confetti i,
+  .nido-games__bubbles i,
   .nido-games__focus-milestones svg.is-reached,
   .nido-games__answers > button.is-correct,
   .nido-games__success-burst,
@@ -1274,7 +1295,7 @@
     animation: none;
   }
 
-  .nido-games__confetti i {
+  .nido-games__bubbles i {
     opacity: 0;
   }
 }

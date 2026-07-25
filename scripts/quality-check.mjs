@@ -566,9 +566,13 @@ check(
 // (matriz de mecánicas × packs temáticos). Son ~41 KiB minificados para 500
 // juegos nuevos —unos 80 bytes por juego— y viven enteros en el chunk diferido
 // de /nido, que sigue por debajo de su tope de 250 KiB por chunk.
+// 2026-07 (ter): 700 → 712 KiB por el pase de acabado de los stickers (brillo,
+// sombra y detalles con encanto en ~55 ilustraciones SVG) y la celebración
+// hablada con frases variadas. Todo en el chunk diferido de /nido (232 KiB de
+// su tope de 250); el JavaScript inicial sigue clavado en 450 KiB.
 check(
-  javascriptBytes <= 700 * 1024,
-  `El JavaScript total con rutas diferidas no debe superar 700 KiB (${Math.ceil(javascriptBytes / 1024)} KiB).`,
+  javascriptBytes <= 712 * 1024,
+  `El JavaScript total con rutas diferidas no debe superar 712 KiB (${Math.ceil(javascriptBytes / 1024)} KiB).`,
 );
 check(
   initialStylesheetBytes > 0 && initialStylesheetBytes <= 85 * 1024,

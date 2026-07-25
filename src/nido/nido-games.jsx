@@ -119,7 +119,14 @@ function createRouteStats(correct = 0) {
   };
 }
 
-const AUTO_ADVANCE_MS = 1500;
+// El avance tras acertar ya no es un cronómetro fijo: espera a que terminen la
+// fanfarria y la frase de celebración (antes el «¡Yupi!» se cortaba a la
+// mitad). Estos topes cubren los casos sin audio y una síntesis de voz que
+// nunca avisa que terminó.
+const ADVANCE_AFTER_VOICE_MS = 450;
+const ADVANCE_WITHOUT_VOICE_MS = 1700;
+const CELEBRATION_SAFETY_MS = 7000;
+const FEEDBACK_SOUND_CAP_MS = 2600;
 const ROUNDS_KEY = "tesis20.nido.route-rounds";
 const ALBUM_KEY = "tesis20.nido.sticker-album";
 const BOSQUE_KEY = "tesis20.nido.bosque-rondas";
@@ -260,17 +267,46 @@ function getRoundValue(rounds, ageId, areaId, categoryId) {
 }
 const PROGRESS_MILESTONES = Object.freeze([5, 10, 15, 20]);
 
-// Piezas de confeti deterministas (sin Math.random: mantiene el render estable).
-const CONFETTI_PIECES = Object.freeze(
-  Array.from({ length: 16 }, (_, index) => ({
-    left: `${(index * 61 + 7) % 100}%`,
-    delay: `${(index % 8) * 90}ms`,
-    duration: `${1150 + (index % 5) * 170}ms`,
-    color: ["#ff6f61", "#ffc94d", "#46b982", "#4b8ff7", "#9873e7"][index % 5],
-    width: `${7 + (index % 3) * 3}px`,
-    tilt: `${(index * 47) % 360}deg`,
-  })),
+// Burbujas del estallido de acierto, deterministas (sin Math.random: mantiene
+// el render estable). El ángulo áureo reparte las burbujas en todas las
+// direcciones sin que dos salgan juntas.
+const BUBBLE_PIECES = Object.freeze(
+  Array.from({ length: 22 }, (_, index) => {
+    const radians = (((index * 137.5) % 360) * Math.PI) / 180;
+    const distance = 120 + (index % 5) * 44;
+    return {
+      dx: `${Math.round(Math.cos(radians) * distance)}px`,
+      dy: `${Math.round(Math.sin(radians) * distance * 0.82)}px`,
+      size: `${13 + (index % 4) * 7}px`,
+      delay: `${(index % 6) * 70}ms`,
+      duration: `${950 + (index % 5) * 170}ms`,
+      color: ["#ff6f61", "#ffc94d", "#46b982", "#4b8ff7", "#9873e7", "#ff9fb2"][
+        index % 6
+      ],
+    };
+  }),
 );
+
+// Frases de celebración: cortas, entusiastas y distintas en cada acierto para
+// que la voz nunca suene igual dos veces seguidas. Las de racha se reservan
+// para tres o más aciertos al hilo. Cada frase tiene id estable para grabarla
+// en el próximo lote de estudio; mientras tanto la dice la voz del
+// dispositivo con tono de fiesta.
+const CELEBRATION_LINES = Object.freeze([
+  { id: "celebracion-1", text: "¡Lo lograsteee! ¡Muy bien!" },
+  { id: "celebracion-2", text: "¡Yupiii! ¡Eres increíble!" },
+  { id: "celebracion-3", text: "¡Bravo, bravísimo!" },
+  { id: "celebracion-4", text: "¡Sí, sí, sí! ¡Esa era!" },
+  { id: "celebracion-5", text: "¡Qué bien te salió! ¡Sigue así!" },
+  { id: "celebracion-6", text: "¡Wooow! ¡Lo encontraste!" },
+  { id: "celebracion-7", text: "¡Genial! ¡Eres una estrella!" },
+  { id: "celebracion-8", text: "¡Aplausos! ¡Lo hiciste genial!" },
+]);
+const CELEBRATION_STREAK_LINES = Object.freeze([
+  { id: "racha-1", text: "¡Increíble! ¡Llevas una racha ganadora!" },
+  { id: "racha-2", text: "¡Imparable! ¡Otra estrella para tu colección!" },
+  { id: "racha-3", text: "¡Wooow, qué racha! ¡Sigue, sigue, sigue!" },
+]);
 
 function createInitialProgress() {
   return Object.fromEntries(
@@ -1467,6 +1503,7 @@ export function NidoGamesExperience({
   const feedbackNodesRef = useRef([]);
   const playbackRunRef = useRef(0);
   const feedbackSoundRunRef = useRef(0);
+  const celebrationRunRef = useRef(0);
   const feedbackTimerRef = useRef(null);
   const feedbackRunRef = useRef(0);
   const focusDialogRef = useRef(null);
@@ -1593,6 +1630,7 @@ export function NidoGamesExperience({
         gain.disconnect();
       });
       feedbackNodesRef.current = [];
+      celebrationRunRef.current += 1;
       window.speechSynthesis?.cancel();
       window.clearTimeout(feedbackTimerRef.current);
       if (audioContextRef.current?.state !== "closed") {
@@ -1619,16 +1657,17 @@ export function NidoGamesExperience({
     setFeedbackEffect(null);
   };
 
-  const showFeedbackEffect = (type) => {
+  const showFeedbackEffect = (type, phrase = "") => {
     window.clearTimeout(feedbackTimerRef.current);
     feedbackRunRef.current += 1;
-    setFeedbackEffect({ type, runId: feedbackRunRef.current });
+    setFeedbackEffect({ type, phrase, runId: feedbackRunRef.current });
     feedbackTimerRef.current = window.setTimeout(
       () => {
         setFeedbackEffect(null);
         feedbackTimerRef.current = null;
       },
-      type === "success" ? 1800 : 1050,
+      // El acierto dura lo que dura la fiesta: fanfarria + frase hablada.
+      type === "success" ? 3200 : 1050,
     );
   };
 
@@ -1649,6 +1688,7 @@ export function NidoGamesExperience({
       gain.disconnect();
     });
     feedbackNodesRef.current = [];
+    if (feedbackAudioRef.current) feedbackAudioRef.current.onended = null;
   };
 
   const playFeedbackTone = (type, runId) => {
@@ -1718,12 +1758,26 @@ export function NidoGamesExperience({
     }
   };
 
-  const playFeedbackSound = (type) => {
+  // `onEnded` avisa cuando la fanfarria terminó de sonar de verdad, pase lo
+  // que pase: fin del mp3, tono sintetizado o silencio total. La celebración
+  // hablada espera esa señal para no pisar al «¡Yupi!» grabado.
+  const playFeedbackSound = (type, onEnded) => {
     stopFeedbackSound();
     const runId = feedbackSoundRunRef.current;
+    let reported = false;
+    const reportEnd = () => {
+      if (reported || feedbackSoundRunRef.current !== runId) return;
+      reported = true;
+      onEnded?.();
+    };
+    // Tope duro: si el mp3 nunca dispara `ended` (carga colgada, pestaña en
+    // segundo plano), la cadena de celebración continúa igual.
+    window.setTimeout(reportEnd, FEEDBACK_SOUND_CAP_MS);
+
     const feedbackAudio = feedbackAudioRef.current;
     if (!feedbackAudio) {
       playFeedbackTone(type, runId);
+      window.setTimeout(reportEnd, 750);
       return;
     }
 
@@ -1732,12 +1786,14 @@ export function NidoGamesExperience({
       if (fallbackStarted || feedbackSoundRunRef.current !== runId) return;
       fallbackStarted = true;
       playFeedbackTone(type, runId);
+      window.setTimeout(reportEnd, 750);
     };
 
     feedbackAudio.src =
       feedbackTracks[type] ?? DEFAULT_FEEDBACK_TRACKS[type];
     feedbackAudio.currentTime = 0;
     feedbackAudio.volume = type === "success" ? 0.78 : 0.62;
+    feedbackAudio.onended = reportEnd;
     feedbackAudio.onerror = fallbackOnce;
     void feedbackAudio.play().catch(fallbackOnce);
   };
@@ -1782,9 +1838,11 @@ export function NidoGamesExperience({
     utterance.voice = preferredVoice ?? spanishVoices[0] ?? null;
     utterance.lang = preferredVoice?.lang ?? "es-PE";
     utterance.rate =
-      { "2-3": 0.84, "4-5": 0.9, 6: 0.96 }[targetChallenge.ageId] ??
-      0.9;
-    utterance.pitch = 1.05;
+      { "2-3": 0.87, "4-5": 0.93, 6: 0.99 }[targetChallenge.ageId] ??
+      0.93;
+    // Tono cálido con variación leve por reto: al encadenar veinte consignas,
+    // una tesitura idéntica suena robótica y los niños desconectan.
+    utterance.pitch = 1.12 + ((targetChallenge.gameIndex ?? 0) % 3) * 0.03;
     utterance.onend = () => {
       if (playbackRunRef.current === runId) setSpeaking(false);
     };
@@ -1798,6 +1856,89 @@ export function NidoGamesExperience({
     window.speechSynthesis.speak(utterance);
     setSpeaking(true);
     onStatus("Reproduciendo la indicación con la voz del dispositivo.");
+  };
+
+  // La celebración tiene voz propia: más aguda, más rápida y distinta en cada
+  // acierto, para que suene a fiesta y no a timbre. `onDone` dispara el avance
+  // al siguiente reto, así la frase nunca se corta a la mitad; el tope de
+  // seguridad garantiza que el juego avanza aunque la síntesis falle sin
+  // avisar.
+  const speakCelebration = (line, variation, onDone) => {
+    celebrationRunRef.current += 1;
+    const runId = celebrationRunRef.current;
+    let finished = false;
+    let safetyTimer = null;
+    const finish = () => {
+      if (finished || celebrationRunRef.current !== runId) return;
+      finished = true;
+      window.clearTimeout(safetyTimer);
+      onDone();
+    };
+    safetyTimer = window.setTimeout(finish, CELEBRATION_SAFETY_MS);
+
+    const speakWithDeviceVoice = () => {
+      if (
+        !("speechSynthesis" in window) ||
+        typeof window.SpeechSynthesisUtterance !== "function"
+      ) {
+        window.setTimeout(finish, ADVANCE_WITHOUT_VOICE_MS);
+        return;
+      }
+      const utterance = new window.SpeechSynthesisUtterance(line.text);
+      // Misma narradora preferida que en las consignas: cambiar de voz entre
+      // la instrucción y la celebración rompería al personaje.
+      const preferredVoiceNames = [
+        "paulina",
+        "monica",
+        "luciana",
+        "elvira",
+        "sabina",
+        "google español",
+      ];
+      const spanishVoices = window.speechSynthesis
+        .getVoices()
+        .filter((voice) => voice.lang.toLowerCase().startsWith("es"));
+      const preferredVoice =
+        spanishVoices.find((voice) =>
+          preferredVoiceNames.some((name) =>
+            voice.name
+              .normalize("NFD")
+              .replace(/[̀-ͯ]/g, "")
+              .toLowerCase()
+              .includes(name),
+          ),
+        ) ?? spanishVoices[0] ?? null;
+      utterance.voice = preferredVoice;
+      utterance.lang = preferredVoice?.lang ?? "es-PE";
+      // Entusiasmo real: registro agudo y ritmo vivo, con variación por
+      // acierto para que dos celebraciones seguidas no suenen iguales.
+      utterance.rate = 1.02 + (variation % 3) * 0.04;
+      utterance.pitch = 1.26 + (variation % 4) * 0.05;
+      utterance.onend = finish;
+      utterance.onerror = finish;
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.speak(utterance);
+    };
+
+    // Si el próximo lote de estudio ya grabó esta frase, suena la narradora
+    // profesional; mientras tanto la dice el dispositivo.
+    const recordedSrc = audioTracks[line.id];
+    if (recordedSrc && audioRef.current) {
+      const audio = audioRef.current;
+      let fallbackStarted = false;
+      const fallbackOnce = () => {
+        if (fallbackStarted || celebrationRunRef.current !== runId) return;
+        fallbackStarted = true;
+        speakWithDeviceVoice();
+      };
+      audio.src = recordedSrc;
+      audio.currentTime = 0;
+      audio.onended = finish;
+      audio.onerror = fallbackOnce;
+      void audio.play().catch(fallbackOnce);
+      return;
+    }
+    speakWithDeviceVoice();
   };
 
   const playInstruction = async (targetChallenge = challenge) => {
@@ -2359,6 +2500,10 @@ export function NidoGamesExperience({
     }
     clearFeedbackEffect();
     stopFeedbackSound();
+    // Volver a escuchar la consigna pausa la fiesta: se cancela la frase de
+    // celebración y su avance automático para no pisar a la narradora.
+    celebrationRunRef.current += 1;
+    clearAutoAdvance();
     void playInstruction();
   };
 
@@ -2389,16 +2534,29 @@ export function NidoGamesExperience({
           },
         },
       }));
-      showFeedbackEffect("success");
-      playFeedbackSound("success");
-      navigator.vibrate?.(60);
-      onStatus("¡Yupi! Respuesta correcta. Sonó la estrellita.");
+      // Fiesta en cadena: fanfarria con «¡Yupi!» completa, después una frase
+      // de ánimo distinta cada vez (las de racha a partir de 3 seguidas), y
+      // solo cuando la voz termina se pasa al siguiente reto. Nada se corta.
+      const streakNow =
+        incorrectAnswers.length === 0 ? routeStats.streak + 1 : 0;
+      const pool =
+        streakNow >= 3 ? CELEBRATION_STREAK_LINES : CELEBRATION_LINES;
+      const lineIndex = (currentGameIndex + streakNow) % pool.length;
+      const line = pool[lineIndex];
+      showFeedbackEffect("success", line.text);
+      playFeedbackSound("success", () => {
+        speakCelebration(line, currentGameIndex + streakNow, () => {
+          clearAutoAdvance();
+          autoAdvanceTimerRef.current = window.setTimeout(() => {
+            autoAdvanceTimerRef.current = null;
+            handleNext();
+          }, ADVANCE_AFTER_VOICE_MS);
+        });
+      });
+      navigator.vibrate?.([50, 60, 90]);
+      onStatus(`${line.text} Respuesta correcta.`);
       window.requestAnimationFrame(() => focusNextRef.current?.focus());
       clearAutoAdvance();
-      autoAdvanceTimerRef.current = window.setTimeout(() => {
-        autoAdvanceTimerRef.current = null;
-        handleNext();
-      }, AUTO_ADVANCE_MS);
     } else {
       setIncorrectAnswers((current) => [...current, answerId]);
       setRouteStats((current) => ({
@@ -2420,6 +2578,10 @@ export function NidoGamesExperience({
   const handleNext = () => {
     clearAutoAdvance();
     stopFeedbackSound();
+    // Un toque manual en «Siguiente reto» interrumpe la frase de celebración
+    // pendiente; sus temporizadores quedan invalidados por el runId.
+    celebrationRunRef.current += 1;
+    window.speechSynthesis?.cancel();
     const nextCompleted = Math.max(completedGames, currentGameIndex + 1);
     setProgress((current) => ({
       ...current,
@@ -3056,16 +3218,17 @@ export function NidoGamesExperience({
                         aria-hidden="true"
                       >
                         {feedbackEffect.type === "success" ? (
-                          <div className="nido-games__confetti">
-                            {CONFETTI_PIECES.map((piece, index) => (
+                          <div className="nido-games__bubbles">
+                            {BUBBLE_PIECES.map((piece, index) => (
                               <i
                                 style={{
-                                  left: piece.left,
-                                  width: piece.width,
+                                  width: piece.size,
+                                  height: piece.size,
                                   background: piece.color,
                                   animationDelay: piece.delay,
                                   animationDuration: piece.duration,
-                                  "--confetti-tilt": piece.tilt,
+                                  "--bubble-dx": piece.dx,
+                                  "--bubble-dy": piece.dy,
                                 }}
                                 key={index}
                               />
@@ -3081,7 +3244,7 @@ export function NidoGamesExperience({
                                 <Star size={42} weight="fill" />
                               </div>
                               <NidoMascot pose="cheer" size={90} />
-                              <strong>¡Yupi!</strong>
+                              <strong>{feedbackEffect.phrase || "¡Yupi!"}</strong>
                               <small>¡Tirirí! Respuesta correcta</small>
                             </>
                           ) : (
