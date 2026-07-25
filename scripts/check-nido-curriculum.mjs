@@ -20,6 +20,16 @@ const AUDIO_MANIFEST_FILE = new URL(
   import.meta.url,
 );
 const AUDIO_PUBLIC_ROOT = new URL("../public/", import.meta.url);
+// La narración debe venir pregrabada de un generador de estudio; la síntesis
+// del navegador solo es un respaldo cuando falta un archivo. Producción está en
+// openrouter y migra a elevenlabs (voz Jhenny) cuando termine el lote.
+const AUDIO_PROVIDERS = Object.freeze(["openrouter", "elevenlabs"]);
+// Cuántas locuciones del catálogo generado hay ya grabadas. Lo actualiza el
+// generador de voz tras cada lote; el verificador solo comprueba que no baje.
+const AUDIO_COVERAGE_FILE = new URL(
+  "./nido-audio-coverage.json",
+  import.meta.url,
+);
 
 let audioManifest = {};
 try {
@@ -31,6 +41,17 @@ const audioTracks =
   audioManifest?.tracks && typeof audioManifest.tracks === "object"
     ? audioManifest.tracks
     : {};
+
+let audioCoverageFloor = 0;
+try {
+  const coverage = JSON.parse(readFileSync(AUDIO_COVERAGE_FILE, "utf8"));
+  if (Number.isInteger(coverage?.generatedVoices)) {
+    audioCoverageFloor = coverage.generatedVoices;
+  }
+} catch {
+  // Sin archivo de cobertura el piso es cero: el catálogo generado aún no se
+  // ha grabado nunca.
+}
 
 let assertionCount = 0;
 let failureCount = 0;
@@ -79,7 +100,11 @@ let categoryCount = 0;
 let combinationCount = 0;
 let optionCount = 0;
 let professionalAudioChallengeCount = 0;
+let generatedCategoryCount = 0;
 const professionalAudioFiles = new Set();
+const spokenTextByAudioId = new Map();
+const coveredGeneratedVoices = new Set();
+const pendingGeneratedVoices = new Set();
 
 check(
   NIDO_CURRICULUM_GAME_COUNT === EXPECTED_GAME_COUNT,
@@ -125,6 +150,8 @@ for (const area of areas) {
   for (const category of categories) {
     categoryCount += 1;
     const categoryLabel = `${areaLabel} / ${category?.name || category?.id || "(sin nombre)"}`;
+    const isGenerated = category?.strategy === "matrix";
+    if (isGenerated) generatedCategoryCount += 1;
 
     check(
       category?.gameCount === EXPECTED_GAME_COUNT,
@@ -235,26 +262,47 @@ for (const area of areas) {
           typeof challenge.audioId === "string"
             ? challenge.audioId.trim()
             : "";
+        const spokenText = String(
+          challenge.spokenText ??
+            challenge.spokenInstruction ??
+            challenge.voice ??
+            "",
+        ).trim();
+        // Los juegos escritos a mano graban una locución por reto; los generados
+        // comparten locución cuando dicen exactamente lo mismo. En ambos casos
+        // la clave de audio identifica un texto y solo uno.
         check(
-          audioId === challengeId,
-          `${combinationLabel} debe usar su ID de reto como audioId.`,
+          isGenerated ? audioId.startsWith("voz-") : audioId === challengeId,
+          `${combinationLabel} usa un audioId inesperado: “${audioId}”.`,
         );
+        const previousSpokenText = spokenTextByAudioId.get(audioId);
+        check(
+          previousSpokenText === undefined || previousSpokenText === spokenText,
+          `El audioId “${audioId}” se reparte entre dos narraciones distintas.`,
+        );
+        spokenTextByAudioId.set(audioId, spokenText);
+
         const audioPublicPath = audioTracks[audioId];
-        check(
+        const hasProfessionalAudio =
           typeof audioPublicPath === "string" &&
-            audioPublicPath.startsWith("/assets/nido/audio/generated/") &&
-            audioPublicPath.endsWith(".mp3"),
-          `${combinationLabel} no está cubierto por el manifiesto profesional.`,
-        );
-        if (typeof audioPublicPath === "string") {
+          audioPublicPath.startsWith("/assets/nido/audio/generated/") &&
+          audioPublicPath.endsWith(".mp3");
+        // El catálogo escrito a mano ya está grabado entero y no puede
+        // retroceder. El generado se graba por lotes: lo que aún no tiene voz
+        // se cuenta y se reporta, y el mínimo cubierto lo fija el archivo de
+        // cobertura, de modo que publicar nunca pueda perder audio existente.
+        if (!isGenerated) {
+          check(
+            hasProfessionalAudio,
+            `${combinationLabel} no está cubierto por el manifiesto profesional.`,
+          );
+        } else if (!hasProfessionalAudio) {
+          pendingGeneratedVoices.add(audioId);
+        }
+        if (hasProfessionalAudio) {
           professionalAudioChallengeCount += 1;
           professionalAudioFiles.add(audioPublicPath);
-          const spokenText = String(
-            challenge.spokenText ??
-              challenge.spokenInstruction ??
-              challenge.voice ??
-              "",
-          ).trim();
+          if (isGenerated) coveredGeneratedVoices.add(audioId);
           const expectedAudioHash = createHash("sha256")
             .update(
               [
@@ -333,12 +381,19 @@ for (const [positionId, payloads] of activityPayloadsByPosition) {
   );
 }
 check(
-  audioManifest?.provider === "openrouter",
-  "El manifiesto profesional debe declarar provider === “openrouter”.",
+  AUDIO_PROVIDERS.includes(audioManifest?.provider),
+  `El manifiesto profesional debe declarar un proveedor de estudio (${AUDIO_PROVIDERS.join(", ")}); declara “${audioManifest?.provider}”.`,
+);
+// Piso de cobertura del catálogo generado: solo puede subir. Si un cambio
+// dejara sin voz locuciones ya grabadas, este control lo detiene.
+check(
+  coveredGeneratedVoices.size >= audioCoverageFloor,
+  `El catálogo generado tenía ${audioCoverageFloor} locuciones grabadas y ahora solo ${coveredGeneratedVoices.size}.`,
 );
 check(
-  professionalAudioChallengeCount === expectedCombinations,
-  `El manifiesto debe cubrir ${expectedCombinations} retos; cubre ${professionalAudioChallengeCount}.`,
+  coveredGeneratedVoices.size + pendingGeneratedVoices.size > 0 ||
+    generatedCategoryCount === 0,
+  "El catálogo generado no produjo ninguna locución.",
 );
 for (const audioPublicPath of professionalAudioFiles) {
   const relativePath = audioPublicPath.replace(/^\/+/, "");
@@ -409,10 +464,20 @@ if (failureCount > 0) {
   process.exitCode = 1;
 } else {
   console.log(
-    `✓ Currículo Nido válido: ${areas.length} áreas, ${categoryCount} subcategorías, ` +
-      `${combinationCount} retos activos y ${optionCount} opciones verificadas ` +
-      `con ${professionalAudioFiles.size} audios profesionales, ` +
+    `✓ Currículo Nido válido: ${areas.length} áreas, ${categoryCount} juegos ` +
+      `(${generatedCategoryCount} generados), ${combinationCount} retos activos ` +
+      `y ${optionCount} opciones verificadas con ${professionalAudioFiles.size} audios profesionales, ` +
       `${bosqueVoiceLines.length} líneas de Misión del Bosque (${bosqueAudioFiles.size} audios) ` +
       `y ${assertionCount} controles.`,
   );
+  if (pendingGeneratedVoices.size) {
+    const pendingCharacters = [...pendingGeneratedVoices].reduce(
+      (total, audioId) => total + (spokenTextByAudioId.get(audioId)?.length ?? 0),
+      0,
+    );
+    console.log(
+      `· Falta grabar ${pendingGeneratedVoices.size} locuciones del catálogo generado ` +
+        `(${pendingCharacters} caracteres); esos juegos narran con la voz del dispositivo.`,
+    );
+  }
 }

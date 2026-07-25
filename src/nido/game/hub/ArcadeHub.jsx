@@ -4,7 +4,19 @@
 // premium: color saturado, tipografía redondeada gruesa, mascota expresiva,
 // feedback inmediato al pasar el cursor.
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
+
+// El catálogo pasó de 40 a más de 500 juegos: pintarlos todos de golpe llena la
+// pantalla de tarjetas que nadie va a mirar y ralentiza el desplazamiento en
+// tablets modestas. Se revelan por tandas y hay un buscador para llegar directo.
+const PAGE_SIZE = 48;
+
+function normalize(value) {
+  return String(value ?? "")
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLocaleLowerCase("es");
+}
 
 /**
  * El filtro activo vive en el padre: la fila "Materias del Nido" también lo
@@ -28,13 +40,27 @@ export default function ArcadeHub({
   activeCategory,
   onCategoryChange,
 }) {
-  const visibleTiles = useMemo(
-    () =>
-      activeCategory === "todos"
-        ? tiles
-        : tiles.filter((tile) => tile.category === activeCategory),
-    [activeCategory, tiles],
-  );
+  const [query, setQuery] = useState("");
+  const [pageCount, setPageCount] = useState(1);
+
+  const visibleTiles = useMemo(() => {
+    const search = normalize(query).trim();
+    return tiles.filter((tile) => {
+      if (activeCategory !== "todos" && tile.category !== activeCategory) {
+        return false;
+      }
+      if (!search) return true;
+      return normalize(`${tile.title} ${tile.tagline}`).includes(search);
+    });
+  }, [activeCategory, query, tiles]);
+
+  // Cambiar de materia o de búsqueda empieza otra vez por la primera tanda.
+  useEffect(() => {
+    setPageCount(1);
+  }, [activeCategory, query]);
+
+  const shownTiles = visibleTiles.slice(0, pageCount * PAGE_SIZE);
+  const remaining = visibleTiles.length - shownTiles.length;
 
   return (
     <div className="arcade">
@@ -70,8 +96,25 @@ export default function ArcadeHub({
         })}
       </div>
 
+      <div className="arcade__search">
+        <label htmlFor="arcade-search">Buscar un juego</label>
+        <input
+          id="arcade-search"
+          type="search"
+          value={query}
+          placeholder="Escribe: contar, sombra, colors…"
+          autoComplete="off"
+          onChange={(event) => setQuery(event.target.value)}
+        />
+        <span aria-live="polite">
+          {visibleTiles.length === tiles.length
+            ? `${tiles.length} juegos`
+            : `${visibleTiles.length} de ${tiles.length} juegos`}
+        </span>
+      </div>
+
       <div className="arcade__grid" aria-label="Juegos disponibles">
-        {visibleTiles.map((tile) => (
+        {shownTiles.map((tile) => (
           <button
             className="arcade__tile"
             type="button"
@@ -100,8 +143,22 @@ export default function ArcadeHub({
         ))}
       </div>
 
+      {remaining > 0 ? (
+        <button
+          className="arcade__more"
+          type="button"
+          onClick={() => setPageCount((count) => count + 1)}
+        >
+          Ver más juegos · quedan {remaining}
+        </button>
+      ) : null}
+
       {!visibleTiles.length ? (
-        <p className="arcade__empty">No hay juegos en esta categoría todavía.</p>
+        <p className="arcade__empty">
+          {query.trim()
+            ? `Ningún juego se llama así. Prueba con otra palabra.`
+            : "No hay juegos en esta categoría todavía."}
+        </p>
       ) : null}
     </div>
   );

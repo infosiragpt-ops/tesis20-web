@@ -562,9 +562,13 @@ check(
 // ilustrada de Nido (stickers SVG, portadas, mascota y escenas) sobre la
 // narración profesional. El chunk de Nido es diferido: el JavaScript inicial
 // conserva su límite de 450 KiB.
+// 2026-07 (bis): 640 → 700 KiB al pasar el catálogo de Nido de 29 a 529 juegos
+// (matriz de mecánicas × packs temáticos). Son ~41 KiB minificados para 500
+// juegos nuevos —unos 80 bytes por juego— y viven enteros en el chunk diferido
+// de /nido, que sigue por debajo de su tope de 250 KiB por chunk.
 check(
-  javascriptBytes <= 640 * 1024,
-  `El JavaScript total con rutas diferidas no debe superar 640 KiB (${Math.ceil(javascriptBytes / 1024)} KiB).`,
+  javascriptBytes <= 700 * 1024,
+  `El JavaScript total con rutas diferidas no debe superar 700 KiB (${Math.ceil(javascriptBytes / 1024)} KiB).`,
 );
 check(
   initialStylesheetBytes > 0 && initialStylesheetBytes <= 85 * 1024,

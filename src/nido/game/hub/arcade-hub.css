@@ -42,6 +42,68 @@
   color: #10233f;
 }
 
+/* Con más de quinientos juegos, encontrar uno concreto pide un buscador. */
+.arcade__search {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.arcade__search label {
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.arcade__search input {
+  flex: 1 1 240px;
+  min-height: 44px;
+  padding: 0 16px;
+  border: 2px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.arcade__search input::placeholder {
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.arcade__search input:focus-visible {
+  border-color: #ffc94d;
+  outline: none;
+}
+
+.arcade__search span {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.arcade__more {
+  display: block;
+  min-height: 52px;
+  margin: 22px auto 0;
+  padding: 0 28px;
+  border: 2px solid rgba(255, 255, 255, 0.24);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background 160ms ease, transform 160ms ease;
+}
+
+.arcade__more:hover {
+  background: rgba(255, 255, 255, 0.16);
+  transform: translateY(-1px);
+}
+
 .arcade__grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
@@ -195,11 +257,13 @@
 @media (prefers-reduced-motion: reduce) {
   .arcade__tile,
   .arcade__tile-glow,
-  .arcade__tile-play {
+  .arcade__tile-play,
+  .arcade__more {
     transition: none;
   }
 
-  .arcade__tile:hover {
+  .arcade__tile:hover,
+  .arcade__more:hover {
     transform: none;
   }
 }

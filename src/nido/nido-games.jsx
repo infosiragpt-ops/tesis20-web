@@ -2039,8 +2039,9 @@ export function NidoGamesExperience({
     onStatus(`¡${missionLabel} completado! Ganaste el sticker ${reward.label}.`);
   };
 
-  // Tarjetas de la Sala de juegos: las 29 rutas del currículo + Misión del
-  // Bosque + 5 mazos de Memoria + 5 mundos de Atrapa y Cuenta = 40 juegos.
+  // Tarjetas de la Sala de juegos: los 529 juegos del currículo (29 escritos a
+  // mano + 500 generados por la matriz de mecánicas × packs) + Misión del
+  // Bosque + 5 mazos de Memoria + 5 mundos de Atrapa y Cuenta.
   // Cada tarjeta abre directamente su juego; no hay pantallas intermedias.
   const routeTiles = useMemo(
     () =>

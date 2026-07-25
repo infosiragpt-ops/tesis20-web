@@ -1,4 +1,9 @@
 import { NIDO_ROUTE_INTERACTIONS } from "./nido-interaction-model.js";
+import {
+  MATRIX_STRATEGY,
+  buildMatrixCategories,
+  buildMatrixDefinition,
+} from "./nido-curriculum-matrix.js";
 
 const GAME_COUNT = 20;
 
@@ -47,7 +52,7 @@ const category = (id, name, iconName, strategy, description) => ({
   gameCount: GAME_COUNT,
 });
 
-export const NIDO_CURRICULUM = Object.freeze([
+const HANDMADE_CURRICULUM = Object.freeze([
   {
     id: "logica",
     name: "Lógica",
@@ -292,6 +297,20 @@ export const NIDO_CURRICULUM = Object.freeze([
     ]),
   },
 ]);
+
+// Cada materia suma sus cien juegos generados (diez mecánicas × diez packs) a
+// los escritos a mano, que se conservan intactos y siguen apareciendo primero.
+export const NIDO_CURRICULUM = Object.freeze(
+  HANDMADE_CURRICULUM.map((area) =>
+    Object.freeze({
+      ...area,
+      categories: Object.freeze([
+        ...area.categories,
+        ...buildMatrixCategories(area.id, GAME_COUNT),
+      ]),
+    }),
+  ),
+);
 
 const SHAPES = Object.freeze([
   { id: "circle", label: "círculo", iconName: "Circle", sides: 0 },
@@ -739,7 +758,13 @@ function makeChallenge(context, definition) {
     ],
   };
   const coachingLines = ageCoaching[age.id];
-  const spokenInstruction = `${baseSpokenInstruction} ${coachingLines[gameIndex % coachingLines.length]}`;
+  // Los juegos escritos a mano rotan el cierre con la ronda; los generados lo
+  // fijan por mecánica (`coachingIndex`) para que las cien variantes de una
+  // misma mecánica compartan una sola locución grabada.
+  const coachingIndex = Number.isInteger(definition.coachingIndex)
+    ? definition.coachingIndex
+    : gameIndex;
+  const spokenInstruction = `${baseSpokenInstruction} ${coachingLines[coachingIndex % coachingLines.length]}`;
   const maximumOptionCount = optionCountForRound(age, gameIndex);
   const correctOption = definition.options.find(
     (option) => option.id === definition.answerId,
@@ -763,6 +788,12 @@ function makeChallenge(context, definition) {
 
   const challengeId = `${area.id}-${categoryItem.id}-${age.id}-${gameIndex + 1}`;
   const publicId = round ? `${challengeId}-ronda-${round + 1}` : challengeId;
+  // Cuando la narración no depende del reto concreto, varios retos comparten
+  // una única pista de audio: la clave sale del propio texto hablado, así que
+  // dos retos comparten archivo exactamente cuando dicen lo mismo.
+  const voiceId = definition.sharedVoice
+    ? `voz-${age.id}-${hashSeed(spokenInstruction).toString(36)}`
+    : challengeId;
 
   return Object.freeze({
     id: publicId,
@@ -780,7 +811,7 @@ function makeChallenge(context, definition) {
     prompt: definition.question,
     spokenInstruction,
     voice: spokenInstruction,
-    audioId: round ? null : challengeId,
+    audioId: round ? null : voiceId,
     visualType: definition.visualType,
     visual: Object.freeze({
       kind: definition.visualKind,
@@ -1683,6 +1714,34 @@ function englishChallenge(context) {
   });
 }
 
+/**
+ * Puente hacia el catálogo generado: la matriz decide qué se pregunta y con qué
+ * dibujos, y aquí se convierte en el mismo formato que producen los juegos
+ * escritos a mano (opciones barajadas, cierre alentador, id de audio).
+ */
+function matrixChallenge(context) {
+  const { categoryItem, age, gameIndex, seed } = context;
+  const definition = buildMatrixDefinition({
+    blueprint: categoryItem.blueprint,
+    age,
+    gameIndex,
+    seed,
+    helpers: { pick, mix, rotate },
+  });
+  const { options, answerId } = makeOptions(
+    definition.choices,
+    definition.correctIndex,
+    seed,
+  );
+
+  return makeChallenge(context, {
+    ...definition,
+    sharedVoice: true,
+    options,
+    answerId,
+  });
+}
+
 const AREA_BUILDERS = Object.freeze({
   logica: logicChallenge,
   matematicas: mathChallenge,
@@ -1742,7 +1801,11 @@ export function buildCurriculumChallenge({
       ? `${areaId}|${categoryId}|${ageId}|${gameIndex}|ronda-${safeRound}`
       : `${areaId}|${categoryId}|${ageId}|${gameIndex}`,
   );
-  const challenge = AREA_BUILDERS[areaId]({
+  const build =
+    categoryItem.strategy === MATRIX_STRATEGY
+      ? matrixChallenge
+      : AREA_BUILDERS[areaId];
+  const challenge = build({
     area,
     categoryItem,
     age,
