@@ -220,14 +220,15 @@ const routeDefinitions = [
         </ul>
       </section>
       <section id="como-jugar" aria-labelledby="static-nido-steps-title">
-        <h2 id="static-nido-steps-title">¿Cómo lo usan los alumnos?</h2>
+        <h2 id="static-nido-steps-title">Cinco formas de aprender jugando</h2>
         <ol>
-          <li>Eligen su edad: 2–3, 4–5 o 6 años.</li>
-          <li>Escuchan la consigna narrada en voz alta por la voz guía.</li>
-          <li>Tocan su respuesta en tarjetas grandes con dibujos.</li>
-          <li>Ganan estrellas hasta completar los 20 retos de cada ruta.</li>
+          <li>Tocar y seleccionar directamente figuras, emociones u objetos.</li>
+          <li>Arrastrar y soltar piezas, con alternativa de tocar pieza y destino.</li>
+          <li>Ordenar tamaños y completar secuencias.</li>
+          <li>Emparejar palabras, cantidades, animales e imágenes.</li>
+          <li>Caminar por recorridos hasta la respuesta correcta.</li>
         </ol>
-        <p>No necesitan saber leer: cada juego se narra y se resuelve tocando ilustraciones.</p>
+        <p>Los juegos se adaptan a 2–3, 4–5 y 6 años, con piezas, recorridos y ayudas adecuados para cada etapa. No necesitan saber leer: cada consigna se narra y puede repetirse.</p>
       </section>`,
   },
   {

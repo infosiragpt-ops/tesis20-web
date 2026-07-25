@@ -265,6 +265,22 @@ export default function MemoriaGame({
                 >
                   {audioPrefs.music ? "♪" : "♪̸"}
                 </button>
+                <button
+                  type="button"
+                  aria-label={
+                    audioPrefs.voice
+                      ? "Silenciar narración"
+                      : "Activar narración"
+                  }
+                  aria-pressed={audioPrefs.voice}
+                  onClick={() => {
+                    const next = !audioPrefs.voice;
+                    audioRef.current?.setVoiceEnabled(next);
+                    setAudioPrefs((current) => ({ ...current, voice: next }));
+                  }}
+                >
+                  {audioPrefs.voice ? "👩‍🏫" : "🔇"}
+                </button>
                 <button type="button" aria-label="Repetir instrucción" onClick={() => speak(theme.tagline)}>
                   🔊
                 </button>

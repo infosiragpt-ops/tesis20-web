@@ -31,8 +31,8 @@
 
 .catch__hud-exit,
 .catch__hud-buttons button {
-  width: 42px;
-  height: 42px;
+  width: 48px;
+  height: 48px;
   display: grid;
   place-items: center;
   border: 3px solid rgba(16, 35, 63, 0.18);

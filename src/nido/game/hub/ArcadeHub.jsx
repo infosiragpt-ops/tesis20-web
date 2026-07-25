@@ -75,6 +75,7 @@ export default function ArcadeHub({
           <button
             className="arcade__tile"
             type="button"
+            data-game-id={tile.id}
             style={{
               "--tile-accent": tile.accent,
               "--tile-accent-soft": tile.accentSoft,

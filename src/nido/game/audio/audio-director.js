@@ -164,7 +164,28 @@ export function createAudioDirector() {
         }
         window.speechSynthesis.cancel();
         const utterance = new window.SpeechSynthesisUtterance(text);
-        utterance.lang = "es-PE";
+        const preferredVoiceNames = [
+          "paulina",
+          "monica",
+          "luciana",
+          "elvira",
+          "sabina",
+          "google español",
+        ];
+        const spanishVoices = window.speechSynthesis
+          .getVoices()
+          .filter((voice) => voice.lang.toLowerCase().startsWith("es"));
+        const preferredVoice = spanishVoices.find((voice) => {
+          const normalizedName = voice.name
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .toLowerCase();
+          return preferredVoiceNames.some((name) =>
+            normalizedName.includes(name),
+          );
+        });
+        utterance.voice = preferredVoice ?? spanishVoices[0] ?? null;
+        utterance.lang = preferredVoice?.lang ?? "es-PE";
         utterance.rate = 0.9;
         utterance.pitch = 1.08;
         utterance.onend = () => {

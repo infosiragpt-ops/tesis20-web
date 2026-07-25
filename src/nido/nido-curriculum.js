@@ -1,3 +1,5 @@
+import { NIDO_ROUTE_INTERACTIONS } from "./nido-interaction-model.js";
+
 const GAME_COUNT = 20;
 
 export const NIDO_CURRICULUM_GAME_COUNT = GAME_COUNT;
@@ -772,6 +774,8 @@ function makeChallenge(context, definition) {
     totalGames: categoryItem.gameCount,
     difficulty: age.difficulty,
     instructionStyle: age.instructionStyle,
+    interaction:
+      NIDO_ROUTE_INTERACTIONS[`${area.id}:${categoryItem.id}`] ?? "tap",
     question: definition.question,
     prompt: definition.question,
     spokenInstruction,

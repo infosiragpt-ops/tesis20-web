@@ -544,6 +544,7 @@
 /* --- Sección: cómo lo usan los alumnos --- */
 
 .nido-steps {
+  scroll-margin-top: 96px;
   padding: clamp(58px, 8vw, 92px) 0;
   background:
     radial-gradient(circle at 8% 10%, rgba(41, 199, 201, 0.13), transparent 34%),
@@ -560,6 +561,10 @@
   list-style: none;
 }
 
+.nido-steps__grid--mechanics {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
 .nido-steps__grid li {
   display: flex;
   flex-direction: column;
@@ -569,6 +574,35 @@
   background: var(--nido-white);
   box-shadow: var(--nido-shadow);
   transition: transform 220ms ease;
+}
+
+.nido-steps__mechanic-art {
+  min-height: 150px;
+  display: grid;
+  place-items: center;
+  margin: 10px 10px 0;
+  border-radius: 21px;
+  background:
+    radial-gradient(circle at 50% 45%, #fff 0 22%, transparent 23%),
+    linear-gradient(145deg, #dff8f2, #eaf3ff);
+  font-size: clamp(3.4rem, 6vw, 5.3rem);
+  filter: drop-shadow(0 10px 16px rgba(16, 35, 63, 0.13));
+}
+
+.nido-steps__grid--mechanics li:nth-child(2) .nido-steps__mechanic-art {
+  background: linear-gradient(145deg, #fff4cc, #ffe2dd);
+}
+
+.nido-steps__grid--mechanics li:nth-child(3) .nido-steps__mechanic-art {
+  background: linear-gradient(145deg, #ece7ff, #dff3ff);
+}
+
+.nido-steps__grid--mechanics li:nth-child(4) .nido-steps__mechanic-art {
+  background: linear-gradient(145deg, #e8f7ff, #e5faef);
+}
+
+.nido-steps__grid--mechanics li:nth-child(5) .nido-steps__mechanic-art {
+  background: linear-gradient(145deg, #fff1d6, #e5faef);
 }
 
 .nido-steps__grid li:hover {
@@ -619,6 +653,54 @@
   color: var(--nido-ink-muted);
   font-size: 0.89rem;
   line-height: 1.58;
+}
+
+.nido-steps__ages {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 28px;
+}
+
+.nido-steps__ages article {
+  display: grid;
+  gap: 5px;
+  padding: 20px;
+  border: 1px solid var(--nido-border);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: 0 9px 22px rgba(16, 35, 63, 0.06);
+}
+
+.nido-steps__ages article > span {
+  width: fit-content;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: var(--nido-yellow);
+  color: var(--nido-navy);
+  font-size: 0.72rem;
+  font-weight: 950;
+}
+
+.nido-steps__ages article:nth-child(2) > span {
+  background: var(--nido-aqua);
+}
+
+.nido-steps__ages article:nth-child(3) > span {
+  background: var(--nido-coral);
+  color: #fff;
+}
+
+.nido-steps__ages strong {
+  color: var(--nido-navy);
+  font-size: 0.98rem;
+}
+
+.nido-steps__ages p {
+  margin: 0;
+  color: var(--nido-ink-muted);
+  font-size: 0.83rem;
+  line-height: 1.5;
 }
 
 .nido-steps__cta {
@@ -676,6 +758,14 @@
   }}@media (max-width: 620px) {
   .nido-steps__grid {
     grid-template-columns: 1fr;
+  }
+
+  .nido-steps__ages {
+    grid-template-columns: 1fr;
+  }
+
+  .nido-steps__mechanic-art {
+    min-height: 125px;
   }
 
   .nido-steps__cta {

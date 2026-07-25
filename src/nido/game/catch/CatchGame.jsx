@@ -422,6 +422,7 @@ export default function CatchGame({
                 <button
                   type="button"
                   aria-label={audioPrefs.music ? "Silenciar música" : "Activar música"}
+                  aria-pressed={audioPrefs.music}
                   onClick={() => {
                     const next = !audioPrefs.music;
                     audioRef.current?.setMusicEnabled(next);
@@ -429,6 +430,22 @@ export default function CatchGame({
                   }}
                 >
                   {audioPrefs.music ? "♪" : "♪̸"}
+                </button>
+                <button
+                  type="button"
+                  aria-label={
+                    audioPrefs.voice
+                      ? "Silenciar narración"
+                      : "Activar narración"
+                  }
+                  aria-pressed={audioPrefs.voice}
+                  onClick={() => {
+                    const next = !audioPrefs.voice;
+                    audioRef.current?.setVoiceEnabled(next);
+                    setAudioPrefs((current) => ({ ...current, voice: next }));
+                  }}
+                >
+                  {audioPrefs.voice ? "👩‍🏫" : "🔇"}
                 </button>
                 <button type="button" aria-label="Repetir instrucción" onClick={() => speak(round.spokenText)}>
                   🔊

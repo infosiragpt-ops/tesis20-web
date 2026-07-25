@@ -5,6 +5,16 @@ import {
   NIDO_CURRICULUM,
   NIDO_CURRICULUM_GAME_COUNT,
 } from "./nido-curriculum";
+import {
+  buildInitialOrder,
+  buildNidoPathLayout,
+  getCorrectOrderLabels,
+  getNidoAgeInteractionProfile,
+  getNidoInteractionMeta,
+  getNidoInteractionType,
+  isNidoPathMoveAllowed,
+  normalizeOrderLabel,
+} from "./nido-interaction-model.js";
 import { CelebrationBurst, NidoMascot } from "./illustrations/nido-mascot.jsx";
 import { createNidoIcon, NidoGlyph } from "./nido-icon-map";
 import { STICKERS } from "./stickers/sticker-registry.jsx";
@@ -556,26 +566,15 @@ function MechanicScene({ challenge, memoryVisible, memorySeconds, replayMemory, 
   </div>;
 }
 
-function ChallengeScene({ challenge, selectedAnswer }) {
+function ChallengeScene({
+  challenge,
+  selectedAnswer,
+  memoryVisible,
+  memorySeconds,
+  replayMemory,
+}) {
   const { visual } = challenge;
   const worldAsset = AREA_WORLD_ASSETS[challenge.areaId];
-  const [memoryVisible, setMemoryVisible] = useState(true);
-  const [memoryRun, setMemoryRun] = useState(0);
-  const [memorySeconds, setMemorySeconds] = useState(visual.previewSeconds ?? 0);
-
-  useEffect(() => {
-    const seconds = Number(visual.previewSeconds) || 0;
-    setMemoryVisible(true);
-    setMemorySeconds(seconds);
-    if (!seconds) return undefined;
-    const timer = window.setInterval(() => setMemorySeconds((current) => {
-      if (current > 1) return current - 1;
-      window.clearInterval(timer);
-      setMemoryVisible(false);
-      return 0;
-    }), 1000);
-    return () => window.clearInterval(timer);
-  }, [challenge.id, memoryRun, visual.previewSeconds]);
 
   return (
     <div
@@ -601,7 +600,7 @@ function ChallengeScene({ challenge, selectedAnswer }) {
           challenge={challenge}
           memorySeconds={memorySeconds}
           memoryVisible={memoryVisible}
-          replayMemory={() => setMemoryRun((current) => current + 1)}
+          replayMemory={replayMemory}
           selectedAnswer={selectedAnswer}
         />
         {visual.word ? (
@@ -614,6 +613,717 @@ function ChallengeScene({ challenge, selectedAnswer }) {
         ) : null}
       </div>
     </div>
+  );
+}
+
+function OptionArtwork({ challenge, option, compact = false }) {
+  const groupNumber = Number(option.id.match(/option-group-(\d+)/)?.[1]);
+  const group = groupNumber
+    ? challenge.visual.groups?.[groupNumber - 1]
+    : null;
+  const numericValue =
+    option.meta?.numericValue ??
+    (/^-?\d+(?:[.,]\d+)?$/.test(String(option.label).trim())
+      ? option.label
+      : null);
+
+  if (group || option.meta?.count !== undefined) {
+    return (
+      <CountPicture
+        count={group?.count ?? option.meta.count}
+        iconName={group?.itemIconName}
+        compact={compact}
+      />
+    );
+  }
+  if (numericValue !== null && numericValue !== undefined) {
+    return <strong className="nido-games__interactive-number">{numericValue}</strong>;
+  }
+  return <Picture item={option} compact={compact} />;
+}
+
+function InteractiveOption({
+  challenge,
+  option,
+  selectedAnswer,
+  incorrectAnswers,
+  locked,
+  className = "",
+  pressed,
+  onClick,
+  ...buttonProps
+}) {
+  const chosen = option.id === selectedAnswer;
+  const correct = chosen && option.id === challenge.answerId;
+  const incorrect = incorrectAnswers.includes(option.id);
+  const hinted =
+    !locked &&
+    incorrectAnswers.length >= 2 &&
+    option.id === challenge.answerId;
+
+  return (
+    <button
+      className={[
+        "nido-games__interactive-option",
+        className,
+        chosen ? "is-selected" : "",
+        correct ? "is-correct" : "",
+        incorrect ? "is-error" : "",
+        hinted ? "is-hint" : "",
+      ]
+        .filter(Boolean)
+        .join(" ")}
+      style={option.tone ? { "--option-tone": option.tone } : undefined}
+      type="button"
+      aria-pressed={pressed ?? chosen}
+      aria-label={`${option.label}${incorrect ? ". Opción ya intentada." : ""}`}
+      disabled={incorrect || (locked && !chosen)}
+      onClick={onClick}
+      {...buttonProps}
+    >
+      <span className="nido-games__interactive-art" aria-hidden="true">
+        <OptionArtwork challenge={challenge} option={option} />
+      </span>
+      <span>{option.label}</span>
+      {correct ? (
+        <CheckCircle size={28} weight="fill" aria-hidden="true" />
+      ) : incorrect ? (
+        <XCircle size={28} weight="fill" aria-hidden="true" />
+      ) : null}
+    </button>
+  );
+}
+
+function DragActivity({
+  challenge,
+  selectedAnswer,
+  incorrectAnswers,
+  onAnswer,
+  locked,
+}) {
+  const [pickedId, setPickedId] = useState("");
+  const [draggingId, setDraggingId] = useState("");
+  const [ghost, setGhost] = useState(null);
+  const pointerDragRef = useRef(null);
+  const suppressClickRef = useRef(false);
+
+  useEffect(() => {
+    if (pickedId && incorrectAnswers.includes(pickedId)) setPickedId("");
+  }, [incorrectAnswers, pickedId]);
+
+  const submit = (optionId) => {
+    if (!optionId || locked || incorrectAnswers.includes(optionId)) return;
+    setPickedId("");
+    setDraggingId("");
+    setGhost(null);
+    onAnswer(optionId);
+  };
+
+  const pointerStart = (event, optionId) => {
+    if (event.pointerType === "mouse" || locked) return;
+    pointerDragRef.current = {
+      optionId,
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      moved: false,
+    };
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+  };
+
+  const pointerMove = (event) => {
+    const drag = pointerDragRef.current;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+    const distance = Math.hypot(
+      event.clientX - drag.startX,
+      event.clientY - drag.startY,
+    );
+    if (distance > 9) {
+      drag.moved = true;
+      suppressClickRef.current = true;
+      setDraggingId(drag.optionId);
+      setGhost({ x: event.clientX, y: event.clientY });
+    }
+  };
+
+  const pointerEnd = (event) => {
+    const drag = pointerDragRef.current;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+    pointerDragRef.current = null;
+    event.currentTarget.releasePointerCapture?.(event.pointerId);
+    const overDropZone = document
+      .elementFromPoint(event.clientX, event.clientY)
+      ?.closest("[data-nido-drop-zone]");
+    if (drag.moved && overDropZone) submit(drag.optionId);
+    else if (drag.moved) setPickedId(drag.optionId);
+    setDraggingId("");
+    setGhost(null);
+    window.setTimeout(() => {
+      suppressClickRef.current = false;
+    }, 0);
+  };
+
+  const pointerCancel = (event) => {
+    const drag = pointerDragRef.current;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+    pointerDragRef.current = null;
+    event.currentTarget.releasePointerCapture?.(event.pointerId);
+    setDraggingId("");
+    setGhost(null);
+    suppressClickRef.current = false;
+  };
+
+  const pickedOption = challenge.options.find(
+    (option) => option.id === (draggingId || pickedId),
+  );
+
+  return (
+    <div
+      className="nido-games__drag-activity"
+      data-age={challenge.ageId}
+      data-mechanic="drag"
+    >
+      <div className="nido-games__drag-pieces" role="group" aria-label="Piezas para arrastrar">
+        {challenge.options.map((option) => (
+          <InteractiveOption
+            challenge={challenge}
+            option={option}
+            selectedAnswer={selectedAnswer}
+            incorrectAnswers={incorrectAnswers}
+            locked={locked}
+            pressed={pickedId === option.id}
+            className={[
+              pickedId === option.id ? "is-picked" : "",
+              draggingId === option.id ? "is-dragging" : "",
+            ]
+              .filter(Boolean)
+              .join(" ")}
+            draggable={!locked && !incorrectAnswers.includes(option.id)}
+            onDragStart={(event) => {
+              event.dataTransfer.effectAllowed = "move";
+              event.dataTransfer.setData("text/plain", option.id);
+              setDraggingId(option.id);
+            }}
+            onDragEnd={() => setDraggingId("")}
+            onPointerDown={(event) => pointerStart(event, option.id)}
+            onPointerMove={pointerMove}
+            onPointerUp={pointerEnd}
+            onPointerCancel={pointerCancel}
+            onClick={() => {
+              if (suppressClickRef.current) return;
+              setPickedId((current) => (current === option.id ? "" : option.id));
+            }}
+            key={option.id}
+          />
+        ))}
+      </div>
+      <button
+        className={[
+          "nido-games__drop-zone",
+          pickedId || draggingId ? "is-ready" : "",
+          selectedAnswer === challenge.answerId ? "is-complete" : "",
+        ]
+          .filter(Boolean)
+          .join(" ")}
+        type="button"
+        data-nido-drop-zone
+        disabled={locked && selectedAnswer !== challenge.answerId}
+        aria-label={
+          pickedId
+            ? `Soltar ${pickedOption?.label ?? "la pieza"} en el destino`
+            : "Destino de las piezas. Primero elige o arrastra una pieza."
+        }
+        onDragOver={(event) => {
+          event.preventDefault();
+          event.dataTransfer.dropEffect = "move";
+        }}
+        onDrop={(event) => {
+          event.preventDefault();
+          submit(event.dataTransfer.getData("text/plain") || draggingId);
+        }}
+        onClick={() => submit(pickedId)}
+      >
+        <span aria-hidden="true">
+          {selectedAnswer === challenge.answerId ? "✓" : "⇣"}
+        </span>
+        <strong>
+          {selectedAnswer === challenge.answerId
+            ? "¡Encajó perfecto!"
+            : pickedId
+              ? "Toca para soltar"
+              : "Suelta aquí"}
+        </strong>
+        <small>Arrastra o toca una pieza y luego este destino</small>
+      </button>
+      {ghost && pickedOption ? (
+        <span
+          className="nido-games__drag-ghost"
+          style={{ left: ghost.x, top: ghost.y }}
+          aria-hidden="true"
+        >
+          <OptionArtwork challenge={challenge} option={pickedOption} />
+        </span>
+      ) : null}
+    </div>
+  );
+}
+
+function OrderActivity({
+  challenge,
+  selectedAnswer,
+  incorrectAnswers,
+  onAnswer,
+  locked,
+}) {
+  const isSizeOrder =
+    challenge.visual.kind === "size-order" &&
+    Array.isArray(challenge.visual.items);
+  const [items, setItems] = useState(() => buildInitialOrder(challenge));
+  const [pickedIndex, setPickedIndex] = useState(-1);
+  const [dragIndex, setDragIndex] = useState(-1);
+  const [attempt, setAttempt] = useState(0);
+
+  if (!isSizeOrder) {
+    return (
+      <DragActivity
+        challenge={challenge}
+        selectedAnswer={selectedAnswer}
+        incorrectAnswers={incorrectAnswers}
+        onAnswer={onAnswer}
+        locked={locked}
+      />
+    );
+  }
+
+  const moveItem = (from, to) => {
+    if (locked || from === to || from < 0 || to < 0) return;
+    setItems((current) => {
+      const next = [...current];
+      const [moved] = next.splice(from, 1);
+      next.splice(to, 0, moved);
+      return next;
+    });
+    setPickedIndex(-1);
+  };
+
+  const choosePosition = (index) => {
+    if (pickedIndex < 0) {
+      setPickedIndex(index);
+      return;
+    }
+    moveItem(pickedIndex, index);
+  };
+
+  const checkOrder = () => {
+    if (locked) return;
+    const currentLabels = items.map((item) =>
+      normalizeOrderLabel(item.label ?? item.value),
+    );
+    const correctLabels = getCorrectOrderLabels(challenge).map(
+      normalizeOrderLabel,
+    );
+    const isCorrect =
+      currentLabels.length === correctLabels.length &&
+      currentLabels.every((label, index) => label === correctLabels[index]);
+    setAttempt((current) => current + 1);
+    onAnswer(
+      isCorrect
+        ? challenge.answerId
+        : `interactive-order-${attempt}-${currentLabels.join("-")}`,
+    );
+  };
+
+  return (
+    <div
+      className="nido-games__order-activity"
+      data-age={challenge.ageId}
+      data-mechanic="order"
+    >
+      <div className="nido-games__order-track" role="list" aria-label="Piezas para ordenar">
+        {items.map((item, index) => (
+          <div
+            className={[
+              "nido-games__order-piece",
+              pickedIndex === index ? "is-picked" : "",
+            ]
+              .filter(Boolean)
+              .join(" ")}
+            role="listitem"
+            draggable={!locked}
+            onDragStart={() => setDragIndex(index)}
+            onDragOver={(event) => event.preventDefault()}
+            onDrop={(event) => {
+              event.preventDefault();
+              moveItem(dragIndex, index);
+              setDragIndex(-1);
+            }}
+            key={item.interactionId}
+          >
+            <button
+              type="button"
+              aria-pressed={pickedIndex === index}
+              aria-label={`${item.label}. Posición ${index + 1}. Toca para mover.`}
+              disabled={locked}
+              onClick={() => choosePosition(index)}
+            >
+              <Picture
+                item={{ ...item, iconName: challenge.visual.itemIconName }}
+              />
+              <strong>{item.label}</strong>
+            </button>
+            <span>
+              <button
+                type="button"
+                aria-label={`Mover ${item.label} a la izquierda`}
+                disabled={locked || index === 0}
+                onClick={() => moveItem(index, index - 1)}
+              >
+                ←
+              </button>
+              <small>{index + 1}</small>
+              <button
+                type="button"
+                aria-label={`Mover ${item.label} a la derecha`}
+                disabled={locked || index === items.length - 1}
+                onClick={() => moveItem(index, index + 1)}
+              >
+                →
+              </button>
+            </span>
+          </div>
+        ))}
+      </div>
+      <button
+        className="nido-games__order-check"
+        type="button"
+        disabled={locked}
+        onClick={checkOrder}
+      >
+        <CheckCircle size={24} weight="fill" aria-hidden="true" />
+        Comprobar orden
+      </button>
+    </div>
+  );
+}
+
+function MatchActivity({
+  challenge,
+  selectedAnswer,
+  incorrectAnswers,
+  onAnswer,
+  locked,
+  memoryVisible,
+}) {
+  const ageProfile = getNidoAgeInteractionProfile(challenge.ageId);
+  const visual = challenge.visual;
+  const previewSeconds = Number(visual.previewSeconds) || 0;
+  const [sourceSelected, setSourceSelected] = useState(
+    ageProfile.sourceStartsSelected,
+  );
+  const memoryReady = !memoryVisible;
+  const matchReady = previewSeconds ? memoryReady : sourceSelected;
+  const source =
+    visual.model ??
+    visual.subject ??
+    visual.adult ??
+    (visual.kind === "teddy-bow-match" ? visual.items?.[0] : null) ??
+    (visual.iconName || visual.word
+      ? {
+          iconName: visual.iconName,
+          tone: visual.tone,
+          label: visual.word,
+        }
+      : { iconName: "Question", label: challenge.question });
+
+  const chooseMatch = (optionId) => {
+    if (!matchReady || locked) return;
+    onAnswer(optionId);
+    if (
+      optionId !== challenge.answerId &&
+      !ageProfile.sourceStartsSelected
+    ) {
+      setSourceSelected(false);
+    }
+  };
+
+  return (
+    <div
+      className="nido-games__match-activity"
+      data-age={challenge.ageId}
+      data-mechanic="match"
+    >
+      <button
+        className={[
+          "nido-games__match-source",
+          matchReady ? "is-selected" : "",
+        ]
+          .filter(Boolean)
+          .join(" ")}
+        type="button"
+        aria-pressed={matchReady}
+        aria-label={
+          previewSeconds
+            ? memoryReady
+              ? "Pista oculta. Elige la pareja de memoria."
+              : "Memoriza la tarjeta que aparece en la escena."
+            : "Seleccionar tarjeta guía"
+        }
+        disabled={locked || Boolean(previewSeconds)}
+        onClick={() => setSourceSelected(true)}
+      >
+        {previewSeconds ? (
+          <>
+            <small>{memoryReady ? "Ahora recuerda" : "Mira la escena"}</small>
+            <span className="nido-games__match-memory" aria-hidden="true">
+              {memoryReady ? "?" : "👀"}
+            </span>
+            <strong>
+              {memoryReady ? "Pista oculta" : "Memoriza el modelo"}
+            </strong>
+          </>
+        ) : (
+          <>
+            <small>Tarjeta guía</small>
+            <Picture item={source} />
+            <strong>
+              {itemLabel(source) || visual.repeatWord || "Busca su pareja"}
+            </strong>
+          </>
+        )}
+      </button>
+      <span className="nido-games__match-connector" aria-hidden="true">
+        {matchReady ? "● ─ ─ →" : "○ ─ ─ ?"}
+      </span>
+      <div className="nido-games__match-options" role="group" aria-label="Posibles parejas">
+        {challenge.options.map((option) => (
+          <InteractiveOption
+            challenge={challenge}
+            option={option}
+            selectedAnswer={selectedAnswer}
+            incorrectAnswers={incorrectAnswers}
+            locked={locked || !matchReady}
+            className="nido-games__match-option"
+            onClick={() => chooseMatch(option.id)}
+            key={option.id}
+          />
+        ))}
+      </div>
+      {!matchReady ? (
+        <p role="status">
+          {previewSeconds
+            ? "Memoriza la tarjeta de la escena."
+            : "Primero toca la tarjeta guía."}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+function PathActivity({
+  challenge,
+  selectedAnswer,
+  incorrectAnswers,
+  onAnswer,
+  locked,
+}) {
+  const layout = useMemo(() => buildNidoPathLayout(challenge), [challenge]);
+  const [position, setPosition] = useState(layout.start);
+  const [pathStatus, setPathStatus] = useState(
+    `El pollito empieza en la fila ${layout.start.row + 1}, columna ${layout.start.column + 1}.`,
+  );
+  const positionRef = useRef(layout.start);
+  const boardRef = useRef(null);
+  const obstacleKeys = new Set(
+    layout.obstacles.map(({ row, column }) => `${row}:${column}`),
+  );
+  const targetsByKey = new Map(
+    layout.targets.map((target) => [
+      `${target.row}:${target.column}`,
+      target.optionId,
+    ]),
+  );
+  const targetSummary = layout.targets
+    .map((target) => {
+      const option = challenge.options.find(
+        (candidate) => candidate.id === target.optionId,
+      );
+      return `${option?.label ?? "respuesta"}, fila ${target.row + 1}, columna ${target.column + 1}`;
+    })
+    .join("; ");
+
+  const move = (rowDelta, columnDelta) => {
+    if (locked) return;
+    const current = positionRef.current;
+    const next = {
+      row: current.row + rowDelta,
+      column: current.column + columnDelta,
+    };
+    if (!isNidoPathMoveAllowed(layout, next.row, next.column)) {
+      const obstacle = layout.obstacles.some(
+        (item) => item.row === next.row && item.column === next.column,
+      );
+      setPathStatus(
+        obstacle
+          ? "Hay un árbol en ese camino. Prueba otra dirección."
+          : "Llegaste al borde del tablero. Prueba otra dirección.",
+      );
+      return;
+    }
+
+    const optionId = targetsByKey.get(`${next.row}:${next.column}`);
+    const option = challenge.options.find(
+      (candidate) => candidate.id === optionId,
+    );
+    const resolvedPosition =
+      optionId && optionId !== challenge.answerId ? layout.start : next;
+    positionRef.current = resolvedPosition;
+    setPosition(resolvedPosition);
+    if (optionId) {
+      setPathStatus(
+        optionId === challenge.answerId
+          ? `Llegaste a ${option?.label ?? "la respuesta"}. ¡Respuesta correcta!`
+          : `Llegaste a ${option?.label ?? "esa respuesta"}. Volvemos al inicio para probar otra ruta.`,
+      );
+      onAnswer(optionId);
+    } else {
+      setPathStatus(`Fila ${next.row + 1}, columna ${next.column + 1}.`);
+    }
+  };
+
+  const handleKeyDown = (event) => {
+    const directions = {
+      ArrowUp: [-1, 0],
+      ArrowDown: [1, 0],
+      ArrowLeft: [0, -1],
+      ArrowRight: [0, 1],
+    };
+    const direction = directions[event.key];
+    if (!direction) return;
+    event.preventDefault();
+    move(...direction);
+  };
+
+  return (
+    <div
+      className="nido-games__path-activity"
+      data-age={challenge.ageId}
+      data-mechanic="path"
+    >
+      <div
+        className="nido-games__path-board"
+        style={{ "--path-size": layout.size }}
+        ref={boardRef}
+        role="application"
+        tabIndex={0}
+        aria-label={`Tablero de ${layout.size} por ${layout.size}. Usa las flechas para caminar. Destinos: ${targetSummary}.`}
+        onKeyDown={handleKeyDown}
+      >
+        {Array.from({ length: layout.size * layout.size }, (_, index) => {
+          const row = Math.floor(index / layout.size);
+          const column = index % layout.size;
+          const key = `${row}:${column}`;
+          const optionId = targetsByKey.get(key);
+          const option = challenge.options.find(
+            (candidate) => candidate.id === optionId,
+          );
+          const isPlayer = position.row === row && position.column === column;
+          const obstacle = obstacleKeys.has(key);
+          const attempted = option && incorrectAnswers.includes(option.id);
+          return (
+            <span
+              className={[
+                "nido-games__path-cell",
+                option ? "is-target" : "",
+                obstacle ? "is-obstacle" : "",
+                attempted ? "is-attempted" : "",
+                option?.id === selectedAnswer ? "is-selected" : "",
+              ]
+                .filter(Boolean)
+                .join(" ")}
+              aria-hidden="true"
+              key={key}
+            >
+              {obstacle ? "🌳" : null}
+              {option ? (
+                <span title={option.label}>
+                  <OptionArtwork challenge={challenge} option={option} compact />
+                </span>
+              ) : null}
+              {isPlayer ? (
+                <span className="nido-games__path-player">🐣</span>
+              ) : null}
+            </span>
+          );
+        })}
+      </div>
+      <p className="sr-only" role="status" aria-live="polite" aria-atomic="true">
+        {pathStatus}
+      </p>
+      <div className="nido-games__path-controls" aria-label="Controles para caminar">
+        <button type="button" aria-label="Caminar arriba" disabled={locked} onClick={() => move(-1, 0)}>
+          ↑
+        </button>
+        <button type="button" aria-label="Caminar a la izquierda" disabled={locked} onClick={() => move(0, -1)}>
+          ←
+        </button>
+        <button type="button" aria-label="Caminar abajo" disabled={locked} onClick={() => move(1, 0)}>
+          ↓
+        </button>
+        <button type="button" aria-label="Caminar a la derecha" disabled={locked} onClick={() => move(0, 1)}>
+          →
+        </button>
+      </div>
+      <p>
+        Lleva al pollito hasta la tarjeta correcta
+        {layout.obstacles.length ? " sin chocar con los árboles." : "."}
+      </p>
+    </div>
+  );
+}
+
+function InteractiveChallenge(props) {
+  const interactionType = getNidoInteractionType(props.challenge);
+
+  if (interactionType === "drag") return <DragActivity {...props} />;
+  if (interactionType === "order") return <OrderActivity {...props} />;
+  if (interactionType === "match") return <MatchActivity {...props} />;
+  if (interactionType === "path") return <PathActivity {...props} />;
+  return <ChallengeAnswers {...props} />;
+}
+
+function ChallengeActivity(props) {
+  const { challenge, selectedAnswer } = props;
+  const previewSeconds = Number(challenge.visual.previewSeconds) || 0;
+  const [memoryVisible, setMemoryVisible] = useState(true);
+  const [memorySeconds, setMemorySeconds] = useState(previewSeconds);
+  const [memoryRun, setMemoryRun] = useState(0);
+
+  useEffect(() => {
+    setMemoryVisible(true);
+    setMemorySeconds(previewSeconds);
+    if (!previewSeconds) return undefined;
+    const timer = window.setInterval(() => {
+      setMemorySeconds((current) => {
+        if (current > 1) return current - 1;
+        window.clearInterval(timer);
+        setMemoryVisible(false);
+        return 0;
+      });
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [challenge.id, memoryRun, previewSeconds]);
+
+  return (
+    <>
+      <ChallengeScene
+        challenge={challenge}
+        selectedAnswer={selectedAnswer}
+        memoryVisible={memoryVisible}
+        memorySeconds={memorySeconds}
+        replayMemory={() => setMemoryRun((current) => current + 1)}
+      />
+      <InteractiveChallenge {...props} memoryVisible={memoryVisible} />
+    </>
   );
 }
 
@@ -745,6 +1455,7 @@ export function NidoGamesExperience({
   const memoriaDialogRef = useRef(null);
   const [catchTheme, setCatchTheme] = useState(null);
   const catchDialogRef = useRef(null);
+  const arcadePreviousFocusRef = useRef(null);
   const [arcadeFilter, setArcadeFilter] = useState("todos");
   const albumDialogRef = useRef(null);
   const [routeComplete, setRouteComplete] = useState(false);
@@ -794,6 +1505,8 @@ export function NidoGamesExperience({
       }),
     [currentGameIndex, currentRound, selectedAge, selectedArea, selectedCategory],
   );
+  const interactionMeta = getNidoInteractionMeta(challenge);
+  const interactionType = getNidoInteractionType(challenge);
   const answerIsCorrect = selectedAnswer === challenge.answerId;
   const pathCurrentId = useMemo(() => {
     for (const areaItem of NIDO_CURRICULUM) {
@@ -1163,6 +1876,7 @@ export function NidoGamesExperience({
   useEffect(() => {
     if (!bosqueOpen) return undefined;
     const dialog = bosqueDialogRef.current;
+    const previousFocus = arcadePreviousFocusRef.current;
     if (dialog && !dialog.open) {
       try {
         dialog.showModal();
@@ -1172,15 +1886,21 @@ export function NidoGamesExperience({
     }
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
+    const focusTimer = window.setTimeout(() => {
+      (dialog?.querySelector("button:not(:disabled)") ?? dialog)?.focus?.();
+    }, 80);
     return () => {
+      window.clearTimeout(focusTimer);
       document.body.style.overflow = previousOverflow;
       if (dialog?.open) dialog.close();
+      window.requestAnimationFrame(() => previousFocus?.focus?.());
     };
   }, [bosqueOpen]);
 
   useEffect(() => {
     if (!memoriaTheme) return undefined;
     const dialog = memoriaDialogRef.current;
+    const previousFocus = arcadePreviousFocusRef.current;
     if (dialog && !dialog.open) {
       try {
         dialog.showModal();
@@ -1190,15 +1910,28 @@ export function NidoGamesExperience({
     }
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
+    const focusTimer = window.setTimeout(() => {
+      (dialog?.querySelector("button:not(:disabled)") ?? dialog)?.focus?.();
+    }, 80);
+    const handleEscape = (event) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      setMemoriaTheme(null);
+    };
+    document.addEventListener("keydown", handleEscape);
     return () => {
+      window.clearTimeout(focusTimer);
+      document.removeEventListener("keydown", handleEscape);
       document.body.style.overflow = previousOverflow;
       if (dialog?.open) dialog.close();
+      window.requestAnimationFrame(() => previousFocus?.focus?.());
     };
   }, [memoriaTheme]);
 
   useEffect(() => {
     if (!catchTheme) return undefined;
     const dialog = catchDialogRef.current;
+    const previousFocus = arcadePreviousFocusRef.current;
     if (dialog && !dialog.open) {
       try {
         dialog.showModal();
@@ -1208,9 +1941,21 @@ export function NidoGamesExperience({
     }
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
+    const focusTimer = window.setTimeout(() => {
+      (dialog?.querySelector("button:not(:disabled)") ?? dialog)?.focus?.();
+    }, 80);
+    const handleEscape = (event) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      setCatchTheme(null);
+    };
+    document.addEventListener("keydown", handleEscape);
     return () => {
+      window.clearTimeout(focusTimer);
+      document.removeEventListener("keydown", handleEscape);
       document.body.style.overflow = previousOverflow;
       if (dialog?.open) dialog.close();
+      window.requestAnimationFrame(() => previousFocus?.focus?.());
     };
   }, [catchTheme]);
 
@@ -1353,7 +2098,10 @@ export function NidoGamesExperience({
       progressLabel:
         bosqueRounds >= 20 ? "Completado" : `Ronda ${Math.min(bosqueRounds + 1, 20)}/20`,
       icon: <NidoMascot pose="hola" size={48} />,
-      onOpen: () => setBosqueOpen(true),
+      onOpen: (event) => {
+        arcadePreviousFocusRef.current = event?.currentTarget;
+        setBosqueOpen(true);
+      },
     };
 
     const memoriaTiles = MEMORY_THEMES.map((theme) => {
@@ -1368,7 +2116,10 @@ export function NidoGamesExperience({
         accentSoft: theme.accentSoft,
         progressLabel: rounds >= 20 ? "Completado" : `Ronda ${Math.min(rounds + 1, 20)}/20`,
         icon: Icon ? <Icon size={44} /> : null,
-        onOpen: () => setMemoriaTheme(theme.id),
+        onOpen: (event) => {
+          arcadePreviousFocusRef.current = event?.currentTarget;
+          setMemoriaTheme(theme.id);
+        },
       };
     });
 
@@ -1384,7 +2135,10 @@ export function NidoGamesExperience({
         accentSoft: theme.accentSoft,
         progressLabel: rounds >= 20 ? "Completado" : `Ronda ${Math.min(rounds + 1, 20)}/20`,
         icon: Icon ? <Icon size={44} /> : null,
-        onOpen: () => setCatchTheme(theme.id),
+        onOpen: (event) => {
+          arcadePreviousFocusRef.current = event?.currentTarget;
+          setCatchTheme(theme.id);
+        },
       };
     });
 
@@ -1892,6 +2646,7 @@ export function NidoGamesExperience({
             <dialog
               className="nido-games__bosque-dialog"
               ref={bosqueDialogRef}
+              tabIndex={-1}
               aria-label="Misión del Bosque"
               onCancel={(event) => {
                 // Escape lo gestiona el juego (pausa); el diálogo no se cierra solo.
@@ -1923,6 +2678,7 @@ export function NidoGamesExperience({
             <dialog
               className="nido-games__bosque-dialog"
               ref={memoriaDialogRef}
+              tabIndex={-1}
               aria-label="Memoria Mágica"
               onCancel={(event) => event.preventDefault()}
             >
@@ -1954,6 +2710,7 @@ export function NidoGamesExperience({
             <dialog
               className="nido-games__bosque-dialog"
               ref={catchDialogRef}
+              tabIndex={-1}
               aria-label="Atrapa y Cuenta"
               onCancel={(event) => event.preventDefault()}
             >
@@ -2167,7 +2924,7 @@ export function NidoGamesExperience({
                         ? `Ronda ${currentRound + 1} · 20 retos completados`
                         : "20 retos completados"}
                     </span>
-                    <h2 id="nido-focus-title" ref={routeSuccessRef} tabIndex="-1">
+                      <h2 id="nido-focus-title" ref={routeSuccessRef} tabIndex={-1}>
                       ¡Ruta terminada!
                     </h2>
                     <p>
@@ -2264,26 +3021,25 @@ export function NidoGamesExperience({
                       .filter(Boolean)
                       .join(" ")}
                     key={challenge.id}
+                    data-age={challenge.ageId}
+                    data-game-id={challenge.id}
+                    data-mechanic={interactionType}
                   >
                     <div className="nido-games__focus-title">
                       <span>
                         {category.name} · reto {currentGameIndex + 1}
                       </span>
-                      <h2 id="nido-focus-title" ref={focusTitleRef} tabIndex="-1">
+                      <h2 id="nido-focus-title" ref={focusTitleRef} tabIndex={-1}>
                         {challenge.question}
                       </h2>
                       <p id="nido-focus-instruction">
-                        Observa la pista, escucha la consigna y toca la mejor
-                        respuesta.
+                        <strong>{interactionMeta.label}:</strong>{" "}
+                        {interactionMeta.shortInstruction}
                       </p>
                     </div>
 
                     <div className="nido-games__focus-activity">
-                      <ChallengeScene
-                        challenge={challenge}
-                        selectedAnswer={selectedAnswer}
-                      />
-                      <ChallengeAnswers
+                      <ChallengeActivity
                         challenge={challenge}
                         selectedAnswer={selectedAnswer}
                         incorrectAnswers={incorrectAnswers}
