@@ -1,6 +1,8 @@
 import {
+  createContext,
   lazy,
   Suspense,
+  useContext,
   useEffect,
   useLayoutEffect,
   useMemo,
@@ -10,6 +12,7 @@ import {
 import { createPortal } from "react-dom";
 import {
   buildCurriculumChallenge,
+  nidoMasteryStep,
   NIDO_CURRICULUM,
   NIDO_CURRICULUM_GAME_COUNT,
 } from "./nido-curriculum";
@@ -81,6 +84,22 @@ const AGE_GROUPS = Object.freeze([
     support: "Secuencias, conteo y consignas de dos pasos.",
   },
 ]);
+
+// La pista sólo se encendía tras dos fallos, así que con dos opciones no se
+// encendía nunca: el primer fallo ya deja a la vista la única respuesta que
+// queda. El segundo disparador es el tiempo parado sobre el reto, que sí
+// alcanza a los peques de 2–3 años. Los plazos crecen con la edad porque a
+// mayor edad se espera más rato de deliberación antes de ayudar.
+const HINT_STALL_DELAYS = Object.freeze({
+  "2-3": 12000,
+  "4-5": 15000,
+  6: 20000,
+});
+const HintStallContext = createContext(false);
+
+function useHintStalled() {
+  return useContext(HintStallContext);
+}
 
 const CATEGORY_TONES = Object.freeze([
   { background: "#c74d59", ink: "#ffffff", track: "rgba(85, 23, 35, 0.34)" },
@@ -616,12 +635,13 @@ function SceneChoice({
   style,
   children,
 }) {
+  const stalled = useHintStalled();
   const chosen = option.id === selectedAnswer;
   const correct = chosen && option.id === challenge.answerId;
   const incorrect = incorrectAnswers.includes(option.id);
   const hinted =
     !locked &&
-    incorrectAnswers.length >= 2 &&
+    (incorrectAnswers.length >= 2 || stalled) &&
     option.id === challenge.answerId;
 
   return (
@@ -1198,12 +1218,13 @@ function InteractiveOption({
   onClick,
   ...buttonProps
 }) {
+  const stalled = useHintStalled();
   const chosen = option.id === selectedAnswer;
   const correct = chosen && option.id === challenge.answerId;
   const incorrect = incorrectAnswers.includes(option.id);
   const hinted =
     !locked &&
-    incorrectAnswers.length >= 2 &&
+    (incorrectAnswers.length >= 2 || stalled) &&
     option.id === challenge.answerId;
 
   return (
@@ -2250,6 +2271,8 @@ function ChallengeAnswers({
   onAnswer,
   locked = false,
 }) {
+  const stalled = useHintStalled();
+
   return (
     <div
       className="nido-games__answers"
@@ -2289,7 +2312,7 @@ function ChallengeAnswers({
               incorrect ? "is-error" : "",
               visualOnly ? "is-visual-only" : "",
               !locked &&
-              incorrectAnswers.length >= 2 &&
+              (incorrectAnswers.length >= 2 || stalled) &&
               option.id === challenge.answerId
                 ? "is-hint"
                 : "",
@@ -2362,6 +2385,11 @@ export function NidoGamesExperience({
   const [progress, setProgress] = useState(loadProgress);
   const [selectedAnswer, setSelectedAnswer] = useState("");
   const [incorrectAnswers, setIncorrectAnswers] = useState([]);
+  const [hintStalled, setHintStalled] = useState(false);
+  // El escalón por rendimiento se congela al entrar en el reto. Si se leyera
+  // del marcador vivo, acertar cambiaría las opciones del reto que el niño ya
+  // tiene delante y el dedo caería sobre una tarjeta distinta de la que miró.
+  const [challengeMastery, setChallengeMastery] = useState(0);
   const [routeStats, setRouteStats] = useState(createRouteStats);
   const [speaking, setSpeaking] = useState(false);
   const [audioTracks, setAudioTracks] = useState(() => DEFAULT_AUDIO_TRACKS);
@@ -2406,6 +2434,10 @@ export function NidoGamesExperience({
   const focusTitleRef = useRef(null);
   const routeSuccessRef = useRef(null);
   const autoAdvanceTimerRef = useRef(null);
+  // La celebración tarda más de medio segundo, así que el avance corre sobre un
+  // closure anterior al acierto. La ref garantiza que el escalón se calcule con
+  // el marcador de verdad y no con el de hace dos renders.
+  const routeStatsRef = useRef(null);
   const answerLockRef = useRef(false);
   const previousFocusRef = useRef(null);
 
@@ -2434,12 +2466,40 @@ export function NidoGamesExperience({
         ageId: selectedAge,
         gameIndex: currentGameIndex,
         round: currentRound,
+        mastery: challengeMastery,
       }),
-    [currentGameIndex, currentRound, selectedAge, selectedArea, selectedCategory],
+    [
+      challengeMastery,
+      currentGameIndex,
+      currentRound,
+      selectedAge,
+      selectedArea,
+      selectedCategory,
+    ],
   );
   const interactionMeta = getNidoInteractionMeta(challenge);
   const interactionType = getNidoInteractionType(challenge);
   const answerIsCorrect = selectedAnswer === challenge.answerId;
+
+  useEffect(() => {
+    routeStatsRef.current = routeStats;
+  }, [routeStats]);
+
+  // El reloj se reinicia con cada reto y con cada intento fallido: la pista
+  // premia al que sigue probando, no al que abandona la tablet encendida.
+  useEffect(() => {
+    setHintStalled(false);
+    if (!focusMode || answerIsCorrect) return undefined;
+    const delay = HINT_STALL_DELAYS[selectedAge] ?? HINT_STALL_DELAYS["4-5"];
+    const timer = window.setTimeout(() => setHintStalled(true), delay);
+    return () => window.clearTimeout(timer);
+  }, [
+    challenge.id,
+    incorrectAnswers.length,
+    focusMode,
+    answerIsCorrect,
+    selectedAge,
+  ]);
   const pathCurrentId = useMemo(() => {
     for (const areaItem of NIDO_CURRICULUM) {
       for (const categoryItem of areaItem.categories) {
@@ -3317,7 +3377,9 @@ export function NidoGamesExperience({
     setCelebrationBusy(false);
     setSelectedAnswer("");
     setIncorrectAnswers([]);
+    setChallengeMastery(0);
     setRouteStats(createRouteStats());
+    routeStatsRef.current = createRouteStats();
     setReplayingRoute(false);
     setRouteComplete(false);
     clearFeedbackEffect();
@@ -3448,7 +3510,10 @@ export function NidoGamesExperience({
     setCurrentGameIndex(startingGameIndex);
     setSelectedAnswer("");
     setIncorrectAnswers([]);
+    // Cada categoría se entra en limpio: el escalón se gana dentro de la ruta.
+    setChallengeMastery(0);
     setRouteStats(createRouteStats(startingGameIndex));
+    routeStatsRef.current = createRouteStats(startingGameIndex);
     setReplayingRoute(isReplay);
     setRouteComplete(false);
     setLatestReward(null);
@@ -3649,13 +3714,16 @@ export function NidoGamesExperience({
 
     if (currentGameIndex < NIDO_CURRICULUM_GAME_COUNT - 1) {
       const nextGameIndex = currentGameIndex + 1;
+      const nextMastery = nidoMasteryStep(routeStatsRef.current ?? routeStats);
       const nextChallenge = buildCurriculumChallenge({
         areaId: selectedArea,
         categoryId: selectedCategory,
         ageId: selectedAge,
         gameIndex: nextGameIndex,
         round: currentRound,
+        mastery: nextMastery,
       });
+      setChallengeMastery(nextMastery);
       setCurrentGameIndex(nextGameIndex);
       setSelectedAnswer("");
       setIncorrectAnswers([]);
@@ -3705,6 +3773,7 @@ export function NidoGamesExperience({
   );
 
   return (
+    <HintStallContext.Provider value={hintStalled}>
     <section className="nido-games" id={id} aria-labelledby="nido-games-title">
       <style data-nido-focus-renderer>{FOCUS_RENDERER_STYLES}</style>
       <audio ref={audioRef} preload="auto" aria-hidden="true" />
@@ -4376,5 +4445,6 @@ export function NidoGamesExperience({
           )
         : null}
     </section>
+    </HintStallContext.Provider>
   );
 }
