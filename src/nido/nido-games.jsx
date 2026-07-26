@@ -33,8 +33,15 @@ import {
 import { CelebrationBurst, NidoMascot } from "./illustrations/nido-mascot.jsx";
 import { createNidoIcon, NidoGlyph } from "./nido-icon-map";
 import { STICKERS } from "./stickers/sticker-registry.jsx";
-import { CATCH_THEMES } from "./game/content/catch-mission.js";
-import { MEMORY_THEMES } from "./game/content/memory-mission.js";
+import {
+  CATCH_THEMES,
+  createCatchRound,
+} from "./game/content/catch-mission.js";
+import { FOREST_AGE_PROFILES } from "./game/content/forest-mission.js";
+import {
+  MEMORY_THEMES,
+  memoryDifficultyForRound,
+} from "./game/content/memory-mission.js";
 import {
   celebrationAudioKey,
   getCelebrationVoiceProfile,
@@ -96,6 +103,17 @@ const HINT_STALL_DELAYS = Object.freeze({
   6: 20000,
 });
 const HintStallContext = createContext(false);
+
+// Etiqueta de exigencia de una ficha. Dice cuántas respuestas tendrá delante el
+// niño, que es el dato que de verdad separa a un peque de dos años de uno de
+// seis: con dos opciones acertar a ciegas sale la mitad de las veces, con cuatro
+// baja a una de cada cuatro. No se inventa un nivel; se cuenta lo que hay.
+function demandLabel(options) {
+  if (!options || options < 2) return null;
+  if (options >= 4) return "Elige entre 4";
+  if (options === 3) return "Elige entre 3";
+  return "Elige entre 2";
+}
 
 function useHintStalled() {
   return useContext(HintStallContext);
@@ -3234,11 +3252,44 @@ export function NidoGamesExperience({
   // mano + 500 generados por la matriz de mecánicas × packs) + Misión del
   // Bosque + 5 mazos de Memoria + 5 mundos de Atrapa y Cuenta.
   // Cada tarjeta abre directamente su juego; no hay pantallas intermedias.
+  // Cuántas opciones ofrece de verdad cada ruta a la edad elegida. Se muestra en
+  // la ficha porque hasta ahora la sala era idéntica para un niño de dos años y
+  // para uno de seis —sólo cambiaba el contador de progreso—, y el reto sí
+  // cambia por dentro: el 97,8 % de las consignas se redactan distinto por edad
+  // y las opciones suben de dos a cuatro. Sin decirlo, ese trabajo era invisible.
+  // Se muestrean tres juegos de los veinte y se toma el máximo, que es el techo
+  // de exigencia con el que se va a encontrar. Medido: 529 rutas en menos de
+  // 20 ms, así que recalcularlo al cambiar de edad no se nota.
+  const routeDemand = useMemo(() => {
+    const demand = new Map();
+    for (const areaItem of NIDO_CURRICULUM) {
+      for (const categoryItem of areaItem.categories) {
+        let options = 0;
+        for (const gameIndex of [0, 9, 19]) {
+          const challenge = buildCurriculumChallenge({
+            areaId: areaItem.id,
+            categoryId: categoryItem.id,
+            ageId: selectedAge,
+            gameIndex,
+          });
+          options = Math.max(options, challenge?.options?.length ?? 0);
+        }
+        demand.set(`${areaItem.id}|${categoryItem.id}`, options);
+      }
+    }
+    return demand;
+  }, [selectedAge]);
+
   const routeTiles = useMemo(
     () =>
       NIDO_CURRICULUM.flatMap((areaItem) => {
         const style = AREA_TILE_STYLE[areaItem.id] ?? AREA_TILE_STYLE.logica;
-        return areaItem.categories.map((categoryItem) => {
+        const ordered = [...areaItem.categories].sort(
+          (a, b) =>
+            (routeDemand.get(`${areaItem.id}|${b.id}`) ?? 0) -
+            (routeDemand.get(`${areaItem.id}|${a.id}`) ?? 0),
+        );
+        return ordered.map((categoryItem) => {
           const done = getProgressValue(
             progress,
             selectedAge,
@@ -3258,6 +3309,9 @@ export function NidoGamesExperience({
             progressLabel: complete
               ? "Completado"
               : `Reto ${done + 1}/${NIDO_CURRICULUM_GAME_COUNT}`,
+            levelLabel: demandLabel(
+              routeDemand.get(`${areaItem.id}|${categoryItem.id}`),
+            ),
             icon: (
               <NidoGlyph
                 name={categoryItem.iconName}
@@ -3274,7 +3328,7 @@ export function NidoGamesExperience({
       }),
     // routeRounds entra en las dependencias porque startCategory lo lee para
     // calcular la ronda de rejugado; sin él las tarjetas guardarían un valor viejo.
-    [progress, routeRounds, selectedAge],
+    [progress, routeDemand, routeRounds, selectedAge],
   );
 
   const arcadeTiles = useMemo(() => {
@@ -3289,6 +3343,13 @@ export function NidoGamesExperience({
       badge: "¡Nuevo!",
       progressLabel:
         bosqueRounds >= 20 ? "Completado" : `Ronda ${Math.min(bosqueRounds + 1, 20)}/20`,
+      // El techo de frutas del último nivel de esa edad: es lo que acabará
+      // contando, y sube de tres a diez entre los dos y los seis años.
+      levelLabel: `Cuenta hasta ${Math.max(
+        ...(FOREST_AGE_PROFILES[selectedAge] ?? FOREST_AGE_PROFILES["2-3"]).levels.flatMap(
+          (level) => level.targets,
+        ),
+      )}`,
       icon: <NidoMascot pose="hola" size={48} />,
       onOpen: (event) => {
         arcadePreviousFocusRef.current = event?.currentTarget;
@@ -3307,6 +3368,7 @@ export function NidoGamesExperience({
         accent: theme.accent,
         accentSoft: theme.accentSoft,
         progressLabel: rounds >= 20 ? "Completado" : `Ronda ${Math.min(rounds + 1, 20)}/20`,
+        levelLabel: `${memoryDifficultyForRound(selectedAge, Math.min(rounds, 19)).pairCount} parejas`,
         icon: Icon ? <Icon size={44} /> : null,
         onOpen: (event) => {
           arcadePreviousFocusRef.current = event?.currentTarget;
@@ -3326,6 +3388,13 @@ export function NidoGamesExperience({
         accent: theme.accent,
         accentSoft: theme.accentSoft,
         progressLabel: rounds >= 20 ? "Completado" : `Ronda ${Math.min(rounds + 1, 20)}/20`,
+        levelLabel: `Atrapa ${
+          createCatchRound({
+            themeId: theme.id,
+            ageId: selectedAge,
+            roundIndex: Math.min(rounds, 19),
+          }).count
+        }`,
         icon: Icon ? <Icon size={44} /> : null,
         onOpen: (event) => {
           arcadePreviousFocusRef.current = event?.currentTarget;

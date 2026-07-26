@@ -597,6 +597,19 @@
   margin-top: 11px;
 }
 
+/* Exigencia real de la ficha a la edad elegida: acompaña a la descripción, que
+   es lo que se lee para decidir a qué jugar. */
+.arcade__tile-level {
+  justify-self: start;
+  margin-top: 5px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #ffffff26;
+  font-size: 0.58rem;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
 .arcade__tile-progress {
   flex: 1;
   min-width: 0;

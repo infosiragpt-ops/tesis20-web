@@ -179,6 +179,7 @@ export default function ArcadeHub({
                 aria-label={[
                   tile.title,
                   tile.tagline,
+                  tile.levelLabel,
                   tile.progressLabel,
                   "Abrir juego",
                 ]
@@ -203,6 +204,12 @@ export default function ArcadeHub({
                 <span className="arcade__tile-copy">
                   <strong>{tile.title}</strong>
                   <small>{tile.tagline}</small>
+                  {/* Lo que cambia al cambiar de edad. Sin esto la sala era
+                      idéntica para un niño de dos años y para uno de seis, y el
+                      ajuste que sí ocurre por dentro no se veía por ninguna parte. */}
+                  {tile.levelLabel ? (
+                    <span className="arcade__tile-level">{tile.levelLabel}</span>
+                  ) : null}
                 </span>
                 <span className="arcade__tile-footer">
                   {tile.progressLabel ? (
