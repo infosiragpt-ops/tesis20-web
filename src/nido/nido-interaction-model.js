@@ -223,18 +223,32 @@ export function buildNidoPathLayout(challenge) {
   }
 
   const rotation = seededRotation(challenge?.seed, boundary.length);
-  const rotatedBoundary = [
-    ...boundary.slice(rotation),
-    ...boundary.slice(0, rotation),
-  ];
   const spacing = Math.max(
     1,
-    Math.floor(rotatedBoundary.length / Math.max(challenge.options.length, 1)),
+    Math.floor(boundary.length / Math.max(challenge.options.length, 1)),
   );
-  const targets = challenge.options.map((option, index) => ({
-    ...rotatedBoundary[(index * spacing) % rotatedBoundary.length],
-    optionId: option.id,
-  }));
+  const placeTargets = (offset) => {
+    const rotatedBoundary = [
+      ...boundary.slice(offset),
+      ...boundary.slice(0, offset),
+    ];
+    return challenge.options.map((option, index) => ({
+      ...rotatedBoundary[(index * spacing) % rotatedBoundary.length],
+      optionId: option.id,
+    }));
+  };
+
+  // Los destinos también son muros para los demás destinos. En la rejilla de
+  // 3×3 una esquina sólo toca dos casillas, así que hay repartos que la dejan
+  // tapiada por sus propios vecinos. Se prueban las rotaciones en orden a
+  // partir de la que pide la semilla y se toma la primera que deja todos los
+  // destinos alcanzables; el resultado sigue siendo determinista.
+  let targets = placeTargets(rotation);
+  for (let attempt = 1; attempt < boundary.length; attempt += 1) {
+    if (allPathTargetsReachable({ size, start, targets, obstacles: [] })) break;
+    targets = placeTargets((rotation + attempt) % boundary.length);
+  }
+
   const targetKeys = new Set(
     targets.map((target) => `${target.row}:${target.column}`),
   );

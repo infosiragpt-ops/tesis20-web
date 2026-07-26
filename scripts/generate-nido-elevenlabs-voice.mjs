@@ -440,6 +440,30 @@ async function main() {
 
   const plan = enumerateAudioPlan();
   const { tracks, bosqueTracks } = plan;
+  // Presupuesto sin gastar: imprime el plan y sale. Sirve para saber cuántos
+  // caracteres costaría un cambio de guion antes de lanzar el lote.
+  if (process.env.NIDO_TTS_PLAN_ONLY === "1") {
+    const planCharacters = plan.jobs.reduce(
+      (sum, job) => sum + job.text.length,
+      0,
+    );
+    const pending = [];
+    for (const job of plan.jobs) {
+      if (!(await isUsableAudio(path.join(GENERATED_AUDIO_DIR, job.fileName)))) {
+        pending.push(job);
+      }
+    }
+    const pendingCharacters = pending.reduce(
+      (sum, job) => sum + job.text.length,
+      0,
+    );
+    console.log(
+      `Plan: ${Object.keys(tracks).length} retos, ${plan.jobs.length} audios únicos, ${planCharacters} caracteres.\n` +
+        `Pendientes de grabar: ${pending.length} audios, ${pendingCharacters} caracteres.`,
+    );
+    if (pending.length) console.log(`Ejemplo pendiente: «${pending[0].text}»`);
+    return;
+  }
   // Ensayo acotado antes de gastar el lote completo: genera solo las primeras
   // locuciones y no reescribe el manifiesto.
   const limit = Number.parseInt(process.env.NIDO_TTS_LIMIT || "0", 10);
@@ -550,6 +574,13 @@ async function main() {
       unlink(path.join(GENERATED_AUDIO_DIR, fileName)),
     ),
   );
+  // Este resumen sólo dice que el plan que este proceso enumeró quedó cubierto,
+  // no que el plan fuera el vigente. Si el guion se edita mientras arranca, node
+  // importa el módulo a medio escribir, enumera el catálogo anterior, encuentra
+  // los mp3 viejos en caché y llega hasta aquí cantando victoria sin grabar
+  // nada. Pasó el 2026-07-26. Por eso `npm run audio:nido` encadena
+  // `check:nido`, que compara el manifiesto contra el currículo ya cargado del
+  // todo, y `audio:nido:plan` permite ver el plan antes de gastar créditos.
   console.log(
     `Manifiesto actualizado: ${generatedCount} generados, ${cachedCount} reutilizados, ${obsoleteFiles.length} obsoletos retirados, ${Object.keys(tracks).length} retos y ${Object.keys(bosqueTracks).length} líneas del bosque cubiertos.`,
   );

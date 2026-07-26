@@ -586,9 +586,15 @@ check(
 // HUD. Son 13 KiB medidos (BosqueGame pasa de 27 a 40 KiB) en un chunk que solo
 // se descarga al abrir ese juego, muy por debajo de su tope de 250 KiB; el
 // JavaScript inicial sigue clavado en 450 KiB.
+// 2026-07-26 (quinquies): 755 → 760 KiB por el motor de dificultad del
+// currículo: elección de distractores por parecido (color «redmean», cercanía
+// numérica e icono), rampa de opciones por edad y ronda, y escalón adaptativo
+// según la racha del niño. Son 3 KiB medidos (el chunk de /nido pasa de 226 a
+// 228 KiB, con su tope de 250 KiB por chunk intacto) y afectan a los 529
+// juegos a la vez; el JavaScript inicial sigue clavado en 450 KiB.
 check(
-  javascriptBytes <= 755 * 1024,
-  `El JavaScript total con rutas diferidas no debe superar 755 KiB (${Math.ceil(javascriptBytes / 1024)} KiB).`,
+  javascriptBytes <= 760 * 1024,
+  `El JavaScript total con rutas diferidas no debe superar 760 KiB (${Math.ceil(javascriptBytes / 1024)} KiB).`,
 );
 check(
   initialStylesheetBytes > 0 && initialStylesheetBytes <= 85 * 1024,

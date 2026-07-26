@@ -717,64 +717,276 @@ function makeOptions(values, correctIndex, seed) {
 }
 
 /**
- * Cantidad de opciones visibles para un reto, según la edad y el número de
- * juego dentro de la categoría (0..GAME_COUNT-1). El techo por edad es el
- * mismo de siempre (age.difficulty + 1, tope 4, alineado con
- * check-nido-curriculum.mjs), pero los primeros juegos arrancan en el
- * mínimo (2 opciones) y solo alcanzan el techo hacia el final de las 20
- * rondas, para que la dificultad suba de forma perceptible sin superar
- * nunca el límite ya validado por edad.
+ * Cantidad de opciones visibles para un reto, según la edad, el número de
+ * juego dentro de la categoría (0..GAME_COUNT-1) y la ronda. El techo por
+ * edad es el mismo de siempre (age.difficulty + 1, tope 4, alineado con
+ * check-nido-curriculum.mjs) y nunca se supera.
+ *
+ * En la ronda 0 los primeros juegos arrancan en el mínimo (2 opciones) y solo
+ * alcanzan el techo hacia el final de las 20 rondas. Al repetir la categoría
+ * el suelo sube: quien vuelve por segunda vez ya no empieza con la elección
+ * más fácil que resolvió ayer. La ronda 0 conserva exactamente el reparto
+ * anterior, que es el validado contra el audio profesional grabado.
  */
-function optionCountForRound(age, gameIndex) {
-  const maxCount = Math.min(age.difficulty + 1, 4);
-  const minCount = 2;
+function optionCountForRound(age, gameIndex, round = 0, mastery = 0) {
+  const baseCeiling = Math.min(age.difficulty + 1, 4);
+  // A partir de la tercera vuelta el techo sube un escalón: quien ya resolvió
+  // cuarenta retos de la categoría puede con una opción más, y sin esto 2–3
+  // años se quedaba en dos opciones para siempre. Las rondas 0 y 1 conservan
+  // el techo por edad que valida check-nido-curriculum.mjs.
+  const raised = (round >= 2 ? 1 : 0) + (mastery > 0 ? 1 : 0);
+  const maxCount = Math.min(4, baseCeiling + raised);
+  // La racha limpia sube también el suelo, no sólo el techo: si únicamente
+  // subiera el techo, la rampa por número de reto seguiría mandando y el niño
+  // que acierta tres seguidas no notaría nada hasta el reto diez.
+  const step = mastery > 0 ? 1 : mastery < 0 ? -1 : 0;
+  const minCount = Math.min(
+    maxCount,
+    2 + Math.max(0, Math.min(Math.max(round, 0), 2) + step),
+  );
   if (maxCount <= minCount) return maxCount;
   const progress = gameIndex / (GAME_COUNT - 1);
   const ramped = minCount + Math.round(progress * (maxCount - minCount));
   return Math.min(maxCount, Math.max(minCount, ramped));
 }
 
-function makeChallenge(context, definition) {
-  const { area, categoryItem, age, gameIndex, seed, round = 0 } = context;
-  const baseSpokenInstruction =
-    definition.spokenInstruction ??
-    `${definition.question} Escucha con atención, mira con calma y elige tu respuesta.`;
-  // Cierres alentadores rotativos: cariñosos, sin presión y deterministas.
-  const ageCoaching = {
+/**
+ * Traduce el marcador vivo de la ruta a un escalón de dificultad: 1 sube,
+ * -1 baja, 0 deja el reto como está. Vive aquí, junto al resto de la política
+ * de dificultad, para que la pantalla no decida por su cuenta.
+ *
+ * Se pide una racha limpia de tres retos para subir, y se baja sólo cuando los
+ * intentos extra superan a los aciertos: al niño que falla una vez y se
+ * recupera no se le castiga.
+ */
+export function nidoMasteryStep({ streak = 0, mistakes = 0, correct = 0 } = {}) {
+  const solved = Math.max(correct, 1);
+  const errorRate = mistakes / solved;
+  if (streak >= 3 && errorRate <= 0.35) return 1;
+  if (errorRate >= 1) return -1;
+  return 0;
+}
+
+const HEX_COLOR = /^#([0-9a-f]{6})$/i;
+
+function toRgb(tone) {
+  const match = HEX_COLOR.exec(String(tone ?? ""));
+  if (!match) return null;
+  const value = Number.parseInt(match[1], 16);
+  return { r: (value >> 16) & 255, g: (value >> 8) & 255, b: value & 255 };
+}
+
+/**
+ * Distancia de color «redmean»: aproxima la percepción humana mucho mejor que
+ * la euclídea cruda en RGB y no necesita convertir a Lab. Normalizada a 0..1.
+ */
+function colorDistance(left, right) {
+  const meanRed = (left.r + right.r) / 2;
+  const deltaR = left.r - right.r;
+  const deltaG = left.g - right.g;
+  const deltaB = left.b - right.b;
+  const raw = Math.sqrt(
+    (2 + meanRed / 256) * deltaR * deltaR +
+      4 * deltaG * deltaG +
+      (2 + (255 - meanRed) / 256) * deltaB * deltaB,
+  );
+  return Math.min(1, raw / 768);
+}
+
+/**
+ * Cuánto se parecen dos opciones: 0 es «casi indistinguibles» y 1 es «no
+ * comparten nada». Es lo que permite graduar la exigencia de un reto sin
+ * cambiar ni la consigna ni el dibujo: enfrentar la respuesta correcta a un
+ * naranja cuando ya es amarilla es mucho más difícil que enfrentarla a un
+ * verde, aunque la pregunta hablada sea idéntica.
+ *
+ * Se promedian solo las señales que ambas opciones comparten, porque los
+ * retos son muy distintos entre sí: unos se juegan con color, otros con
+ * cantidades y otros solo con el dibujo.
+ */
+function optionDistance(correct, candidate) {
+  const signals = [];
+
+  const correctRgb = toRgb(correct.tone);
+  const candidateRgb = toRgb(candidate.tone);
+  if (correctRgb && candidateRgb) {
+    signals.push(colorDistance(correctRgb, candidateRgb));
+  }
+
+  const correctValue = Number(correct.value);
+  const candidateValue = Number(candidate.value);
+  if (Number.isFinite(correctValue) && Number.isFinite(candidateValue)) {
+    // Confundir 4 con 5 es normal a los cinco años; confundir 4 con 9 no.
+    signals.push(Math.min(1, Math.abs(correctValue - candidateValue) / 5));
+  }
+
+  if (correct.iconName && candidate.iconName) {
+    signals.push(correct.iconName === candidate.iconName ? 0.1 : 0.9);
+  }
+
+  if (!signals.length) {
+    const left = String(correct.label ?? "").toLowerCase();
+    const right = String(candidate.label ?? "").toLowerCase();
+    if (left && right) {
+      const shared = left[0] === right[0] ? 0.4 : 1;
+      const lengthGap =
+        Math.abs(left.length - right.length) / Math.max(left.length, right.length);
+      signals.push(Math.min(1, shared * (0.6 + lengthGap)));
+    }
+  }
+
+  if (!signals.length) return 0.5;
+  return signals.reduce((total, value) => total + value, 0) / signals.length;
+}
+
+/**
+ * Cuánto aprieta el reto, de 0 (distractores obvios) a 1 (distractores que
+ * obligan a mirar dos veces). Sube dentro de la categoría y sigue subiendo al
+ * repetirla, así que es el eje que hace progresar a 2–3 años, cuyo número de
+ * opciones está fijado en dos por diseño.
+ */
+function distractorTension(gameIndex, round, mastery = 0) {
+  const within = GAME_COUNT > 1 ? gameIndex / (GAME_COUNT - 1) : 1;
+  const replays = Math.min(Math.max(round, 0), 3) / 3;
+  // El escalón por rendimiento pesa tanto como saltarse media categoría: es lo
+  // que hace que el reto responda al niño de hoy y no sólo a su edad.
+  const adaptive = 0.3 * Math.max(-1, Math.min(1, mastery));
+  return Math.max(0, Math.min(1, 0.15 + 0.6 * within + 0.25 * replays + adaptive));
+}
+
+/**
+ * Escoge qué distractores sobreviven al recorte por edad. Antes se tomaban los
+ * primeros del array ya barajado, así que la dificultad real de cada reto era
+ * aleatoria: un mismo juego podía enfrentar «silla verde» contra «reloj rojo»
+ * (trivial) o «silla naranja» contra «puerta amarilla» (exigente) sin ningún
+ * patrón. Aquí se ordenan por parecido y se toma una ventana cuya posición
+ * depende de la tensión, de modo que la dificultad crece de verdad.
+ */
+function pickDistractors(correct, pool, count, tension, seed) {
+  if (count <= 0) return [];
+  if (pool.length <= count) return pool;
+
+  const ranked = pool
+    .map((option, index) => ({
+      option,
+      index,
+      distance: optionDistance(correct, option),
+    }))
+    .sort(
+      (left, right) =>
+        left.distance - right.distance ||
+        mix(seed, left.index + 53) - mix(seed, right.index + 53),
+    );
+
+  // tension 1 → cabeza de la lista (los más parecidos); tension 0 → cola.
+  const start = Math.round((1 - tension) * (ranked.length - count));
+  return ranked.slice(start, start + count).map((entry) => entry.option);
+}
+
+/**
+ * Cierres alentadores que rematan cada consigna hablada.
+ *
+ * Catorce por edad, no tres. Con tres, «¡Confío en ti!» aparecía en el 24% de
+ * las 2460 locuciones del catálogo y «¡Tú puedes!» en el 19%: un niño que
+ * encadena veinte retos oía la misma despedida siete veces y la narración se
+ * volvía un runrún. Ninguno marca género —quien juega puede ser niña— ni
+ * insinúa la respuesta, y cada uno pide una entonación distinta (susurro
+ * cómplice, entusiasmo, ternura lenta) para que la maestra no lea siempre
+ * igual. `coaching-lines.test.mjs` lo verifica.
+ */
+export const AGE_COACHING_LINES = Object.freeze({
     "2-3": [
       "Vamos despacito, sin apuro. ¡Tú puedes!",
       "Mira una cosita a la vez. ¡Lo harás genial!",
       "Respira, mira bien… ¡y elige con tu dedito!",
+      "Cuando quieras, con tu dedito. ¡Aquí te espero!",
+      "No hay ninguna prisa. ¡Tómate tu tiempito!",
+      "Ojitos bien abiertos… ¡tú sabes cuál es!",
+      "Primero miramos y después tocamos. ¡Así, muy bien!",
+      "Yo te espero aquí. ¡Mira con toda tu calma!",
+      "Cuenta hasta tres en tu cabecita… ¡y elige!",
+      "Señala el que tú creas. ¡Confío en ti!",
+      "Un ratito para pensar… ¡y ya está!",
+      "Piensa con tu cabecita. ¡Qué bien lo haces!",
+      "Sin miedo, que aquí nadie se equivoca. ¡Vamos!",
+      "Mira bien el dibujo… ¡y toca cuando quieras!",
     ],
     "4-5": [
       "Piensa con calma y elige. ¡Confío en ti!",
-      "Mira todas las pistas como un gran explorador. ¡Vamos!",
+      "Busca las pistas con tu lupa invisible. ¡Vamos!",
       "Tómate tu tiempo… ¡tú puedes con esto!",
+      "Esto es una misión secreta. ¡Shhh, concéntrate!",
+      "Mira otra vez con ojos de detective. ¡Adelante!",
+      "Tu cabeza ya lo sabe. ¡Solo déjala pensar!",
+      "Respira hondo… ¡y elige con toda tu valentía!",
+      "¡Lupa en mano! Observa cada detalle. ¡Vamos allá!",
+      "Cada pista guarda un secreto. ¡Escúchalas todas!",
+      "Aquí nadie tiene prisa. ¡Piénsalo a tu ritmo!",
+      "Confía en lo que ves. ¡Tu mente es muy sabia!",
+      "Un pasito de pensamiento… ¡y a por ello!",
+      "¡Qué gran aventura! Observa bien… ¡y decide!",
+      "Somos un equipo. ¡Yo te acompaño y tú decides!",
     ],
     6: [
       "Piénsalo bien y demuestra lo que sabes. ¡Adelante!",
-      "Analiza como todo un experto. ¡Confío en ti!",
+      "Analiza cada detalle con calma. ¡Confío en ti!",
       "Revisa con tus ojos de águila antes de elegir. ¡Tú puedes!",
+      "Compara las opciones una por una. ¡Tú sabes hacerlo!",
+      "Descarta lo que no encaja. ¡Esa es la estrategia!",
+      "Tu razonamiento vale más que la prisa. ¡Demuéstralo!",
+      "Lee, observa y decide. ¡Tienes todo lo necesario!",
+      "Busca el detalle que marca la diferencia. ¡Vamos!",
+      "Piensa como quien resuelve misterios. ¡Tú puedes!",
+      "Nada de adivinar: razona y elige. ¡Con seguridad!",
+      "Ya has llegado muy lejos. ¡Demuéstralo una vez más!",
+      "Revisa tu idea antes de confirmarla. ¡Buen criterio!",
+      "Tienes la mente afilada. ¡Úsala sin miedo!",
+      "Observa el conjunto, no solo una parte. ¡Vamos allá!",
     ],
-  };
+});
+
+function makeChallenge(context, definition) {
+  const {
+    area,
+    categoryItem,
+    age,
+    gameIndex,
+    seed,
+    round = 0,
+    mastery = 0,
+  } = context;
+  const baseSpokenInstruction =
+    definition.spokenInstruction ??
+    `${definition.question} Escucha con atención, mira con calma y elige tu respuesta.`;
+  const ageCoaching = AGE_COACHING_LINES;
   const coachingLines = ageCoaching[age.id];
-  // Los juegos escritos a mano rotan el cierre con la ronda; los generados lo
-  // fijan por mecánica (`coachingIndex`) para que las cien variantes de una
-  // misma mecánica compartan una sola locución grabada.
-  const coachingIndex = Number.isInteger(definition.coachingIndex)
-    ? definition.coachingIndex
-    : gameIndex;
+  // La invariante que hay que respetar no es «un cierre por mecánica», sino
+  // «el mismo cierre para todos los retos que comparten locución»: si dos retos
+  // con idéntica consigna base recibieran cierres distintos, cada uno pasaría a
+  // necesitar su propio mp3 y el catálogo grabado se multiplicaría. Derivarlo
+  // del hash del texto base lo garantiza por construcción, y además reparte los
+  // catorce cierres, cosa que el índice de mecánica no podía hacer: solo tomaba
+  // diez valores. Los escritos a mano no comparten voz, así que ahí rotar con el
+  // número de juego es gratis y da más variedad todavía.
+  const coachingIndex = definition.sharedVoice
+    ? hashSeed(baseSpokenInstruction)
+    : Number.isInteger(definition.coachingIndex)
+      ? definition.coachingIndex
+      : gameIndex;
   const spokenInstruction = `${baseSpokenInstruction} ${coachingLines[coachingIndex % coachingLines.length]}`;
-  const maximumOptionCount = optionCountForRound(age, gameIndex);
+  const maximumOptionCount = optionCountForRound(age, gameIndex, round, mastery);
   const correctOption = definition.options.find(
     (option) => option.id === definition.answerId,
   );
   const visibleOptionIds = new Set([
     definition.answerId,
-    ...definition.options
-      .filter((option) => option.id !== definition.answerId)
-      .slice(0, Math.max(0, maximumOptionCount - 1))
-      .map((option) => option.id),
+    ...pickDistractors(
+      correctOption ?? {},
+      definition.options.filter((option) => option.id !== definition.answerId),
+      Math.max(0, maximumOptionCount - 1),
+      distractorTension(gameIndex, round, mastery),
+      seed,
+    ).map((option) => option.id),
   ]);
   const ageAdjustedOptions = definition.options.filter((option) =>
     visibleOptionIds.has(option.id),
@@ -1780,6 +1992,7 @@ export function buildCurriculumChallenge({
   ageId,
   gameIndex,
   round = 0,
+  mastery = 0,
 }) {
   const area = getCurriculumArea(areaId);
   if (!area) {
@@ -1821,6 +2034,9 @@ export function buildCurriculumChallenge({
     gameIndex,
     seed,
     round: safeRound,
+    // Sin señal de rendimiento el reto sale exactamente igual que antes: los
+    // scripts de validación y el audio grabado siguen viendo el mismo catálogo.
+    mastery: Math.max(-1, Math.min(1, Number(mastery) || 0)),
   });
 
   if (
