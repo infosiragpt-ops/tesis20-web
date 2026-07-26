@@ -207,9 +207,54 @@ function sceneTheme(categoryId) {
 
 const DEFAULT_AUDIO_TRACKS = Object.freeze({});
 
+// El efecto de acierto llevaba una voz diciendo «yupi» pegada al final del
+// arpegio. Sonaba en los 31 740 retos y, como la pantalla de premio no tenía
+// sonido propio, era también lo último que se oía al cerrar una ruta: la
+// partida terminaba con un «yupi» en vez de con una victoria. Ahora el acierto
+// es un premio instrumental corto y el final de ruta tiene su fanfarria.
+// Ambos se sintetizan en `scripts/generate-nido-reward-sfx.mjs`.
 const DEFAULT_FEEDBACK_TRACKS = Object.freeze({
-  success: "/assets/nido/audio/success-tiriri-yupi-v1.mp3",
+  success: "/assets/nido/audio/success-premio-v2.mp3",
   error: "/assets/nido/audio/error-tin-ton-v1.mp3",
+  victory: "/assets/nido/audio/victory-fanfarria-v1.mp3",
+});
+
+// Volumen y tope de espera de cada efecto. El tope es el respaldo para cuando
+// el navegador nunca dispara `onended` (pestaña de fondo, audio bloqueado):
+// tiene que superar la duración real del archivo o cortaría la fanfarria.
+const FEEDBACK_SOUND_SETTINGS = Object.freeze({
+  success: { volume: 0.68, timeoutMs: 4000 },
+  error: { volume: 0.58, timeoutMs: 2500 },
+  victory: { volume: 0.82, timeoutMs: 5200 },
+});
+
+// Respaldo sintetizado para cuando el mp3 no carga: [frecuencia, retraso,
+// duración, volumen]. La victoria repite la misma progresión I–V–I de la
+// fanfarria grabada para que el niño reconozca el momento aunque suene la
+// versión de emergencia.
+const FEEDBACK_TONE_NOTES = Object.freeze({
+  success: [
+    [1046.5, 0, 0.2, 0.1],
+    [1318.51, 0.06, 0.24, 0.11],
+    [1567.98, 0.12, 0.28, 0.12],
+    [2093.0, 0.19, 0.38, 0.1],
+  ],
+  error: [
+    [311.13, 0, 0.18, 0.1],
+    [233.08, 0.15, 0.28, 0.085],
+  ],
+  victory: [
+    [523.25, 0, 0.26, 0.09], [659.26, 0, 0.26, 0.08], [783.99, 0, 0.26, 0.07],
+    [587.33, 0.28, 0.26, 0.09], [783.99, 0.28, 0.26, 0.08], [987.77, 0.28, 0.26, 0.07],
+    [523.25, 0.56, 1.1, 0.1], [659.26, 0.56, 1.1, 0.085], [783.99, 0.56, 1.1, 0.075],
+    [1046.5, 0.56, 1.1, 0.07], [1318.51, 0.62, 0.9, 0.05], [1567.98, 0.68, 0.8, 0.04],
+  ],
+});
+
+const FEEDBACK_TONE_DURATIONS = Object.freeze({
+  success: 650,
+  error: 520,
+  victory: 1700,
 });
 
 function createRouteStats(correct = 0) {
@@ -2739,23 +2784,13 @@ export function NidoGamesExperience({
       }
 
       const startAt = audioContext.currentTime + 0.02;
-      const notes =
-        type === "success"
-          ? [
-              [659.25, 0, 0.18, 0.11],
-              [783.99, 0.11, 0.22, 0.12],
-              [1046.5, 0.23, 0.34, 0.14],
-            ]
-          : [
-              [311.13, 0, 0.18, 0.1],
-              [233.08, 0.15, 0.28, 0.085],
-            ];
+      const notes = FEEDBACK_TONE_NOTES[type] ?? FEEDBACK_TONE_NOTES.error;
 
       notes.forEach(([frequency, delay, duration, volume]) => {
         const oscillator = audioContext.createOscillator();
         const gain = audioContext.createGain();
         const noteStart = startAt + delay;
-        oscillator.type = type === "success" ? "sine" : "triangle";
+        oscillator.type = type === "error" ? "triangle" : "sine";
         oscillator.frequency.setValueAtTime(frequency, noteStart);
         gain.gain.setValueAtTime(0.0001, noteStart);
         gain.gain.exponentialRampToValueAtTime(volume, noteStart + 0.025);
@@ -2785,12 +2820,12 @@ export function NidoGamesExperience({
     } else {
       playNotes();
     }
-    return type === "success" ? 650 : 520;
+    return FEEDBACK_TONE_DURATIONS[type] ?? FEEDBACK_TONE_DURATIONS.error;
   };
 
   // La promesa se resuelve cuando la fanfarria termina de sonar de verdad:
   // fin del mp3, tono sintetizado o silencio total. La celebración hablada
-  // espera esa señal para no pisar al «¡Yupi!» grabado.
+  // espera esa señal para no pisar al premio del acierto.
   const playFeedbackSound = (type) => {
     stopFeedbackSound();
     const runId = feedbackSoundRunRef.current;
@@ -2806,10 +2841,9 @@ export function NidoGamesExperience({
         }
         resolve(completed);
       };
-      const watchdog = window.setTimeout(
-        () => settle(true),
-        type === "success" ? 4000 : 2500,
-      );
+      const settings =
+        FEEDBACK_SOUND_SETTINGS[type] ?? FEEDBACK_SOUND_SETTINGS.error;
+      const watchdog = window.setTimeout(() => settle(true), settings.timeoutMs);
       feedbackSoundCompletionRef.current = { runId, resolve: settle };
 
       const fallbackOnce = () => {
@@ -2837,7 +2871,7 @@ export function NidoGamesExperience({
       feedbackAudio.src =
         feedbackTracks[type] ?? DEFAULT_FEEDBACK_TRACKS[type];
       feedbackAudio.currentTime = 0;
-      feedbackAudio.volume = type === "success" ? 0.68 : 0.58;
+      feedbackAudio.volume = settings.volume;
       feedbackAudio.onended = () => settle(true);
       feedbackAudio.onerror = fallbackOnce;
       void feedbackAudio.play().catch(fallbackOnce);
@@ -3831,8 +3865,11 @@ export function NidoGamesExperience({
         });
       }
       setRouteComplete(true);
+      // La pantalla de premio no tenía sonido: los 20 retos terminaban con el
+      // mismo efecto de un acierto cualquiera y el trofeo aparecía en silencio.
+      void playFeedbackSound("victory");
       onStatus(
-        `¡Subcategoría ${category.name} completada para ${age.label}!`,
+        `¡Subcategoría ${category.name} completada para ${age.label}! Ganaste el sticker ${reward.label}.`,
       );
       window.requestAnimationFrame(() => routeSuccessRef.current?.focus());
     }

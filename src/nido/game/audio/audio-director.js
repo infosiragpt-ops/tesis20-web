@@ -195,6 +195,14 @@ export function createAudioDirector() {
     active.watchdogTimer = null;
   };
 
+  // Campana aditiva: la fundamental más dos parciales inarmónicas. Es lo que
+  // separa un premio de un pitido de interfaz, y cuesta tres osciladores.
+  const bell = (freq, at, dur, volume) => {
+    note(sfxBus, freq, at, dur, volume);
+    note(sfxBus, freq * 2.76, at, dur * 0.5, volume * 0.3);
+    note(sfxBus, freq * 5.4, at, dur * 0.28, volume * 0.12);
+  };
+
   const SFX = {
     jump: () => note(sfxBus, 420, ctx.currentTime, 0.16, 0.16, "triangle"),
     collect: () => {
@@ -206,18 +214,35 @@ export function createAudioDirector() {
       note(sfxBus, 494, ctx.currentTime + 0.08, 0.14, 0.14);
     },
     count: () => note(sfxBus, 784, ctx.currentTime, 0.13, 0.18),
+    // Mismo arpegio de premio que el currículo, para que los cinco juegos de
+    // Nido premien igual: Do–Mi–Sol–Do con timbre de campana.
     success: () => {
-      note(sfxBus, 659, ctx.currentTime, 0.16, 0.16);
-      note(sfxBus, 784, ctx.currentTime + 0.1, 0.18, 0.16);
-      note(sfxBus, 1047, ctx.currentTime + 0.22, 0.3, 0.18);
+      [1046.5, 1318.51, 1567.98, 2093.0].forEach((freq, index) =>
+        bell(freq, ctx.currentTime + index * 0.055, 0.5, 0.13 - index * 0.008),
+      );
+      note(sfxBus, 523.25, ctx.currentTime + 0.17, 0.4, 0.07);
     },
     try: () => {
       note(sfxBus, 311, ctx.currentTime, 0.16, 0.12, "triangle");
       note(sfxBus, 262, ctx.currentTime + 0.14, 0.2, 0.1, "triangle");
     },
+    // Fin de ronda. La escala ascendente anterior se quedaba en «bien hecho»;
+    // esta es la fanfarria I–V–I de la victoria del currículo, con confeti de
+    // campanitas encima, para que ganar suene a ganar.
     celebrate: () => {
-      [523, 659, 784, 1047, 1319].forEach((freq, index) =>
-        note(sfxBus, freq, ctx.currentTime + index * 0.09, 0.22, 0.15),
+      const now = ctx.currentTime;
+      const CHORDS = [
+        [0, 0.24, [523.25, 659.26, 783.99]],
+        [0.26, 0.24, [587.33, 783.99, 987.77]],
+        [0.52, 1.0, [523.25, 659.26, 783.99, 1046.5]],
+      ];
+      for (const [delay, dur, chord] of CHORDS) {
+        for (const freq of chord) {
+          note(sfxBus, freq, now + delay, dur, 0.1, "triangle");
+        }
+      }
+      [1318.51, 1567.98, 2093.0, 2637.02, 1760.0, 2349.32].forEach(
+        (freq, index) => bell(freq, now + 0.56 + index * 0.11, 0.42, 0.075),
       );
     },
   };

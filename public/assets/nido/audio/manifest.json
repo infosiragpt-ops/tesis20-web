@@ -12,8 +12,9 @@
   "feedbackProvider": "local-prerecorded",
   "feedbackFallback": "web-audio",
   "feedbackTracks": {
-    "success": "/assets/nido/audio/success-tiriri-yupi-v1.mp3",
-    "error": "/assets/nido/audio/error-tin-ton-v1.mp3"
+    "success": "/assets/nido/audio/success-premio-v2.mp3",
+    "error": "/assets/nido/audio/error-tin-ton-v1.mp3",
+    "victory": "/assets/nido/audio/victory-fanfarria-v1.mp3"
   },
   "ageProfiles": {
     "6": {
