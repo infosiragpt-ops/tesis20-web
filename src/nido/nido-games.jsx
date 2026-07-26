@@ -1187,7 +1187,16 @@ function ChallengeScene({
         {visual.word ? (
           <strong className="nido-games__scene-word">{String(visual.word)}</strong>
         ) : null}
+        {/* El español va debajo y en pequeño: acompaña a la palabra que se
+            aprende sin robarle el sitio, y desaparece solo según avanzan las
+            rondas. */}
+        {visual.supportWord ? (
+          <span className="nido-games__scene-repeat">
+            En español: <strong>{String(visual.supportWord)}</strong>
+          </span>
+        ) : null}
         {visual.repeatWord &&
+        String(visual.repeatWord) !== String(visual.word) &&
         (visual.kind !== "emotion-scene" ||
           selectedAnswer === challenge.answerId) ? (
           <span className="nido-games__scene-repeat">

@@ -566,7 +566,7 @@ const ENGLISH_VOCABULARY = Object.freeze({
     spanish,
     english,
     value: index + 1,
-    iconName: "NumberCircleOne",
+    iconName: `NumberCircle${index + 1}`,
   })),
   "english-family": [
     ["mother", "mamá", "FamilyMother"],
@@ -1107,7 +1107,7 @@ function logicChallenge(context) {
         id: `number-${value}`,
         label: String(value),
         value,
-        iconName: "NumberCircleOne",
+        iconName: `NumberCircle${value}`,
       })),
       0,
       seed,
@@ -1386,7 +1386,7 @@ function mathChallenge(context) {
       id: `number-${value}`,
       label: String(value),
       value,
-      iconName: "NumberCircleOne",
+      iconName: `NumberCircle${value}`,
     })),
     0,
     seed,
@@ -1924,7 +1924,13 @@ function englishChallenge(context) {
     visual: {
       sourceLanguage: reverse ? "en" : "es",
       targetLanguage: reverse ? "es" : "en",
-      word: reverse ? item.english : spanishSupport ? item.spanish : null,
+      // La palabra que se está aprendiendo va siempre en grande. Antes, en el
+      // modo directo, el cartel grande era «uno» y «one» quedaba de subtítulo
+      // gris: en un juego cuyo objetivo es aprender inglés, el andamio se leía
+      // como protagonista y lo aprendido como pie de foto.
+      word: item.english,
+      // El español es apoyo, y se retira solo conforme avanzan las rondas.
+      supportWord: spanishSupport ? item.spanish : null,
       spanishSupport,
       iconName: item.iconName,
       tone: item.tone ?? null,

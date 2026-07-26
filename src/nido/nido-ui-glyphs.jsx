@@ -33,6 +33,49 @@ const make = (children, filled = false) => {
   return UiGlyph;
 };
 
+// Números de la ronda. Existía un único glifo, `NumberCircleOne`, dibujado a
+// mano con dos trazos, y `numberChoice()` se lo asignaba a todos los valores:
+// la ficha guía mostraba un «1» aunque el reto fuera del seis. Dibujar diez
+// cifras a mano da además un trazo tosco justo donde el niño está aprendiendo a
+// reconocer la forma del número, así que la cifra se compone con tipografía
+// real dentro del círculo del sistema.
+const numberGlyph = (value) => {
+  function NumberGlyph({ size = 24, weight, tint, ...rest }) {
+    return (
+      <Glyph size={size} {...rest}>
+        <circle cx="12" cy="12" r="9.2" />
+        <text
+          x="12"
+          y="12"
+          textAnchor="middle"
+          dominantBaseline="central"
+          stroke="none"
+          fill="currentColor"
+          fontSize={String(value).length > 1 ? "10" : "12.5"}
+          fontWeight="900"
+          fontFamily="'Arial Rounded MT Bold', 'Avenir Next', system-ui, sans-serif"
+        >
+          {value}
+        </text>
+      </Glyph>
+    );
+  }
+  return NumberGlyph;
+};
+
+/** Nombre de glifo para una cifra: `NumberCircle3`, `NumberCircle10`… */
+export const numberGlyphName = (value) => `NumberCircle${value}`;
+
+// El currículo llega hoy hasta el 29 (series de Matemáticas para seis años); se
+// generan hasta el 40 para que ampliar una serie no rompa la ficha guía en
+// silencio. `numeros-y-palabras.test.mjs` avisa si el catálogo se pasa.
+const NUMBER_GLYPHS = Object.fromEntries(
+  Array.from({ length: 41 }, (_, value) => [
+    numberGlyphName(value),
+    numberGlyph(value),
+  ]),
+);
+
 const arrow = (rotation) =>
   make(
     <g transform={rotation ? `rotate(${rotation} 12 12)` : undefined}>
@@ -41,6 +84,7 @@ const arrow = (rotation) =>
   );
 
 export const UI_GLYPHS = Object.freeze({
+  ...NUMBER_GLYPHS,
   ArrowDown: arrow(90),
   ArrowLeftGlyph: arrow(180),
   ArrowBendRightUp: make(<path d="M5 20 Q5 8 17 8 M12.5 12.5 L17 8 L12.5 3.5" />),

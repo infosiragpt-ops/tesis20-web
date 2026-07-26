@@ -182,11 +182,16 @@ const idsOf = (...entries) => entries.flat().map((entry) => entry.id);
 
 const tint = (entry, color) => ({ ...entry, tone: color.tone });
 
+// Cada cifra usa su propio glifo. Antes todas apuntaban a «NumberCircleOne», así
+// que la ficha guía enseñaba un «1» aunque el reto fuera del seis. El nombre se
+// arma aquí en vez de importarlo de nido-ui-glyphs.jsx: este módulo es de datos
+// y no debe arrastrar componentes de React. `ui-glyphs.test.mjs` comprueba que
+// los dos lados sigan hablando el mismo idioma.
 const numberChoice = (value) => ({
   id: `numero-${value}`,
   label: String(value),
   value,
-  iconName: "NumberCircleOne",
+  iconName: `NumberCircle${value}`,
 });
 
 /** Cantidad de la ronda: sube con la edad y se mueve con el número de juego. */

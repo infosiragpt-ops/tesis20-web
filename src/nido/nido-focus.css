@@ -443,6 +443,9 @@
   letter-spacing: 0.01em;
 }
 
+/* También viste el apoyo en español que acompaña a la palabra inglesa: mismo
+   papel visual —texto pequeño y apagado bajo el cartel— y ni un byte más de
+   hoja, que está a 25 bytes de su tope. */
 .nido-games__scene-repeat {
   color: #4d647b;
   font-size: 0.76rem;
