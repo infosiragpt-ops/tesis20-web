@@ -592,9 +592,15 @@ check(
 // según la racha del niño. Son 3 KiB medidos (el chunk de /nido pasa de 226 a
 // 228 KiB, con su tope de 250 KiB por chunk intacto) y afectan a los 529
 // juegos a la vez; el JavaScript inicial sigue clavado en 450 KiB.
+// 2026-07-26 (sexies): 760 → 766 KiB por las locuciones grabadas de Memoria
+// Mágica y Atrapa y Cuenta. Sus diez juegos narraban con la voz sintética del
+// sistema porque sus runtimes nunca pedían un mp3; ahora resuelven claves contra
+// el manifiesto. Son 4.25 KiB medidos (arcade-voice-lines, un chunk propio que
+// sólo se descarga al abrir esos juegos) más el cableado en cada runtime; el
+// JavaScript inicial sigue clavado en 450 KiB.
 check(
-  javascriptBytes <= 760 * 1024,
-  `El JavaScript total con rutas diferidas no debe superar 760 KiB (${Math.ceil(javascriptBytes / 1024)} KiB).`,
+  javascriptBytes <= 766 * 1024,
+  `El JavaScript total con rutas diferidas no debe superar 766 KiB (${Math.ceil(javascriptBytes / 1024)} KiB).`,
 );
 check(
   initialStylesheetBytes > 0 && initialStylesheetBytes <= 85 * 1024,

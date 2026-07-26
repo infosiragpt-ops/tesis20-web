@@ -17,9 +17,24 @@ import {
   huertoTargetSwitch,
 } from "../content/catch-mission.js";
 import {
+  celebrationAudioKey,
   getCelebrationVoiceProfile,
   pickSuccessCelebration,
 } from "../content/celebration-feedback.js";
+import { loadVoiceManifest } from "../audio/voice-manifest.js";
+import {
+  atrapaAvisoKey,
+  atrapaAvisoText,
+  atrapaBriefKey,
+  atrapaCambioKey,
+  atrapaCambioText,
+  atrapaCompleteKey,
+  atrapaCompleteText,
+  atrapaDobleKey,
+  atrapaDobleText,
+  atrapaLadosKey,
+  atrapaLadosText,
+} from "../content/arcade-voice-lines.js";
 import { STICKERS } from "../../stickers/sticker-registry.jsx";
 import "./catch-game.css";
 
@@ -125,6 +140,8 @@ export default function CatchGame({
   const currentTargetRef = useRef(round.target);
   const targetSwitchedRef = useRef(false);
 
+  const tracksRef = useRef({});
+
   const speak = useCallback((text, opts) => {
     return (
       audioRef.current?.speak(text, opts) ??
@@ -132,12 +149,28 @@ export default function CatchGame({
     );
   }, []);
 
+  // Igual que en Misión del Bosque: con clave suena la maestra de estudio, sin
+  // clave audioDirector cae a la voz del dispositivo. Ese respaldo es para un
+  // fallo de red, no para el uso normal.
+  const narrate = useCallback(
+    (text, key, opts) =>
+      speak(text, { ...opts, audioSrc: key ? tracksRef.current[key] : undefined }),
+    [speak],
+  );
+
   useEffect(() => {
     const audio = createAudioDirector();
     audioRef.current = audio;
     setAudioPrefs(audio.prefs());
     adapterRef.current = createDifficultyAdapter({ maxLevel: 0 });
+
+    let manifestActive = true;
+    loadVoiceManifest().then(({ tracks }) => {
+      if (manifestActive) tracksRef.current = tracks;
+    });
+
     return () => {
+      manifestActive = false;
       celebrationRunRef.current += 1;
       loopRef.current?.destroy();
       loopRef.current = null;
@@ -229,7 +262,7 @@ export default function CatchGame({
       await wait(CELEBRATION_LEAD_IN_MS);
       if (celebrationRunRef.current !== celebrationRun) return;
 
-      await speak(celebration.spokenText, {
+      await narrate(celebration.spokenText, celebrationAudioKey(celebration.id), {
         ...voiceProfile,
         watchdogMs: CELEBRATION_WATCHDOG_MS,
       });
@@ -244,7 +277,7 @@ export default function CatchGame({
         setMissionSummary(summary);
         phaseRef.current = "missionComplete";
         setPhase("missionComplete");
-        void speak("¡Atrapa y cuenta completado! Qué buena puntería.");
+        void narrate(atrapaCompleteText[ageId], atrapaCompleteKey(ageId));
         onMissionComplete?.(summary);
       } else {
         setRoundIndex(completedRound);
@@ -347,7 +380,7 @@ export default function CatchGame({
                 targetSwitchedRef.current = true;
                 currentTargetRef.current = nextTarget;
                 targetSwitched = true;
-                speak("¡Cambio de objetivo! Ahora busca esto en el huerto.");
+                narrate(atrapaCambioText[ageId], atrapaCambioKey(ageId));
               }
             }
 
@@ -399,15 +432,19 @@ export default function CatchGame({
   useEffect(() => {
     if (phase !== "briefing") return;
     setupRound(roundIndex);
-    let intro = round.spokenText;
-    if (attributeMode) {
-      intro += ` Esta vez busca figuras con ${attributeMode.sides} lados: pueden ser distintas, pero todas cuentan.`;
-    } else if (secondaryTarget) {
-      intro += " Y ojo: atrapar el segundo dibujo vale doble.";
-    } else if (theme.id === "huerto" && roundIndex >= CATCH_EXPERT_ROUND_INDEX) {
-      intro += " En esta ronda el objetivo podría cambiar a la mitad, ¡te avisaré!";
-    }
-    speak(intro);
+    void (async () => {
+      await narrate(round.spokenText, atrapaBriefKey(ageId, round.count));
+      if (attributeMode) {
+        await narrate(
+          atrapaLadosText(attributeMode.sides),
+          atrapaLadosKey(ageId, attributeMode.sides),
+        );
+      } else if (secondaryTarget) {
+        await narrate(atrapaDobleText[ageId], atrapaDobleKey(ageId));
+      } else if (theme.id === "huerto" && roundIndex >= CATCH_EXPERT_ROUND_INDEX) {
+        await narrate(atrapaAvisoText[ageId], atrapaAvisoKey(ageId));
+      }
+    })();
     setPhase("playing");
   }, [attributeMode, phase, roundIndex, round.spokenText, secondaryTarget, setupRound, speak, theme.id]);
 
@@ -547,7 +584,7 @@ export default function CatchGame({
                 >
                   {audioPrefs.voice ? "👩‍🏫" : "🔇"}
                 </button>
-                <button type="button" aria-label="Repetir instrucción" onClick={() => speak(round.spokenText)}>
+                <button type="button" aria-label="Repetir instrucción" onClick={() => narrate(round.spokenText, atrapaBriefKey(ageId, round.count))}>
                   🔊
                 </button>
                 <button type="button" aria-label={paused ? "Continuar" : "Pausa"} onClick={togglePause}>

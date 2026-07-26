@@ -26,6 +26,7 @@ import {
   buildCurriculumChallenge,
 } from "../src/nido/nido-curriculum.js";
 import { enumerateForestVoiceLines } from "../src/nido/game/content/forest-voice-lines.js";
+import { enumerateArcadeVoiceLines } from "../src/nido/game/content/arcade-voice-lines.js";
 import {
   celebrationAudioKey,
   PERSISTENCE_CELEBRATION,
@@ -201,6 +202,16 @@ function enumerateAudioPlan() {
       jobsByHash,
       { key: line.key, ageId: line.ageId, text: line.text },
       bosqueTracks,
+    );
+  }
+
+  // Memoria Mágica y Atrapa y Cuenta. Van a `tracks` —no a un mapa aparte—
+  // porque sus runtimes ya cargan ese mismo mapa para las celebraciones.
+  for (const line of enumerateArcadeVoiceLines()) {
+    addJob(
+      jobsByHash,
+      { key: line.key, ageId: line.ageId, text: line.text },
+      tracks,
     );
   }
 

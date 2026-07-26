@@ -15,9 +15,29 @@ import {
   pickBonusSidesQuestion,
 } from "../content/memory-mission.js";
 import {
+  celebrationAudioKey,
   getCelebrationVoiceProfile,
   pickSuccessCelebration,
 } from "../content/celebration-feedback.js";
+import { loadVoiceManifest } from "../audio/voice-manifest.js";
+import {
+  memoriaBonusBienKey,
+  memoriaBonusBienText,
+  memoriaBonusCasiKey,
+  memoriaBonusCasiText,
+  memoriaBonusKey,
+  memoriaBonusText,
+  memoriaBriefKey,
+  memoriaBriefText,
+  memoriaCompleteKey,
+  memoriaCompleteText,
+  memoriaIntrusoKey,
+  memoriaIntrusoText,
+  memoriaParejaIntrusaKey,
+  memoriaParejaIntrusaText,
+  memoriaVistazoKey,
+  memoriaVistazoText,
+} from "../content/arcade-voice-lines.js";
 import { STICKERS } from "../../stickers/sticker-registry.jsx";
 import "./memoria-game.css";
 
@@ -69,13 +89,21 @@ export default function MemoriaGame({
   const peekTimerRef = useRef(null);
   const mismatchStreakRef = useRef(0);
   const celebrationRunRef = useRef(0);
+  const tracksRef = useRef({});
 
   useEffect(() => {
     const audio = createAudioDirector();
     audioRef.current = audio;
     setAudioPrefs(audio.prefs());
     adapterRef.current = createDifficultyAdapter({ maxLevel: 0 });
+
+    let active = true;
+    loadVoiceManifest().then(({ tracks }) => {
+      if (active) tracksRef.current = tracks;
+    });
+
     return () => {
+      active = false;
       celebrationRunRef.current += 1;
       window.clearTimeout(previewTimerRef.current);
       window.clearTimeout(mismatchTimerRef.current);
@@ -91,6 +119,16 @@ export default function MemoriaGame({
       Promise.resolve({ status: "skipped" })
     );
   }, []);
+
+  // Narra con la maestra de estudio cuando la clave está grabada. Sin clave, o
+  // sin manifiesto, audioDirector.speak cae a la voz del dispositivo: es el
+  // respaldo para un fallo de red, no el modo normal. Toda frase nueva de este
+  // juego debe pasar por aquí con su clave de arcade-voice-lines.js.
+  const narrate = useCallback(
+    (text, key, opts) =>
+      speak(text, { ...opts, audioSrc: key ? tracksRef.current[key] : undefined }),
+    [speak],
+  );
 
   const setupRound = useCallback(
     (index) => {
@@ -118,16 +156,13 @@ export default function MemoriaGame({
   useEffect(() => {
     if (phase !== "briefing") return;
     setupRound(roundIndex);
-    const intro = `${theme.tagline} Mira bien la posición de cada tarjeta, ${
-      roundIndex === 0 ? "" : "y "
-    }encuentra las parejas.`;
-    speak(
-      hasIntruderRound(theme.id, roundIndex)
-        ? `${intro} Esta vez, una pareja no es del cole, ¿la notas?`
-        : intro,
+    const intruder = hasIntruderRound(theme.id, roundIndex);
+    narrate(
+      memoriaBriefText(theme, ageId, intruder),
+      memoriaBriefKey(theme.id, ageId, intruder),
     );
     setPhase("playing");
-  }, [phase, roundIndex, setupRound, speak, theme.id, theme.tagline]);
+  }, [ageId, narrate, phase, roundIndex, setupRound, theme]);
 
   const handleStart = () => {
     audioRef.current?.start();
@@ -142,14 +177,14 @@ export default function MemoriaGame({
         setMissionSummary(summary);
         setLocked(true);
         setPhase("missionComplete");
-        void speak("¡Memoria mágica completada! Qué buena memoria tienes.");
+        void narrate(memoriaCompleteText[ageId], memoriaCompleteKey(ageId));
         onMissionComplete?.(summary);
       } else {
         setRoundIndex(completedRound);
         setPhase("briefing");
       }
     },
-    [onMissionComplete, speak],
+    [ageId, narrate, onMissionComplete],
   );
 
   const celebrateCompletedRound = useCallback(
@@ -165,16 +200,26 @@ export default function MemoriaGame({
         `memoria:${theme.id}:${ageId}:${completedRound}:${perfect ? "perfecta" : "completa"}`,
         adapterRef.current.summary().successes,
       );
+      // rate y pitch sólo tienen efecto sobre la voz sintética; con el clip de
+      // estudio se ignoran. Se mantienen para que el respaldo suene animado.
       const voiceProfile = getCelebrationVoiceProfile(ageId, celebration);
-      const praise = intruderFound
-        ? `¡Encontraste también al intruso! ${celebration.spokenText}`
-        : celebration.spokenText;
 
       setLocked(true);
       await wait(CELEBRATION_LEAD_IN_MS);
       if (celebrationRunRef.current !== celebrationRun) return;
 
-      await speak(praise, {
+      // El reconocimiento del intruso va suelto y no concatenado al festejo:
+      // pegarlos formaba un texto nuevo que ningún mp3 podía cubrir, y arrastraba
+      // toda la celebración a la voz del dispositivo.
+      if (intruderFound) {
+        await narrate(memoriaIntrusoText[ageId], memoriaIntrusoKey(ageId), {
+          ...voiceProfile,
+          watchdogMs: CELEBRATION_WATCHDOG_MS,
+        });
+        if (celebrationRunRef.current !== celebrationRun) return;
+      }
+
+      await narrate(celebration.spokenText, celebrationAudioKey(celebration.id), {
         ...voiceProfile,
         watchdogMs: CELEBRATION_WATCHDOG_MS,
       });
@@ -186,9 +231,7 @@ export default function MemoriaGame({
 
       if (bonus) {
         setBonusQuestion({ ...bonus, completedRound });
-        void speak(
-          `Antes de seguir, una pregunta extra: ¿cuál figura tiene más lados, la ${bonus.optionA} o la ${bonus.optionB}?`,
-        );
+        void narrate(memoriaBonusText[ageId], memoriaBonusKey(ageId));
         return;
       }
 
@@ -204,30 +247,40 @@ export default function MemoriaGame({
     const correct = chosenSticker === answer;
     const celebrationRun = celebrationRunRef.current + 1;
     celebrationRunRef.current = celebrationRun;
-    let feedbackText;
+    let celebration = null;
     let voiceProfile;
 
     if (correct) {
       audioRef.current?.sfx("success");
-      const celebration = pickSuccessCelebration(
+      celebration = pickSuccessCelebration(
         `memoria-bonus:${theme.id}:${ageId}:${completedRound}`,
         adapterRef.current.summary().successes,
       );
       voiceProfile = getCelebrationVoiceProfile(ageId, celebration);
-      feedbackText = `¡Exacto! Esa figura tiene más lados. ${celebration.spokenText}`;
-    } else {
-      const sidesAnswer = MEMORY_SHAPE_SIDES[answer];
-      feedbackText = `Casi. La figura con más lados tenía ${sidesAnswer}. ¡La próxima la encontrarás!`;
     }
 
     void (async () => {
       if (correct) await wait(CELEBRATION_LEAD_IN_MS);
       if (celebrationRunRef.current !== celebrationRun) return;
 
-      await speak(feedbackText, {
-        ...voiceProfile,
-        watchdogMs: CELEBRATION_WATCHDOG_MS,
-      });
+      // Acierto y festejo son dos locuciones grabadas encadenadas, no una frase
+      // compuesta: así ninguna de las dos pierde la voz de estudio.
+      if (correct) {
+        await narrate(memoriaBonusBienText[ageId], memoriaBonusBienKey(ageId), {
+          ...voiceProfile,
+          watchdogMs: CELEBRATION_WATCHDOG_MS,
+        });
+        if (celebrationRunRef.current !== celebrationRun) return;
+        await narrate(
+          celebration.spokenText,
+          celebrationAudioKey(celebration.id),
+          { ...voiceProfile, watchdogMs: CELEBRATION_WATCHDOG_MS },
+        );
+      } else {
+        await narrate(memoriaBonusCasiText[ageId], memoriaBonusCasiKey(ageId), {
+          watchdogMs: CELEBRATION_WATCHDOG_MS,
+        });
+      }
       if (celebrationRunRef.current !== celebrationRun) return;
 
       if (correct) audioRef.current?.sfx("celebrate");
@@ -277,8 +330,9 @@ export default function MemoriaGame({
           const celebrationRun = celebrationRunRef.current + 1;
           celebrationRunRef.current = celebrationRun;
           setLocked(true);
-          void speak(
-            "¡Ese no era del cole, pero lo encontraste igual! ¡Buen ojo!",
+          void narrate(
+            memoriaParejaIntrusaText[ageId],
+            memoriaParejaIntrusaKey(ageId),
             { watchdogMs: CELEBRATION_WATCHDOG_MS },
           ).then(() => {
             if (celebrationRunRef.current === celebrationRun) setLocked(false);
@@ -297,7 +351,7 @@ export default function MemoriaGame({
 
         if (triggerPeek) {
           mismatchStreakRef.current = 0;
-          speak("Con calma, aquí tienes un segundo vistazo.");
+          narrate(memoriaVistazoText[ageId], memoriaVistazoKey(ageId));
           mismatchTimerRef.current = window.setTimeout(() => {
             setFlipped([]);
             setPeeking(true);
@@ -366,7 +420,12 @@ export default function MemoriaGame({
                 >
                   {audioPrefs.voice ? "👩‍🏫" : "🔇"}
                 </button>
-                <button type="button" aria-label="Repetir instrucción" onClick={() => speak(theme.tagline)}>
+                <button type="button" aria-label="Repetir instrucción" onClick={() =>
+                    narrate(
+                      memoriaBriefText(theme, ageId, hasIntruderRound(theme.id, roundIndex)),
+                      memoriaBriefKey(theme.id, ageId, hasIntruderRound(theme.id, roundIndex)),
+                    )
+                  }>
                   🔊
                 </button>
               </div>
