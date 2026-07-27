@@ -4260,6 +4260,7 @@ export function NidoGamesExperience({
                 className="nido-games__focus-shell"
                 data-area={selectedArea}
                 data-age={selectedAge}
+                data-streak={routeStats.streak >= 3 ? "hot" : "calm"}
               >
                 <header className="nido-games__focus-header">
                   <button

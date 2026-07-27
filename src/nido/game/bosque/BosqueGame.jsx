@@ -469,13 +469,13 @@ export default function BosqueGame({
         state.pose = "idle";
       }
 
-      // Recoger es una acción deliberada: el niño debe acercarse y presionar
-      // "Recoger" (no basta con caminar encima). Se agarra la fruta más
-      // cercana dentro del radio de alcance.
+      // Recoger: acción deliberada con el botón, salvo en 2–3 años (walkOnly),
+      // donde bastar con acercarse mantiene el flujo mágico y adictivo.
       const px = state.body.x + state.body.w / 2;
       const py = state.body.y + state.body.h / 2;
-      if (input.grabPressed) {
-        input.grabPressed = false;
+      const tryGrab = Boolean(input.grabPressed) || profile.walkOnly;
+      if (input.grabPressed) input.grabPressed = false;
+      if (tryGrab) {
         let nearestFruit = null;
         let nearestDistanceSq = GRAB_RADIUS * GRAB_RADIUS;
         for (const fruit of state.fruits) {
@@ -488,7 +488,9 @@ export default function BosqueGame({
             nearestDistanceSq = distanceSq;
           }
         }
-        if (nearestFruit) {
+        // En walkOnly solo una fruta a la vez: el niño va y vuelve a la cesta.
+        const canCarryMore = profile.walkOnly ? state.carried < 1 : true;
+        if (nearestFruit && canCarryMore) {
           // `held` distingue "en brazos" de "ya en la cesta": sin esa marca,
           // soltar una fruta podía devolver al campo una entregada.
           nearestFruit.collected = true;
@@ -635,7 +637,10 @@ export default function BosqueGame({
       ? round.target - state.carried - state.delivered
       : 0;
     for (const fruit of state.fruits) {
-      const highlighted = !fruit.collected && highlightBudget > 0;
+      // Recogida o entregada: sale del campo. La que va en brazos la dibuja
+      // Niko; las de la cesta se ven en el contador del mimbre.
+      if (fruit.collected) continue;
+      const highlighted = highlightBudget > 0;
       if (highlighted) highlightBudget -= 1;
       drawFruit(ctx, fruit, t, highlighted, reduced, WORLD.groundY);
     }

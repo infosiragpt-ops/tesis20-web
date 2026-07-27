@@ -635,8 +635,16 @@ export function drawBush(ctx, obstacle, groundY, t, reduced) {
   }
 }
 
+/** ¿La fruta sigue en el suelo del bosque? (no en brazos ni en la cesta). */
+export function isFruitOnField(fruit) {
+  return Boolean(fruit) && !fruit.collected;
+}
+
 /** Manzana con hoja, brillo especular y sombra de contacto. */
 export function drawFruit(ctx, fruit, t, highlighted, reduced, groundY) {
+  // Defensa en profundidad: si ya se recogió, no se pinta en el campo.
+  if (!isFruitOnField(fruit)) return;
+
   const bob = reduced ? 0 : Math.sin(t * 2.2 + fruit.x * 0.05) * 3;
   const y = fruit.y + bob;
   const r = 15;

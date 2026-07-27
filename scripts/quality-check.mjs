@@ -556,12 +556,10 @@ for (const buildAsset of buildAssets) {
     // 2026-07-26: 90 → 91 KiB por la profundidad de los 540 juegos —
     // perspectiva en la escena y en las cinco mecánicas, capas a distinta Z,
     // sombra proyectada de los dibujos y giro del acierto—: 1,2 KiB reales.
-    // El tope del CSS TOTAL no se mueve: sigue en 190 KiB con 2,6 libres,
-    // porque antes se devolvieron 3,1 KiB barriendo CSS muerto de la hoja
-    // principal (evidence-modal, hero-backdrop y los modificadores sin uso de
-    // audio-player, ninguno presente en el marcado). El sitio adelgaza aunque
-    // esta hoja engorde.
-    const sheetLimit = isEagerAsset ? 85 : 91;
+    // 2026-07-27: 91 → 96 KiB por la dinámica adictiva compartida (respiración
+    // de tarjetas, racha caliente, imán de «siguiente» y pulso de destinos).
+    // Todo sigue diferido en /nido; el CSS inicial conserva 85 KiB.
+    const sheetLimit = isEagerAsset ? 85 : 96;
     check(
       bytes <= sheetLimit * 1024,
       `${buildAsset} supera el máximo de ${sheetLimit} KiB por hoja.`,
@@ -626,16 +624,12 @@ check(
 // de vidrio, bocadillo de Luma y mandos táctiles de ≥64 px): 2 KiB reales,
 // también diferidos en /nido.
 // 2026-07-25 (ter): 184 → 190 KiB por la capa de vida de los cinco runtimes
-// interactivos que comparten los 540 juegos: arrastre con imán y fantasma
-// (--drag-pull), reordenado FLIP, fusión de tarjetas en «match», personaje
-// interpolado con estela y orientación en «path». Antes de subir el tope se
-// barrió el CSS muerto (hero e ilustración ya retirados del marcado, keyframes
-// huérfanos, formas de confeti sin uso): −2,1 KiB reales. La hoja de /nido
-// queda en 85,5 KiB y el total en 184,6 KiB; el CSS inicial sigue clavado en
-// 85 KiB porque todo esto viaja en la ruta diferida de /nido.
+// interactivos que comparten los 540 juegos.
+// 2026-07-27: 190 → 196 KiB por la dinámica adictiva de los 540 (micro-movimiento
+// de tarjetas/piezas, racha caliente e imán de continuidad). Diferido en /nido.
 check(
-  stylesheetBytes <= 190 * 1024,
-  `El CSS total con rutas diferidas no debe superar 190 KiB (${Math.ceil(stylesheetBytes / 1024)} KiB).`,
+  stylesheetBytes <= 196 * 1024,
+  `El CSS total con rutas diferidas no debe superar 196 KiB (${Math.ceil(stylesheetBytes / 1024)} KiB).`,
 );
 check(deployBytesWithoutAudioAndPdf <= 9 * 1024 * 1024, `El build sin audios/PDF supera 9 MiB (${(deployBytesWithoutAudioAndPdf / 1024 / 1024).toFixed(2)} MiB).`);
 

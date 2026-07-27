@@ -3244,3 +3244,26 @@
     display: none;
   }
 }
+
+/* Dinámica adictiva 540 juegos: micro-movimiento + racha caliente + imán del siguiente. */
+@media (prefers-reduced-motion:no-preference){
+.nido-games__answers>button:not(:disabled):not(.is-correct):not(.is-error),
+.nido-games__interactive-option:not(:disabled):not(.is-correct):not(.is-error){animation:nido-card-breathe 3.6s ease-in-out infinite}
+.nido-games__answers>button:nth-child(2n){animation-delay:.45s}
+.nido-games__answers>button:nth-child(3n){animation-delay:.9s}
+.nido-games__scene-content .nido-games__picture{animation:nido-piece-bob 2.8s ease-in-out infinite}
+.nido-games__focus-shell[data-streak=hot] .nido-games__focus-score>span:last-child{background:linear-gradient(135deg,#fff4cc,#ffe08a);box-shadow:0 0 0 2px rgba(226,168,18,.35),0 8px 18px rgba(226,168,18,.28);animation:nido-streak-glow 1.2s ease-in-out infinite}
+.nido-games__focus-dialog .nido-games__focus-result button:not(:disabled){animation:nido-next-magnet 1.4s ease-in-out infinite}
+.nido-games__path-cell.is-target,.nido-games__drop-zone.is-ready{animation:nido-target-pulse 1.5s ease-in-out infinite}
+}
+@keyframes nido-card-breathe{0%,100%{transform:translateZ(10px) translateY(0)}50%{transform:translateZ(14px) translateY(-2px)}}
+@keyframes nido-piece-bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+@keyframes nido-streak-glow{0%,100%{filter:brightness(1)}50%{filter:brightness(1.08)}}
+@keyframes nido-next-magnet{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-3px) scale(1.03);box-shadow:0 11px 0 color-mix(in srgb,var(--a-dark) 28%,transparent),0 0 0 8px color-mix(in srgb,var(--a) 18%,transparent)}}
+@keyframes nido-target-pulse{0%,100%{box-shadow:0 0 0 0 rgba(255,201,77,.35)}50%{box-shadow:0 0 0 10px rgba(255,201,77,0)}}
+@media (prefers-reduced-motion:reduce){
+.nido-games__answers>button,.nido-games__interactive-option,.nido-games__scene-content .nido-games__picture,
+.nido-games__focus-shell[data-streak=hot] .nido-games__focus-score>span:last-child,
+.nido-games__focus-dialog .nido-games__focus-result button:not(:disabled),
+.nido-games__path-cell.is-target,.nido-games__drop-zone.is-ready{animation:none!important}
+}
