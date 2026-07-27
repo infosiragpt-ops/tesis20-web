@@ -1172,6 +1172,52 @@ function MechanicScene({
   return v.word ? null : <div className="nido-games__mechanic is-options"><span>{pictures}</span></div>;
 }
 
+// Inclina la escena siguiendo al puntero, ±7°. Solo escribe dos ángulos: el
+// parallax lo produce la perspectiva de la hoja, porque la lámina y el
+// contenido están a distinta profundidad y una misma rotación los desplaza a
+// distinto ritmo. Con movimiento reducido ni se instala el oyente.
+function useSceneTilt() {
+  const sceneRef = useRef(null);
+
+  useEffect(() => {
+    const scene = sceneRef.current;
+    if (!scene || window.matchMedia?.("(prefers-reduced-motion:reduce)").matches) {
+      return undefined;
+    }
+
+    let frame = 0;
+    const rest = () => {
+      cancelAnimationFrame(frame);
+      frame = 0;
+      scene.style.removeProperty("--tilt-x");
+      scene.style.removeProperty("--tilt-y");
+    };
+    const tilt = ({ clientX, clientY }) => {
+      if (frame) return;
+      frame = requestAnimationFrame(() => {
+        frame = 0;
+        const box = scene.getBoundingClientRect();
+        if (!box.width) return;
+        // El eje X gira sobre la horizontal: le toca la coordenada Y.
+        const set = (axis, value) =>
+          scene.style.setProperty(`--tilt-${axis}`, `${value * 14}deg`);
+        set("x", 0.5 - (clientY - box.top) / box.height);
+        set("y", (clientX - box.left) / box.width - 0.5);
+      });
+    };
+
+    scene.addEventListener("pointermove", tilt);
+    scene.addEventListener("pointerleave", rest);
+    return () => {
+      rest();
+      scene.removeEventListener("pointermove", tilt);
+      scene.removeEventListener("pointerleave", rest);
+    };
+  }, []);
+
+  return sceneRef;
+}
+
 function ChallengeScene({
   challenge,
   selectedAnswer,
@@ -1186,9 +1232,11 @@ function ChallengeScene({
   const worldAsset = AREA_WORLD_ASSETS[challenge.areaId];
   const directSceneActivity = usesDirectSceneActivity(challenge);
   const [themeTone, themeZoom, themeShift] = sceneTheme(challenge.categoryId);
+  const sceneRef = useSceneTilt();
 
   return (
     <div
+      ref={sceneRef}
       className={[
         "nido-games__scene",
         directSceneActivity ? "is-direct-activity" : "",

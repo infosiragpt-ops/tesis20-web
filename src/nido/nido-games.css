@@ -52,7 +52,7 @@
 .nido-games__heading h1 {
   margin: 8px 0 0;
   color: var(--nido-navy);
-  font-family: "Arial Rounded MT Bold", "Avenir Next", sans-serif;
+  font-family: var(--nido-font-round);
   font-size: clamp(2.2rem, 4vw, 3.45rem);
   letter-spacing: -0.05em;
   line-height: 1;
@@ -109,7 +109,7 @@
 .nido-games__ages legend {
   margin-bottom: 15px;
   color: var(--nido-navy);
-  font-family: "Arial Rounded MT Bold", "Avenir Next", sans-serif;
+  font-family: var(--nido-font-round);
   font-size: clamp(1.28rem, 2vw, 1.72rem);
   font-weight: 900;
 }
@@ -158,7 +158,7 @@
 
 .nido-games__age-options button strong {
   color: inherit;
-  font-family: "Arial Rounded MT Bold", "Avenir Next", sans-serif;
+  font-family: var(--nido-font-round);
   font-size: 1.05rem;
 }
 
@@ -188,7 +188,7 @@
 .nido-games__summary h2 {
   margin: 0 0 16px;
   color: var(--nido-navy);
-  font-family: "Arial Rounded MT Bold", "Avenir Next", sans-serif;
+  font-family: var(--nido-font-round);
   font-size: 1.1rem;
 }
 

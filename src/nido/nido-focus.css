@@ -166,7 +166,7 @@
   min-width: 0;
   overflow: hidden;
   color: var(--n);
-  font-family: "Arial Rounded MT Bold", "Avenir Next", sans-serif;
+  font-family: var(--nido-font-round);
   font-size: 0.94rem;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -283,7 +283,7 @@
 .nido-games__focus-title h2 {
   margin: 3px 0 2px;
   color: var(--n);
-  font-family: "Arial Rounded MT Bold", "Avenir Next", sans-serif;
+  font-family: var(--nido-font-round);
   font-size: clamp(1.25rem, 2.4vw, 2rem);
   letter-spacing: -0.025em;
   line-height: 1.12;
@@ -399,6 +399,54 @@
   border-radius: 18px;
 }
 
+/* ── Profundidad ────────────────────────────────────────────────────────────
+   Los 540 juegos se dibujaban planos: lámina, dibujos y tarjetas vivían en el
+   mismo plano y todo el volumen lo fingía una sombra dura de 7 px. Aquí entra
+   perspectiva de verdad —matriz de proyección— y cada capa ocupa su propia
+   profundidad.
+
+   La inclinación se aplica IGUAL a las dos capas de la escena. Como están a
+   distinta Z, la proyección las desplaza a distinto ritmo y el parallax sale
+   solo: no son dos animaciones sincronizadas a mano. Y viaja en cada hijo, no
+   en la escena, porque `container-type: inline-size` aplana el subárbol y
+   `preserve-3d` ahí no haría nada. */
+.nido-games__scene {
+  perspective: 900px;
+}
+
+.nido-games__scene > img {
+  /* El `scale(1.086)` devuelve lo que encoge la proyección al alejar la lámina
+     70 px con perspectiva de 900 (970/900). Sin él asomaría el panel por los
+     bordes, que es justo lo que costó ajustar en los doce encuadres. */
+  transform: rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg))
+    translate(var(--scene-shift, 0, 0)) translateZ(-70px)
+    scale(var(--scene-zoom, 1.02)) scale(1.086);
+}
+
+.nido-games__scene-content {
+  transform: rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg))
+    translateZ(30px);
+  transform-style: preserve-3d;
+}
+
+/* Los dibujos proyectan su propia sombra: el volumen se ve incluso quieto, sin
+   puntero y con el movimiento desactivado —que es como se juega en tablet—.
+   Son dos sombras: una pegada al dibujo, que lo despega del fondo, y otra
+   larga y difusa, que es la que lo pone de pie sobre la escena. Va en `filter`
+   y no en `transform` porque el bloque en línea de nido-games.jsx coloca con
+   transform los dibujos de posición y escondite, y se inyecta después. */
+.nido-games__scene-content .nido-games__picture {
+  filter: drop-shadow(0 2px 1px rgba(16, 35, 63, 0.2))
+    drop-shadow(0 11px 9px rgba(16, 35, 63, 0.26));
+}
+
+/* Camuflaje y escondite viven de que cueste encontrar la figura: una sombra
+   propia la delataría y dejaría el reto sin gracia. */
+.nido-games__camouflage .nido-games__picture,
+.nido-games__hidden .nido-games__picture {
+  filter: none;
+}
+
 .nido-games__visual-question {
   width: 48px;
   height: 48px;
@@ -459,6 +507,9 @@
   grid-auto-rows: minmax(90px, 1fr);
   gap: 9px;
   align-content: stretch;
+  /* Más corta que la de la escena (900): las tarjetas están más cerca, y con
+     una perspectiva larga la inclinación no se notaría. */
+  perspective: 760px;
 }
 
 .nido-games__answers:not(:has(> button:nth-child(3))) {
@@ -513,6 +564,10 @@
     border-color 160ms ease,
     box-shadow 160ms ease,
     transform 160ms ease;
+  /* En reposo, no plana. Con la perspectiva del contenedor, sacar la tarjeta
+     10 px hacia delante basta para que las de los lados enseñen su canto
+     interior: el volumen se ve en una captura y en una tablet, sin puntero. */
+  transform: translateZ(10px);
 }
 
 .nido-games__answers > button:not(:disabled):hover {
@@ -520,12 +575,14 @@
   box-shadow:
     0 9px 0 color-mix(in srgb, var(--a) 20%, transparent),
     0 15px 28px rgba(16, 35, 63, 0.11);
-  transform: translateY(-2px);
+  /* Se acerca al niño y se inclina hacia él: la tarjeta deja de subir dos
+     píxeles en el plano y pasa a salir de la pantalla. */
+  transform: translateZ(24px) rotateX(-6deg);
 }
 
 .nido-games__answers > button:not(:disabled):active {
   box-shadow: 0 3px 0 rgba(16, 35, 63, 0.1);
-  transform: translateY(3px);
+  transform: translateZ(6px) rotateX(3deg);
 }
 
 .nido-games__answers > button.is-visual-only {
@@ -548,7 +605,7 @@
   box-shadow:
     0 7px 0 rgba(43, 169, 111, 0.2),
     0 14px 28px rgba(43, 169, 111, 0.14);
-  animation: nido-correct-pop 340ms ease-out;
+  animation: nido-correct-pop 520ms ease-out forwards;
 }
 
 .nido-games__answers > button.is-error {
@@ -864,7 +921,7 @@
 }
 
 .nido-games__focus-dialog .nido-games__focus-feedback-card strong {
-  font-family: "Arial Rounded MT Bold", "Avenir Next", sans-serif;
+  font-family: var(--nido-font-round);
   font-size: 1.45rem;
 }
 
@@ -955,7 +1012,7 @@
 }
 
 .nido-games__focus-dialog .nido-games__focus-success h2 {
-  font-family: "Arial Rounded MT Bold", "Avenir Next", sans-serif;
+  font-family: var(--nido-font-round);
   font-size: clamp(1.7rem, 4vw, 2.6rem);
 }
 
@@ -1025,9 +1082,15 @@
   }
 }
 
+/* El acierto crecía un 2,5 % y volvía. Ahora la tarjeta se levanta y gira
+   sobre su eje vertical: con la perspectiva del contenedor se le ve el canto,
+   y se queda alzada (`forwards`) para que la respuesta buena siga señalada. */
 @keyframes nido-correct-pop {
-  50% {
-    transform: scale(1.025);
+  40% {
+    transform: translateZ(46px) rotateY(13deg);
+  }
+  100% {
+    transform: translateZ(12px);
   }
 }
 
@@ -1899,8 +1962,14 @@
   animation: nido-rise-in 460ms cubic-bezier(0.2, 1.2, 0.4, 1) 120ms both;
 }
 
+/* `backwards` y no `both`: una animación terminada con relleno hacia delante
+   sigue ganándole a las declaraciones normales, así que fijaba el `transform`
+   de la tarjeta para siempre —el reposo en 3D y el `:hover` no llegaban a
+   aplicarse nunca— y de paso clavaba `opacity: 1`, con lo que las opciones
+   descartadas tampoco se atenuaban. Con `backwards` la entrada sigue saliendo
+   desde su estado inicial durante el retardo y suelta el control al acabar. */
 .nido-games__answers > button {
-  animation: nido-pop-in 400ms cubic-bezier(0.2, 1.4, 0.4, 1) both;
+  animation: nido-pop-in 400ms cubic-bezier(0.2, 1.4, 0.4, 1) backwards;
 }
 
 .nido-games__answers > button:nth-child(1) {
@@ -2072,13 +2141,29 @@
   touch-action: none;
 }
 
+/* Las cinco mecánicas interactivas comparten la misma profundidad que las
+   tarjetas de respuesta: son ~190 de los 540 juegos y no pasan por
+   `nido-games__answers`. La perspectiva va en cada contenedor porque las
+   piezas de arrastre y las del camino viven en rejillas distintas. */
+.nido-games__direct-options,
+.nido-games__drag-pieces,
+.nido-games__match-options,
+.nido-games__pattern-options,
+.nido-games__order-track {
+  perspective: 760px;
+}
+
+.nido-games__interactive-option {
+  transform: translateZ(9px);
+}
+
 .nido-games__interactive-option:not(:disabled):hover,
 .nido-games__interactive-option.is-picked {
   border-color: var(--a);
   box-shadow:
     0 7px 0 color-mix(in srgb, var(--a) 22%, transparent),
     0 14px 24px rgba(16, 35, 63, 0.11);
-  transform: translateY(-2px);
+  transform: translateZ(22px) rotateX(-5deg);
 }
 
 .nido-games__interactive-option.is-picked {
@@ -2138,13 +2223,16 @@
  * nuevo y un niño ve el mismo lenguaje en los cinco modos de jugar.
  */
 
+/* `backwards`, por lo mismo que en las tarjetas de respuesta: con `both` la
+   entrada terminada seguía mandando sobre `transform` y `opacity`, así que ni
+   el relieve en reposo ni el atenuado de las piezas ya usadas se veían. */
 :is(
     .nido-games__drag-pieces,
     .nido-games__match-options,
     .nido-games__order-track
   )
   > * {
-  animation: nido-pop-in 380ms cubic-bezier(0.2, 1.4, 0.4, 1) 140ms both;
+  animation: nido-pop-in 380ms cubic-bezier(0.2, 1.4, 0.4, 1) 140ms backwards;
 }
 
 :is(
@@ -3140,6 +3228,14 @@
 
   .nido-games__order-piece.is-dragging {
     transition: none;
+  }
+
+  /* La profundidad se queda —es geometría, no movimiento— pero el giro del
+     acierto no. La inclinación por puntero ni se llega a instalar: el efecto
+     de `ChallengeScene` comprueba el ajuste antes de escuchar nada. */
+  .nido-games__answers > button.is-correct {
+    animation: none;
+    transform: translateZ(12px);
   }
 
   /* `burstFromEvent` ya ni siquiera crea los nodos con movimiento reducido;

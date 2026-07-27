@@ -553,7 +553,15 @@ for (const buildAsset of buildAssets) {
     // 2026-07-25: la hoja crítica conserva su tope de 85 KiB; las diferidas
     // (hoy solo las de /nido) admiten 90 KiB desde la capa de vida de los
     // cinco runtimes interactivos. Ver la nota del CSS total más abajo.
-    const sheetLimit = isEagerAsset ? 85 : 90;
+    // 2026-07-26: 90 → 91 KiB por la profundidad de los 540 juegos —
+    // perspectiva en la escena y en las cinco mecánicas, capas a distinta Z,
+    // sombra proyectada de los dibujos y giro del acierto—: 1,2 KiB reales.
+    // El tope del CSS TOTAL no se mueve: sigue en 190 KiB con 2,6 libres,
+    // porque antes se devolvieron 3,1 KiB barriendo CSS muerto de la hoja
+    // principal (evidence-modal, hero-backdrop y los modificadores sin uso de
+    // audio-player, ninguno presente en el marcado). El sitio adelgaza aunque
+    // esta hoja engorde.
+    const sheetLimit = isEagerAsset ? 85 : 91;
     check(
       bytes <= sheetLimit * 1024,
       `${buildAsset} supera el máximo de ${sheetLimit} KiB por hoja.`,
@@ -598,9 +606,14 @@ check(
 // el manifiesto. Son 4.25 KiB medidos (arcade-voice-lines, un chunk propio que
 // sólo se descarga al abrir esos juegos) más el cableado en cada runtime; el
 // JavaScript inicial sigue clavado en 450 KiB.
+// 2026-07-26 (septies): 766 → 767 KiB por el único JavaScript que necesita la
+// profundidad de los 540 juegos: un oyente de puntero que escribe dos ángulos
+// en la escena. El parallax lo calcula la perspectiva del CSS, no este código,
+// y con `prefers-reduced-motion` ni se instala. Son 0.4 KiB medidos; el
+// JavaScript inicial sigue clavado en 450 KiB.
 check(
-  javascriptBytes <= 766 * 1024,
-  `El JavaScript total con rutas diferidas no debe superar 766 KiB (${Math.ceil(javascriptBytes / 1024)} KiB).`,
+  javascriptBytes <= 767 * 1024,
+  `El JavaScript total con rutas diferidas no debe superar 767 KiB (${Math.ceil(javascriptBytes / 1024)} KiB).`,
 );
 check(
   initialStylesheetBytes > 0 && initialStylesheetBytes <= 85 * 1024,
