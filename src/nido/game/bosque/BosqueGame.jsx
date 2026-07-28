@@ -37,6 +37,8 @@ import {
   drawNiko,
   drawParticles,
   drawPlatform,
+  isFruitOnField,
+  setFruitPlace,
   VIEW_H,
   VIEW_W,
 } from "./forest-renderer.js";
@@ -45,6 +47,7 @@ import "./bosque-game.css";
 const WORLD = Object.freeze({ width: 1900, groundY: 470 });
 const BASKET = Object.freeze({ x: 1700, y: 400, w: 120, h: 66 });
 const GRAB_RADIUS = 56;
+const GRAB_RADIUS_TODDLER = 78;
 const CONFETTI = ["#ff6f61", "#ffc94d", "#46b982", "#4b8ff7", "#9873e7"];
 const CELEBRATION_LEAD_IN_MS = 540;
 const CELEBRATION_DWELL_MS = 700;
@@ -355,12 +358,11 @@ export default function BosqueGame({
         }
         audioRef.current?.sfx("try");
         state.pose = "tryAgain";
-        // Sin castigo: las frutas de la cesta (no las que lleva en brazos)
-        // vuelven al campo, cerca de la cesta, para volver a intentarlo.
+        // Sin castigo: solo las de la cesta vuelven al campo (nunca las de brazos).
         let returned = 0;
         for (const fruit of state.fruits) {
-          if (fruit.collected && !fruit.held && returned < state.delivered) {
-            fruit.collected = false;
+          if (fruit.place === "basket" && returned < state.delivered) {
+            setFruitPlace(fruit, "field");
             fruit.x = 1150 + returned * 90 + Math.random() * 40;
             fruit.y = WORLD.groundY - 26;
             returned += 1;
@@ -469,17 +471,17 @@ export default function BosqueGame({
         state.pose = "idle";
       }
 
-      // Recoger: acción deliberada con el botón, salvo en 2–3 años (walkOnly),
-      // donde bastar con acercarse mantiene el flujo mágico y adictivo.
+      // Recoger: botón deliberado; en 2–3 (walkOnly) también al acercarse.
       const px = state.body.x + state.body.w / 2;
       const py = state.body.y + state.body.h / 2;
+      const grabRadius = profile.walkOnly ? GRAB_RADIUS_TODDLER : GRAB_RADIUS;
       const tryGrab = Boolean(input.grabPressed) || profile.walkOnly;
       if (input.grabPressed) input.grabPressed = false;
       if (tryGrab) {
         let nearestFruit = null;
-        let nearestDistanceSq = GRAB_RADIUS * GRAB_RADIUS;
+        let nearestDistanceSq = grabRadius * grabRadius;
         for (const fruit of state.fruits) {
-          if (fruit.collected) continue;
+          if (!isFruitOnField(fruit)) continue;
           const dx = fruit.x - px;
           const dy = fruit.y - py;
           const distanceSq = dx * dx + dy * dy;
@@ -491,50 +493,48 @@ export default function BosqueGame({
         // En walkOnly solo una fruta a la vez: el niño va y vuelve a la cesta.
         const canCarryMore = profile.walkOnly ? state.carried < 1 : true;
         if (nearestFruit && canCarryMore) {
-          // `held` distingue "en brazos" de "ya en la cesta": sin esa marca,
-          // soltar una fruta podía devolver al campo una entregada.
-          nearestFruit.collected = true;
-          nearestFruit.held = true;
+          setFruitPlace(nearestFruit, "held");
           state.carried += 1;
           state.pose = "grab";
-          state.squash = 0.4;
+          state.squash = 0.55;
+          state.shake = state.reducedMotion ? 0 : 2.2;
           audioRef.current?.sfx("collect");
           busRef.current?.emit(GAME_TO_PLATFORM.OBJECT_COLLECTED, {
             carried: state.carried,
           });
-          for (let index = 0; index < 9; index += 1) {
+          for (let index = 0; index < 12; index += 1) {
             state.particles.push({
               kind: "star",
               x: nearestFruit.x,
               y: nearestFruit.y,
-              vx: (Math.random() - 0.5) * 210,
-              vy: -60 - Math.random() * 220,
-              size: 2 + Math.random() * 2.6,
+              vx: (Math.random() - 0.5) * 240,
+              vy: -80 - Math.random() * 240,
+              size: 2 + Math.random() * 3,
               spin: Math.random() * 6,
-              spinRate: (Math.random() - 0.5) * 12,
-              life: 0.85,
-              color: "#ffc94d",
+              spinRate: (Math.random() - 0.5) * 14,
+              life: 0.95,
+              color: index % 2 ? "#ffc94d" : "#ff6f61",
             });
           }
           setHud({ carried: state.carried, delivered: state.delivered });
         }
-        // Si no hay fruta al alcance, no pasa nada: intentar "Recoger" al
-        // caminar no es un error, así que no suena ningún aviso.
       }
 
-      // Entregar en la cesta
+      // Entregar en la cesta (radio un poco generoso para dedos pequeños).
+      const basketPad = profile.walkOnly ? 36 : 28;
       if (
         state.carried > 0 &&
-        px > BASKET.x - 24 &&
-        px < BASKET.x + BASKET.w + 24 &&
-        state.body.y + state.body.h > BASKET.y - 40
+        px > BASKET.x - basketPad &&
+        px < BASKET.x + BASKET.w + basketPad &&
+        state.body.y + state.body.h > BASKET.y - 48
       ) {
         setPhase("counting");
         const toDeliver = state.carried;
         state.carried = 0;
-        // Las frutas en brazos pasan a estar en la cesta (dejan de ser
-        // recuperables con "Soltar").
-        for (const fruit of state.fruits) fruit.held = false;
+        // Solo las que iban en brazos pasan a la cesta.
+        for (const fruit of state.fruits) {
+          if (fruit.place === "held" || fruit.held) setFruitPlace(fruit, "basket");
+        }
         let counted = 0;
         state.counting = window.setInterval(() => {
           const current = stateRef.current;
@@ -637,9 +637,8 @@ export default function BosqueGame({
       ? round.target - state.carried - state.delivered
       : 0;
     for (const fruit of state.fruits) {
-      // Recogida o entregada: sale del campo. La que va en brazos la dibuja
-      // Niko; las de la cesta se ven en el contador del mimbre.
-      if (fruit.collected) continue;
+      // field → suelo; held → Niko; basket → contador de la cesta.
+      if (!isFruitOnField(fruit)) continue;
       const highlighted = highlightBudget > 0;
       if (highlighted) highlightBudget -= 1;
       drawFruit(ctx, fruit, t, highlighted, reduced, WORLD.groundY);
@@ -806,10 +805,9 @@ export default function BosqueGame({
     const state = stateRef.current;
     if (!state || state.carried <= 0 || phaseRef.current !== "playing") return;
     state.carried -= 1;
-    const fruit = state.fruits.find((item) => item.held);
+    const fruit = state.fruits.find((item) => item.place === "held" || item.held);
     if (fruit) {
-      fruit.collected = false;
-      fruit.held = false;
+      setFruitPlace(fruit, "field");
       fruit.x = state.body.x + state.body.w / 2 + state.body.facing * -46;
       fruit.y = WORLD.groundY - 26;
     }

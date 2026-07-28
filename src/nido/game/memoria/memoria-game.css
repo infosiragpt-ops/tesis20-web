@@ -329,3 +329,27 @@
     gap: 8px;
   }
 }
+
+.memoria__card-back,.memoria__card-front{
+  box-shadow:
+    0 1px 0 rgba(255,255,255,.55),
+    0 10px 0 rgba(16,35,63,.12),
+    0 18px 24px rgba(16,35,63,.16);
+}
+.memoria__card-back{
+  background:
+    linear-gradient(145deg,rgba(255,255,255,.3),transparent 42%),
+    linear-gradient(160deg,var(--memoria-accent),color-mix(in srgb,var(--memoria-accent) 72%,#10233f));
+}
+.memoria__card:not(:disabled):hover .memoria__card-inner{
+  transform:translateY(-8px) translateZ(12px) scale(1.04);
+}
+.memoria__card.is-flipped:not(:disabled):hover .memoria__card-inner{
+  transform:rotateY(180deg) translateY(-8px) translateZ(12px) scale(1.04);
+}
+.memoria__card.is-matched .memoria__card-front{
+  box-shadow:
+    0 1px 0 #fff,
+    0 12px 0 color-mix(in srgb,var(--memoria-accent) 35%,rgba(16,35,63,.16)),
+    0 20px 28px color-mix(in srgb,var(--memoria-accent) 28%,transparent);
+}

@@ -941,3 +941,38 @@
     display: none;
   }
 }
+
+/* Hub de primer nivel: tarjetas con volumen y atracción al toque */
+.arcade__grid{perspective:1600px;perspective-origin:50% 12%}
+.arcade__tile{
+  transform:rotateX(5deg) translateZ(0);
+  transform-style:preserve-3d;
+  box-shadow:
+    0 2px 0 color-mix(in srgb,var(--tile-accent) 42%,#09162b),
+    0 12px 0 color-mix(in srgb,var(--tile-accent) 26%,#06101f),
+    0 26px 34px #040d1e66,
+    inset 0 1px 0 #ffffff55;
+}
+.arcade__tile:hover,
+.arcade__tile:focus-visible{
+  transform:translateY(-10px) rotateX(1deg) scale(1.03);
+  box-shadow:
+    0 2px 0 color-mix(in srgb,var(--tile-accent) 48%,#09162b),
+    0 18px 0 color-mix(in srgb,var(--tile-accent) 30%,#06101f),
+    0 36px 48px #040d1e7a,
+    inset 0 1px 0 #ffffff66;
+}
+.arcade__tile-icon{
+  transform:translateZ(26px);
+  box-shadow:0 10px 0 #10233f22,0 18px 26px #05102255,inset 0 2px 0 #ffffffaa;
+}
+.arcade__tile-play{
+  box-shadow:0 6px 0 rgba(7,20,40,.25),0 12px 18px rgba(7,20,40,.2);
+}
+@media (max-width:720px){
+  .arcade__tile{transform:rotateX(2deg)}
+  .arcade__tile:hover,.arcade__tile:focus-visible{transform:translateY(-6px) scale(1.02)}
+}
+@media (prefers-reduced-motion:reduce){
+  .arcade__tile,.arcade__tile:hover,.arcade__tile:focus-visible,.arcade__tile-icon{transform:none}
+}

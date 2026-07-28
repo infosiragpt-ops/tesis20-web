@@ -204,6 +204,8 @@ export function layoutForestRound(round, world, seedExtra = 0) {
         id: `fruta-${index}`,
         x: platform.x + 24 + random() * (platform.w - 48),
         y: platform.y - 26,
+        place: "field",
+        held: false,
         collected: false,
       });
     } else {
@@ -211,6 +213,8 @@ export function layoutForestRound(round, world, seedExtra = 0) {
         id: `fruta-${index}`,
         x: playStart + random() * (playEnd - playStart),
         y: world.groundY - 26,
+        place: "field",
+        held: false,
         collected: false,
       });
     }

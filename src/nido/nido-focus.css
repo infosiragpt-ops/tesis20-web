@@ -3267,3 +3267,77 @@
 .nido-games__focus-dialog .nido-games__focus-result button:not(:disabled),
 .nido-games__path-cell.is-target,.nido-games__drop-zone.is-ready{animation:none!important}
 }
+
+/* ── Primer nivel: volumen extruido y recompensa inmediata ───────────────── */
+.nido-games__focus-shell[data-render],
+.nido-games__focus-shell{
+  --nido-card-face:linear-gradient(165deg,#fff 0%,#f7fbff 55%,#eef5fc 100%);
+}
+.nido-games__answers>button,
+.nido-games__interactive-option,
+.nido-games__scene-choice,
+.nido-games__order-piece,
+.nido-games__match-source{
+  background:var(--nido-card-face,#fff);
+  box-shadow:
+    0 1px 0 #fff,
+    0 3px 0 rgba(16,35,63,.06),
+    0 10px 0 rgba(16,35,63,.1),
+    0 18px 28px rgba(16,35,63,.12),
+    inset 0 0 0 1px rgba(16,35,63,.05);
+}
+.nido-games__answers>button.is-correct,
+.nido-games__interactive-option.is-correct,
+.nido-games__scene-choice.is-correct{
+  background:linear-gradient(165deg,#f3fff8,#d4f6e6);
+  box-shadow:
+    0 1px 0 #fff,
+    0 12px 0 rgba(43,169,111,.26),
+    0 22px 34px rgba(43,169,111,.2),
+    inset 0 0 0 2px #2ba96f;
+}
+.nido-games__answer-visual,
+.nido-games__interactive-art{
+  box-shadow:
+    inset 0 1px 0 #fff,
+    inset 0 -10px 16px rgba(16,35,63,.05),
+    0 8px 14px rgba(16,35,63,.1);
+  transform:translateZ(14px);
+}
+.nido-games__focus-progress-track>span,
+.nido-games__focus-progress>span{
+  box-shadow:inset 0 1px 2px rgba(16,35,63,.12);
+}
+.nido-games__focus-progress-track>span>span,
+.nido-games__focus-progress>span>i,
+.nido-games__focus-progress-track span span{
+  box-shadow:0 0 12px color-mix(in srgb,var(--a) 45%,transparent);
+}
+.nido-games__drag-ghost{
+  filter:drop-shadow(0 16px 18px rgba(10,28,52,.35));
+  transform:translate(-50%,-50%) scale(1.1) rotate(-5deg);
+}
+.nido-games__path-player{
+  filter:drop-shadow(0 10px 10px rgba(16,35,63,.28));
+}
+.nido-games__match-source.is-selected{
+  transform:translateZ(22px) scale(1.03);
+  box-shadow:
+    0 1px 0 #fff,
+    0 14px 0 color-mix(in srgb,var(--a) 30%,rgba(16,35,63,.16)),
+    0 24px 32px rgba(16,35,63,.16),
+    inset 0 0 0 3px var(--a);
+}
+@media (prefers-reduced-motion:no-preference){
+  .nido-games__focus-canvas{
+    animation:nido-stage-in .45s cubic-bezier(.2,.9,.2,1.15) both;
+  }
+  .nido-games__answers>button,
+  .nido-games__interactive-option{
+    transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease,background .16s ease;
+  }
+}
+@keyframes nido-stage-in{
+  from{opacity:0;transform:translateY(14px) scale(.985)}
+  to{opacity:1;transform:none}
+}

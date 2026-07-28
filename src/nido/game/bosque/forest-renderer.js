@@ -635,9 +635,36 @@ export function drawBush(ctx, obstacle, groundY, t, reduced) {
   }
 }
 
+/**
+ * Ciclo de vida de una fruta del bosque:
+ * - field  → en el suelo / plataforma (se dibuja en el mundo)
+ * - held   → en brazos de Niko (la dibuja el personaje)
+ * - basket → ya entregada (solo cuenta en la cesta)
+ *
+ * `collected` se mantiene por compatibilidad con el resto del runtime:
+ * true significa “ya no está en el campo” (held o basket).
+ */
+export function normalizeFruitPlace(fruit) {
+  if (!fruit || typeof fruit !== "object") return null;
+  if (fruit.place === "field" || fruit.place === "held" || fruit.place === "basket") {
+    return fruit.place;
+  }
+  if (fruit.held) return "held";
+  if (fruit.collected) return "basket";
+  return "field";
+}
+
 /** ¿La fruta sigue en el suelo del bosque? (no en brazos ni en la cesta). */
 export function isFruitOnField(fruit) {
-  return Boolean(fruit) && !fruit.collected;
+  return normalizeFruitPlace(fruit) === "field";
+}
+
+export function setFruitPlace(fruit, place) {
+  if (!fruit) return fruit;
+  fruit.place = place;
+  fruit.held = place === "held";
+  fruit.collected = place !== "field";
+  return fruit;
 }
 
 /** Manzana con hoja, brillo especular y sombra de contacto. */
