@@ -136,12 +136,15 @@ const navigation = [
     href: "/evidencias",
     page: "evidence",
   },
+  { label: "Contrato", href: "/contrato", page: "contract" },
+  // Cierra la barra a la derecha, después de Contrato: es la puerta al portal
+  // de gestión (antes se llamaba «Pagos») y se dibuja como botón de cuenta.
   {
-    label: "Pagos",
+    label: "Login",
     href: "https://www.gestion.tesis20.com",
     external: true,
+    login: true,
   },
-  { label: "Contrato", href: "/contrato", page: "contract" },
 ];
 
 const contractDownloadHref = "/downloads/contrato-general-asesoria-academica-tesis20.pdf";
@@ -675,7 +678,13 @@ function Header({ menuOpen, onMenuToggle, onNavigate, currentPage, isScrolled })
         <nav className="desktop-navigation" aria-label="Navegación principal">
           {navigation.map((item) => (
             <a
-              className={item.page === currentPage ? "nav-link nav-link--active" : "nav-link"}
+              className={[
+                "nav-link",
+                item.page === currentPage ? "nav-link--active" : "",
+                item.login ? "nav-link--login" : "",
+              ]
+                .filter(Boolean)
+                .join(" ")}
               href={getNavigationHref(item, currentPage)}
               key={item.label}
               target={item.external ? "_blank" : undefined}
@@ -683,11 +692,14 @@ function Header({ menuOpen, onMenuToggle, onNavigate, currentPage, isScrolled })
               aria-current={item.page === currentPage ? "page" : undefined}
               aria-label={item.external ? `${item.label} (se abre en una pestaña nueva)` : undefined}
               referrerPolicy={item.external ? "no-referrer" : undefined}
-              onClick={() => trackInteraction("navigation_click", { page: item.page || "external", location: "desktop" })}
+              onClick={() => trackInteraction("navigation_click", { page: item.page || (item.login ? "login" : "external"), location: "desktop" })}
               {...internalNavigationProps(item, currentPage)}
             >
+              {item.login ? <User size={16} weight="bold" aria-hidden="true" /> : null}
               {item.label}
-              {item.external ? <ArrowSquareOut size={14} aria-hidden="true" /> : null}
+              {item.external && !item.login ? (
+                <ArrowSquareOut size={14} aria-hidden="true" />
+              ) : null}
             </a>
           ))}
         </nav>
@@ -738,7 +750,10 @@ function Header({ menuOpen, onMenuToggle, onNavigate, currentPage, isScrolled })
               referrerPolicy={item.external ? "no-referrer" : undefined}
               {...internalNavigationProps(item, currentPage)}
             >
-              <span>{item.label}</span>
+              <span>
+                {item.login ? <User size={18} weight="bold" aria-hidden="true" /> : null}
+                {item.label}
+              </span>
               {item.external ? (
                 <ArrowSquareOut size={18} aria-hidden="true" />
               ) : (
@@ -2046,9 +2061,9 @@ function Footer() {
             target="_blank"
             rel="noopener noreferrer"
             referrerPolicy="no-referrer"
-            aria-label="Pagos (se abre en una pestaña nueva)"
+            aria-label="Login (se abre en una pestaña nueva)"
           >
-            Pagos
+            Login
           </a>
         </nav>
         <address className="footer-column footer-contact">

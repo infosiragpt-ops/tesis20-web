@@ -439,6 +439,31 @@ footer[id] {
   transform: scaleX(1);
 }
 
+/* La puerta al portal de gestión. Se dibuja como botón de cuenta —contorno,
+   no relleno— para pedir el clic sin pelearse con el CTA amarillo de
+   orientación, que sigue siendo la acción principal de la cabecera. */
+.nav-link--login {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 11px 18px;
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  font-weight: 700;
+  transition: background 160ms ease, color 160ms ease, transform 160ms ease;
+}
+
+.nav-link--login::after {
+  content: none;
+}
+
+.nav-link--login:hover,
+.nav-link--login:focus-visible {
+  background: var(--ink);
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
 .whatsapp-button {
   min-height: 48px;
   padding: 12px 20px;
@@ -1992,6 +2017,13 @@ footer[id] {
     font-size: 15px;
     font-weight: 700;
     text-decoration: none;
+  }
+
+  /* El icono de cuenta del Login viaja dentro del rótulo. */
+  .mobile-navigation__inner > a:not(.whatsapp-button) > span {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
   }
 
   .mobile-navigation__cta {
