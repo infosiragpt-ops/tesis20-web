@@ -3245,27 +3245,69 @@
   }
 }
 
-/* Dinámica adictiva 540 juegos: micro-movimiento + racha caliente + imán del siguiente. */
+/* Dinámica adictiva segura: NO anima transform en pictures posicionadas
+   (position-scene / hidden / between). El bob va solo en filter/box-shadow
+   o en wrappers que no cargan layout. */
 @media (prefers-reduced-motion:no-preference){
-.nido-games__answers>button:not(:disabled):not(.is-correct):not(.is-error),
-.nido-games__interactive-option:not(:disabled):not(.is-correct):not(.is-error){animation:nido-card-breathe 3.6s ease-in-out infinite}
-.nido-games__answers>button:nth-child(2n){animation-delay:.45s}
-.nido-games__answers>button:nth-child(3n){animation-delay:.9s}
-.nido-games__scene-content .nido-games__picture{animation:nido-piece-bob 2.8s ease-in-out infinite}
-.nido-games__focus-shell[data-streak=hot] .nido-games__focus-score>span:last-child{background:linear-gradient(135deg,#fff4cc,#ffe08a);box-shadow:0 0 0 2px rgba(226,168,18,.35),0 8px 18px rgba(226,168,18,.28);animation:nido-streak-glow 1.2s ease-in-out infinite}
-.nido-games__focus-dialog .nido-games__focus-result button:not(:disabled){animation:nido-next-magnet 1.4s ease-in-out infinite}
-.nido-games__path-cell.is-target,.nido-games__drop-zone.is-ready{animation:nido-target-pulse 1.5s ease-in-out infinite}
+.nido-games__answers>button:not(:disabled):not(.is-correct):not(.is-error):not(.is-selected):not(.is-hint),
+.nido-games__interactive-option:not(:disabled):not(.is-correct):not(.is-error):not(.is-picked):not(.is-dragging):not(.is-selected){
+  animation:nido-card-breathe 3.6s ease-in-out infinite
 }
-@keyframes nido-card-breathe{0%,100%{transform:translateZ(10px) translateY(0)}50%{transform:translateZ(14px) translateY(-2px)}}
-@keyframes nido-piece-bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+.nido-games__answers>button:nth-child(2n),
+.nido-games__interactive-option:nth-child(2n){animation-delay:.45s}
+.nido-games__answers>button:nth-child(3n),
+.nido-games__interactive-option:nth-child(3n){animation-delay:.9s}
+/* Solo dibujos libres del escenario, nunca los de posición/escondite. */
+.nido-games__scene-content > .nido-games__mechanic .nido-games__picture,
+.nido-games__scene-content > .nido-games__visual-sequence .nido-games__picture,
+.nido-games__scene-content > .nido-games__clue .nido-games__picture{
+  animation:nido-piece-glow 2.8s ease-in-out infinite
+}
+.nido-games__position .nido-games__picture,
+.nido-games__hidden .nido-games__picture,
+.nido-games__camouflage .nido-games__picture,
+.nido-games__difference .nido-games__picture{
+  animation:none!important
+}
+.nido-games__focus-shell[data-streak=hot] .nido-games__focus-score>span:last-child{
+  background:linear-gradient(135deg,#fff4cc,#ffe08a);
+  box-shadow:0 0 0 2px rgba(226,168,18,.35),0 8px 18px rgba(226,168,18,.28);
+  animation:nido-streak-glow 1.2s ease-in-out infinite
+}
+.nido-games__focus-dialog .nido-games__focus-result button:not(:disabled){
+  animation:nido-next-magnet 1.4s ease-in-out infinite
+}
+.nido-games__path-cell.is-target,.nido-games__drop-zone.is-ready{
+  animation:nido-target-pulse 1.5s ease-in-out infinite
+}
+}
+/* Respiración solo con translateZ/Y compuestos sobre la base 3D, sin pisar estados activos. */
+@keyframes nido-card-breathe{
+  0%,100%{transform:translateZ(10px) translateY(0)}
+  50%{transform:translateZ(14px) translateY(-2px)}
+}
+/* Glow en filter: no toca transform de posicionamiento. */
+@keyframes nido-piece-glow{
+  0%,100%{filter:drop-shadow(0 2px 1px rgba(16,35,63,.2)) drop-shadow(0 11px 9px rgba(16,35,63,.26))}
+  50%{filter:drop-shadow(0 3px 2px rgba(16,35,63,.22)) drop-shadow(0 14px 12px rgba(16,35,63,.3))}
+}
 @keyframes nido-streak-glow{0%,100%{filter:brightness(1)}50%{filter:brightness(1.08)}}
-@keyframes nido-next-magnet{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-3px) scale(1.03);box-shadow:0 11px 0 color-mix(in srgb,var(--a-dark) 28%,transparent),0 0 0 8px color-mix(in srgb,var(--a) 18%,transparent)}}
-@keyframes nido-target-pulse{0%,100%{box-shadow:0 0 0 0 rgba(255,201,77,.35)}50%{box-shadow:0 0 0 10px rgba(255,201,77,0)}}
+@keyframes nido-next-magnet{
+  0%,100%{transform:translateY(0) scale(1)}
+  50%{transform:translateY(-3px) scale(1.03);box-shadow:0 11px 0 color-mix(in srgb,var(--a-dark) 28%,transparent),0 0 0 8px color-mix(in srgb,var(--a) 18%,transparent)}
+}
+@keyframes nido-target-pulse{
+  0%,100%{box-shadow:0 0 0 0 rgba(255,201,77,.35)}
+  50%{box-shadow:0 0 0 10px rgba(255,201,77,0)}
+}
 @media (prefers-reduced-motion:reduce){
-.nido-games__answers>button,.nido-games__interactive-option,.nido-games__scene-content .nido-games__picture,
+.nido-games__answers>button,
+.nido-games__interactive-option,
+.nido-games__scene-content .nido-games__picture,
 .nido-games__focus-shell[data-streak=hot] .nido-games__focus-score>span:last-child,
 .nido-games__focus-dialog .nido-games__focus-result button:not(:disabled),
-.nido-games__path-cell.is-target,.nido-games__drop-zone.is-ready{animation:none!important}
+.nido-games__path-cell.is-target,
+.nido-games__drop-zone.is-ready{animation:none!important}
 }
 
 /* ── Primer nivel: volumen extruido y recompensa inmediata ───────────────── */
@@ -3314,8 +3356,8 @@
   box-shadow:0 0 12px color-mix(in srgb,var(--a) 45%,transparent);
 }
 .nido-games__drag-ghost{
+  /* Solo refuerza sombra; el magnet pull de --drag-pull manda el transform. */
   filter:drop-shadow(0 16px 18px rgba(10,28,52,.35));
-  transform:translate(-50%,-50%) scale(1.1) rotate(-5deg);
 }
 .nido-games__path-player{
   filter:drop-shadow(0 10px 10px rgba(16,35,63,.28));
@@ -3340,4 +3382,20 @@
 @keyframes nido-stage-in{
   from{opacity:0;transform:translateY(14px) scale(.985)}
   to{opacity:1;transform:none}
+}
+
+/* Feedback de orden incorrecto: sacude la primera pieza mal colocada */
+@keyframes nido-order-wrong {
+  0%,100% { transform: translateZ(10px) translateX(0); }
+  25% { transform: translateZ(10px) translateX(-6px); }
+  75% { transform: translateZ(10px) translateX(6px); }
+}
+.nido-games__order-piece.is-order-wrong {
+  animation: nido-order-wrong 480ms ease;
+  border-color: #dc5048 !important;
+  box-shadow: 0 0 0 3px rgba(220,80,72,.25), 0 10px 0 rgba(220,80,72,.18) !important;
+}
+.nido-games__path-cell.is-attempted {
+  filter: grayscale(.35) brightness(.92);
+  opacity: .82;
 }

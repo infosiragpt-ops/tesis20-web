@@ -1814,6 +1814,24 @@ function OrderActivity({
       currentLabels.length === correctLabels.length &&
       currentLabels.every((label, index) => label === correctLabels[index]);
     setAttempt((current) => current + 1);
+    if (!isCorrect) {
+      // Marca visual del primer hueco mal puesto para que el niño vea dónde mirar.
+      const firstWrong = currentLabels.findIndex(
+        (label, index) => label !== correctLabels[index],
+      );
+      if (firstWrong >= 0) {
+        const track = trackRef.current;
+        const piece = track?.children?.[firstWrong];
+        piece?.classList?.remove("is-order-wrong");
+        // reflow para reiniciar la animación
+        void piece?.offsetWidth;
+        piece?.classList?.add("is-order-wrong");
+        window.setTimeout(
+          () => piece?.classList?.remove("is-order-wrong"),
+          520,
+        );
+      }
+    }
     onAnswer(
       isCorrect
         ? challenge.answerId
@@ -2201,26 +2219,35 @@ function PathActivity({
     const option = challenge.options.find(
       (candidate) => candidate.id === optionId,
     );
-    const resolvedPosition =
-      optionId && optionId !== challenge.answerId ? layout.start : next;
-    positionRef.current = resolvedPosition;
-    setPosition(resolvedPosition);
+    // Primero pisa la casilla elegida; si es incorrecta, vuelve al inicio con delay.
+    positionRef.current = next;
+    setPosition(next);
     if (columnDelta) setFacing(columnDelta > 0 ? 1 : -1);
     setVisited((current) => {
       const nextVisited = new Set(current);
-      nextVisited.add(`${resolvedPosition.row}:${resolvedPosition.column}`);
+      nextVisited.add(`${next.row}:${next.column}`);
       return nextVisited;
     });
     if (optionId) {
+      if (optionId === challenge.answerId) {
+        setPathStatus(
+          `Llegaste a ${option?.label ?? "la respuesta"}. ¡Respuesta correcta!`,
+        );
+        onAnswer(optionId);
+        return;
+      }
       setPathStatus(
-        optionId === challenge.answerId
-          ? `Llegaste a ${option?.label ?? "la respuesta"}. ¡Respuesta correcta!`
-          : `Llegaste a ${option?.label ?? "esa respuesta"}. Volvemos al inicio para probar otra ruta.`,
+        `Llegaste a ${option?.label ?? "esa respuesta"}. Esa no es. Volvemos al inicio…`,
       );
       onAnswer(optionId);
-    } else {
-      setPathStatus(`Fila ${next.row + 1}, columna ${next.column + 1}.`);
+      window.setTimeout(() => {
+        positionRef.current = layout.start;
+        setPosition(layout.start);
+        setPathStatus("De nuevo en el inicio. Prueba otra ruta.");
+      }, 520);
+      return;
     }
+    setPathStatus(`Fila ${next.row + 1}, columna ${next.column + 1}.`);
   };
 
   const handleKeyDown = (event) => {
@@ -4589,11 +4616,26 @@ export function NidoGamesExperience({
                       </p>
                       <button
                         type="button"
-                        onClick={handleNext}
-                        disabled={!answerIsCorrect || celebrationBusy}
+                        onClick={() => {
+                          // El niño puede saltar la celebración tras el acierto:
+                          // cancela la voz y avanza sin quedarse atrapado.
+                          if (celebrationBusy) {
+                            celebrationRunRef.current += 1;
+                            window.clearTimeout(celebrationFailsafeRef.current);
+                            celebrationFailsafeRef.current = null;
+                            setCelebrationBusy(false);
+                            clearFeedbackEffect();
+                            stopCelebrationPraise();
+                            window.speechSynthesis?.cancel();
+                          }
+                          handleNext();
+                        }}
+                        disabled={!answerIsCorrect}
                       >
                         {celebrationBusy
-                          ? "Celebrando…"
+                          ? currentGameIndex < NIDO_CURRICULUM_GAME_COUNT - 1
+                            ? "Saltar y seguir"
+                            : "Saltar y finalizar"
                           : currentGameIndex <
                               NIDO_CURRICULUM_GAME_COUNT - 1
                             ? "Siguiente reto"

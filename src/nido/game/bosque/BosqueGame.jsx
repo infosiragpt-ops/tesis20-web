@@ -48,6 +48,7 @@ const WORLD = Object.freeze({ width: 1900, groundY: 470 });
 const BASKET = Object.freeze({ x: 1700, y: 400, w: 120, h: 66 });
 const GRAB_RADIUS = 56;
 const GRAB_RADIUS_TODDLER = 78;
+const DROP_REGRAB_COOLDOWN_MS = 550;
 const CONFETTI = ["#ff6f61", "#ffc94d", "#46b982", "#4b8ff7", "#9873e7"];
 const CELEBRATION_LEAD_IN_MS = 540;
 const CELEBRATION_DWELL_MS = 700;
@@ -358,18 +359,20 @@ export default function BosqueGame({
         }
         audioRef.current?.sfx("try");
         state.pose = "tryAgain";
-        // Sin castigo: solo las de la cesta vuelven al campo (nunca las de brazos).
+        // Conserva el progreso correcto: solo rebotan las frutas de más.
+        const extra = state.delivered - targetRound.target;
         let returned = 0;
-        for (const fruit of state.fruits) {
-          if (fruit.place === "basket" && returned < state.delivered) {
-            setFruitPlace(fruit, "field");
-            fruit.x = 1150 + returned * 90 + Math.random() * 40;
-            fruit.y = WORLD.groundY - 26;
-            returned += 1;
-          }
+        for (let index = state.fruits.length - 1; index >= 0; index -= 1) {
+          const fruit = state.fruits[index];
+          if (fruit.place !== "basket" || returned >= extra) continue;
+          setFruitPlace(fruit, "field");
+          fruit.x = 1150 + returned * 90 + Math.random() * 40;
+          fruit.y = WORLD.groundY - 26;
+          fruit.noGrabUntil = state.time + DROP_REGRAB_COOLDOWN_MS / 1000;
+          returned += 1;
         }
-        state.delivered = 0;
-        setHud({ carried: state.carried, delivered: 0 });
+        state.delivered = targetRound.target;
+        setHud({ carried: state.carried, delivered: targetRound.target });
         setPhase("playing");
         narrate(
           tryAgainText(targetRound.target),
@@ -482,6 +485,7 @@ export default function BosqueGame({
         let nearestDistanceSq = grabRadius * grabRadius;
         for (const fruit of state.fruits) {
           if (!isFruitOnField(fruit)) continue;
+          if ((fruit.noGrabUntil ?? 0) > state.time) continue;
           const dx = fruit.x - px;
           const dy = fruit.y - py;
           const distanceSq = dx * dx + dy * dy;
@@ -520,21 +524,27 @@ export default function BosqueGame({
         }
       }
 
-      // Entregar en la cesta (radio un poco generoso para dedos pequeños).
+      // Entregar en la cesta. No acepta de más: si ya está la meta, no deposita.
       const basketPad = profile.walkOnly ? 36 : 28;
+      const roomInBasket = Math.max(0, round.target - state.delivered);
       if (
         state.carried > 0 &&
+        roomInBasket > 0 &&
         px > BASKET.x - basketPad &&
         px < BASKET.x + BASKET.w + basketPad &&
         state.body.y + state.body.h > BASKET.y - 48
       ) {
         setPhase("counting");
-        const toDeliver = state.carried;
-        state.carried = 0;
-        // Solo las que iban en brazos pasan a la cesta.
+        const toDeliver = Math.min(state.carried, roomInBasket);
+        // Si trae de más, solo deja las que caben; el resto sigue en brazos.
+        let deposited = 0;
         for (const fruit of state.fruits) {
-          if (fruit.place === "held" || fruit.held) setFruitPlace(fruit, "basket");
+          if ((fruit.place === "held" || fruit.held) && deposited < toDeliver) {
+            setFruitPlace(fruit, "basket");
+            deposited += 1;
+          }
         }
+        state.carried = Math.max(0, state.carried - toDeliver);
         let counted = 0;
         state.counting = window.setInterval(() => {
           const current = stateRef.current;
@@ -557,7 +567,10 @@ export default function BosqueGame({
               color: "#ffc94d",
             });
           }
-          setHud({ carried: 0, delivered: current.delivered });
+          setHud({
+            carried: current.carried,
+            delivered: current.delivered,
+          });
           setSubtitle(
             `${NUMBER_WORDS[Math.min(current.delivered, 10)]}…`,
           );
@@ -808,10 +821,12 @@ export default function BosqueGame({
     const fruit = state.fruits.find((item) => item.place === "held" || item.held);
     if (fruit) {
       setFruitPlace(fruit, "field");
-      fruit.x = state.body.x + state.body.w / 2 + state.body.facing * -46;
+      // Delante de Niko (no detrás) y con cooldown para no re-agarrarla al instante.
+      fruit.x = state.body.x + state.body.w / 2 + state.body.facing * 52;
       fruit.y = WORLD.groundY - 26;
+      fruit.noGrabUntil = state.time + DROP_REGRAB_COOLDOWN_MS / 1000;
     }
-    audioRef.current?.sfx("deposit");
+    audioRef.current?.sfx("jump");
     setHud({ carried: state.carried, delivered: state.delivered });
   };
 

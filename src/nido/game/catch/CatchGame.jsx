@@ -133,8 +133,10 @@ export default function CatchGame({
     spawnSeed: mulberry(1),
     caughtCount: 0,
     time: 0,
+    roundDone: false,
   });
   const inputRef = useRef({ left: false, right: false });
+  const fxItemsRef = useRef([]);
   // Objetivo activo de "Atrapa en el Huerto": arranca en round.target y
   // puede cambiar una vez a mitad de ronda en nivel experto.
   const currentTargetRef = useRef(round.target);
@@ -231,7 +233,9 @@ export default function CatchGame({
         ),
         caughtCount: 0,
         time: 0,
+        roundDone: false,
       };
+      fxItemsRef.current = [];
       currentTargetRef.current = targetRound.target;
       targetSwitchedRef.current = false;
       setCaught(0);
@@ -300,7 +304,13 @@ export default function CatchGame({
       const metrics = stageMetricsRef.current;
       state.time += dt;
 
-      if (phaseRef.current !== "playing") return;
+      if (phaseRef.current !== "playing" || state.roundDone) return;
+
+      // Efectos de pop/shake viven un instante fuera del tablero jugable.
+      fxItemsRef.current = fxItemsRef.current.filter((fx) => {
+        fx.life -= dt;
+        return fx.life > 0;
+      });
 
       const speed = 340;
       if (inputRef.current.left) state.basketX -= speed * dt;
@@ -361,8 +371,13 @@ export default function CatchGame({
             state.caughtCount += item.points ?? 1;
             audioRef.current?.sfx("collect");
             setCaught(state.caughtCount);
+            fxItemsRef.current.push({
+              ...item,
+              fx: "good",
+              life: 0.42,
+            });
             setFeedback({ type: "good", id: item.id });
-            window.setTimeout(() => setFeedback(null), 400);
+            window.setTimeout(() => setFeedback(null), 420);
 
             if (
               theme.id === "huerto" &&
@@ -385,13 +400,22 @@ export default function CatchGame({
             }
 
             if (state.caughtCount >= round.count) {
+              state.roundDone = true;
+              state.items = [];
+              setTick((current) => current + 1);
               evaluateRound();
+              return;
             }
           } else {
             adapterRef.current?.recordError();
             audioRef.current?.sfx("try");
+            fxItemsRef.current.push({
+              ...item,
+              fx: "bad",
+              life: 0.42,
+            });
             setFeedback({ type: "bad", id: item.id });
-            window.setTimeout(() => setFeedback(null), 400);
+            window.setTimeout(() => setFeedback(null), 420);
           }
           continue;
         }
@@ -466,6 +490,9 @@ export default function CatchGame({
     setPaused((current) => {
       const next = !current;
       if (next) {
+        // Al pausar, soltamos controles táctiles/teclado para que no queden pegados.
+        inputRef.current.left = false;
+        inputRef.current.right = false;
         loopRef.current?.pause();
         audioRef.current?.suspend();
       } else {
@@ -501,13 +528,27 @@ export default function CatchGame({
   const touchHold = (key) => ({
     onPointerDown: (event) => {
       event.preventDefault();
+      event.currentTarget.setPointerCapture?.(event.pointerId);
       inputRef.current[key] = true;
     },
-    onPointerUp: () => {
+    onPointerUp: (event) => {
+      event.currentTarget.releasePointerCapture?.(event.pointerId);
       inputRef.current[key] = false;
     },
-    onPointerLeave: () => {
-      inputRef.current[key] = false;
+    onPointerCancel: (event) => {
+      event.currentTarget.releasePointerCapture?.(event.pointerId);
+      inputRef.current.left = false;
+      inputRef.current.right = false;
+    },
+    onLostPointerCapture: () => {
+      inputRef.current.left = false;
+      inputRef.current.right = false;
+    },
+    onPointerLeave: (event) => {
+      // Con capture activo el leave no debe soltar el control a medias.
+      if (!event.currentTarget.hasPointerCapture?.(event.pointerId)) {
+        inputRef.current[key] = false;
+      }
     },
   });
 
@@ -594,15 +635,18 @@ export default function CatchGame({
             </header>
 
             <div className="catch__field">
-              {stateRef.current.items.map((item) => {
+              {[...stateRef.current.items, ...fxItemsRef.current].map((item) => {
                 const Sticker = STICKERS[item.sticker];
+                const fxClass = item.fx ? `is-${item.fx}` : "";
                 return (
                   <span
-                    key={item.id}
-                    className={`catch__item ${feedback?.id === item.id ? `is-${feedback.type}` : ""}`}
+                    key={`${item.id}-${item.fx ?? "live"}`}
+                    className="catch__item-wrap"
                     style={{ transform: `translate(${item.x}px, ${item.y}px)` }}
                   >
-                    {Sticker ? <Sticker size={ITEM_SIZE} /> : null}
+                    <span className={`catch__item ${fxClass}`.trim()}>
+                      {Sticker ? <Sticker size={ITEM_SIZE} /> : null}
+                    </span>
                   </span>
                 );
               })}

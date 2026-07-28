@@ -556,10 +556,11 @@ for (const buildAsset of buildAssets) {
     // 2026-07-26: 90 → 91 KiB por la profundidad de los 540 juegos —
     // perspectiva en la escena y en las cinco mecánicas, capas a distinta Z,
     // sombra proyectada de los dibujos y giro del acierto—: 1,2 KiB reales.
-    // 2026-07-27: 91 → 96 KiB por la dinámica adictiva compartida (respiración
-    // de tarjetas, racha caliente, imán de «siguiente» y pulso de destinos).
+    // 2026-07-27: 91 → 96 KiB por la dinámica adictiva compartida.
+    // 2026-07-28: 96 → 100 KiB por el pase P0/P1 (bob seguro sin romper
+    // position-scenes, feedback de orden, path y catch pop).
     // Todo sigue diferido en /nido; el CSS inicial conserva 85 KiB.
-    const sheetLimit = isEagerAsset ? 85 : 96;
+    const sheetLimit = isEagerAsset ? 85 : 100;
     check(
       bytes <= sheetLimit * 1024,
       `${buildAsset} supera el máximo de ${sheetLimit} KiB por hoja.`,
@@ -606,12 +607,13 @@ check(
 // JavaScript inicial sigue clavado en 450 KiB.
 // 2026-07-26 (septies): 766 → 767 KiB por el único JavaScript que necesita la
 // profundidad de los 540 juegos: un oyente de puntero que escribe dos ángulos
-// en la escena. El parallax lo calcula la perspectiva del CSS, no este código,
-// y con `prefers-reduced-motion` ni se instala. Son 0.4 KiB medidos; el
-// JavaScript inicial sigue clavado en 450 KiB.
+// en la escena.
+// 2026-07-28 (octies): 767 → 772 KiB por el pase P0/P1 de jugabilidad:
+// ciclo de frutas field/held/basket, catch pop+pointer capture, path delay
+// en error y skip de celebración. El JS inicial sigue en 450 KiB.
 check(
-  javascriptBytes <= 767 * 1024,
-  `El JavaScript total con rutas diferidas no debe superar 767 KiB (${Math.ceil(javascriptBytes / 1024)} KiB).`,
+  javascriptBytes <= 772 * 1024,
+  `El JavaScript total con rutas diferidas no debe superar 772 KiB (${Math.ceil(javascriptBytes / 1024)} KiB).`,
 );
 check(
   initialStylesheetBytes > 0 && initialStylesheetBytes <= 85 * 1024,
@@ -625,11 +627,11 @@ check(
 // también diferidos en /nido.
 // 2026-07-25 (ter): 184 → 190 KiB por la capa de vida de los cinco runtimes
 // interactivos que comparten los 540 juegos.
-// 2026-07-27: 190 → 196 KiB por la dinámica adictiva de los 540 (micro-movimiento
-// de tarjetas/piezas, racha caliente e imán de continuidad). Diferido en /nido.
+// 2026-07-27: 190 → 196 KiB por la dinámica adictiva de los 540.
+// 2026-07-28: 196 → 202 KiB por feedback de orden/path y catch pop seguro.
 check(
-  stylesheetBytes <= 196 * 1024,
-  `El CSS total con rutas diferidas no debe superar 196 KiB (${Math.ceil(stylesheetBytes / 1024)} KiB).`,
+  stylesheetBytes <= 202 * 1024,
+  `El CSS total con rutas diferidas no debe superar 202 KiB (${Math.ceil(stylesheetBytes / 1024)} KiB).`,
 );
 check(deployBytesWithoutAudioAndPdf <= 9 * 1024 * 1024, `El build sin audios/PDF supera 9 MiB (${(deployBytesWithoutAudioAndPdf / 1024 / 1024).toFixed(2)} MiB).`);
 
