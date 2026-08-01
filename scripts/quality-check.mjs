@@ -26,6 +26,22 @@ const routeSpecs = [
     schemaType: "CollectionPage",
   },
   {
+    path: "/carreras",
+    output: "dist/carreras.html",
+    title: "Carreras universitarias por áreas | Tesis20",
+    h1: "Encuentra tu carrera por área de conocimiento",
+    content: ["Ingeniería y tecnología", "Negocios, economía y gestión", "Catálogo internacional orientativo"],
+    schemaType: "CollectionPage",
+  },
+  {
+    path: "/docentes",
+    output: "dist/docentes.html",
+    title: "Docentes y asesores por carrera | Tesis20",
+    h1: "Encuentra un docente para tu tema",
+    content: ["Docentes disponibles", "Universidad donde enseña", "Perfiles de demostración"],
+    schemaType: "CollectionPage",
+  },
+  {
     path: "/nido",
     output: "dist/nido.html",
     title: "Videojuegos educativos para niños | Tesis20 Nido",

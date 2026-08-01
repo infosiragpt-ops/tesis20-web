@@ -50,6 +50,27 @@ const PAGE_META = {
     image: DEFAULT_SHARE_IMAGE,
     imageAlt: "Modelo general informativo de contrato de Tesis20",
   },
+  careers: {
+    title: "Carreras universitarias por áreas | Tesis20",
+    description:
+      "Explora un catálogo internacional de carreras organizado por ingeniería, negocios, salud, ciencias, humanidades y otras áreas de conocimiento.",
+    path: "/carreras",
+    schemaType: "CollectionPage",
+    image: DEFAULT_SHARE_IMAGE,
+    imageAlt: "Catálogo internacional de carreras y áreas académicas de Tesis20",
+  },
+  teachers: {
+    title: "Docentes y asesores por carrera | Tesis20",
+    description:
+      "Encuentra docentes por nombre, carrera y universidad, revisa su perfil y solicita orientación mediante el WhatsApp oficial de Tesis20.",
+    path: "/docentes",
+    schemaType: "CollectionPage",
+    image: `${SITE_ORIGIN}/assets/docentes/docentes-grid-v1.jpg`,
+    imageAlt: "Directorio ilustrativo de docentes asesores de Tesis20",
+    imageType: "image/jpeg",
+    imageWidth: 1672,
+    imageHeight: 941,
+  },
   nido: {
     title: "Videojuegos educativos para niños | Tesis20 Nido",
     description:
@@ -144,6 +165,8 @@ function getSafePageKey(pathname = window.location.pathname) {
     "/servicios": "services",
     "/evidencias": "evidence",
     "/contrato": "contract",
+    "/carreras": "careers",
+    "/docentes": "teachers",
     "/nido": "nido",
   };
 
@@ -204,6 +227,8 @@ export function SeoManager({
       services: "Servicios",
       evidence: "Evidencias",
       contract: "Contrato",
+      careers: "Carreras",
+      teachers: "Docentes",
       nido: "Nido",
       "not-found": "Página no encontrada",
     };
@@ -240,7 +265,8 @@ export function SeoManager({
     });
     upsertMeta('meta[property="og:image:type"]', {
       property: "og:image:type",
-      content: meta.image.endsWith(".jpg") ? "image/jpeg" : "image/png",
+      content:
+        meta.imageType || (meta.image.endsWith(".jpg") ? "image/jpeg" : "image/png"),
     });
     upsertMeta('meta[property="og:image:alt"]', {
       property: "og:image:alt",
@@ -486,6 +512,8 @@ export function RouteAnnouncer({ currentPage }) {
     services: "Página de servicios cargada",
     evidence: "Página de evidencias cargada",
     contract: "Página de contrato cargada",
+    careers: "Página de carreras cargada",
+    teachers: "Página de docentes cargada",
     nido: "Página de Nido cargada",
     "not-found": "Página no encontrada cargada",
   };

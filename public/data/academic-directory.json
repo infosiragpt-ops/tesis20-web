@@ -1,0 +1,460 @@
+{
+  "careerAreas": [
+    {
+      "id": "ingenieria-tecnologia",
+      "name": "Ingeniería y tecnología",
+      "description": "Diseño, construcción y optimización de sistemas, infraestructura, software y procesos.",
+      "careers": [
+        "Ingeniería Aeronáutica",
+        "Ingeniería Aeroespacial",
+        "Ingeniería Agrícola",
+        "Ingeniería Ambiental",
+        "Ingeniería Automotriz",
+        "Ingeniería Biomédica",
+        "Ingeniería Biotecnológica",
+        "Ingeniería Civil",
+        "Ingeniería de Alimentos",
+        "Ingeniería de Datos",
+        "Ingeniería de Materiales",
+        "Ingeniería de Minas",
+        "Ingeniería de Petróleo",
+        "Ingeniería de Sistemas",
+        "Ingeniería de Software",
+        "Ingeniería de Telecomunicaciones",
+        "Ingeniería Eléctrica",
+        "Ingeniería Electrónica",
+        "Ingeniería Energética",
+        "Ingeniería Geológica",
+        "Ingeniería Industrial",
+        "Ingeniería Informática",
+        "Ingeniería Mecánica",
+        "Ingeniería Mecatrónica",
+        "Ingeniería Metalúrgica",
+        "Ingeniería Naval",
+        "Ingeniería Química",
+        "Ingeniería Sanitaria",
+        "Ingeniería Textil",
+        "Robótica y Automatización"
+      ]
+    },
+    {
+      "id": "negocios-economia",
+      "name": "Negocios, economía y gestión",
+      "description": "Dirección de organizaciones, mercados, finanzas, talento y operaciones nacionales e internacionales.",
+      "careers": [
+        "Administración de Empresas",
+        "Administración Pública",
+        "Agronegocios",
+        "Analítica de Negocios",
+        "Banca y Seguros",
+        "Comercio Exterior",
+        "Contabilidad",
+        "Economía",
+        "Emprendimiento e Innovación",
+        "Finanzas",
+        "Gestión Comercial",
+        "Gestión de Operaciones",
+        "Gestión de Proyectos",
+        "Gestión del Talento Humano",
+        "Gestión Pública",
+        "Logística y Cadena de Suministro",
+        "Marketing",
+        "Negocios Digitales",
+        "Negocios Internacionales",
+        "Responsabilidad Social Empresarial"
+      ]
+    },
+    {
+      "id": "salud-bienestar",
+      "name": "Salud y bienestar",
+      "description": "Prevención, diagnóstico, tratamiento, rehabilitación y gestión de la salud humana.",
+      "careers": [
+        "Administración en Salud",
+        "Bioanálisis Clínico",
+        "Enfermería",
+        "Epidemiología",
+        "Farmacia y Bioquímica",
+        "Fisioterapia y Rehabilitación",
+        "Fonoaudiología",
+        "Gerontología",
+        "Instrumentación Quirúrgica",
+        "Medicina Humana",
+        "Medicina Nuclear",
+        "Nutrición y Dietética",
+        "Obstetricia",
+        "Odontología",
+        "Optometría",
+        "Podología",
+        "Psicología",
+        "Radiología",
+        "Salud Pública",
+        "Terapia Ocupacional",
+        "Tecnología Médica"
+      ]
+    },
+    {
+      "id": "ciencias-exactas-naturales",
+      "name": "Ciencias exactas y naturales",
+      "description": "Investigación de la materia, la vida, el planeta, el universo y los modelos que los explican.",
+      "careers": [
+        "Astronomía",
+        "Biología",
+        "Bioquímica",
+        "Biofísica",
+        "Ciencias Atmosféricas",
+        "Ciencias del Mar",
+        "Ecología",
+        "Estadística",
+        "Física",
+        "Genética",
+        "Geofísica",
+        "Geología",
+        "Matemática",
+        "Meteorología",
+        "Microbiología",
+        "Nanociencia",
+        "Neurociencia",
+        "Oceanografía",
+        "Paleontología",
+        "Química"
+      ]
+    },
+    {
+      "id": "sociales-humanidades",
+      "name": "Ciencias sociales y humanidades",
+      "description": "Estudio de las sociedades, culturas, lenguas, ideas, memoria y comportamiento humano.",
+      "careers": [
+        "Antropología",
+        "Arqueología",
+        "Ciencias de la Religión",
+        "Desarrollo Internacional",
+        "Estudios Culturales",
+        "Estudios de Género",
+        "Estudios Latinoamericanos",
+        "Filosofía",
+        "Geografía Humana",
+        "Historia",
+        "Humanidades Digitales",
+        "Lingüística",
+        "Literatura",
+        "Psicología Social",
+        "Relaciones Internacionales",
+        "Sociología",
+        "Teología",
+        "Trabajo Social",
+        "Traducción e Interpretación",
+        "Urbanismo Social"
+      ]
+    },
+    {
+      "id": "derecho-politica",
+      "name": "Derecho, política y asuntos públicos",
+      "description": "Sistemas jurídicos, gobierno, justicia, seguridad ciudadana y diseño de políticas públicas.",
+      "careers": [
+        "Ciencia Política",
+        "Criminalística",
+        "Criminología",
+        "Derecho",
+        "Derecho Ambiental",
+        "Derecho Corporativo",
+        "Derecho Internacional",
+        "Derecho Laboral",
+        "Derecho Penal",
+        "Derecho Tributario",
+        "Diplomacia",
+        "Gestión Parlamentaria",
+        "Políticas Públicas",
+        "Relaciones Laborales",
+        "Seguridad Ciudadana"
+      ]
+    },
+    {
+      "id": "educacion",
+      "name": "Educación y pedagogía",
+      "description": "Aprendizaje, docencia, gestión educativa e inclusión en todas las etapas de formación.",
+      "careers": [
+        "Educación Artística",
+        "Educación Especial",
+        "Educación Física",
+        "Educación Inicial",
+        "Educación Intercultural Bilingüe",
+        "Educación Primaria",
+        "Educación Secundaria",
+        "Enseñanza de Ciencias",
+        "Enseñanza de Idiomas",
+        "Enseñanza de Matemática",
+        "Gestión Educativa",
+        "Orientación Educativa",
+        "Pedagogía",
+        "Psicopedagogía",
+        "Tecnología Educativa"
+      ]
+    },
+    {
+      "id": "arquitectura-diseno-artes",
+      "name": "Arquitectura, diseño y artes",
+      "description": "Creación de espacios, objetos, experiencias y expresiones visuales, escénicas y sonoras.",
+      "careers": [
+        "Animación Digital",
+        "Arquitectura",
+        "Artes Escénicas",
+        "Artes Visuales",
+        "Cine",
+        "Conservación y Restauración",
+        "Danza",
+        "Diseño de Interiores",
+        "Diseño de Moda",
+        "Diseño de Producto",
+        "Diseño Gráfico",
+        "Diseño Industrial",
+        "Diseño UX/UI",
+        "Fotografía",
+        "Ilustración",
+        "Música",
+        "Paisajismo",
+        "Teatro",
+        "Urbanismo"
+      ]
+    },
+    {
+      "id": "comunicacion-medios",
+      "name": "Comunicación, medios y contenidos",
+      "description": "Creación y gestión de mensajes, marcas, audiencias, medios y narrativas digitales.",
+      "careers": [
+        "Comunicación Audiovisual",
+        "Comunicación Corporativa",
+        "Comunicación Digital",
+        "Comunicación para el Desarrollo",
+        "Creación de Contenidos",
+        "Edición y Producción Editorial",
+        "Escritura Creativa",
+        "Gestión de Medios",
+        "Guion",
+        "Marketing Digital",
+        "Periodismo",
+        "Producción Musical",
+        "Publicidad",
+        "Relaciones Públicas",
+        "Sonido y Producción Audiovisual"
+      ]
+    },
+    {
+      "id": "agroambiente-veterinaria",
+      "name": "Agro, ambiente y veterinaria",
+      "description": "Producción sostenible, recursos naturales, alimentación, biodiversidad y salud animal.",
+      "careers": [
+        "Acuicultura",
+        "Agroecología",
+        "Agronomía",
+        "Ciencia de los Alimentos",
+        "Ciencias Forestales",
+        "Desarrollo Rural",
+        "Enología",
+        "Gestión Ambiental",
+        "Gestión de Recursos Hídricos",
+        "Horticultura",
+        "Ingeniería Pesquera",
+        "Medicina Veterinaria",
+        "Producción Animal",
+        "Recursos Naturales",
+        "Silvicultura",
+        "Sostenibilidad",
+        "Zootecnia"
+      ]
+    },
+    {
+      "id": "turismo-hospitalidad-deporte",
+      "name": "Turismo, hospitalidad y deporte",
+      "description": "Experiencias, destinos, alimentos, recreación, rendimiento y gestión de servicios.",
+      "careers": [
+        "Administración Hotelera",
+        "Ciencias del Deporte",
+        "Dirección de Eventos",
+        "Entrenamiento Deportivo",
+        "Gastronomía",
+        "Gestión Deportiva",
+        "Gestión Turística",
+        "Hotelería y Turismo",
+        "Recreación",
+        "Turismo Cultural",
+        "Turismo Sostenible"
+      ]
+    },
+    {
+      "id": "seguridad-defensa-transporte",
+      "name": "Seguridad, defensa y transporte",
+      "description": "Protección, prevención de riesgos, movilidad, operaciones y respuesta ante emergencias.",
+      "careers": [
+        "Administración Aeronáutica",
+        "Aviación Comercial",
+        "Ciencias Militares",
+        "Ciencias Navales",
+        "Gestión de Riesgos y Desastres",
+        "Gestión del Transporte",
+        "Investigación de Accidentes",
+        "Marina Mercante",
+        "Prevención de Riesgos Laborales",
+        "Seguridad Industrial",
+        "Seguridad y Defensa",
+        "Transporte y Movilidad Urbana"
+      ]
+    },
+    {
+      "id": "interdisciplinarias-emergentes",
+      "name": "Carreras interdisciplinarias y emergentes",
+      "description": "Campos que integran tecnología, ciencia, sociedad y nuevos modelos de innovación.",
+      "careers": [
+        "Bioinformática",
+        "Ciencia Cognitiva",
+        "Ciencia de Datos",
+        "Ciencias de la Complejidad",
+        "Ciencias Espaciales",
+        "Ciberseguridad",
+        "Computación Cuántica",
+        "Diseño de Videojuegos",
+        "Economía Circular",
+        "Fintech",
+        "Gestión de la Innovación",
+        "Informática en Salud",
+        "Inteligencia Artificial",
+        "Internet de las Cosas",
+        "Neurotecnología",
+        "Realidad Extendida",
+        "Sistemas de Información Geográfica",
+        "Tecnologías Limpias",
+        "Transición Energética"
+      ]
+    }
+  ],
+  "careerCount": 234,
+  "teachers": [
+    {
+      "id": "valeria-ruiz",
+      "name": "Valeria Ruiz",
+      "country": "Perú",
+      "universities": [
+        "Universidad Andina — demo"
+      ],
+      "careers": [
+        "Psicología",
+        "Educación Inicial",
+        "Psicopedagogía"
+      ],
+      "price": 85,
+      "description": "Acompaña investigaciones cualitativas, diseño de instrumentos y proyectos sobre aprendizaje y bienestar.",
+      "photo": "/assets/docentes/valeria-ruiz-v1.jpg"
+    },
+    {
+      "id": "diego-salas",
+      "name": "Diego Salas",
+      "country": "México",
+      "universities": [
+        "Instituto Metropolitano — demo"
+      ],
+      "careers": [
+        "Ingeniería Industrial",
+        "Logística y Cadena de Suministro",
+        "Gestión de Operaciones"
+      ],
+      "price": 95,
+      "description": "Especialista en mejora de procesos, operaciones, indicadores y metodología aplicada a organizaciones.",
+      "photo": "/assets/docentes/diego-salas-v1.jpg"
+    },
+    {
+      "id": "mariana-torres",
+      "name": "Mariana Torres",
+      "country": "Colombia",
+      "universities": [
+        "Universidad del Caribe — demo"
+      ],
+      "careers": [
+        "Administración de Empresas",
+        "Marketing",
+        "Negocios Internacionales"
+      ],
+      "price": 90,
+      "description": "Orienta estudios de mercado, estrategia, comportamiento del consumidor y proyectos de emprendimiento.",
+      "photo": "/assets/docentes/mariana-torres-v1.jpg"
+    },
+    {
+      "id": "andres-vega",
+      "name": "Andrés Vega",
+      "country": "Chile",
+      "universities": [
+        "Universidad Austral Metropolitana — demo"
+      ],
+      "careers": [
+        "Ingeniería Civil",
+        "Ingeniería Ambiental",
+        "Gestión de Proyectos"
+      ],
+      "price": 110,
+      "description": "Asesora proyectos de infraestructura, sostenibilidad, matrices de riesgo y evaluación técnica.",
+      "photo": "/assets/docentes/andres-vega-v1.jpg"
+    },
+    {
+      "id": "luis-paredes",
+      "name": "Luis Paredes",
+      "country": "Perú",
+      "universities": [
+        "Universidad Tecnológica del Centro — demo"
+      ],
+      "careers": [
+        "Ingeniería de Sistemas",
+        "Ciencia de Datos",
+        "Inteligencia Artificial"
+      ],
+      "price": 105,
+      "description": "Guía tesis de software, analítica, modelos predictivos y validación de soluciones tecnológicas.",
+      "photo": "/assets/docentes/luis-paredes-v1.jpg"
+    },
+    {
+      "id": "camila-rojas",
+      "name": "Camila Rojas",
+      "country": "Argentina",
+      "universities": [
+        "Universidad Rioplatense — demo"
+      ],
+      "careers": [
+        "Medicina Humana",
+        "Salud Pública",
+        "Epidemiología"
+      ],
+      "price": 120,
+      "description": "Acompaña revisiones sistemáticas, protocolos de salud, epidemiología y análisis crítico de evidencia.",
+      "photo": "/assets/docentes/camila-rojas-v1.jpg"
+    },
+    {
+      "id": "sergio-montes",
+      "name": "Sergio Montes",
+      "country": "España",
+      "universities": [
+        "Instituto Superior Mediterráneo — demo"
+      ],
+      "careers": [
+        "Economía",
+        "Finanzas",
+        "Analítica de Negocios"
+      ],
+      "price": 125,
+      "description": "Trabaja modelos económicos, finanzas corporativas, análisis cuantitativo y presentación de resultados.",
+      "photo": "/assets/docentes/sergio-montes-v1.jpg"
+    },
+    {
+      "id": "elena-castro",
+      "name": "Elena Castro",
+      "country": "Ecuador",
+      "universities": [
+        "Universidad del Pacífico Sur — demo"
+      ],
+      "careers": [
+        "Derecho",
+        "Políticas Públicas",
+        "Relaciones Internacionales"
+      ],
+      "price": 100,
+      "description": "Orienta investigaciones jurídicas, análisis normativo, políticas públicas y estudios comparados.",
+      "photo": "/assets/docentes/elena-castro-v1.jpg"
+    }
+  ]
+}

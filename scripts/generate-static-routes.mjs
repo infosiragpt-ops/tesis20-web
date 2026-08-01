@@ -1,10 +1,28 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
+import { CAREER_AREAS, CAREER_COUNT, TEACHERS } from "../src/data/academic-directory.js";
 
 const DIST_DIRECTORY = resolve(process.cwd(), "dist");
 const INDEX_PATH = resolve(DIST_DIRECTORY, "index.html");
 const SITE_ORIGIN = "https://www.tesis20.com";
 const SHARE_IMAGE = `${SITE_ORIGIN}/assets/hero-students.png`;
+
+function buildTeacherWhatsAppUrl(teacher) {
+  const message = [
+    "¡Hola, Tesis20! Quiero solicitar una asesoría con este docente:",
+    "",
+    `Nombre: ${teacher.name}`,
+    `Carrera(s): ${teacher.careers.join(", ")}`,
+    `Universidad donde enseña: ${teacher.universities.join(", ")}`,
+    `País: ${teacher.country}`,
+    `Precio referencial por hora: S/ ${teacher.price}`,
+    `Perfil: ${teacher.description}`,
+    "",
+    "Por favor, confirmen su disponibilidad y el precio final para mi tema.",
+  ].join("\n");
+
+  return `https://api.whatsapp.com/send?phone=51918714054&text=${encodeURIComponent(message)}`;
+}
 
 const services = [
   {
@@ -175,6 +193,99 @@ const routeDefinitions = [
         <h2 id="static-services-process-title">Antes de comenzar</h2>
         <p>Realizamos una orientación inicial para identificar el servicio adecuado. Puedes leer el <a href="/contrato">modelo general de contrato</a> y resolver tus dudas antes de decidir.</p>
       </section>`,
+  },
+  {
+    output: "carreras.html",
+    path: "/carreras",
+    directory: "careers",
+    title: "Carreras universitarias por áreas | Tesis20",
+    description:
+      "Explora un catálogo internacional de carreras organizado por ingeniería, negocios, salud, ciencias, humanidades y otras áreas de conocimiento.",
+    heading: "Encuentra tu carrera por área de conocimiento",
+    schemaType: "CollectionPage",
+    content: `
+      <div class="directory-page" data-academic-directory="careers">
+        <section class="directory-hero" aria-labelledby="directory-page-title">
+          <div class="directory-shell directory-hero__inner">
+            <div class="directory-hero__copy">
+              <p>Explorador académico internacional</p>
+              <h1 id="directory-page-title">Encuentra tu carrera por área de conocimiento</h1>
+              <span>Consulta un mapa amplio de carreras universitarias y campos emergentes. Los nombres y especialidades pueden variar según cada país y universidad.</span>
+              <a class="directory-hero__link" href="/docentes">Buscar docentes por carrera <span aria-hidden="true">→</span></a>
+            </div>
+            <div class="directory-hero__stat" aria-label="${CAREER_COUNT} carreras orientativas"><strong>${CAREER_COUNT}</strong><span>carreras orientativas</span><i aria-hidden="true">T20</i></div>
+          </div>
+        </section>
+        <section class="directory-search" aria-labelledby="career-search-title">
+          <div class="directory-shell">
+            <div class="directory-search__heading"><div><p>Busca y compara</p><h2 id="career-search-title">Catálogo de carreras</h2></div><span data-directory-count aria-live="polite">${CAREER_COUNT} carreras encontradas</span></div>
+            <div class="directory-filters" role="search">
+              <label><span>Nombre de la carrera</span><span class="directory-field"><input id="career-query" type="search" placeholder="Ej.: Ingeniería, Psicología, Marketing…"></span></label>
+              <label><span>Área de conocimiento</span><span class="directory-field"><select id="career-area"><option value="">Todas las áreas</option>${CAREER_AREAS.map((area) => `<option value="${area.id}">${area.name}</option>`).join("")}</select></span></label>
+              <button type="button" class="directory-clear" data-directory-clear disabled>Limpiar</button>
+            </div>
+            <div class="career-area-grid">
+              ${CAREER_AREAS.map((area) => `<article class="career-area-card" data-career-area="${area.id}">
+                <header><span aria-hidden="true">T20</span><div><h2>${area.name}</h2><p>${area.description}</p></div><strong>${area.careers.length}</strong></header>
+                <ul>${area.careers.map((career) => `<li><span>${career}</span></li>`).join("")}</ul>
+              </article>`).join("\n")}
+            </div>
+            <div class="directory-empty" data-directory-empty hidden><span aria-hidden="true">⌕</span><h2>No encontramos esa carrera</h2><p>Prueba con otra palabra o revisa todas las áreas disponibles.</p></div>
+            <aside class="directory-note"><strong>Catálogo internacional orientativo</strong><p>La denominación de una carrera cambia entre países y universidades. Si no encuentras el nombre exacto, Tesis20 puede ayudarte a ubicar el área equivalente.</p></aside>
+          </div>
+        </section>
+      </div>`,
+  },
+  {
+    output: "docentes.html",
+    path: "/docentes",
+    directory: "teachers",
+    title: "Docentes y asesores por carrera | Tesis20",
+    description:
+      "Encuentra docentes por nombre, carrera y universidad, revisa su perfil y solicita orientación mediante el WhatsApp oficial de Tesis20.",
+    heading: "Encuentra un docente para tu tema",
+    schemaType: "CollectionPage",
+    image: `${SITE_ORIGIN}/assets/docentes/docentes-grid-v1.jpg`,
+    imageAlt: "Directorio ilustrativo de docentes asesores de Tesis20",
+    imageType: "image/jpeg",
+    imageWidth: 1672,
+    imageHeight: 941,
+    content: `
+      <div class="directory-page" data-academic-directory="teachers">
+        <section class="directory-hero" aria-labelledby="directory-page-title">
+          <div class="directory-shell directory-hero__inner">
+            <div class="directory-hero__copy">
+              <p>Red académica Tesis20</p>
+              <h1 id="directory-page-title">Encuentra un docente para tu tema</h1>
+              <span>Filtra por nombre, carrera y universidad. El contacto siempre llega al WhatsApp oficial de Tesis20 con la ficha completa del docente seleccionado.</span>
+              <a class="directory-hero__link" href="/carreras">Explorar todas las carreras <span aria-hidden="true">→</span></a>
+            </div>
+            <div class="directory-hero__stat" aria-label="${TEACHERS.length} perfiles demostrativos"><strong>${TEACHERS.length}</strong><span>perfiles demostrativos</span><i aria-hidden="true">T20</i></div>
+          </div>
+        </section>
+        <section class="directory-search teacher-directory" aria-labelledby="teacher-search-title">
+          <div class="directory-shell">
+            <div class="directory-search__heading"><div><p>Directorio académico</p><h2 id="teacher-search-title">Docentes disponibles</h2></div><span data-directory-count aria-live="polite">${TEACHERS.length} docentes encontrados</span></div>
+            <div class="directory-filters directory-filters--teachers" role="search">
+              <label><span>Nombre</span><span class="directory-field"><input id="teacher-name" type="search" placeholder="Buscar docente"></span></label>
+              <label><span>Carrera</span><span class="directory-field"><select id="teacher-career"><option value="">Todas las carreras</option>${[...new Set(TEACHERS.flatMap((teacher) => teacher.careers))].sort((a, b) => a.localeCompare(b, "es")).map((career) => `<option value="${escapeAttribute(career)}">${career}</option>`).join("")}</select></span></label>
+              <label><span>Universidad donde enseña</span><span class="directory-field"><select id="teacher-university"><option value="">Todas las universidades</option>${[...new Set(TEACHERS.flatMap((teacher) => teacher.universities))].sort((a, b) => a.localeCompare(b, "es")).map((university) => `<option value="${escapeAttribute(university)}">${university}</option>`).join("")}</select></span></label>
+              <button type="button" class="directory-clear" data-directory-clear disabled>Limpiar</button>
+            </div>
+            <div class="teacher-grid">
+              ${TEACHERS.map((teacher) => `<article class="teacher-card" data-teacher-card data-name="${escapeAttribute(teacher.name)}" data-careers="${escapeAttribute(teacher.careers.join("|"))}" data-universities="${escapeAttribute(teacher.universities.join("|"))}">
+                <img class="teacher-card__photo" src="${teacher.photo}" alt="Retrato ilustrativo de ${teacher.name}" width="418" height="470" loading="lazy" decoding="async">
+                <div class="teacher-card__body"><div class="teacher-card__title"><div><p>Docente asesor</p><h2>${teacher.name}</h2></div><span>${teacher.country}</span></div>
+                <p class="teacher-card__description">${teacher.description}</p>
+                <dl><div><dt>Carreras</dt><dd>${teacher.careers.join(" · ")}</dd></div><div><dt>Universidad</dt><dd>${teacher.universities.join(" · ")}</dd></div></dl>
+                <div class="teacher-card__footer"><p><small>Precio referencial por hora</small><strong>S/ ${teacher.price}</strong></p><a href="${escapeAttribute(buildTeacherWhatsAppUrl(teacher))}" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer" aria-label="Contactar a Tesis20 por WhatsApp para solicitar asesoría con ${teacher.name}">Contactar por WhatsApp</a></div></div>
+              </article>`).join("\n")}
+            </div>
+            <div class="directory-empty" data-directory-empty hidden><span aria-hidden="true">⌕</span><h2>No encontramos docentes con esos filtros</h2><p>Prueba otra carrera, universidad o nombre.</p></div>
+            <aside class="directory-note directory-note--warning"><strong>Perfiles de demostración</strong><p>Los nombres, retratos, universidades y precios de esta primera versión son ilustrativos. Tesis20 confirmará identidad, experiencia, disponibilidad y tarifa antes de coordinar una asesoría.</p></aside>
+          </div>
+        </section>
+      </div>`,
   },
   {
     output: "nido.html",
@@ -393,12 +504,33 @@ function createNavigation(route) {
       </header>`;
   }
 
+  if (route.directory) {
+    return `
+      <header class="site-header" data-seo-header>
+        <div class="header-inner">
+          <a class="brand" href="/" aria-label="Tesis20, inicio"><img src="/assets/tesis20-logo.png" alt="Tesis20" width="74" height="83"></a>
+          <nav class="desktop-navigation" aria-label="Navegación principal">
+            <a class="nav-link" href="/">Inicio</a>
+            <a class="nav-link" href="/servicios">Servicios</a>
+            <a class="nav-link${route.path === "/carreras" ? " nav-link--active" : ""}" href="/carreras"${route.path === "/carreras" ? ' aria-current="page"' : ""}>Carreras</a>
+            <a class="nav-link${route.path === "/docentes" ? " nav-link--active" : ""}" href="/docentes"${route.path === "/docentes" ? ' aria-current="page"' : ""}>Docentes</a>
+            <a class="nav-link" href="/evidencias">Evidencias</a>
+            <a class="nav-link" href="/contrato">Contrato</a>
+            <a class="nav-link" href="/nido">Nido</a>
+          </nav>
+          <a class="whatsapp-button header-cta" href="https://api.whatsapp.com/send?phone=51918714054">Quiero orientación</a>
+        </div>
+      </header>`;
+  }
+
   return `
     <header data-seo-header>
       <a href="/" aria-label="Tesis20, inicio">Tesis20</a>
       <nav aria-label="Navegación principal">
         <a href="/">Inicio</a>
         <a href="/servicios">Servicios</a>
+        <a href="/carreras">Carreras</a>
+        <a href="/docentes">Docentes</a>
         <a href="/evidencias">Evidencias</a>
         <a href="/contrato">Contrato</a>
         <a href="/nido">Nido</a>
@@ -413,7 +545,11 @@ function createStaticMarkup(route) {
           <p><strong>Tesis20 Nido</strong> · Aprendizaje creativo en una experiencia local de demostración.</p>
           <p><a href="/">Volver a la plataforma Tesis de Tesis20.com</a></p>
         </footer>`
-      : `<footer>
+      : route.directory
+        ? `<footer data-static-directory-footer>
+            <div><strong>Tesis20</strong><span>Asesoría y acompañamiento académico</span><nav aria-label="Enlaces del pie"><a href="/carreras">Carreras</a><a href="/docentes">Docentes</a><a href="/contrato">Contrato</a></nav></div>
+          </footer>`
+        : `<footer>
           <p><strong>Tesis20</strong> · Asesoría y acompañamiento académico en Lima y todo el Perú.</p>
           <address>Jr. Lincoln 638, Pueblo Libre, Lima – Perú · <a href="tel:+51918714054">(+51) 918 714 054</a></address>
         </footer>`;
@@ -618,7 +754,20 @@ function renderRoute(template, route) {
     "Estudiantes universitarios durante un proceso de acompañamiento académico";
   const shareImageWidth = String(route.imageWidth || 800);
   const shareImageHeight = String(route.imageHeight || 999);
+  const shareImageType =
+    route.imageType || (shareImage.endsWith(".jpg") ? "image/jpeg" : "image/png");
   let html = template;
+
+  if (route.directory) {
+    html = html.replace(
+      "</head>",
+      '    <link rel="stylesheet" href="/assets/academic-directory-v1.css" />\n  </head>',
+    );
+    html = html.replace(
+      "</body>",
+      '    <script type="module" src="/assets/academic-directory-v1.js"></script>\n  </body>',
+    );
+  }
 
   html = html.replace(/<title>[^<]*<\/title>/i, `<title>${route.title}</title>`);
   html = upsertMeta(html, "name", "description", route.description);
@@ -636,7 +785,7 @@ function renderRoute(template, route) {
     ["og:url", canonicalUrl || `${SITE_ORIGIN}/404`],
     ["og:image", shareImage],
     ["og:image:secure_url", shareImage],
-    ["og:image:type", shareImage.endsWith(".jpg") ? "image/jpeg" : "image/png"],
+    ["og:image:type", shareImageType],
     ["og:image:alt", shareImageAlt],
     ["og:image:width", shareImageWidth],
     ["og:image:height", shareImageHeight],

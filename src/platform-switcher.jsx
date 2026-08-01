@@ -27,6 +27,22 @@ const platforms = [
     available: true,
   },
   {
+    id: "carreras",
+    name: "Carreras",
+    description: "Áreas de conocimiento y carreras del mundo",
+    href: "/carreras",
+    Icon: Books,
+    available: true,
+  },
+  {
+    id: "docentes",
+    name: "Docentes",
+    description: "Especialistas por carrera y universidad",
+    href: "/docentes",
+    Icon: GraduationCap,
+    available: true,
+  },
+  {
     id: "escuela",
     name: "Escuela",
     description: "Educación primaria y acompañamiento escolar",

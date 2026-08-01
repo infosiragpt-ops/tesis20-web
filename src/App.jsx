@@ -61,6 +61,12 @@ import spssTranscript from "../audio-scripts/ibm-spss-statistics.txt?raw";
 import defenseTranscript from "../audio-scripts/simulacion-sustentacion.txt?raw";
 
 const NidoPage = lazy(() => import("./nido/nido-page.jsx"));
+const CareersPage = import.meta.env.DEV
+  ? lazy(() => import("./academic-directory-pages.jsx").then((module) => ({ default: module.CareersPage })))
+  : null;
+const TeachersPage = import.meta.env.DEV
+  ? lazy(() => import("./academic-directory-pages.jsx").then((module) => ({ default: module.TeachersPage })))
+  : null;
 
 const whatsappPhone = "51918714054";
 
@@ -73,6 +79,8 @@ const whatsappMessages = {
   services: "¡Hola! Deseo orientación para elegir el servicio adecuado para mi investigación.",
   evidence: "¡Hola! Revisé los resultados reportados por estudiantes y deseo información sobre el acompañamiento de Tesis20.",
   contract: "¡Hola! Revisé el contrato general de Tesis20 y deseo orientación antes de comenzar.",
+  careers: "¡Hola! Revisé el catálogo de carreras de Tesis20 y deseo ayuda para ubicar mi especialidad.",
+  teachers: "¡Hola! Revisé el directorio de docentes y deseo ayuda para elegir un asesor según mi carrera y tema.",
 };
 
 function getPageFromPathname(pathname = window.location.pathname) {
@@ -83,6 +91,8 @@ function getPageFromPathname(pathname = window.location.pathname) {
     "/servicios": "services",
     "/evidencias": "evidence",
     "/contrato": "contract",
+    "/carreras": "careers",
+    "/docentes": "teachers",
     "/nido": "nido",
   };
 
@@ -131,6 +141,8 @@ function internalNavigationProps(item, currentPage) {
 const navigation = [
   { label: "Inicio", href: "#inicio", servicesHref: "/#inicio", page: "home" },
   { label: "Servicios", href: "/servicios", page: "services" },
+  { label: "Carreras", href: "/carreras", page: "careers" },
+  { label: "Docentes", href: "/docentes", page: "teachers" },
   {
     label: "Evidencias",
     href: "/evidencias",
@@ -656,7 +668,13 @@ function Header({ menuOpen, onMenuToggle, onNavigate, currentPage, isScrolled })
           <PlatformSwitcher
             menuOpen={menuOpen}
             onCloseMenu={onNavigate}
-            currentPlatform="tesis"
+            currentPlatform={
+              currentPage === "careers"
+                ? "carreras"
+                : currentPage === "teachers"
+                  ? "docentes"
+                  : "tesis"
+            }
           />
           <a
             className="brand"
@@ -2054,6 +2072,8 @@ function Footer() {
         <nav className="footer-column" aria-labelledby="footer-links-title">
           <h2 id="footer-links-title">Enlaces rápidos</h2>
           <a href="/servicios">Servicios</a>
+          <a href="/carreras">Carreras</a>
+          <a href="/docentes">Docentes</a>
           <a href="/evidencias">Evidencias</a>
           <a href="/contrato">Contrato</a>
           <a
@@ -2287,6 +2307,14 @@ export function App() {
         <EvidencePage />
       ) : currentPage === "contract" ? (
         <ContractPage />
+      ) : currentPage === "careers" && CareersPage ? (
+        <Suspense fallback={<main id="main-content" tabIndex="-1">Preparando carreras…</main>}>
+          <CareersPage />
+        </Suspense>
+      ) : currentPage === "teachers" && TeachersPage ? (
+        <Suspense fallback={<main id="main-content" tabIndex="-1">Preparando docentes…</main>}>
+          <TeachersPage />
+        </Suspense>
       ) : currentPage === "not-found" ? (
         <NotFoundPage />
       ) : (
