@@ -138,6 +138,10 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 20px;
 }
+.teacher-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: stretch;
+}
 .career-area-card,
 .teacher-card {
   overflow: hidden;
@@ -184,15 +188,35 @@
 .career-area-card li { display: flex; gap: 7px; color: #46494b; font-size: 13px; line-height: 1.4; }
 .career-area-card li::before { color: var(--coral); content: "●"; font-size: 8px; line-height: 20px; }
 
-.teacher-card { min-width: 0; display: grid; grid-template-columns: 205px minmax(0, 1fr); }
+.teacher-card {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  isolation: isolate;
+}
 .teacher-card__photo {
+  position: static;
+  flex: 0 0 auto;
+  display: block;
   width: 100%;
-  height: 100%;
-  min-height: 344px;
+  height: auto;
+  min-height: 0;
+  aspect-ratio: 4 / 3;
   background: #e9e1d5;
   object-fit: cover;
+  object-position: center 28%;
 }
-.teacher-card__body { min-width: 0; padding: 23px; display: flex; flex-direction: column; }
+.teacher-card__body {
+  position: relative;
+  z-index: 1;
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 23px;
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--line);
+  background: var(--white);
+}
 .teacher-card__title { display: flex; justify-content: space-between; gap: 10px; }
 .teacher-card__title h2 { margin-top: 5px; font: 600 27px/1 var(--display); text-transform: uppercase; }
 .teacher-card__title > span {
@@ -265,8 +289,7 @@
 }
 @media (max-width: 1040px) {
   .directory-filters--teachers { grid-template-columns: repeat(2, 1fr); }
-  .teacher-grid { grid-template-columns: 1fr; }
-  .teacher-card { grid-template-columns: 235px minmax(0, 1fr); }
+  .teacher-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 820px) {
   [data-seo-prerendered] .header-inner { height: auto; padding: 12px 0; flex-wrap: wrap; }
@@ -288,6 +311,7 @@
   .directory-filters,
   .directory-filters--teachers,
   .career-area-grid { grid-template-columns: 1fr; }
+  .teacher-grid { grid-template-columns: 1fr; }
   .directory-clear { width: 100%; }
   [data-static-directory-footer] > div { align-items: flex-start; flex-direction: column; }
   [data-static-directory-footer] nav { margin-left: 0; }
@@ -303,8 +327,7 @@
   .career-area-card header > span { width: 40px; height: 40px; }
   .career-area-card h2 { font-size: 20px; }
   .career-area-card ul { padding: 19px; grid-template-columns: 1fr; }
-  .teacher-card { grid-template-columns: 1fr; }
-  .teacher-card__photo { min-height: 0; aspect-ratio: 16 / 10; }
+  .teacher-card__photo { aspect-ratio: 4 / 3; }
   .teacher-card__body { padding: 20px; }
   .teacher-card__footer { align-items: stretch; flex-direction: column; }
   .teacher-card__footer a { justify-content: center; }
