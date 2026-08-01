@@ -147,6 +147,11 @@
   color: var(--ink);
 }
 .directory-clear:disabled { border-color: transparent; background: #e9e6df; color: #888; cursor: not-allowed; }
+.directory-results-more button:disabled {
+  background: #ddd8cf;
+  color: #817d75;
+  cursor: not-allowed;
+}
 
 .career-area-grid,
 .teacher-grid {
@@ -158,6 +163,7 @@
 .teacher-grid {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   align-items: stretch;
+  scroll-margin-top: 105px;
 }
 .career-area-card,
 .teacher-card {
@@ -211,17 +217,38 @@
   flex-direction: column;
   isolation: isolate;
 }
+.teacher-card__media {
+  position: relative;
+  flex: 0 0 auto;
+  overflow: hidden;
+  aspect-ratio: 4 / 3;
+  background: #e9e1d5;
+}
 .teacher-card__photo {
   position: static;
-  flex: 0 0 auto;
   display: block;
   width: 100%;
-  height: auto;
+  height: 100%;
   min-height: 0;
-  aspect-ratio: 4 / 3;
   background: #e9e1d5;
   object-fit: cover;
   object-position: center 28%;
+}
+.teacher-card__portrait { shape-rendering: geometricPrecision; }
+.teacher-card__portrait-badge {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  padding: 6px 9px;
+  border: 1px solid rgba(255, 255, 255, .5);
+  border-radius: 999px;
+  background: rgba(26, 28, 30, .82);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  backdrop-filter: blur(5px);
 }
 .teacher-card__body {
   position: relative;
@@ -369,7 +396,7 @@
   .career-area-card header > span { width: 40px; height: 40px; }
   .career-area-card h2 { font-size: 20px; }
   .career-area-card ul { padding: 19px; grid-template-columns: 1fr; }
-  .teacher-card__photo { aspect-ratio: 4 / 3; }
+  .teacher-card__media { aspect-ratio: 4 / 3; }
   .teacher-card__body { padding: 20px; }
   .teacher-card__footer { align-items: stretch; flex-direction: column; }
   .teacher-card__footer a { justify-content: center; }

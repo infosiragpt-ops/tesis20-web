@@ -1,6 +1,7 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { CAREER_AREAS, CAREER_COUNT, TEACHERS } from "../src/data/academic-directory.js";
+import { teacherMediaMarkup } from "../src/teacher-portrait.js";
 
 const DIST_DIRECTORY = resolve(process.cwd(), "dist");
 const INDEX_PATH = resolve(DIST_DIRECTORY, "index.html");
@@ -10,15 +11,19 @@ const TEACHER_PAGE_SIZE = 24;
 
 function buildTeacherWhatsAppUrl(teacher) {
   const message = [
-    "¡Hola, Tesis20! Quiero solicitar una asesoría con este docente:",
+    "¡Hola, Tesis20! Quiero consultar por un asesor con un perfil similar a esta referencia demostrativa:",
     "",
+    `Código del perfil: ${teacher.profileCode}`,
     `Nombre: ${teacher.name}`,
     `Especialidades: ${(teacher.specialties || []).join(", ")}`,
     `Carrera(s): ${teacher.careers.join(", ")}`,
     `Universidad donde enseña: ${teacher.universities.join(", ")}`,
     `País: ${teacher.country}`,
     `Precio referencial por hora: S/ ${teacher.price}`,
+    `Trayectoria referencial simulada: ${teacher.experienceYears} años`,
     `Perfil: ${teacher.description}`,
+    "",
+    "Este perfil es demostrativo. Tesis20 confirmará identidad, experiencia, disponibilidad y tarifa.",
     "",
     "Por favor, confirmen su disponibilidad y el precio final para mi tema.",
   ].join("\n");
@@ -44,11 +49,11 @@ function teacherCardMarkup(teacher) {
     .join("");
 
   return `<article class="teacher-card" data-teacher-card data-name="${escapeAttribute(teacher.name)}" data-search="${escapeAttribute(teacherSearchCorpus(teacher))}" data-careers="${escapeAttribute(teacher.careers.join("|"))}" data-universities="${escapeAttribute(teacher.universities.join("|"))}">
-    <img class="teacher-card__photo" src="${escapeAttribute(teacher.photo)}" alt="Retrato ilustrativo de ${escapeAttribute(teacher.name)}" width="418" height="470" loading="lazy" decoding="async">
-    <div class="teacher-card__body"><div class="teacher-card__title"><div><p>Docente asesor</p><h2>${escapeAttribute(teacher.name)}</h2></div><span>${escapeAttribute(teacher.country)}</span></div>
+    ${teacherMediaMarkup(teacher)}
+    <div class="teacher-card__body"><div class="teacher-card__title"><div><p>Perfil docente demo</p><h2>${escapeAttribute(teacher.name)}</h2></div><span>${escapeAttribute(teacher.country)}</span></div>
     <p class="teacher-card__description">${escapeAttribute(teacher.description)}</p>
-    <dl><div><dt>Especialidades</dt><dd><ul class="teacher-card__tags">${specialties}</ul></dd></div><div><dt>Carreras</dt><dd>${teacher.careers.map(escapeAttribute).join(" · ")}</dd></div><div><dt>Universidad</dt><dd>${teacher.universities.map(escapeAttribute).join(" · ")}</dd></div></dl>
-    <div class="teacher-card__footer"><p><small>Precio referencial por hora</small><strong>S/ ${teacher.price}</strong></p><a href="${escapeAttribute(buildTeacherWhatsAppUrl(teacher))}" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer" aria-label="Contactar a Tesis20 por WhatsApp para solicitar asesoría con ${escapeAttribute(teacher.name)}">Contactar por WhatsApp</a></div></div>
+    <dl><div><dt>Experiencia simulada</dt><dd>${teacher.experienceYears} años de trayectoria referencial · ${escapeAttribute(teacher.profileCode)}</dd></div><div><dt>Especialidades</dt><dd><ul class="teacher-card__tags">${specialties}</ul></dd></div><div><dt>Carreras</dt><dd>${teacher.careers.map(escapeAttribute).join(" · ")}</dd></div><div><dt>Universidad</dt><dd>${teacher.universities.map(escapeAttribute).join(" · ")}</dd></div></dl>
+    <div class="teacher-card__footer"><p><small>Precio referencial por hora</small><strong>S/ ${teacher.price}</strong></p><a href="${escapeAttribute(buildTeacherWhatsAppUrl(teacher))}" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer" aria-label="Consultar a Tesis20 por WhatsApp sobre el perfil demostrativo de ${escapeAttribute(teacher.name)}">Contactar por WhatsApp</a></div></div>
   </article>`;
 }
 
@@ -293,20 +298,20 @@ const routeDefinitions = [
         </section>
         <section class="directory-search teacher-directory" aria-labelledby="teacher-search-title">
           <div class="directory-shell">
-            <div class="directory-search__heading"><div><p>Directorio académico</p><h2 id="teacher-search-title">Docentes disponibles</h2></div><span data-directory-count aria-live="polite">${TEACHERS.length} docentes encontrados</span></div>
+            <div class="directory-search__heading"><div><p>Directorio académico</p><h2 id="teacher-search-title">Perfiles docentes demostrativos</h2></div><span data-directory-count aria-live="polite">${TEACHERS.length} perfiles encontrados</span></div>
             <form class="directory-filters directory-filters--teachers" role="search" aria-label="Buscar docentes por necesidad" data-directory-teacher-form>
               <label class="directory-need-field"><span>¿Qué asesoría necesitas?</span><span class="directory-field"><input id="teacher-need" type="search" placeholder="Ej.: derecho penal, SPSS, tesis cualitativa…" autocomplete="off"></span><small class="directory-field-hint">Busca por tema, especialidad, metodología, software o nombre del docente.</small></label>
               <label><span>Carrera</span><span class="directory-field"><select id="teacher-career"><option value="">Todas las carreras</option>${[...new Set(TEACHERS.flatMap((teacher) => teacher.careers))].sort((a, b) => a.localeCompare(b, "es")).map((career) => `<option value="${escapeAttribute(career)}">${career}</option>`).join("")}</select></span></label>
               <label><span>Universidad donde enseña</span><span class="directory-field"><select id="teacher-university"><option value="">Todas las universidades</option>${[...new Set(TEACHERS.flatMap((teacher) => teacher.universities))].sort((a, b) => a.localeCompare(b, "es")).map((university) => `<option value="${escapeAttribute(university)}">${university}</option>`).join("")}</select></span></label>
               <div class="directory-actions"><button type="submit" class="directory-search-button" aria-controls="teacher-results">Buscar docentes</button><button type="button" class="directory-clear" data-directory-clear disabled>Limpiar</button></div>
             </form>
+            <aside class="directory-note directory-note--warning"><strong>Directorio demostrativo</strong><p>Estos 4,000 perfiles, sus nombres, retratos, universidades, experiencia y precios son referencias simuladas. Tesis20 confirmará un asesor real, su identidad, experiencia, disponibilidad y tarifa antes de coordinar.</p></aside>
             <div class="directory-note directory-note--warning" data-directory-load-warning hidden role="status"><strong>Catálogo temporalmente incompleto</strong><p>No pudimos cargar todos los perfiles. Reintenta en unos momentos para buscar en el directorio completo.</p></div>
-            <div class="teacher-grid" id="teacher-results" data-teacher-results>
+            <div class="teacher-grid" id="teacher-results" data-teacher-results tabindex="-1">
               ${TEACHERS.slice(0, TEACHER_PAGE_SIZE).map(teacherCardMarkup).join("\n")}
             </div>
-            <div class="directory-empty" data-directory-empty hidden><span aria-hidden="true">⌕</span><h2>No encontramos docentes con esos filtros</h2><p>Prueba otra necesidad, especialidad, carrera o universidad.</p></div>
-            <div class="directory-results-more" data-directory-pagination${TEACHERS.length <= TEACHER_PAGE_SIZE ? " hidden" : ""}><span data-directory-range aria-live="polite">Mostrando ${Math.min(TEACHERS.length, TEACHER_PAGE_SIZE)} de ${TEACHERS.length} docentes</span><button type="button" data-directory-more>Mostrar más docentes</button></div>
-            <aside class="directory-note directory-note--warning"><strong>Perfiles de demostración</strong><p>Los nombres, retratos, universidades y precios de esta primera versión son ilustrativos. Tesis20 confirmará identidad, experiencia, disponibilidad y tarifa antes de coordinar una asesoría.</p></aside>
+            <div class="directory-empty" data-directory-empty hidden><span aria-hidden="true">⌕</span><h2>No encontramos perfiles con esos filtros</h2><p>Prueba otra necesidad, especialidad, carrera o universidad.</p></div>
+            <nav class="directory-results-more" data-directory-pagination${TEACHERS.length <= TEACHER_PAGE_SIZE ? " hidden" : ""} aria-label="Paginación de docentes"><button type="button" data-directory-previous disabled>← Anterior</button><span data-directory-range aria-live="polite">Mostrando 1–${Math.min(TEACHERS.length, TEACHER_PAGE_SIZE)} de ${TEACHERS.length} perfiles</span><button type="button" data-directory-next disabled>Siguiente →</button></nav>
           </div>
         </section>
       </div>`,
@@ -785,11 +790,11 @@ function renderRoute(template, route) {
   if (route.directory) {
     html = html.replace(
       "</head>",
-      '    <link rel="stylesheet" href="/assets/academic-directory-v1.css?v=20260801-search4" />\n  </head>',
+      '    <link rel="stylesheet" href="/assets/academic-directory-v1.css?v=20260801-catalog4000v5" />\n  </head>',
     );
     html = html.replace(
       "</body>",
-      '    <script type="module" src="/assets/academic-directory-v1.js?v=20260801-search4"></script>\n  </body>',
+      '    <script type="module" src="/assets/academic-directory-v1.js?v=20260801-catalog4000v5"></script>\n  </body>',
     );
   }
 
@@ -863,7 +868,14 @@ async function generateStaticRoutes() {
   await mkdir(dirname(directoryDataPath), { recursive: true });
   await writeFile(
     directoryDataPath,
-    `${JSON.stringify({ careerAreas: CAREER_AREAS, careerCount: CAREER_COUNT, teachers: TEACHERS }, null, 2)}\n`,
+    JSON.stringify({ careerAreas: CAREER_AREAS, careerCount: CAREER_COUNT, teachers: TEACHERS }),
+    "utf8",
+  );
+  const portraitAssetPath = resolve(DIST_DIRECTORY, "assets/teacher-portrait-v1.js");
+  await mkdir(dirname(portraitAssetPath), { recursive: true });
+  await writeFile(
+    portraitAssetPath,
+    await readFile(resolve(process.cwd(), "src/teacher-portrait.js"), "utf8"),
     "utf8",
   );
 

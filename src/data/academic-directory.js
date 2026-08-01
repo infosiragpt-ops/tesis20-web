@@ -1,3 +1,8 @@
+import {
+  generateDemoTeachers,
+  TEACHER_CATALOG_SIZE,
+} from "./teacher-catalog-generator.js";
+
 export const CAREER_AREAS = [
   {
     id: "ingenieria-tecnologia",
@@ -339,7 +344,7 @@ export const CAREER_AREAS = [
   },
 ];
 
-export const TEACHERS = [
+const SEED_TEACHERS = [
   {
     id: "valeria-ruiz",
     name: "Valeria Ruiz",
@@ -485,6 +490,12 @@ export const TEACHERS = [
     photo: "/assets/docentes/elena-castro-v1.jpg",
   },
 ];
+
+export const TEACHERS = generateDemoTeachers(
+  CAREER_AREAS,
+  SEED_TEACHERS,
+  TEACHER_CATALOG_SIZE,
+);
 
 export const CAREER_COUNT = CAREER_AREAS.reduce(
   (total, area) => total + area.careers.length,

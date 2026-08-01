@@ -2,7 +2,8 @@ import { execFileSync } from "node:child_process";
 import { access, readFile, readdir, stat } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { TEACHERS } from "../src/data/academic-directory.js";
+import { gzipSync } from "node:zlib";
+import { CAREER_AREAS, TEACHERS } from "../src/data/academic-directory.js";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const siteOrigin = "https://www.tesis20.com";
@@ -40,11 +41,11 @@ const routeSpecs = [
     title: "Docentes y asesores por carrera | Tesis20",
     h1: "Encuentra un docente para tu tema",
     content: [
-      "Docentes disponibles",
+      "Perfiles docentes demostrativos",
       "¿Qué asesoría necesitas?",
       "Buscar docentes",
       "Especialidades",
-      "Perfiles de demostración",
+      "Directorio demostrativo",
     ],
     schemaType: "CollectionPage",
   },
@@ -305,9 +306,11 @@ const vercelText = await read("vercel.json");
 const appSource = await read("src/App.jsx");
 const nidoGamesSource = await read("src/nido/nido-games.jsx");
 const nidoFocusStyles = await read("src/nido/nido-focus.css");
-const academicDirectory = JSON.parse(await read("public/data/academic-directory.json"));
+const academicDirectoryText = await read("dist/data/academic-directory.json");
+const academicDirectory = JSON.parse(academicDirectoryText);
 const teacherSearchSource = await read("src/teacher-search.js");
 const teacherDirectoryRuntime = await read("public/assets/academic-directory-v1.js");
+const teacherPortraitAsset = await read("dist/assets/teacher-portrait-v1.js");
 const manifest = JSON.parse(manifestText);
 const vercel = JSON.parse(vercelText);
 
@@ -330,7 +333,20 @@ check(
 );
 check(
   JSON.stringify(academicDirectory.teachers) === JSON.stringify(TEACHERS),
-  "El JSON público de docentes debe coincidir exactamente con la fuente académica.",
+  "El JSON construido de docentes debe coincidir exactamente con la fuente académica.",
+);
+const listedCareers = new Set(CAREER_AREAS.flatMap((area) => area.careers));
+check(TEACHERS.length === 4_000, "El directorio debe contener exactamente 4,000 perfiles demostrativos.");
+check(new Set(TEACHERS.map((teacher) => teacher.id)).size === TEACHERS.length, "Cada docente debe tener un ID único.");
+check(new Set(TEACHERS.map((teacher) => teacher.name)).size === TEACHERS.length, "Cada docente debe tener un nombre demostrativo único.");
+check(new Set(TEACHERS.map((teacher) => teacher.profileCode)).size === TEACHERS.length, "Cada docente debe tener un código de perfil único.");
+check(
+  new Set(TEACHERS.map((teacher) => teacher.photo || `avatar:${teacher.avatarSeed}`)).size === TEACHERS.length,
+  "Cada docente debe tener una fotografía o semilla de retrato única.",
+);
+check(
+  [...listedCareers].every((career) => TEACHERS.some((teacher) => teacher.careers.includes(career))),
+  "Los perfiles docentes deben cubrir todas las carreras del catálogo.",
 );
 check(
   TEACHERS.every((teacher) =>
@@ -342,9 +358,33 @@ check(
   "Cada docente debe declarar especialidades visibles y términos de búsqueda relacionados.",
 );
 check(
+  TEACHERS.every((teacher) =>
+    teacher.isDemo === true &&
+    /^T20-D\d{4}$/.test(teacher.profileCode) &&
+    Number.isInteger(teacher.experienceYears) &&
+    teacher.experienceYears >= 6 &&
+    Number.isInteger(teacher.avatarSeed) &&
+    teacher.avatarSeed > 0 &&
+    teacher.description.startsWith("Perfil demostrativo") &&
+    teacher.universities.every((university) => university.endsWith("— demo")) &&
+    teacher.careers.every((career) => listedCareers.has(career))
+  ),
+  "Cada perfil debe declarar su carácter demostrativo, experiencia, universidad demo y carreras válidas.",
+);
+check(
+  academicDirectoryText.length < 5_500_000 && gzipSync(academicDirectoryText).length < 650_000,
+  "El catálogo de 4,000 docentes excede el presupuesto de transferencia.",
+);
+check(
+  teacherPortraitAsset.includes("teacherMediaMarkup") && teacherPortraitAsset.includes("data-portrait-seed"),
+  "El build debe incluir el generador local de retratos profesionales ilustrativos.",
+);
+check(
   teacherSearchSource.includes("SEARCH_STOP_WORDS") &&
     teacherDirectoryRuntime.includes("teacherSearchStopWords") &&
-    teacherDirectoryRuntime.includes("TEACHER_PAGE_SIZE = 24"),
+    teacherDirectoryRuntime.includes("TEACHER_PAGE_SIZE = 24") &&
+    teacherDirectoryRuntime.includes("data-directory-previous") &&
+    teacherDirectoryRuntime.includes("data-directory-next"),
   "La búsqueda de docentes debe interpretar necesidades y limitar la cantidad renderizada por página.",
 );
 
@@ -594,7 +634,11 @@ let initialStylesheetBytes = 0;
 let deployBytesWithoutAudioAndPdf = 0;
 for (const distFile of distFiles) {
   const bytes = await fileSize(distFile);
-  if (!/\.(?:mp3|pdf)$/i.test(distFile)) deployBytesWithoutAudioAndPdf += bytes;
+  // El directorio se controla por separado con un presupuesto comprimido,
+  // que representa mejor su transferencia real que el JSON minificado en disco.
+  if (!/\.(?:mp3|pdf)$/i.test(distFile) && distFile !== "dist/data/academic-directory.json") {
+    deployBytesWithoutAudioAndPdf += bytes;
+  }
 }
 for (const buildAsset of buildAssets) {
   const bytes = await fileSize(buildAsset);

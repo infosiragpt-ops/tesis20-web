@@ -1,3 +1,5 @@
+import { teacherMediaMarkup } from "/assets/teacher-portrait-v1.js?v=20260801-catalog4000v5";
+
 const normalize = (value) =>
   String(value || "")
     .normalize("NFD")
@@ -8,10 +10,12 @@ const normalize = (value) =>
 
 const TEACHER_PAGE_SIZE = 24;
 const teacherSearchStopWords = new Set([
-  "asesor", "asesora", "asesoria", "busco", "buscar", "con", "de", "del",
+  "al", "alguien", "apoyo", "asesor", "asesora", "asesoria", "asesoramiento",
+  "ayuda", "ayudar", "busco", "buscar", "con", "de", "del",
   "docente", "docentes", "el", "en", "especialista", "especializado",
-  "especializada", "la", "las", "los", "mi", "necesito", "para", "profesor",
-  "profesora", "que", "quiero", "tesis", "un", "una", "y",
+  "especializada", "experiencia", "experto", "experta", "hacer", "la", "las",
+  "los", "mi", "necesito", "orientacion", "para", "profesor", "profesora",
+  "que", "quiero", "sepa", "sobre", "tema", "tesis", "un", "una", "y",
 ]);
 
 const getTeacherSearchTerms = (query) => [...new Set(
@@ -77,15 +81,19 @@ function searchTeacherIndex(index, filters) {
 
 function buildTeacherWhatsappHref(teacher) {
   const message = [
-    "¡Hola, Tesis20! Quiero solicitar una asesoría con este docente:",
+    "¡Hola, Tesis20! Quiero consultar por un asesor con un perfil similar a esta referencia demostrativa:",
     "",
+    `Código del perfil: ${teacher.profileCode}`,
     `Nombre: ${teacher.name}`,
     `Especialidades: ${(teacher.specialties || []).join(", ")}`,
     `Carrera(s): ${(teacher.careers || []).join(", ")}`,
     `Universidad donde enseña: ${(teacher.universities || []).join(", ")}`,
     `País: ${teacher.country}`,
     `Precio referencial por hora: S/ ${teacher.price}`,
+    `Trayectoria referencial simulada: ${teacher.experienceYears} años`,
     `Perfil: ${teacher.description}`,
+    "",
+    "Este perfil es demostrativo. Tesis20 confirmará identidad, experiencia, disponibilidad y tarifa.",
     "",
     "Por favor, confirmen su disponibilidad y el precio final para mi tema.",
   ].join("\n");
@@ -98,11 +106,11 @@ function teacherCardMarkup(teacher) {
     .join("");
 
   return `<article class="teacher-card" data-teacher-card>
-    <img class="teacher-card__photo" src="${escapeHtml(teacher.photo)}" alt="Retrato ilustrativo de ${escapeHtml(teacher.name)}" width="418" height="470" loading="lazy" decoding="async">
-    <div class="teacher-card__body"><div class="teacher-card__title"><div><p>Docente asesor</p><h2>${escapeHtml(teacher.name)}</h2></div><span>${escapeHtml(teacher.country)}</span></div>
+    ${teacherMediaMarkup(teacher)}
+    <div class="teacher-card__body"><div class="teacher-card__title"><div><p>Perfil docente demo</p><h2>${escapeHtml(teacher.name)}</h2></div><span>${escapeHtml(teacher.country)}</span></div>
     <p class="teacher-card__description">${escapeHtml(teacher.description)}</p>
-    <dl><div><dt>Especialidades</dt><dd><ul class="teacher-card__tags">${specialties}</ul></dd></div><div><dt>Carreras</dt><dd>${(teacher.careers || []).map(escapeHtml).join(" · ")}</dd></div><div><dt>Universidad</dt><dd>${(teacher.universities || []).map(escapeHtml).join(" · ")}</dd></div></dl>
-    <div class="teacher-card__footer"><p><small>Precio referencial por hora</small><strong>S/ ${teacher.price}</strong></p><a href="${escapeHtml(buildTeacherWhatsappHref(teacher))}" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer" aria-label="Contactar a Tesis20 por WhatsApp para solicitar asesoría con ${escapeHtml(teacher.name)}">Contactar por WhatsApp</a></div></div>
+    <dl><div><dt>Experiencia simulada</dt><dd>${teacher.experienceYears} años de trayectoria referencial · ${escapeHtml(teacher.profileCode)}</dd></div><div><dt>Especialidades</dt><dd><ul class="teacher-card__tags">${specialties}</ul></dd></div><div><dt>Carreras</dt><dd>${(teacher.careers || []).map(escapeHtml).join(" · ")}</dd></div><div><dt>Universidad</dt><dd>${(teacher.universities || []).map(escapeHtml).join(" · ")}</dd></div></dl>
+    <div class="teacher-card__footer"><p><small>Precio referencial por hora</small><strong>S/ ${teacher.price}</strong></p><a href="${escapeHtml(buildTeacherWhatsappHref(teacher))}" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer" aria-label="Consultar a Tesis20 por WhatsApp sobre el perfil demostrativo de ${escapeHtml(teacher.name)}">Contactar por WhatsApp</a></div></div>
   </article>`;
 }
 
@@ -158,13 +166,17 @@ function setupTeachers(container) {
   const results = container.querySelector("[data-teacher-results]");
   const pagination = container.querySelector("[data-directory-pagination]");
   const range = container.querySelector("[data-directory-range]");
-  const more = container.querySelector("[data-directory-more]");
+  const previous = container.querySelector("[data-directory-previous]");
+  const next = container.querySelector("[data-directory-next]");
   const loadWarning = container.querySelector("[data-directory-load-warning]");
   const fallbackCards = [...container.querySelectorAll("[data-teacher-card]")];
   let appliedFilters = { query: "", career: "", university: "" };
-  let visibleLimit = TEACHER_PAGE_SIZE;
+  let currentPage = 0;
+  let isUpdating = false;
+  previous.disabled = true;
+  next.disabled = true;
 
-  const indexRequest = fetch("/data/academic-directory.json?v=20260801-search4")
+  const indexRequest = fetch("/data/academic-directory.json?v=20260801-catalog4000v5")
     .then((response) => {
       if (!response.ok) throw new Error(`No se pudo cargar el directorio (${response.status})`);
       return response.json();
@@ -172,6 +184,7 @@ function setupTeachers(container) {
     .then((directory) => createTeacherSearchIndex(directory.teachers || []))
     .catch(() => {
       loadWarning.hidden = false;
+      pagination.hidden = true;
       return null;
     });
 
@@ -180,18 +193,23 @@ function setupTeachers(container) {
       !appliedFilters.query && !appliedFilters.career && !appliedFilters.university;
   };
 
-  const updateMeta = (total, shown) => {
-    count.textContent = `${total} ${total === 1 ? "docente encontrado" : "docentes encontrados"}`;
+  const updateMeta = (total, start, end) => {
+    count.textContent = `${total} ${total === 1 ? "perfil encontrado" : "perfiles encontrados"}`;
     setEmptyState(container, total);
-    pagination.hidden = total === 0 || shown >= total;
-    range.textContent = `Mostrando ${shown} de ${total} docentes`;
+    pagination.hidden = total <= TEACHER_PAGE_SIZE;
+    range.textContent = total ? `Mostrando ${start + 1}–${end} de ${total} perfiles` : "Sin perfiles para mostrar";
+    previous.disabled = currentPage === 0;
+    next.disabled = end >= total;
   };
 
   const renderIndexedResults = (index) => {
     const matches = searchTeacherIndex(index, appliedFilters);
-    const visibleTeachers = matches.slice(0, visibleLimit);
+    const start = currentPage * TEACHER_PAGE_SIZE;
+    if (start >= matches.length && currentPage > 0) currentPage = 0;
+    const safeStart = currentPage * TEACHER_PAGE_SIZE;
+    const visibleTeachers = matches.slice(safeStart, safeStart + TEACHER_PAGE_SIZE);
     results.innerHTML = visibleTeachers.map(teacherCardMarkup).join("");
-    updateMeta(matches.length, visibleTeachers.length);
+    updateMeta(matches.length, safeStart, safeStart + visibleTeachers.length);
   };
 
   const renderFallbackResults = () => {
@@ -207,15 +225,32 @@ function setupTeachers(container) {
       if (matches) total += 1;
     });
     pagination.hidden = true;
-    count.textContent = `${total} ${total === 1 ? "docente encontrado" : "docentes encontrados"}`;
+    count.textContent = `${total} ${total === 1 ? "perfil encontrado" : "perfiles encontrados"}`;
     setEmptyState(container, total);
   };
 
   const update = async () => {
-    const index = await indexRequest;
-    if (index) renderIndexedResults(index);
-    else renderFallbackResults();
-    syncClearState();
+    if (isUpdating) return;
+    isUpdating = true;
+    previous.disabled = true;
+    next.disabled = true;
+    try {
+      const index = await indexRequest;
+      if (index) renderIndexedResults(index);
+      else renderFallbackResults();
+      syncClearState();
+    } finally {
+      isUpdating = false;
+    }
+  };
+
+  const focusResultsStart = () => {
+    const top = results.getBoundingClientRect().top + window.scrollY - 105;
+    const previousScrollBehavior = document.documentElement.style.scrollBehavior;
+    document.documentElement.style.scrollBehavior = "auto";
+    window.scrollTo(0, top);
+    document.documentElement.style.scrollBehavior = previousScrollBehavior;
+    results.focus({ preventScroll: true });
   };
 
   form.addEventListener("submit", (event) => {
@@ -225,7 +260,7 @@ function setupTeachers(container) {
       career: career.value,
       university: university.value,
     };
-    visibleLimit = TEACHER_PAGE_SIZE;
+    currentPage = 0;
     update();
   });
 
@@ -243,14 +278,21 @@ function setupTeachers(container) {
     career.value = "";
     university.value = "";
     appliedFilters = { query: "", career: "", university: "" };
-    visibleLimit = TEACHER_PAGE_SIZE;
+    currentPage = 0;
     update();
     need.focus();
   });
 
-  more.addEventListener("click", async () => {
-    visibleLimit += TEACHER_PAGE_SIZE;
+  previous.addEventListener("click", async () => {
+    currentPage = Math.max(0, currentPage - 1);
     await update();
+    focusResultsStart();
+  });
+
+  next.addEventListener("click", async () => {
+    currentPage += 1;
+    await update();
+    focusResultsStart();
   });
 
   syncClearState();

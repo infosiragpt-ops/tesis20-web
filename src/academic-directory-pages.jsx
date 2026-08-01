@@ -1,30 +1,28 @@
 import { useEffect, useMemo, useState } from "react";
 import { trackInteraction } from "./platform-enhancements.jsx";
 import { createTeacherSearchIndex, searchTeacherIndex } from "./teacher-search.js";
+import { CAREER_AREAS, CAREER_COUNT, TEACHERS } from "./data/academic-directory.js";
+import { teacherMediaMarkup } from "./teacher-portrait.js";
 
 const WHATSAPP_PHONE = "51918714054";
 const TEACHER_PAGE_SIZE = 24;
-let directoryRequest;
+const ACADEMIC_DIRECTORY = {
+  careerAreas: CAREER_AREAS,
+  careerCount: CAREER_COUNT,
+  teachers: TEACHERS,
+};
 
 function useAcademicDirectory() {
-  const [directory, setDirectory] = useState(null);
-  const [failed, setFailed] = useState(false);
-
   useEffect(() => {
-    if (!document.querySelector('link[href="/assets/academic-directory-v1.css?v=20260801-search4"]')) {
+    if (!document.querySelector('link[href="/assets/academic-directory-v1.css?v=20260801-catalog4000v5"]')) {
       const stylesheet = document.createElement("link");
       stylesheet.rel = "stylesheet";
-      stylesheet.href = "/assets/academic-directory-v1.css?v=20260801-search4";
+      stylesheet.href = "/assets/academic-directory-v1.css?v=20260801-catalog4000v5";
       document.head.appendChild(stylesheet);
     }
-    directoryRequest ||= fetch("/data/academic-directory.json?v=20260801-search4").then((response) => {
-      if (!response.ok) throw new Error(`No se pudo cargar el directorio (${response.status})`);
-      return response.json();
-    });
-    directoryRequest.then(setDirectory).catch(() => setFailed(true));
   }, []);
 
-  return { directory, failed };
+  return { directory: ACADEMIC_DIRECTORY, failed: false };
 }
 
 function normalizeSearchText(value) {
@@ -51,26 +49,30 @@ function careerCardsMarkup(areas) {
 
 function teacherCardsMarkup(teachers) {
   return teachers.map((teacher) => `<article class="teacher-card">
-    <img class="teacher-card__photo" src="${escapeHtml(teacher.photo)}" alt="Retrato ilustrativo de ${escapeHtml(teacher.name)}" width="418" height="470" loading="lazy" decoding="async">
-    <div class="teacher-card__body"><div class="teacher-card__title"><div><p>Docente asesor</p><h2>${escapeHtml(teacher.name)}</h2></div><span>${escapeHtml(teacher.country)}</span></div>
+    ${teacherMediaMarkup(teacher)}
+    <div class="teacher-card__body"><div class="teacher-card__title"><div><p>Perfil docente demo</p><h2>${escapeHtml(teacher.name)}</h2></div><span>${escapeHtml(teacher.country)}</span></div>
     <p class="teacher-card__description">${escapeHtml(teacher.description)}</p>
-    <dl><div><dt>Especialidades</dt><dd><ul class="teacher-card__tags">${(teacher.specialties || []).map((specialty) => `<li>${escapeHtml(specialty)}</li>`).join("")}</ul></dd></div><div><dt>Carreras</dt><dd>${teacher.careers.map(escapeHtml).join(" · ")}</dd></div><div><dt>Universidad</dt><dd>${teacher.universities.map(escapeHtml).join(" · ")}</dd></div></dl>
+    <dl><div><dt>Experiencia simulada</dt><dd>${teacher.experienceYears} años de trayectoria referencial · ${escapeHtml(teacher.profileCode)}</dd></div><div><dt>Especialidades</dt><dd><ul class="teacher-card__tags">${(teacher.specialties || []).map((specialty) => `<li>${escapeHtml(specialty)}</li>`).join("")}</ul></dd></div><div><dt>Carreras</dt><dd>${teacher.careers.map(escapeHtml).join(" · ")}</dd></div><div><dt>Universidad</dt><dd>${teacher.universities.map(escapeHtml).join(" · ")}</dd></div></dl>
     <div class="teacher-card__footer"><p><small>Precio referencial por hora</small><strong>S/ ${teacher.price}</strong></p>
-    <a href="${escapeHtml(buildTeacherWhatsappHref(teacher))}" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer" data-teacher="${escapeHtml(teacher.id)}" aria-label="Contactar a Tesis20 por WhatsApp para solicitar asesoría con ${escapeHtml(teacher.name)}">Contactar por WhatsApp</a></div></div>
+    <a href="${escapeHtml(buildTeacherWhatsappHref(teacher))}" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer" data-teacher="${escapeHtml(teacher.id)}" aria-label="Consultar a Tesis20 por WhatsApp sobre el perfil demostrativo de ${escapeHtml(teacher.name)}">Contactar por WhatsApp</a></div></div>
   </article>`).join("");
 }
 
 function buildTeacherWhatsappHref(teacher) {
   const message = [
-    "¡Hola, Tesis20! Quiero solicitar una asesoría con este docente:",
+    "¡Hola, Tesis20! Quiero consultar por un asesor con un perfil similar a esta referencia demostrativa:",
     "",
+    `Código del perfil: ${teacher.profileCode}`,
     `Nombre: ${teacher.name}`,
     `Especialidades: ${(teacher.specialties || []).join(", ")}`,
     `Carrera(s): ${teacher.careers.join(", ")}`,
     `Universidad donde enseña: ${teacher.universities.join(", ")}`,
     `País: ${teacher.country}`,
     `Precio referencial por hora: S/ ${teacher.price}`,
+    `Trayectoria referencial simulada: ${teacher.experienceYears} años`,
     `Perfil: ${teacher.description}`,
+    "",
+    "Este perfil es demostrativo. Tesis20 confirmará identidad, experiencia, disponibilidad y tarifa.",
     "",
     "Por favor, confirmen su disponibilidad y el precio final para mi tema.",
   ].join("\n");
@@ -229,7 +231,7 @@ export function TeachersPage() {
     career: "",
     university: "",
   });
-  const [visibleLimit, setVisibleLimit] = useState(TEACHER_PAGE_SIZE);
+  const [currentPage, setCurrentPage] = useState(0);
   const { directory, failed } = useAcademicDirectory();
   const teachers = directory?.teachers || [];
   const teacherCareerOptions = useMemo(
@@ -246,7 +248,8 @@ export function TeachersPage() {
     () => searchTeacherIndex(teacherSearchIndex, appliedFilters),
     [appliedFilters, teacherSearchIndex],
   );
-  const visibleTeachers = matchingTeachers.slice(0, visibleLimit);
+  const pageStart = currentPage * TEACHER_PAGE_SIZE;
+  const visibleTeachers = matchingTeachers.slice(pageStart, pageStart + TEACHER_PAGE_SIZE);
 
   const hasFilters = Boolean(
     needQuery ||
@@ -260,7 +263,7 @@ export function TeachersPage() {
 
   const applySearch = (event) => {
     event.preventDefault();
-    setVisibleLimit(TEACHER_PAGE_SIZE);
+    setCurrentPage(0);
     setAppliedFilters({ query: needQuery.trim(), career, university });
     trackInteraction("teacher_search_submit", {
       hasQuery: Boolean(needQuery.trim()),
@@ -274,7 +277,21 @@ export function TeachersPage() {
     setCareer("");
     setUniversity("");
     setAppliedFilters({ query: "", career: "", university: "" });
-    setVisibleLimit(TEACHER_PAGE_SIZE);
+    setCurrentPage(0);
+  };
+
+  const changePage = (nextPage) => {
+    setCurrentPage(nextPage);
+    window.requestAnimationFrame(() => {
+      const results = document.getElementById("teacher-results");
+      if (!results) return;
+      const top = results.getBoundingClientRect().top + window.scrollY - 105;
+      const previousScrollBehavior = document.documentElement.style.scrollBehavior;
+      document.documentElement.style.scrollBehavior = "auto";
+      window.scrollTo(0, top);
+      document.documentElement.style.scrollBehavior = previousScrollBehavior;
+      results.focus({ preventScroll: true });
+    });
   };
 
   return (
@@ -297,10 +314,10 @@ export function TeachersPage() {
           <div className="directory-search__heading">
             <div>
               <p>Directorio académico</p>
-              <h2 id="teacher-search-title">Docentes disponibles</h2>
+              <h2 id="teacher-search-title">Perfiles docentes demostrativos</h2>
             </div>
             <span aria-live="polite">
-              {matchingTeachers.length} {matchingTeachers.length === 1 ? "docente encontrado" : "docentes encontrados"}
+              {matchingTeachers.length} {matchingTeachers.length === 1 ? "perfil encontrado" : "perfiles encontrados"}
             </span>
           </div>
 
@@ -369,6 +386,15 @@ export function TeachersPage() {
             </div>
           </form>
 
+          <aside className="directory-note directory-note--warning">
+            <strong>Directorio demostrativo</strong>
+            <p>
+              Estos 4,000 perfiles, sus nombres, retratos, universidades, experiencia y
+              precios son referencias simuladas. Tesis20 confirmará un asesor real, su
+              identidad, experiencia, disponibilidad y tarifa antes de coordinar.
+            </p>
+          </aside>
+
           {!directory && !failed ? (
             <div className="directory-empty" role="status">
               <span aria-hidden="true">•••</span>
@@ -379,6 +405,7 @@ export function TeachersPage() {
             <div
               id="teacher-results"
               className="teacher-grid"
+              tabIndex="-1"
               dangerouslySetInnerHTML={{ __html: teacherCards }}
               onClick={(event) => {
                 const link = event.target.closest("[data-teacher]");
@@ -391,7 +418,7 @@ export function TeachersPage() {
           ) : (
             <div className="directory-empty">
               <span aria-hidden="true">⌕</span>
-              <h2>No encontramos docentes con esos filtros</h2>
+              <h2>No encontramos perfiles con esos filtros</h2>
               <p>Prueba otra necesidad, especialidad, carrera o universidad.</p>
               <button type="button" onClick={clearSearch}>
                 Limpiar búsqueda
@@ -399,28 +426,28 @@ export function TeachersPage() {
             </div>
           )}
 
-          {matchingTeachers.length > visibleTeachers.length ? (
-            <div className="directory-results-more">
+          {matchingTeachers.length > TEACHER_PAGE_SIZE ? (
+            <nav className="directory-results-more" aria-label="Paginación de docentes">
+              <button
+                type="button"
+                disabled={currentPage === 0}
+                onClick={() => changePage(Math.max(0, currentPage - 1))}
+              >
+                ← Anterior
+              </button>
               <span aria-live="polite">
-                Mostrando {visibleTeachers.length} de {matchingTeachers.length} docentes
+                Mostrando {pageStart + 1}–{pageStart + visibleTeachers.length} de {matchingTeachers.length} perfiles
               </span>
               <button
                 type="button"
-                onClick={() => setVisibleLimit((current) => current + TEACHER_PAGE_SIZE)}
+                disabled={pageStart + visibleTeachers.length >= matchingTeachers.length}
+                onClick={() => changePage(currentPage + 1)}
               >
-                Mostrar más docentes
+                Siguiente →
               </button>
-            </div>
+            </nav>
           ) : null}
 
-          <aside className="directory-note directory-note--warning">
-            <strong>Perfiles de demostración</strong>
-            <p>
-              Los nombres, retratos, universidades y precios de esta primera versión son
-              ilustrativos. Tesis20 confirmará identidad, experiencia, disponibilidad y tarifa
-              antes de coordinar una asesoría.
-            </p>
-          </aside>
         </div>
       </section>
     </main>
