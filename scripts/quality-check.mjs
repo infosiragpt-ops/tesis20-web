@@ -2,6 +2,7 @@ import { execFileSync } from "node:child_process";
 import { access, readFile, readdir, stat } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { TEACHERS } from "../src/data/academic-directory.js";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const siteOrigin = "https://www.tesis20.com";
@@ -38,7 +39,13 @@ const routeSpecs = [
     output: "dist/docentes.html",
     title: "Docentes y asesores por carrera | Tesis20",
     h1: "Encuentra un docente para tu tema",
-    content: ["Docentes disponibles", "Universidad donde enseña", "Perfiles de demostración"],
+    content: [
+      "Docentes disponibles",
+      "¿Qué asesoría necesitas?",
+      "Buscar docentes",
+      "Especialidades",
+      "Perfiles de demostración",
+    ],
     schemaType: "CollectionPage",
   },
   {
@@ -298,6 +305,9 @@ const vercelText = await read("vercel.json");
 const appSource = await read("src/App.jsx");
 const nidoGamesSource = await read("src/nido/nido-games.jsx");
 const nidoFocusStyles = await read("src/nido/nido-focus.css");
+const academicDirectory = JSON.parse(await read("public/data/academic-directory.json"));
+const teacherSearchSource = await read("src/teacher-search.js");
+const teacherDirectoryRuntime = await read("public/assets/academic-directory-v1.js");
 const manifest = JSON.parse(manifestText);
 const vercel = JSON.parse(vercelText);
 
@@ -317,6 +327,25 @@ check(
     nidoGamesSource.includes('dialog.setAttribute("open", "")') &&
     nidoFocusStyles.includes("position: fixed"),
   "La apertura de juegos de Nido debe conservar el diálogo modal y su fallback visible.",
+);
+check(
+  JSON.stringify(academicDirectory.teachers) === JSON.stringify(TEACHERS),
+  "El JSON público de docentes debe coincidir exactamente con la fuente académica.",
+);
+check(
+  TEACHERS.every((teacher) =>
+    Array.isArray(teacher.specialties) &&
+    teacher.specialties.length >= 3 &&
+    Array.isArray(teacher.searchTerms) &&
+    teacher.searchTerms.length >= 3
+  ),
+  "Cada docente debe declarar especialidades visibles y términos de búsqueda relacionados.",
+);
+check(
+  teacherSearchSource.includes("SEARCH_STOP_WORDS") &&
+    teacherDirectoryRuntime.includes("teacherSearchStopWords") &&
+    teacherDirectoryRuntime.includes("TEACHER_PAGE_SIZE = 24"),
+  "La búsqueda de docentes debe interpretar necesidades y limitar la cantidad renderizada por página.",
 );
 
 // El sitemap debe describir exactamente las páginas indexables que entrega el build.
@@ -476,6 +505,18 @@ for (const route of routeSpecs) {
   }
   if (route.path === "/contrato") {
     check(schemaNodes.some((node) => hasSchemaType(node, "DigitalDocument")), "dist/contrato.html debe describir el contrato como DigitalDocument.");
+  }
+  if (route.path === "/docentes") {
+    const renderedTeacherCards = (html.match(/data-teacher-card/g) || []).length;
+    check(
+      renderedTeacherCards === Math.min(TEACHERS.length, 24),
+      "dist/docentes.html debe renderizar solo la primera página de hasta 24 docentes.",
+    );
+    check(
+      /<form\b[^>]*data-directory-teacher-form/i.test(html) &&
+        /type=["']submit["'][^>]*class=["']directory-search-button["']/i.test(html),
+      "El directorio de docentes debe ejecutar la búsqueda mediante un formulario y botón explícito.",
+    );
   }
   if (route.service) {
     const serviceNode = schemaNodes.find((node) => hasSchemaType(node, "Service"));

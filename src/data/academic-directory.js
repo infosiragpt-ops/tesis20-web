@@ -346,9 +346,16 @@ export const TEACHERS = [
     country: "Perú",
     universities: ["Universidad Andina — demo"],
     careers: ["Psicología", "Educación Inicial", "Psicopedagogía"],
+    specialties: [
+      "Metodología cualitativa",
+      "Diseño de instrumentos",
+      "Psicología educativa",
+      "Psicopedagogía",
+    ],
+    searchTerms: ["entrevistas", "grupos focales", "aprendizaje", "bienestar estudiantil"],
     price: 85,
     description:
-      "Acompaña investigaciones cualitativas, diseño de instrumentos y proyectos sobre aprendizaje y bienestar.",
+      "Especialista en investigación cualitativa, diseño de instrumentos y proyectos sobre aprendizaje y bienestar.",
     photo: "/assets/docentes/valeria-ruiz-v1.jpg",
   },
   {
@@ -357,6 +364,13 @@ export const TEACHERS = [
     country: "México",
     universities: ["Instituto Metropolitano — demo"],
     careers: ["Ingeniería Industrial", "Logística y Cadena de Suministro", "Gestión de Operaciones"],
+    specialties: [
+      "Mejora de procesos",
+      "Gestión de operaciones",
+      "Logística",
+      "Indicadores de gestión",
+    ],
+    searchTerms: ["lean", "cadena de suministro", "productividad", "optimización de procesos"],
     price: 95,
     description:
       "Especialista en mejora de procesos, operaciones, indicadores y metodología aplicada a organizaciones.",
@@ -368,9 +382,16 @@ export const TEACHERS = [
     country: "Colombia",
     universities: ["Universidad del Caribe — demo"],
     careers: ["Administración de Empresas", "Marketing", "Negocios Internacionales"],
+    specialties: [
+      "Investigación de mercados",
+      "Marketing estratégico",
+      "Comportamiento del consumidor",
+      "Emprendimiento",
+    ],
+    searchTerms: ["estudio de mercado", "marca", "clientes", "plan de negocio"],
     price: 90,
     description:
-      "Orienta estudios de mercado, estrategia, comportamiento del consumidor y proyectos de emprendimiento.",
+      "Especialista en estudios de mercado, estrategia, comportamiento del consumidor y proyectos de emprendimiento.",
     photo: "/assets/docentes/mariana-torres-v1.jpg",
   },
   {
@@ -379,9 +400,16 @@ export const TEACHERS = [
     country: "Chile",
     universities: ["Universidad Austral Metropolitana — demo"],
     careers: ["Ingeniería Civil", "Ingeniería Ambiental", "Gestión de Proyectos"],
+    specialties: [
+      "Infraestructura",
+      "Sostenibilidad",
+      "Gestión de proyectos",
+      "Matrices de riesgo",
+    ],
+    searchTerms: ["impacto ambiental", "riesgos", "obras civiles", "evaluación técnica"],
     price: 110,
     description:
-      "Asesora proyectos de infraestructura, sostenibilidad, matrices de riesgo y evaluación técnica.",
+      "Especialista en proyectos de infraestructura, sostenibilidad, matrices de riesgo y evaluación técnica.",
     photo: "/assets/docentes/andres-vega-v1.jpg",
   },
   {
@@ -390,9 +418,16 @@ export const TEACHERS = [
     country: "Perú",
     universities: ["Universidad Tecnológica del Centro — demo"],
     careers: ["Ingeniería de Sistemas", "Ciencia de Datos", "Inteligencia Artificial"],
+    specialties: [
+      "Desarrollo de software",
+      "Ciencia de datos",
+      "Inteligencia artificial",
+      "Modelos predictivos",
+    ],
+    searchTerms: ["machine learning", "analítica", "programación", "validación de software"],
     price: 105,
     description:
-      "Guía tesis de software, analítica, modelos predictivos y validación de soluciones tecnológicas.",
+      "Especialista en tesis de software, analítica, modelos predictivos y validación de soluciones tecnológicas.",
     photo: "/assets/docentes/luis-paredes-v1.jpg",
   },
   {
@@ -401,9 +436,16 @@ export const TEACHERS = [
     country: "Argentina",
     universities: ["Universidad Rioplatense — demo"],
     careers: ["Medicina Humana", "Salud Pública", "Epidemiología"],
+    specialties: [
+      "Revisiones sistemáticas",
+      "Epidemiología",
+      "Salud pública",
+      "Protocolos de investigación",
+    ],
+    searchTerms: ["PRISMA", "metaanálisis", "evidencia científica", "estudios clínicos"],
     price: 120,
     description:
-      "Acompaña revisiones sistemáticas, protocolos de salud, epidemiología y análisis crítico de evidencia.",
+      "Especialista en revisiones sistemáticas, protocolos de salud, epidemiología y análisis crítico de evidencia.",
     photo: "/assets/docentes/camila-rojas-v1.jpg",
   },
   {
@@ -412,9 +454,16 @@ export const TEACHERS = [
     country: "España",
     universities: ["Instituto Superior Mediterráneo — demo"],
     careers: ["Economía", "Finanzas", "Analítica de Negocios"],
+    specialties: [
+      "Econometría",
+      "IBM SPSS Statistics",
+      "Finanzas corporativas",
+      "Análisis cuantitativo",
+    ],
+    searchTerms: ["SPSS", "regresión", "estadística", "modelos económicos", "datos financieros"],
     price: 125,
     description:
-      "Trabaja modelos económicos, finanzas corporativas, análisis cuantitativo y presentación de resultados.",
+      "Especialista en econometría, IBM SPSS Statistics, finanzas corporativas y análisis cuantitativo.",
     photo: "/assets/docentes/sergio-montes-v1.jpg",
   },
   {
@@ -423,9 +472,16 @@ export const TEACHERS = [
     country: "Ecuador",
     universities: ["Universidad del Pacífico Sur — demo"],
     careers: ["Derecho", "Políticas Públicas", "Relaciones Internacionales"],
+    specialties: [
+      "Derecho penal",
+      "Derecho procesal penal",
+      "Investigación jurídica",
+      "Políticas públicas",
+    ],
+    searchTerms: ["criminología", "delitos", "litigación penal", "jurisprudencia", "política criminal"],
     price: 100,
     description:
-      "Orienta investigaciones jurídicas, análisis normativo, políticas públicas y estudios comparados.",
+      "Especialista en derecho penal, proceso penal e investigación jurídica; orienta análisis normativo, jurisprudencia y políticas públicas.",
     photo: "/assets/docentes/elena-castro-v1.jpg",
   },
 ];
