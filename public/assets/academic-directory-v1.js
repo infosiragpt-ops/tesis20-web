@@ -1,4 +1,4 @@
-import { teacherMediaMarkup } from "/assets/teacher-portrait-v1.js?v=20260801-catalog4000v5";
+import { assignTeacherPortraits, teacherMediaMarkup } from "/assets/teacher-portrait-v1.js?v=20260802-syntheticphotosv1";
 
 const normalize = (value) =>
   String(value || "")
@@ -100,17 +100,17 @@ function buildTeacherWhatsappHref(teacher) {
   return `https://api.whatsapp.com/send?phone=51918714054&text=${encodeURIComponent(message)}`;
 }
 
-function teacherCardMarkup(teacher) {
+function teacherCardMarkup(teacher, portraitIndex) {
   const specialties = (teacher.specialties || [])
     .map((specialty) => `<li>${escapeHtml(specialty)}</li>`)
     .join("");
 
   return `<article class="teacher-card" data-teacher-card>
-    ${teacherMediaMarkup(teacher)}
-    <div class="teacher-card__body"><div class="teacher-card__title"><div><p>Perfil docente demo</p><h2>${escapeHtml(teacher.name)}</h2></div><span>${escapeHtml(teacher.country)}</span></div>
+    ${teacherMediaMarkup(teacher, portraitIndex)}
+    <div class="teacher-card__body"><div class="teacher-card__title"><div><p>Perfil de referencia · no es una persona real</p><h2>${escapeHtml(teacher.name)}</h2></div><span>${escapeHtml(teacher.country)}</span></div>
     <p class="teacher-card__description">${escapeHtml(teacher.description)}</p>
     <dl><div><dt>Experiencia simulada</dt><dd>${teacher.experienceYears} años de trayectoria referencial · ${escapeHtml(teacher.profileCode)}</dd></div><div><dt>Especialidades</dt><dd><ul class="teacher-card__tags">${specialties}</ul></dd></div><div><dt>Carreras</dt><dd>${(teacher.careers || []).map(escapeHtml).join(" · ")}</dd></div><div><dt>Universidad</dt><dd>${(teacher.universities || []).map(escapeHtml).join(" · ")}</dd></div></dl>
-    <div class="teacher-card__footer"><p><small>Precio referencial por hora</small><strong>S/ ${teacher.price}</strong></p><a href="${escapeHtml(buildTeacherWhatsappHref(teacher))}" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer" aria-label="Consultar a Tesis20 por WhatsApp sobre el perfil demostrativo de ${escapeHtml(teacher.name)}">Contactar por WhatsApp</a></div></div>
+    <div class="teacher-card__footer"><p><small>Precio referencial por hora</small><strong>S/ ${teacher.price}</strong></p><a href="${escapeHtml(buildTeacherWhatsappHref(teacher))}" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer" aria-label="Solicitar a Tesis20 un asesor real similar al perfil demostrativo de ${escapeHtml(teacher.name)}">Solicitar asesor real similar</a></div></div>
   </article>`;
 }
 
@@ -176,7 +176,7 @@ function setupTeachers(container) {
   previous.disabled = true;
   next.disabled = true;
 
-  const indexRequest = fetch("/data/academic-directory.json?v=20260801-catalog4000v5")
+  const indexRequest = fetch("/data/academic-directory.json?v=20260802-syntheticphotosv1")
     .then((response) => {
       if (!response.ok) throw new Error(`No se pudo cargar el directorio (${response.status})`);
       return response.json();
@@ -208,7 +208,9 @@ function setupTeachers(container) {
     if (start >= matches.length && currentPage > 0) currentPage = 0;
     const safeStart = currentPage * TEACHER_PAGE_SIZE;
     const visibleTeachers = matches.slice(safeStart, safeStart + TEACHER_PAGE_SIZE);
-    results.innerHTML = visibleTeachers.map(teacherCardMarkup).join("");
+    results.innerHTML = assignTeacherPortraits(visibleTeachers)
+      .map(({ teacher, portraitIndex }) => teacherCardMarkup(teacher, portraitIndex))
+      .join("");
     updateMeta(matches.length, safeStart, safeStart + visibleTeachers.length);
   };
 

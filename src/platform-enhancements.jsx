@@ -70,6 +70,7 @@ const PAGE_META = {
     imageType: "image/jpeg",
     imageWidth: 1672,
     imageHeight: 941,
+    noindex: true,
   },
   nido: {
     title: "Videojuegos educativos para niños | Tesis20 Nido",
@@ -240,7 +241,9 @@ export function SeoManager({
       name: "robots",
       content: isNotFound
         ? "noindex, nofollow"
-        : "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1",
+        : meta.noindex
+          ? "noindex, follow"
+          : "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1",
     });
     upsertMeta('meta[name="author"]', { name: "author", content: SITE_NAME });
     upsertMeta('meta[property="og:title"]', { property: "og:title", content: meta.title });

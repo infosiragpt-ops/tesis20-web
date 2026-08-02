@@ -221,7 +221,7 @@
   position: relative;
   flex: 0 0 auto;
   overflow: hidden;
-  aspect-ratio: 4 / 3;
+  aspect-ratio: 1;
   background: #e9e1d5;
 }
 .teacher-card__photo {
@@ -234,7 +234,12 @@
   object-fit: cover;
   object-position: center 28%;
 }
-.teacher-card__portrait { shape-rendering: geometricPrecision; }
+.teacher-card__synthetic-photo {
+  background-image: var(--teacher-photo-sheet);
+  background-repeat: no-repeat;
+  background-position: var(--teacher-photo-x) var(--teacher-photo-y);
+  background-size: 400% 400%;
+}
 .teacher-card__portrait-badge {
   position: absolute;
   right: 12px;
@@ -396,7 +401,7 @@
   .career-area-card header > span { width: 40px; height: 40px; }
   .career-area-card h2 { font-size: 20px; }
   .career-area-card ul { padding: 19px; grid-template-columns: 1fr; }
-  .teacher-card__media { aspect-ratio: 4 / 3; }
+  .teacher-card__media { aspect-ratio: 1; }
   .teacher-card__body { padding: 20px; }
   .teacher-card__footer { align-items: stretch; flex-direction: column; }
   .teacher-card__footer a { justify-content: center; }

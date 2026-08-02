@@ -1,7 +1,7 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { CAREER_AREAS, CAREER_COUNT, TEACHERS } from "../src/data/academic-directory.js";
-import { teacherMediaMarkup } from "../src/teacher-portrait.js";
+import { assignTeacherPortraits, teacherMediaMarkup } from "../src/teacher-portrait.js";
 
 const DIST_DIRECTORY = resolve(process.cwd(), "dist");
 const INDEX_PATH = resolve(DIST_DIRECTORY, "index.html");
@@ -43,17 +43,17 @@ function teacherSearchCorpus(teacher) {
   ].join(" ");
 }
 
-function teacherCardMarkup(teacher) {
+function teacherCardMarkup(teacher, portraitIndex) {
   const specialties = (teacher.specialties || [])
     .map((specialty) => `<li>${escapeAttribute(specialty)}</li>`)
     .join("");
 
   return `<article class="teacher-card" data-teacher-card data-name="${escapeAttribute(teacher.name)}" data-search="${escapeAttribute(teacherSearchCorpus(teacher))}" data-careers="${escapeAttribute(teacher.careers.join("|"))}" data-universities="${escapeAttribute(teacher.universities.join("|"))}">
-    ${teacherMediaMarkup(teacher)}
-    <div class="teacher-card__body"><div class="teacher-card__title"><div><p>Perfil docente demo</p><h2>${escapeAttribute(teacher.name)}</h2></div><span>${escapeAttribute(teacher.country)}</span></div>
+    ${teacherMediaMarkup(teacher, portraitIndex)}
+    <div class="teacher-card__body"><div class="teacher-card__title"><div><p>Perfil de referencia · no es una persona real</p><h2>${escapeAttribute(teacher.name)}</h2></div><span>${escapeAttribute(teacher.country)}</span></div>
     <p class="teacher-card__description">${escapeAttribute(teacher.description)}</p>
     <dl><div><dt>Experiencia simulada</dt><dd>${teacher.experienceYears} años de trayectoria referencial · ${escapeAttribute(teacher.profileCode)}</dd></div><div><dt>Especialidades</dt><dd><ul class="teacher-card__tags">${specialties}</ul></dd></div><div><dt>Carreras</dt><dd>${teacher.careers.map(escapeAttribute).join(" · ")}</dd></div><div><dt>Universidad</dt><dd>${teacher.universities.map(escapeAttribute).join(" · ")}</dd></div></dl>
-    <div class="teacher-card__footer"><p><small>Precio referencial por hora</small><strong>S/ ${teacher.price}</strong></p><a href="${escapeAttribute(buildTeacherWhatsAppUrl(teacher))}" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer" aria-label="Consultar a Tesis20 por WhatsApp sobre el perfil demostrativo de ${escapeAttribute(teacher.name)}">Contactar por WhatsApp</a></div></div>
+    <div class="teacher-card__footer"><p><small>Precio referencial por hora</small><strong>S/ ${teacher.price}</strong></p><a href="${escapeAttribute(buildTeacherWhatsAppUrl(teacher))}" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer" aria-label="Solicitar a Tesis20 un asesor real similar al perfil demostrativo de ${escapeAttribute(teacher.name)}">Solicitar asesor real similar</a></div></div>
   </article>`;
 }
 
@@ -283,6 +283,7 @@ const routeDefinitions = [
     imageType: "image/jpeg",
     imageWidth: 1672,
     imageHeight: 941,
+    noindex: true,
     content: `
       <div class="directory-page" data-academic-directory="teachers">
         <section class="directory-hero" aria-labelledby="directory-page-title">
@@ -305,10 +306,10 @@ const routeDefinitions = [
               <label><span>Universidad donde enseña</span><span class="directory-field"><select id="teacher-university"><option value="">Todas las universidades</option>${[...new Set(TEACHERS.flatMap((teacher) => teacher.universities))].sort((a, b) => a.localeCompare(b, "es")).map((university) => `<option value="${escapeAttribute(university)}">${university}</option>`).join("")}</select></span></label>
               <div class="directory-actions"><button type="submit" class="directory-search-button" aria-controls="teacher-results">Buscar docentes</button><button type="button" class="directory-clear" data-directory-clear disabled>Limpiar</button></div>
             </form>
-            <aside class="directory-note directory-note--warning"><strong>Directorio demostrativo</strong><p>Estos 4,000 perfiles, sus nombres, retratos, universidades, experiencia y precios son referencias simuladas. Tesis20 confirmará un asesor real, su identidad, experiencia, disponibilidad y tarifa antes de coordinar.</p></aside>
+            <aside class="directory-note directory-note--warning"><strong>Directorio demostrativo</strong><p>Estos 4,000 perfiles, sus nombres, imágenes sintéticas generadas con IA, universidades, experiencia y precios son referencias simuladas: no corresponden a profesionales disponibles ni a personas reales. Tesis20 confirmará la identidad, experiencia, disponibilidad y tarifa de un asesor real antes de coordinar.</p></aside>
             <div class="directory-note directory-note--warning" data-directory-load-warning hidden role="status"><strong>Catálogo temporalmente incompleto</strong><p>No pudimos cargar todos los perfiles. Reintenta en unos momentos para buscar en el directorio completo.</p></div>
             <div class="teacher-grid" id="teacher-results" data-teacher-results tabindex="-1">
-              ${TEACHERS.slice(0, TEACHER_PAGE_SIZE).map(teacherCardMarkup).join("\n")}
+              ${assignTeacherPortraits(TEACHERS.slice(0, TEACHER_PAGE_SIZE)).map(({ teacher, portraitIndex }) => teacherCardMarkup(teacher, portraitIndex)).join("\n")}
             </div>
             <div class="directory-empty" data-directory-empty hidden><span aria-hidden="true">⌕</span><h2>No encontramos perfiles con esos filtros</h2><p>Prueba otra necesidad, especialidad, carrera o universidad.</p></div>
             <nav class="directory-results-more" data-directory-pagination${TEACHERS.length <= TEACHER_PAGE_SIZE ? " hidden" : ""} aria-label="Paginación de docentes"><button type="button" data-directory-previous disabled>← Anterior</button><span data-directory-range aria-live="polite">Mostrando 1–${Math.min(TEACHERS.length, TEACHER_PAGE_SIZE)} de ${TEACHERS.length} perfiles</span><button type="button" data-directory-next disabled>Siguiente →</button></nav>
@@ -790,11 +791,11 @@ function renderRoute(template, route) {
   if (route.directory) {
     html = html.replace(
       "</head>",
-      '    <link rel="stylesheet" href="/assets/academic-directory-v1.css?v=20260801-catalog4000v5" />\n  </head>',
+      '    <link rel="stylesheet" href="/assets/academic-directory-v1.css?v=20260802-syntheticphotosv1" />\n  </head>',
     );
     html = html.replace(
       "</body>",
-      '    <script type="module" src="/assets/academic-directory-v1.js?v=20260801-catalog4000v5"></script>\n  </body>',
+      '    <script type="module" src="/assets/academic-directory-v1.js?v=20260802-syntheticphotosv1"></script>\n  </body>',
     );
   }
 
@@ -805,7 +806,9 @@ function renderRoute(template, route) {
     `<meta name="robots" content="${
       isNotFound
         ? "noindex, nofollow"
-        : "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1"
+        : route.noindex
+          ? "noindex, follow"
+          : "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1"
     }" />`,
   );
   const metaReplacements = [
@@ -898,6 +901,7 @@ async function generateStaticRoutes() {
   const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${routeDefinitions
+  .filter((route) => !route.noindex)
   .map((route) => {
     const priority = route.path === "/" ? "1.0" : route.path === "/servicios" ? "0.9" : "0.8";
     return `  <url>
@@ -916,7 +920,7 @@ ${routeDefinitions
       .map((route) => route.output)
       .join(", ")}`,
   );
-  console.log(`✓ Sitemap actualizado: ${routeDefinitions.length} URLs, lastmod ${lastModified}`);
+  console.log(`✓ Sitemap actualizado: ${routeDefinitions.filter((route) => !route.noindex).length} URLs, lastmod ${lastModified}`);
 }
 
 await generateStaticRoutes();

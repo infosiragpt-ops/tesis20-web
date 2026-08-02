@@ -2,7 +2,11 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { CAREER_AREAS, TEACHERS } from "../../src/data/academic-directory.js";
-import { teacherMediaMarkup } from "../../src/teacher-portrait.js";
+import {
+  assignTeacherPortraits,
+  teacherMediaMarkup,
+  TEACHER_PORTRAIT_COUNT,
+} from "../../src/teacher-portrait.js";
 import {
   createTeacherSearchIndex,
   getTeacherSearchTerms,
@@ -121,15 +125,51 @@ test("busca sobre los 4 mil perfiles sin duplicar tarjetas", () => {
   assert.equal(new Set(results.map((teacher) => teacher.id)).size, results.length);
 });
 
-test("genera retratos vectoriales locales distintos para perfiles sin foto", () => {
-  const generatedTeachers = TEACHERS.filter((teacher) => !teacher.photo).slice(0, 48);
-  const portraits = generatedTeachers.map(teacherMediaMarkup);
+test("muestra una fotografía sintética local en los 4 mil perfiles", () => {
+  const portraits = TEACHERS.map((teacher) => teacherMediaMarkup(teacher));
+  const portraitIndexes = portraits.map((portrait) =>
+    Number(portrait.match(/data-portrait-index="(\d+)"/)?.[1])
+  );
 
-  assert.equal(new Set(portraits).size, generatedTeachers.length);
+  assert.equal(portraits.length, 4_000);
+  assert.equal(new Set(portraitIndexes).size, TEACHER_PORTRAIT_COUNT);
   assert(portraits.every((portrait) =>
-    portrait.includes("teacher-card__portrait") &&
-    portrait.includes("Retrato ilustrativo") &&
-    !portrait.includes('src="http://') &&
-    !portrait.includes('src="https://')
+    portrait.includes("teacher-card__synthetic-photo") &&
+    portrait.includes("Imagen sintética · IA") &&
+    portrait.includes("/assets/docentes/synthetic-v1/") &&
+    portrait.includes("no representa a una persona real") &&
+    !portrait.includes("<svg") &&
+    !portrait.includes("http://") &&
+    !portrait.includes("https://")
   ));
+});
+
+test("no repite fotografías dentro de ninguna página visible", () => {
+  const lists = [
+    TEACHERS,
+    searchTeacherIndex(teacherIndex, { query: "derecho penal" }),
+    searchTeacherIndex(teacherIndex, { query: "SPSS" }),
+    searchTeacherIndex(teacherIndex, { query: "PRISMA" }),
+  ];
+
+  for (const teachers of lists) {
+    for (let start = 0; start < teachers.length; start += 24) {
+      const assigned = assignTeacherPortraits(teachers.slice(start, start + 24));
+      assert.equal(new Set(assigned.map(({ portraitIndex }) => portraitIndex)).size, assigned.length);
+    }
+  }
+});
+
+test("resuelve colisiones de retrato de forma determinista", () => {
+  const collisionPage = Array.from({ length: 24 }, (_, index) => ({
+    name: `Perfil ${index + 1}`,
+    profileCode: `T20-D${String(index + 1).padStart(4, "0")}`,
+    avatarSeed: 64 * (index + 1),
+  }));
+  const firstAssignment = assignTeacherPortraits(collisionPage);
+  const secondAssignment = assignTeacherPortraits(collisionPage);
+
+  assert.deepEqual(firstAssignment, secondAssignment);
+  assert.equal(new Set(firstAssignment.map(({ portraitIndex }) => portraitIndex)).size, 24);
+  assert.throws(() => assignTeacherPortraits([...collisionPage, collisionPage[0]]), RangeError);
 });

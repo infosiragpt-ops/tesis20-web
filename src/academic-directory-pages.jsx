@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { trackInteraction } from "./platform-enhancements.jsx";
 import { createTeacherSearchIndex, searchTeacherIndex } from "./teacher-search.js";
 import { CAREER_AREAS, CAREER_COUNT, TEACHERS } from "./data/academic-directory.js";
-import { teacherMediaMarkup } from "./teacher-portrait.js";
+import { assignTeacherPortraits, teacherMediaMarkup } from "./teacher-portrait.js";
 
 const WHATSAPP_PHONE = "51918714054";
 const TEACHER_PAGE_SIZE = 24;
@@ -14,10 +14,10 @@ const ACADEMIC_DIRECTORY = {
 
 function useAcademicDirectory() {
   useEffect(() => {
-    if (!document.querySelector('link[href="/assets/academic-directory-v1.css?v=20260801-catalog4000v5"]')) {
+    if (!document.querySelector('link[href="/assets/academic-directory-v1.css?v=20260802-syntheticphotosv1"]')) {
       const stylesheet = document.createElement("link");
       stylesheet.rel = "stylesheet";
-      stylesheet.href = "/assets/academic-directory-v1.css?v=20260801-catalog4000v5";
+      stylesheet.href = "/assets/academic-directory-v1.css?v=20260802-syntheticphotosv1";
       document.head.appendChild(stylesheet);
     }
   }, []);
@@ -48,13 +48,13 @@ function careerCardsMarkup(areas) {
 }
 
 function teacherCardsMarkup(teachers) {
-  return teachers.map((teacher) => `<article class="teacher-card">
-    ${teacherMediaMarkup(teacher)}
-    <div class="teacher-card__body"><div class="teacher-card__title"><div><p>Perfil docente demo</p><h2>${escapeHtml(teacher.name)}</h2></div><span>${escapeHtml(teacher.country)}</span></div>
+  return assignTeacherPortraits(teachers).map(({ teacher, portraitIndex }) => `<article class="teacher-card">
+    ${teacherMediaMarkup(teacher, portraitIndex)}
+    <div class="teacher-card__body"><div class="teacher-card__title"><div><p>Perfil de referencia · no es una persona real</p><h2>${escapeHtml(teacher.name)}</h2></div><span>${escapeHtml(teacher.country)}</span></div>
     <p class="teacher-card__description">${escapeHtml(teacher.description)}</p>
     <dl><div><dt>Experiencia simulada</dt><dd>${teacher.experienceYears} años de trayectoria referencial · ${escapeHtml(teacher.profileCode)}</dd></div><div><dt>Especialidades</dt><dd><ul class="teacher-card__tags">${(teacher.specialties || []).map((specialty) => `<li>${escapeHtml(specialty)}</li>`).join("")}</ul></dd></div><div><dt>Carreras</dt><dd>${teacher.careers.map(escapeHtml).join(" · ")}</dd></div><div><dt>Universidad</dt><dd>${teacher.universities.map(escapeHtml).join(" · ")}</dd></div></dl>
     <div class="teacher-card__footer"><p><small>Precio referencial por hora</small><strong>S/ ${teacher.price}</strong></p>
-    <a href="${escapeHtml(buildTeacherWhatsappHref(teacher))}" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer" data-teacher="${escapeHtml(teacher.id)}" aria-label="Consultar a Tesis20 por WhatsApp sobre el perfil demostrativo de ${escapeHtml(teacher.name)}">Contactar por WhatsApp</a></div></div>
+    <a href="${escapeHtml(buildTeacherWhatsappHref(teacher))}" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer" data-teacher="${escapeHtml(teacher.id)}" aria-label="Solicitar a Tesis20 un asesor real similar al perfil demostrativo de ${escapeHtml(teacher.name)}">Solicitar asesor real similar</a></div></div>
   </article>`).join("");
 }
 
@@ -389,9 +389,10 @@ export function TeachersPage() {
           <aside className="directory-note directory-note--warning">
             <strong>Directorio demostrativo</strong>
             <p>
-              Estos 4,000 perfiles, sus nombres, retratos, universidades, experiencia y
-              precios son referencias simuladas. Tesis20 confirmará un asesor real, su
-              identidad, experiencia, disponibilidad y tarifa antes de coordinar.
+              Estos 4,000 perfiles, sus nombres, imágenes sintéticas generadas con IA,
+              universidades, experiencia y precios son referencias simuladas: no corresponden
+              a profesionales disponibles ni a personas reales. Tesis20 confirmará la identidad,
+              experiencia, disponibilidad y tarifa de un asesor real antes de coordinar.
             </p>
           </aside>
 

@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "type": "synthetic-demo-headshots",
+  "generatedAt": "2026-08-02",
+  "generator": "OpenAI image generation",
+  "representsRealPeople": false,
+  "gridSize": 4,
+  "portraitsPerSheet": 16,
+  "portraitCount": 64,
+  "sheets": [
+    {
+      "path": "/assets/docentes/synthetic-v1/advisers-sheet-01.avif",
+      "sha256": "214286f3550cfeadf1361556c11492667eb4bb711091b6ef439df08fc069703b"
+    },
+    {
+      "path": "/assets/docentes/synthetic-v1/advisers-sheet-02.avif",
+      "sha256": "904485c4d9e801033b264ade33315fb9ed99b42fccc2db092b64564fccf6b671"
+    },
+    {
+      "path": "/assets/docentes/synthetic-v1/advisers-sheet-03.avif",
+      "sha256": "95f1528eb207235dbe8c129c9c218ce86584c75d137990804ef4bd6d659c5d4a"
+    },
+    {
+      "path": "/assets/docentes/synthetic-v1/advisers-sheet-04.avif",
+      "sha256": "10efe9fb25a3c34d43b18714e4261438e857e49e69c97754869d0faf381ce2f3"
+    }
+  ]
+}

@@ -1,9 +1,14 @@
 import { execFileSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import { access, readFile, readdir, stat } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { gzipSync } from "node:zlib";
 import { CAREER_AREAS, TEACHERS } from "../src/data/academic-directory.js";
+import {
+  assignTeacherPortraits,
+  TEACHER_PORTRAIT_COUNT,
+} from "../src/teacher-portrait.js";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const siteOrigin = "https://www.tesis20.com";
@@ -48,6 +53,7 @@ const routeSpecs = [
       "Directorio demostrativo",
     ],
     schemaType: "CollectionPage",
+    indexable: false,
   },
   {
     path: "/nido",
@@ -264,6 +270,7 @@ function isValidImageSignature(extension, bytes) {
   if (extension === ".webp") {
     return bytes.subarray(0, 4).toString("ascii") === "RIFF" && bytes.subarray(8, 12).toString("ascii") === "WEBP";
   }
+  if (extension === ".avif") return bytes.subarray(4, 12).toString("ascii") === "ftypavif";
   if (extension === ".svg") return bytes.toString("utf8", 0, 256).includes("<svg");
   return true;
 }
@@ -311,6 +318,7 @@ const academicDirectory = JSON.parse(academicDirectoryText);
 const teacherSearchSource = await read("src/teacher-search.js");
 const teacherDirectoryRuntime = await read("public/assets/academic-directory-v1.js");
 const teacherPortraitAsset = await read("dist/assets/teacher-portrait-v1.js");
+const teacherPhotoManifest = JSON.parse(await read("public/assets/docentes/synthetic-v1/manifest.json"));
 const manifest = JSON.parse(manifestText);
 const vercel = JSON.parse(vercelText);
 
@@ -376,9 +384,36 @@ check(
   "El catálogo de 4,000 docentes excede el presupuesto de transferencia.",
 );
 check(
-  teacherPortraitAsset.includes("teacherMediaMarkup") && teacherPortraitAsset.includes("data-portrait-seed"),
-  "El build debe incluir el generador local de retratos profesionales ilustrativos.",
+  teacherPortraitAsset.includes("teacherMediaMarkup") &&
+    teacherPortraitAsset.includes("data-portrait-index") &&
+    teacherPortraitAsset.includes("Imagen sintética · IA") &&
+    !teacherPortraitAsset.includes("<svg"),
+  "El build debe incluir fotografías sintéticas locales y no retratos SVG.",
 );
+check(
+  teacherPhotoManifest.type === "synthetic-demo-headshots" &&
+    teacherPhotoManifest.representsRealPeople === false &&
+    teacherPhotoManifest.portraitCount === TEACHER_PORTRAIT_COUNT &&
+    teacherPhotoManifest.sheets.length === 4,
+  "El manifiesto debe documentar 64 retratos sintéticos que no representan personas reales.",
+);
+for (const sheet of teacherPhotoManifest.sheets) {
+  const relativePath = sheet.path.replace(/^\//, "public/");
+  check(/^\/assets\/docentes\/synthetic-v1\/advisers-sheet-\d{2}\.avif$/.test(sheet.path), `Ruta de retrato sintético no permitida: ${sheet.path}`);
+  check(await exists(relativePath), `Falta la biblioteca fotográfica ${sheet.path}.`);
+  if (await exists(relativePath)) {
+    const bytes = await readFile(path.join(root, relativePath));
+    check(bytes.length <= 100 * 1024, `${sheet.path} supera 100 KiB.`);
+    check(createHash("sha256").update(bytes).digest("hex") === sheet.sha256, `${sheet.path} no coincide con su hash documentado.`);
+  }
+}
+for (let start = 0; start < TEACHERS.length; start += 24) {
+  const page = assignTeacherPortraits(TEACHERS.slice(start, start + 24));
+  check(
+    new Set(page.map(({ portraitIndex }) => portraitIndex)).size === page.length,
+    `La página docente ${Math.floor(start / 24) + 1} repite una fotografía.`,
+  );
+}
 check(
   teacherSearchSource.includes("SEARCH_STOP_WORDS") &&
     teacherDirectoryRuntime.includes("teacherSearchStopWords") &&
@@ -390,9 +425,9 @@ check(
 
 // El sitemap debe describir exactamente las páginas indexables que entrega el build.
 const sitemapEntries = extractSitemapEntries(sitemap);
-const expectedCanonicalUrls = routeSpecs.map((route) => canonicalFor(route.path));
+const expectedCanonicalUrls = routeSpecs.filter((route) => route.indexable !== false).map((route) => canonicalFor(route.path));
 const sitemapLocations = sitemapEntries.map((entry) => entry.loc);
-check(sitemapEntries.length === routeSpecs.length, `sitemap.xml debe contener exactamente ${routeSpecs.length} URLs indexables.`);
+check(sitemapEntries.length === expectedCanonicalUrls.length, `sitemap.xml debe contener exactamente ${expectedCanonicalUrls.length} URLs indexables.`);
 check(new Set(sitemapLocations).size === sitemapLocations.length, "sitemap.xml contiene URLs duplicadas.");
 for (const canonicalUrl of expectedCanonicalUrls) {
   check(sitemapLocations.includes(canonicalUrl), `Falta ${canonicalUrl} en sitemap.xml.`);
@@ -484,7 +519,7 @@ const evidenceSources = [...appSource.matchAll(/src:\s*["'](\/assets\/evidence\/
 check(evidenceSources.length > 0, "No se encontraron evidencias agrupadas declaradas.");
 check(new Set(evidenceSources).size === evidenceSources.length, "Una misma captura no debe publicarse en varios grupos de evidencias.");
 
-const sourceImages = await walk("public/assets", (file) => /\.(?:png|jpe?g|webp|svg)$/i.test(file));
+const sourceImages = await walk("public/assets", (file) => /\.(?:avif|png|jpe?g|webp|svg)$/i.test(file));
 for (const imageFile of sourceImages) {
   const bytes = await readFile(path.join(root, imageFile));
   check(isValidImageSignature(path.extname(imageFile).toLowerCase(), bytes), `${imageFile} no coincide con su extensión declarada.`);
@@ -530,7 +565,11 @@ for (const route of routeSpecs) {
   check(getMetaContent(html, "property", "og:title") === route.title, `${route.output} debe alinear og:title con title.`);
   check(getMetaContent(html, "name", "twitter:title") === route.title, `${route.output} debe alinear twitter:title con title.`);
   check(description.length >= 80 && description.length <= 180, `${route.output} necesita una meta description de 80 a 180 caracteres (actual: ${description.length}).`);
-  check(/\bindex\b/i.test(robotsMeta) && !/\bnoindex\b/i.test(robotsMeta), `${route.output} debe ser indexable.`);
+  if (route.indexable === false) {
+    check(/\bnoindex\b/i.test(robotsMeta), `${route.output} debe mantenerse fuera de buscadores mientras use perfiles sintéticos.`);
+  } else {
+    check(/\bindex\b/i.test(robotsMeta) && !/\bnoindex\b/i.test(robotsMeta), `${route.output} debe ser indexable.`);
+  }
   check(/<main\b/i.test(html), `${route.output} debe contener contenido semántico dentro de <main>.`);
   check(visibleText.length >= 350, `${route.output} debe entregar contenido útil sin depender de ejecutar JavaScript.`);
   for (const text of route.content) {
@@ -734,7 +773,10 @@ check(
   stylesheetBytes <= 202 * 1024,
   `El CSS total con rutas diferidas no debe superar 202 KiB (${Math.ceil(stylesheetBytes / 1024)} KiB).`,
 );
-check(deployBytesWithoutAudioAndPdf <= 9 * 1024 * 1024, `El build sin audios/PDF supera 9 MiB (${(deployBytesWithoutAudioAndPdf / 1024 / 1024).toFixed(2)} MiB).`);
+// 2026-08-02: 9 → 9.5 MiB para 64 fotografías sintéticas empaquetadas en
+// cuatro hojas AVIF locales (267 KiB medidos). Solo /docentes las referencia;
+// no se incorporaron 4,000 binarios ni dependencias externas.
+check(deployBytesWithoutAudioAndPdf <= 9.5 * 1024 * 1024, `El build sin audios/PDF supera 9.5 MiB (${(deployBytesWithoutAudioAndPdf / 1024 / 1024).toFixed(2)} MiB).`);
 
 for (const htmlFile of distFiles.filter((file) => file.endsWith(".html"))) {
   check((await fileSize(htmlFile)) <= 300 * 1024, `${htmlFile} supera 300 KiB.`);
@@ -747,7 +789,7 @@ for (const audio of distFiles.filter((file) =>
 )) {
   check((await fileSize(audio)) <= 1_200 * 1024, `${audio} supera 1.2 MiB.`);
 }
-for (const imageFile of distFiles.filter((file) => /\.(?:png|jpe?g|webp|svg)$/i.test(file))) {
+for (const imageFile of distFiles.filter((file) => /\.(?:avif|png|jpe?g|webp|svg)$/i.test(file))) {
   const bytes = await readFile(path.join(root, imageFile));
   check(isValidImageSignature(path.extname(imageFile).toLowerCase(), bytes), `${imageFile} no coincide con su extensión declarada.`);
   check(bytes.length <= 1_800 * 1024, `${imageFile} supera el máximo de 1.8 MiB.`);
