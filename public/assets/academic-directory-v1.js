@@ -1,4 +1,4 @@
-import { assignTeacherPortraits, teacherMediaMarkup } from "/assets/teacher-portrait-v1.js?v=20260802-syntheticphotosv1";
+import { assignTeacherPortraits, teacherMediaMarkup } from "/assets/teacher-portrait-v1.js?v=20260802-syntheticphotosv2";
 
 const normalize = (value) =>
   String(value || "")
@@ -176,7 +176,7 @@ function setupTeachers(container) {
   previous.disabled = true;
   next.disabled = true;
 
-  const indexRequest = fetch("/data/academic-directory.json?v=20260802-syntheticphotosv1")
+  const indexRequest = fetch("/data/academic-directory.json?v=20260802-syntheticphotosv2")
     .then((response) => {
       if (!response.ok) throw new Error(`No se pudo cargar el directorio (${response.status})`);
       return response.json();

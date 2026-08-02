@@ -11,6 +11,15 @@ const FIRST_NAMES = [
   "Rocío", "Rodrigo", "Sandra", "Santiago", "Sara", "Sergio", "Silvia", "Sofía",
 ];
 
+const FEMININE_FIRST_NAMES = new Set([
+  "Adriana", "Alicia", "Amanda", "Amelia", "Ana", "Ángela", "Beatriz", "Camila",
+  "Carla", "Carmen", "Catalina", "Clara", "Claudia", "Daniela", "Elena", "Elisa",
+  "Emilia", "Eva", "Fernanda", "Gabriela", "Gloria", "Helena", "Irene", "Isabel",
+  "Jimena", "Julia", "Laura", "Lucía", "Marcela", "Mariana", "Marta", "Mónica",
+  "Natalia", "Noelia", "Paola", "Patricia", "Raquel", "Renata", "Rocío", "Sandra",
+  "Sara", "Silvia", "Sofía",
+]);
+
 const SURNAMES = [
   "Acosta", "Aguilar", "Alarcón", "Alfaro", "Álvarez", "Arias", "Benítez", "Blanco",
   "Bravo", "Cabrera", "Campos", "Cano", "Carrasco", "Castillo", "Castro", "Cervantes",
@@ -204,6 +213,7 @@ export function generateDemoTeachers(areas, seedTeachers = [], targetCount = 4_0
       id,
       profileCode: `T20-D${String(profileNumber).padStart(4, "0")}`,
       name,
+      portraitPresentation: FEMININE_FIRST_NAMES.has(firstName) ? "feminine" : "masculine",
       country: COUNTRIES[(seed >>> 2) % COUNTRIES.length],
       universities: [DEMO_UNIVERSITIES[(seed >>> 7) % DEMO_UNIVERSITIES.length]],
       careers: [career],

@@ -791,11 +791,11 @@ function renderRoute(template, route) {
   if (route.directory) {
     html = html.replace(
       "</head>",
-      '    <link rel="stylesheet" href="/assets/academic-directory-v1.css?v=20260802-syntheticphotosv1" />\n  </head>',
+      '    <link rel="stylesheet" href="/assets/academic-directory-v1.css?v=20260802-syntheticphotosv2" />\n  </head>',
     );
     html = html.replace(
       "</body>",
-      '    <script type="module" src="/assets/academic-directory-v1.js?v=20260802-syntheticphotosv1"></script>\n  </body>',
+      '    <script type="module" src="/assets/academic-directory-v1.js?v=20260802-syntheticphotosv2"></script>\n  </body>',
     );
   }
 

@@ -6,6 +6,7 @@ import {
   assignTeacherPortraits,
   teacherMediaMarkup,
   TEACHER_PORTRAIT_COUNT,
+  TEACHER_PORTRAIT_POOLS,
 } from "../../src/teacher-portrait.js";
 import {
   createTeacherSearchIndex,
@@ -93,6 +94,7 @@ test("el catálogo real contiene 4 mil perfiles demostrativos variados", () => {
   ));
   assert(TEACHERS.every((teacher) =>
     teacher.isDemo &&
+    ["feminine", "masculine"].includes(teacher.portraitPresentation) &&
     teacher.experienceYears >= 6 &&
     teacher.specialties.length >= 3 &&
     teacher.searchTerms.length >= 3 &&
@@ -156,20 +158,34 @@ test("no repite fotografías dentro de ninguna página visible", () => {
     for (let start = 0; start < teachers.length; start += 24) {
       const assigned = assignTeacherPortraits(teachers.slice(start, start + 24));
       assert.equal(new Set(assigned.map(({ portraitIndex }) => portraitIndex)).size, assigned.length);
+      assert(assigned.every(({ teacher, portraitIndex }) =>
+        TEACHER_PORTRAIT_POOLS[teacher.portraitPresentation].includes(portraitIndex)
+      ));
     }
   }
 });
 
 test("resuelve colisiones de retrato de forma determinista", () => {
-  const collisionPage = Array.from({ length: 24 }, (_, index) => ({
-    name: `Perfil ${index + 1}`,
-    profileCode: `T20-D${String(index + 1).padStart(4, "0")}`,
-    avatarSeed: 64 * (index + 1),
-  }));
-  const firstAssignment = assignTeacherPortraits(collisionPage);
-  const secondAssignment = assignTeacherPortraits(collisionPage);
+  for (const portraitPresentation of ["feminine", "masculine"]) {
+    const collisionPage = Array.from({ length: 24 }, (_, index) => ({
+      name: `Perfil ${index + 1}`,
+      profileCode: `T20-D${String(index + 1).padStart(4, "0")}`,
+      avatarSeed: 32 * (index + 1),
+      portraitPresentation,
+    }));
+    const firstAssignment = assignTeacherPortraits(collisionPage);
+    const secondAssignment = assignTeacherPortraits(collisionPage);
 
-  assert.deepEqual(firstAssignment, secondAssignment);
-  assert.equal(new Set(firstAssignment.map(({ portraitIndex }) => portraitIndex)).size, 24);
-  assert.throws(() => assignTeacherPortraits([...collisionPage, collisionPage[0]]), RangeError);
+    assert.deepEqual(firstAssignment, secondAssignment);
+    assert.equal(new Set(firstAssignment.map(({ portraitIndex }) => portraitIndex)).size, 24);
+    assert(firstAssignment.every(({ portraitIndex }) =>
+      TEACHER_PORTRAIT_POOLS[portraitPresentation].includes(portraitIndex)
+    ));
+    assert.throws(() => assignTeacherPortraits([...collisionPage, collisionPage[0]]), RangeError);
+  }
+  assert.throws(() => assignTeacherPortraits([{
+    name: "Perfil sin presentación",
+    profileCode: "T20-D9999",
+    avatarSeed: 1,
+  }]), TypeError);
 });

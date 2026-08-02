@@ -8,6 +8,7 @@ import { CAREER_AREAS, TEACHERS } from "../src/data/academic-directory.js";
 import {
   assignTeacherPortraits,
   TEACHER_PORTRAIT_COUNT,
+  TEACHER_PORTRAIT_POOLS,
 } from "../src/teacher-portrait.js";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -373,6 +374,7 @@ check(
     teacher.experienceYears >= 6 &&
     Number.isInteger(teacher.avatarSeed) &&
     teacher.avatarSeed > 0 &&
+    ["feminine", "masculine"].includes(teacher.portraitPresentation) &&
     teacher.description.startsWith("Perfil demostrativo") &&
     teacher.universities.every((university) => university.endsWith("— demo")) &&
     teacher.careers.every((career) => listedCareers.has(career))
@@ -394,6 +396,7 @@ check(
   teacherPhotoManifest.type === "synthetic-demo-headshots" &&
     teacherPhotoManifest.representsRealPeople === false &&
     teacherPhotoManifest.portraitCount === TEACHER_PORTRAIT_COUNT &&
+    JSON.stringify(teacherPhotoManifest.presentations) === JSON.stringify(TEACHER_PORTRAIT_POOLS) &&
     teacherPhotoManifest.sheets.length === 4,
   "El manifiesto debe documentar 64 retratos sintéticos que no representan personas reales.",
 );
@@ -412,6 +415,12 @@ for (let start = 0; start < TEACHERS.length; start += 24) {
   check(
     new Set(page.map(({ portraitIndex }) => portraitIndex)).size === page.length,
     `La página docente ${Math.floor(start / 24) + 1} repite una fotografía.`,
+  );
+  check(
+    page.every(({ teacher, portraitIndex }) =>
+      TEACHER_PORTRAIT_POOLS[teacher.portraitPresentation].includes(portraitIndex)
+    ),
+    `La página docente ${Math.floor(start / 24) + 1} mezcla presentaciones de nombre y retrato.`,
   );
 }
 check(

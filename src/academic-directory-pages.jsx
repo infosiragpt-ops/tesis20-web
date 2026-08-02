@@ -14,10 +14,10 @@ const ACADEMIC_DIRECTORY = {
 
 function useAcademicDirectory() {
   useEffect(() => {
-    if (!document.querySelector('link[href="/assets/academic-directory-v1.css?v=20260802-syntheticphotosv1"]')) {
+    if (!document.querySelector('link[href="/assets/academic-directory-v1.css?v=20260802-syntheticphotosv2"]')) {
       const stylesheet = document.createElement("link");
       stylesheet.rel = "stylesheet";
-      stylesheet.href = "/assets/academic-directory-v1.css?v=20260802-syntheticphotosv1";
+      stylesheet.href = "/assets/academic-directory-v1.css?v=20260802-syntheticphotosv2";
       document.head.appendChild(stylesheet);
     }
   }, []);

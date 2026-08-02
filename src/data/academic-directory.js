@@ -348,6 +348,7 @@ const SEED_TEACHERS = [
   {
     id: "valeria-ruiz",
     name: "Valeria Ruiz",
+    portraitPresentation: "feminine",
     country: "Perú",
     universities: ["Universidad Andina — demo"],
     careers: ["Psicología", "Educación Inicial", "Psicopedagogía"],
@@ -366,6 +367,7 @@ const SEED_TEACHERS = [
   {
     id: "diego-salas",
     name: "Diego Salas",
+    portraitPresentation: "masculine",
     country: "México",
     universities: ["Instituto Metropolitano — demo"],
     careers: ["Ingeniería Industrial", "Logística y Cadena de Suministro", "Gestión de Operaciones"],
@@ -384,6 +386,7 @@ const SEED_TEACHERS = [
   {
     id: "mariana-torres",
     name: "Mariana Torres",
+    portraitPresentation: "feminine",
     country: "Colombia",
     universities: ["Universidad del Caribe — demo"],
     careers: ["Administración de Empresas", "Marketing", "Negocios Internacionales"],
@@ -402,6 +405,7 @@ const SEED_TEACHERS = [
   {
     id: "andres-vega",
     name: "Andrés Vega",
+    portraitPresentation: "masculine",
     country: "Chile",
     universities: ["Universidad Austral Metropolitana — demo"],
     careers: ["Ingeniería Civil", "Ingeniería Ambiental", "Gestión de Proyectos"],
@@ -420,6 +424,7 @@ const SEED_TEACHERS = [
   {
     id: "luis-paredes",
     name: "Luis Paredes",
+    portraitPresentation: "masculine",
     country: "Perú",
     universities: ["Universidad Tecnológica del Centro — demo"],
     careers: ["Ingeniería de Sistemas", "Ciencia de Datos", "Inteligencia Artificial"],
@@ -438,6 +443,7 @@ const SEED_TEACHERS = [
   {
     id: "camila-rojas",
     name: "Camila Rojas",
+    portraitPresentation: "feminine",
     country: "Argentina",
     universities: ["Universidad Rioplatense — demo"],
     careers: ["Medicina Humana", "Salud Pública", "Epidemiología"],
@@ -456,6 +462,7 @@ const SEED_TEACHERS = [
   {
     id: "sergio-montes",
     name: "Sergio Montes",
+    portraitPresentation: "masculine",
     country: "España",
     universities: ["Instituto Superior Mediterráneo — demo"],
     careers: ["Economía", "Finanzas", "Analítica de Negocios"],
@@ -474,6 +481,7 @@ const SEED_TEACHERS = [
   {
     id: "elena-castro",
     name: "Elena Castro",
+    portraitPresentation: "feminine",
     country: "Ecuador",
     universities: ["Universidad del Pacífico Sur — demo"],
     careers: ["Derecho", "Políticas Públicas", "Relaciones Internacionales"],
