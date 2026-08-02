@@ -546,7 +546,6 @@ function createNavigation(route) {
             <a class="nav-link${route.path === "/docentes" ? " nav-link--active" : ""}" href="/docentes"${route.path === "/docentes" ? ' aria-current="page"' : ""}>Docentes</a>
             <a class="nav-link" href="/evidencias">Evidencias</a>
             <a class="nav-link" href="/contrato">Contrato</a>
-            <a class="nav-link" href="/nido">Nido</a>
           </nav>
           <a class="whatsapp-button header-cta" href="https://api.whatsapp.com/send?phone=51918714054">Quiero orientación</a>
         </div>
@@ -563,7 +562,6 @@ function createNavigation(route) {
         <a href="/docentes">Docentes</a>
         <a href="/evidencias">Evidencias</a>
         <a href="/contrato">Contrato</a>
-        <a href="/nido">Nido</a>
       </nav>
     </header>`;
 }
@@ -578,10 +576,12 @@ function createStaticMarkup(route) {
       : route.directory
         ? `<footer data-static-directory-footer>
             <div><strong>Tesis20</strong><span>Asesoría y acompañamiento académico</span><nav aria-label="Enlaces del pie"><a href="/carreras">Carreras</a><a href="/docentes">Docentes</a><a href="/contrato">Contrato</a></nav></div>
+            <p><a href="/nido">Nido20</a> · plataforma infantil independiente.</p>
           </footer>`
         : `<footer>
           <p><strong>Tesis20</strong> · Asesoría y acompañamiento académico en Lima y todo el Perú.</p>
           <address>Jr. Lincoln 638, Pueblo Libre, Lima – Perú · <a href="tel:+51918714054">(+51) 918 714 054</a></address>
+          <p><a href="/nido">Nido20</a> · plataforma infantil independiente.</p>
         </footer>`;
 
   return `

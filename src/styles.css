@@ -255,6 +255,18 @@ footer[id] {
   gap: 8px;
 }
 
+.platform-switcher__group-label {
+  margin-top: 4px;
+  padding-top: 11px;
+  border-top: 1px solid var(--line);
+  color: #71601f;
+  font-size: 9px;
+  font-weight: 900;
+  line-height: 1.2;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
 .platform-option {
   width: 100%;
   min-height: 64px;

@@ -1,8 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import { Baby } from "@phosphor-icons/react/Baby";
-import { BookOpen } from "@phosphor-icons/react/BookOpen";
 import { Books } from "@phosphor-icons/react/Books";
-import { Buildings } from "@phosphor-icons/react/Buildings";
 import { CaretDown } from "@phosphor-icons/react/CaretDown";
 import { CheckCircle } from "@phosphor-icons/react/CheckCircle";
 import { GraduationCap } from "@phosphor-icons/react/GraduationCap";
@@ -16,14 +14,6 @@ const platforms = [
     description: "Investigación, titulación y posgrado",
     href: "/#inicio",
     Icon: GraduationCap,
-    available: true,
-  },
-  {
-    id: "nido",
-    name: "Nido",
-    description: "Aprendizaje y estimulación temprana",
-    href: "/nido",
-    Icon: Baby,
     available: true,
   },
   {
@@ -43,22 +33,13 @@ const platforms = [
     available: true,
   },
   {
-    id: "escuela",
-    name: "Escuela",
-    description: "Educación primaria y acompañamiento escolar",
-    Icon: BookOpen,
-  },
-  {
-    id: "colegio",
-    name: "Colegio",
-    description: "Secundaria y preparación académica",
-    Icon: Books,
-  },
-  {
-    id: "universidad",
-    name: "Universidad",
-    description: "Formación superior y desarrollo profesional",
-    Icon: Buildings,
+    id: "nido",
+    name: "Nido20",
+    description: "Aprendizaje y estimulación temprana",
+    href: "/nido",
+    Icon: Baby,
+    available: true,
+    groupLabel: "Plataforma infantil independiente",
   },
 ];
 
@@ -214,59 +195,66 @@ export function PlatformSwitcher({
         </header>
 
         <p id="platform-switcher-description" className="platform-switcher__description">
-          Elige la plataforma que corresponde a tu camino educativo.
+          Accede a Tesis20 y sus directorios, o abre Nido20 por separado.
         </p>
 
         <nav className="platform-switcher__options" aria-label="Plataformas de Tesis20.com">
           {platforms.map(({ Icon, ...platform }) => {
             const isCurrent = platform.id === activePlatform.id;
 
-            return platform.available ? (
-              <a
-                className={`platform-option platform-option--available ${
-                  isCurrent ? "platform-option--current" : ""
-                }`}
-                href={platform.href}
-                aria-current={isCurrent ? "page" : undefined}
-                key={platform.id}
-                onClick={() => {
-                  closeSwitcher(false);
-                  trackInteraction("ecosystem_platform_select", {
-                    platform: platform.id,
-                    location: "header",
-                  });
-                }}
-              >
-                <span className="platform-option__icon" aria-hidden="true">
-                  <Icon size={23} weight="duotone" />
-                </span>
-                <span className="platform-option__copy">
-                  <strong>{platform.name}</strong>
-                  <small>{platform.description}</small>
-                </span>
-                <span className="platform-option__status">
-                  {isCurrent ? (
-                    <CheckCircle size={16} weight="fill" aria-hidden="true" />
-                  ) : null}
-                  {isCurrent ? "Estás aquí" : "Ir a plataforma"}
-                </span>
-              </a>
-            ) : (
-              <button
-                className="platform-option platform-option--upcoming"
-                type="button"
-                key={platform.id}
-                onClick={() => handleUpcomingPlatform(platform)}
-              >
-                <span className="platform-option__icon" aria-hidden="true">
-                  <Icon size={23} weight="duotone" />
-                </span>
-                <span className="platform-option__copy">
-                  <strong>{platform.name}</strong>
-                  <small>{platform.description}</small>
-                </span>
-                <span className="platform-option__status">Próximamente</span>
-              </button>
+            return (
+              <Fragment key={platform.id}>
+                {platform.groupLabel ? (
+                  <span className="platform-switcher__group-label">
+                    {platform.groupLabel}
+                  </span>
+                ) : null}
+                {platform.available ? (
+                  <a
+                    className={`platform-option platform-option--available ${
+                      isCurrent ? "platform-option--current" : ""
+                    }`}
+                    href={platform.href}
+                    aria-current={isCurrent ? "page" : undefined}
+                    onClick={() => {
+                      closeSwitcher(false);
+                      trackInteraction("ecosystem_platform_select", {
+                        platform: platform.id,
+                        location: "header",
+                      });
+                    }}
+                  >
+                    <span className="platform-option__icon" aria-hidden="true">
+                      <Icon size={23} weight="duotone" />
+                    </span>
+                    <span className="platform-option__copy">
+                      <strong>{platform.name}</strong>
+                      <small>{platform.description}</small>
+                    </span>
+                    <span className="platform-option__status">
+                      {isCurrent ? (
+                        <CheckCircle size={16} weight="fill" aria-hidden="true" />
+                      ) : null}
+                      {isCurrent ? "Estás aquí" : "Ir a plataforma"}
+                    </span>
+                  </a>
+                ) : (
+                  <button
+                    className="platform-option platform-option--upcoming"
+                    type="button"
+                    onClick={() => handleUpcomingPlatform(platform)}
+                  >
+                    <span className="platform-option__icon" aria-hidden="true">
+                      <Icon size={23} weight="duotone" />
+                    </span>
+                    <span className="platform-option__copy">
+                      <strong>{platform.name}</strong>
+                      <small>{platform.description}</small>
+                    </span>
+                    <span className="platform-option__status">Próximamente</span>
+                  </button>
+                )}
+              </Fragment>
             );
           })}
         </nav>
@@ -280,8 +268,7 @@ export function PlatformSwitcher({
         </p>
 
         <footer>
-          Cada plataforma tendrá identidad, contenidos y aula virtual propios, unidos por
-          Tesis20.com.
+          Tesis20 y Nido20 mantienen identidad, contenidos y navegación independientes.
         </footer>
       </section>
     </div>
