@@ -1,6 +1,5 @@
 import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import { Baby } from "@phosphor-icons/react/Baby";
-import { Books } from "@phosphor-icons/react/Books";
 import { CaretDown } from "@phosphor-icons/react/CaretDown";
 import { CheckCircle } from "@phosphor-icons/react/CheckCircle";
 import { GraduationCap } from "@phosphor-icons/react/GraduationCap";
@@ -17,29 +16,12 @@ const platforms = [
     available: true,
   },
   {
-    id: "carreras",
-    name: "Carreras",
-    description: "Áreas de conocimiento y carreras del mundo",
-    href: "/carreras",
-    Icon: Books,
-    available: true,
-  },
-  {
-    id: "docentes",
-    name: "Docentes",
-    description: "Especialistas por carrera y universidad",
-    href: "/docentes",
-    Icon: GraduationCap,
-    available: true,
-  },
-  {
     id: "nido",
     name: "Nido20",
     description: "Aprendizaje y estimulación temprana",
     href: "/nido",
     Icon: Baby,
     available: true,
-    groupLabel: "Plataforma infantil independiente",
   },
 ];
 
@@ -195,7 +177,7 @@ export function PlatformSwitcher({
         </header>
 
         <p id="platform-switcher-description" className="platform-switcher__description">
-          Accede a Tesis20 y sus directorios, o abre Nido20 por separado.
+          Accede a Tesis20 o abre Nido20 por separado.
         </p>
 
         <nav className="platform-switcher__options" aria-label="Plataformas de Tesis20.com">
