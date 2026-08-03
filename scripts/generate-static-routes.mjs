@@ -1,6 +1,7 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { CAREER_AREAS, CAREER_COUNT, TEACHERS } from "../src/data/academic-directory.js";
+import { ACADEMIC_RESOURCES } from "../src/data/academic-resources.js";
 import { assignTeacherPortraits, teacherMediaMarkup } from "../src/teacher-portrait.js";
 
 const DIST_DIRECTORY = resolve(process.cwd(), "dist");
@@ -432,6 +433,46 @@ const routeDefinitions = [
         <p>Este modelo es informativo y debe completarse con los datos y condiciones aceptados por las partes. Se recomienda revisión legal antes de su uso definitivo.</p>
       </section>`,
   },
+  {
+    output: "recursos.html",
+    path: "/recursos",
+    title: "Recursos académicos por universidad | Tesis20",
+    description:
+      "Consulta líneas de investigación, reglamentos, formatos y guías académicas en PDF, organizados por universidad e institución educativa.",
+    heading: "Recursos por universidad",
+    schemaType: "CollectionPage",
+    content: `
+      <p class="eyebrow">Biblioteca académica</p>
+      <h1>Recursos por universidad</h1>
+      <p>Consulta líneas de investigación, reglamentos, formatos y guías organizados por institución para ubicar rápidamente el documento que necesitas.</p>
+      <section aria-labelledby="static-resources-title">
+        <h2 id="static-resources-title">Documentos disponibles</h2>
+        ${ACADEMIC_RESOURCES.map(
+          (institution) => `<article>
+            <h3>${escapeAttribute(institution.name)}</h3>
+            <p>${escapeAttribute(institution.description)}</p>
+            <p><a href="${escapeAttribute(institution.sourceUrl)}" target="_blank" rel="noopener noreferrer">Visitar sitio institucional</a></p>
+            ${institution.documents.map(
+              (document) => `<section>
+                <h4>${escapeAttribute(document.title)}</h4>
+                <p><strong>${escapeAttribute(document.category)}</strong> · ${escapeAttribute(document.format)} · ${document.pages} página</p>
+                <p>${escapeAttribute(document.description)}</p>
+                <p>Programas incluidos: ${document.programs.map(escapeAttribute).join("; ")}.</p>
+                <p><a href="${escapeAttribute(document.href)}" target="_blank" rel="noopener noreferrer">Abrir PDF</a> · <a href="${escapeAttribute(document.href)}" download="${escapeAttribute(document.fileName)}">Descargar documento</a></p>
+              </section>`,
+            ).join("\n")}
+          </article>`,
+        ).join("\n")}
+      </section>
+      <section aria-labelledby="static-resources-validity-title">
+        <h2 id="static-resources-validity-title">Verifica siempre la versión vigente</h2>
+        <p>Los documentos se publican como referencia académica y pertenecen a sus instituciones de origen. Confirma con la universidad si existe una edición más reciente o una norma específica para tu programa.</p>
+      </section>
+      <section aria-labelledby="static-resources-next-title">
+        <h2 id="static-resources-next-title">UPN, UCV, UTP y más universidades</h2>
+        <p>La biblioteca crecerá con líneas de investigación, reglamentos, plantillas y guías de titulación verificadas de cada institución.</p>
+      </section>`,
+  },
 ];
 
 const serviceRouteDefinitions = services.map((service) => ({
@@ -546,6 +587,7 @@ function createNavigation(route) {
             <a class="nav-link${route.path === "/docentes" ? " nav-link--active" : ""}" href="/docentes"${route.path === "/docentes" ? ' aria-current="page"' : ""}>Docentes</a>
             <a class="nav-link" href="/evidencias">Evidencias</a>
             <a class="nav-link" href="/contrato">Contrato</a>
+            <a class="nav-link" href="/recursos">Recursos</a>
           </nav>
           <a class="whatsapp-button header-cta" href="https://api.whatsapp.com/send?phone=51918714054">Quiero orientación</a>
         </div>
@@ -562,6 +604,7 @@ function createNavigation(route) {
         <a href="/docentes">Docentes</a>
         <a href="/evidencias">Evidencias</a>
         <a href="/contrato">Contrato</a>
+        <a href="/recursos">Recursos</a>
       </nav>
     </header>`;
 }
@@ -575,7 +618,7 @@ function createStaticMarkup(route) {
         </footer>`
       : route.directory
         ? `<footer data-static-directory-footer>
-            <div><strong>Tesis20</strong><span>Asesoría y acompañamiento académico</span><nav aria-label="Enlaces del pie"><a href="/carreras">Carreras</a><a href="/docentes">Docentes</a><a href="/contrato">Contrato</a></nav></div>
+            <div><strong>Tesis20</strong><span>Asesoría y acompañamiento académico</span><nav aria-label="Enlaces del pie"><a href="/carreras">Carreras</a><a href="/docentes">Docentes</a><a href="/contrato">Contrato</a><a href="/recursos">Recursos</a></nav></div>
             <p><a href="/nido">Nido20</a> · plataforma infantil independiente.</p>
           </footer>`
         : `<footer>
@@ -754,6 +797,32 @@ function createStructuredData(route) {
       inLanguage: "es-PE",
       isAccessibleForFree: true,
       publisher: { "@id": `${SITE_ORIGIN}/#organization` },
+    });
+  }
+
+  if (route.path === "/recursos") {
+    const documents = ACADEMIC_RESOURCES.flatMap((institution) =>
+      institution.documents.map((document) => ({ institution, document })),
+    );
+    graph.push({
+      "@type": "ItemList",
+      "@id": `${canonicalUrl}#documents`,
+      name: "Recursos académicos por universidad",
+      numberOfItems: documents.length,
+      itemListElement: documents.map(({ institution, document }, index) => ({
+        "@type": "ListItem",
+        position: index + 1,
+        url: `${SITE_ORIGIN}${document.href}`,
+        item: {
+          "@type": "DigitalDocument",
+          name: `${document.title} de ${institution.name}`,
+          description: document.description,
+          url: `${SITE_ORIGIN}${document.href}`,
+          encodingFormat: "application/pdf",
+          inLanguage: "es-PE",
+          isAccessibleForFree: true,
+        },
+      })),
     });
   }
 

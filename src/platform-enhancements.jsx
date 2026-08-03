@@ -50,6 +50,15 @@ const PAGE_META = {
     image: DEFAULT_SHARE_IMAGE,
     imageAlt: "Modelo general informativo de contrato de Tesis20",
   },
+  resources: {
+    title: "Recursos académicos por universidad | Tesis20",
+    description:
+      "Consulta líneas de investigación, reglamentos, formatos y guías académicas en PDF, organizados por universidad e institución educativa.",
+    path: "/recursos",
+    schemaType: "CollectionPage",
+    image: DEFAULT_SHARE_IMAGE,
+    imageAlt: "Biblioteca de recursos académicos por universidad de Tesis20",
+  },
   careers: {
     title: "Carreras universitarias por áreas | Tesis20",
     description:
@@ -166,6 +175,7 @@ function getSafePageKey(pathname = window.location.pathname) {
     "/servicios": "services",
     "/evidencias": "evidence",
     "/contrato": "contract",
+    "/recursos": "resources",
     "/carreras": "careers",
     "/docentes": "teachers",
     "/nido": "nido",
@@ -228,6 +238,7 @@ export function SeoManager({
       services: "Servicios",
       evidence: "Evidencias",
       contract: "Contrato",
+      resources: "Recursos",
       careers: "Carreras",
       teachers: "Docentes",
       nido: "Nido",
@@ -465,6 +476,32 @@ export function SeoManager({
             publisher: { "@id": `${SITE_ORIGIN}/#organization` },
           }
         : null;
+    const resourcesCatalog =
+      pageKey === "resources"
+        ? {
+            "@type": "ItemList",
+            "@id": `${canonicalUrl}#documents`,
+            name: "Recursos académicos por universidad",
+            numberOfItems: 1,
+            itemListElement: [
+              {
+                "@type": "ListItem",
+                position: 1,
+                url: `${SITE_ORIGIN}/downloads/recursos/isam-lineas-investigacion-ejes-tematicos.pdf`,
+                item: {
+                  "@type": "DigitalDocument",
+                  name: "Líneas de investigación y ejes temáticos de la Escuela ISAM",
+                  description:
+                    "Documento institucional con líneas, temas y objetivos de investigación organizados por programa de estudio.",
+                  url: `${SITE_ORIGIN}/downloads/recursos/isam-lineas-investigacion-ejes-tematicos.pdf`,
+                  encodingFormat: "application/pdf",
+                  inLanguage: "es-PE",
+                  isAccessibleForFree: true,
+                },
+              },
+            ],
+          }
+        : null;
     const faqSchema =
       !isNotFound && safeFaqItems.length > 0
         ? {
@@ -488,6 +525,7 @@ export function SeoManager({
         ...(servicesCatalog ? [servicesCatalog] : []),
         ...(selectedServiceSchema ? [selectedServiceSchema] : []),
         ...(contractDocument ? [contractDocument] : []),
+        ...(resourcesCatalog ? [resourcesCatalog] : []),
         ...(faqSchema ? [faqSchema] : []),
       ],
     };
@@ -515,6 +553,7 @@ export function RouteAnnouncer({ currentPage }) {
     services: "Página de servicios cargada",
     evidence: "Página de evidencias cargada",
     contract: "Página de contrato cargada",
+    resources: "Página de recursos cargada",
     careers: "Página de carreras cargada",
     teachers: "Página de docentes cargada",
     nido: "Página de Nido cargada",

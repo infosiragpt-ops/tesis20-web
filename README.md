@@ -35,8 +35,8 @@ npm run preview -- --port 3000
 - `/servicios` — Servicios
 - `/evidencias` — Evidencias
 - `/contrato` — Contrato general y descarga del PDF
+- `/recursos` — Biblioteca de documentos académicos por universidad
 
 ## Aviso
 
 Las evidencias públicas se muestran anonimizadas. El contrato incluido es un modelo general informativo y debe completarse y revisarse según el servicio concreto antes de firmarse.
-

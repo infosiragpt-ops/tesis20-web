@@ -61,6 +61,7 @@ import spssTranscript from "../audio-scripts/ibm-spss-statistics.txt?raw";
 import defenseTranscript from "../audio-scripts/simulacion-sustentacion.txt?raw";
 
 const NidoPage = lazy(() => import("./nido/nido-page.jsx"));
+const ResourcesPage = lazy(() => import("./resources-page.jsx"));
 const CareersPage = import.meta.env.DEV
   ? lazy(() => import("./academic-directory-pages.jsx").then((module) => ({ default: module.CareersPage })))
   : null;
@@ -79,6 +80,7 @@ const whatsappMessages = {
   services: "¡Hola! Deseo orientación para elegir el servicio adecuado para mi investigación.",
   evidence: "¡Hola! Revisé los resultados reportados por estudiantes y deseo información sobre el acompañamiento de Tesis20.",
   contract: "¡Hola! Revisé el contrato general de Tesis20 y deseo orientación antes de comenzar.",
+  resources: "¡Hola! Revisé los recursos académicos por universidad y deseo orientación para mi investigación.",
   careers: "¡Hola! Revisé el catálogo de carreras de Tesis20 y deseo ayuda para ubicar mi especialidad.",
   teachers: "¡Hola! Revisé el directorio de docentes y deseo ayuda para elegir un asesor según mi carrera y tema.",
 };
@@ -91,6 +93,7 @@ function getPageFromPathname(pathname = window.location.pathname) {
     "/servicios": "services",
     "/evidencias": "evidence",
     "/contrato": "contract",
+    "/recursos": "resources",
     "/carreras": "careers",
     "/docentes": "teachers",
     "/nido": "nido",
@@ -149,7 +152,8 @@ const navigation = [
     page: "evidence",
   },
   { label: "Contrato", href: "/contrato", page: "contract" },
-  // Cierra la barra a la derecha, después de Contrato: es la puerta al portal
+  { label: "Recursos", href: "/recursos", page: "resources" },
+  // Cierra la barra a la derecha: es la puerta al portal
   // de gestión (antes se llamaba «Pagos») y se dibuja como botón de cuenta.
   {
     label: "Login",
@@ -2076,6 +2080,7 @@ function Footer() {
           <a href="/docentes">Docentes</a>
           <a href="/evidencias">Evidencias</a>
           <a href="/contrato">Contrato</a>
+          <a href="/recursos">Recursos</a>
           <a
             href="https://www.gestion.tesis20.com"
             target="_blank"
@@ -2307,6 +2312,10 @@ export function App() {
         <EvidencePage />
       ) : currentPage === "contract" ? (
         <ContractPage />
+      ) : currentPage === "resources" ? (
+        <Suspense fallback={<main id="main-content" tabIndex="-1">Preparando recursos…</main>}>
+          <ResourcesPage />
+        </Suspense>
       ) : currentPage === "careers" && CareersPage ? (
         <Suspense fallback={<main id="main-content" tabIndex="-1">Preparando carreras…</main>}>
           <CareersPage />

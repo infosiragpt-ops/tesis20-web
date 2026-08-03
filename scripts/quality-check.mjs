@@ -85,6 +85,14 @@ const routeSpecs = [
     schemaType: "WebPage",
   },
   {
+    path: "/recursos",
+    output: "dist/recursos.html",
+    title: "Recursos académicos por universidad | Tesis20",
+    h1: "Recursos por universidad",
+    content: ["Escuela ISAM", "Líneas de investigación y ejes temáticos", "UPN, UCV, UTP"],
+    schemaType: "CollectionPage",
+  },
+  {
     path: "/servicios/articulo-cientifico",
     output: "dist/servicios/articulo-cientifico.html",
     title: "Asesoría para artículo científico | Tesis20",
@@ -594,6 +602,9 @@ for (const route of routeSpecs) {
   if (route.path === "/contrato") {
     check(schemaNodes.some((node) => hasSchemaType(node, "DigitalDocument")), "dist/contrato.html debe describir el contrato como DigitalDocument.");
   }
+  if (route.path === "/recursos") {
+    check(schemaNodes.some((node) => hasSchemaType(node, "ItemList")), "dist/recursos.html debe describir los documentos como ItemList.");
+  }
   if (route.path === "/docentes") {
     const renderedTeacherCards = (html.match(/data-teacher-card/g) || []).length;
     check(
@@ -634,7 +645,7 @@ for (const route of routeSpecs) {
   const requiredPaths =
     route.path === "/nido"
       ? ["/"]
-      : ["/servicios", "/evidencias", "/contrato", "/nido"];
+      : ["/servicios", "/evidencias", "/contrato", "/recursos", "/nido"];
   for (const requiredPath of requiredPaths) {
     check(hrefs.some((href) => href === requiredPath || href.startsWith(`${requiredPath}#`)), `${route.output} debe enlazar a ${requiredPath}.`);
   }
