@@ -8,6 +8,7 @@
     "dev:lan": "vite --host 0.0.0.0 --port 3000",
     "build": "vite build && node scripts/generate-static-routes.mjs",
     "preview": "vite preview --port 3000",
+    "harvest:theses": "node scripts/harvest-theses.mjs",
     "audio:nido": "node scripts/generate-nido-elevenlabs-voice.mjs && npm run check:nido",
     "audio:nido:plan": "NIDO_TTS_PLAN_ONLY=1 node scripts/generate-nido-elevenlabs-voice.mjs",
     "audio:nido:feedback": "node scripts/generate-nido-elevenlabs-audio.mjs",

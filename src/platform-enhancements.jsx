@@ -51,13 +51,13 @@ const PAGE_META = {
     imageAlt: "Modelo general informativo de contrato de Tesis20",
   },
   resources: {
-    title: "Recursos académicos por universidad | Tesis20",
+    title: "Buscador de tesis y recursos académicos | Tesis20",
     description:
-      "Consulta líneas de investigación, reglamentos, formatos y guías académicas en PDF, organizados por universidad e institución educativa.",
+      "Busca tesis peruanas por tema, autor, universidad, nivel y año, y consulta recursos académicos institucionales organizados y verificables.",
     path: "/recursos",
     schemaType: "CollectionPage",
     image: DEFAULT_SHARE_IMAGE,
-    imageAlt: "Biblioteca de recursos académicos por universidad de Tesis20",
+    imageAlt: "Buscador de tesis y biblioteca de recursos académicos de Tesis20",
   },
   careers: {
     title: "Carreras universitarias por áreas | Tesis20",
@@ -238,7 +238,7 @@ export function SeoManager({
       services: "Servicios",
       evidence: "Evidencias",
       contract: "Contrato",
-      resources: "Recursos",
+      resources: "Recursos y repositorio",
       careers: "Carreras",
       teachers: "Docentes",
       nido: "Nido",
@@ -481,7 +481,7 @@ export function SeoManager({
         ? {
             "@type": "ItemList",
             "@id": `${canonicalUrl}#documents`,
-            name: "Recursos académicos por universidad",
+            name: "Recursos institucionales por universidad",
             numberOfItems: 1,
             itemListElement: [
               {

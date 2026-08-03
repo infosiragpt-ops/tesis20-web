@@ -2,6 +2,7 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { CAREER_AREAS, CAREER_COUNT, TEACHERS } from "../src/data/academic-directory.js";
 import { ACADEMIC_RESOURCES } from "../src/data/academic-resources.js";
+import { ACTIVE_THESIS_REPOSITORIES } from "../src/data/thesis-repositories.js";
 import { assignTeacherPortraits, teacherMediaMarkup } from "../src/teacher-portrait.js";
 
 const DIST_DIRECTORY = resolve(process.cwd(), "dist");
@@ -436,19 +437,34 @@ const routeDefinitions = [
   {
     output: "recursos.html",
     path: "/recursos",
-    title: "Recursos académicos por universidad | Tesis20",
+    title: "Buscador de tesis y recursos académicos | Tesis20",
     description:
-      "Consulta líneas de investigación, reglamentos, formatos y guías académicas en PDF, organizados por universidad e institución educativa.",
-    heading: "Recursos por universidad",
+      "Busca tesis peruanas por tema, autor, universidad, nivel y año, y consulta recursos académicos institucionales organizados y verificables.",
+    heading: "Recursos y repositorio de tesis",
     schemaType: "CollectionPage",
     content: `
-      <p class="eyebrow">Biblioteca académica</p>
-      <h1>Recursos por universidad</h1>
-      <p>Consulta líneas de investigación, reglamentos, formatos y guías organizados por institución para ubicar rápidamente el documento que necesitas.</p>
+      <p class="eyebrow">Recursos académicos + buscador especializado</p>
+      <h1>Recursos y repositorio de tesis</h1>
+      <p>Busca tesis peruanas por tema, autor, universidad, nivel y año, o consulta documentos institucionales útiles para orientar tu investigación.</p>
+      <section aria-labelledby="static-thesis-search-title">
+        <h2 id="static-thesis-search-title">Encuentra tesis, no documentos mezclados</h2>
+        <p>El índice piloto acepta únicamente registros identificados como tesis en los metadatos oficiales de seis universidades peruanas. Cada resultado conserva autor, año, temas y enlace al repositorio original.</p>
+        <form action="/recursos" method="get" role="search">
+          <label for="static-thesis-query">Tema, título, autor o palabra clave</label>
+          <input id="static-thesis-query" name="q" type="search" placeholder="Ej.: inteligencia artificial en educación">
+          <button type="submit">Buscar tesis</button>
+        </form>
+        <h3>Repositorios universitarios conectados</h3>
+        <ul>${ACTIVE_THESIS_REPOSITORIES.map(
+          (repository) => `<li><img src="${escapeAttribute(repository.logo)}" alt="" width="${repository.logoWidth || 320}" height="${repository.logoHeight || 180}"> ${escapeAttribute(repository.acronym)} — ${escapeAttribute(repository.name)}</li>`,
+        ).join("")}</ul>
+        <p>La cosecha utiliza OAI-PMH y valida los tipos de tesis de pregrado, maestría y doctorado sin copiar ni alojar los archivos.</p>
+      </section>
       <section aria-labelledby="static-resources-title">
-        <h2 id="static-resources-title">Documentos disponibles</h2>
+        <h2 id="static-resources-title">Recursos institucionales disponibles</h2>
         ${ACADEMIC_RESOURCES.map(
           (institution) => `<article>
+            ${institution.logo ? `<img src="${escapeAttribute(institution.logo)}" alt="" width="${institution.logoWidth || 320}" height="${institution.logoHeight || 180}">` : ""}
             <h3>${escapeAttribute(institution.name)}</h3>
             <p>${escapeAttribute(institution.description)}</p>
             <p><a href="${escapeAttribute(institution.sourceUrl)}" target="_blank" rel="noopener noreferrer">Visitar sitio institucional</a></p>
@@ -469,8 +485,8 @@ const routeDefinitions = [
         <p>Los documentos se publican como referencia académica y pertenecen a sus instituciones de origen. Confirma con la universidad si existe una edición más reciente o una norma específica para tu programa.</p>
       </section>
       <section aria-labelledby="static-resources-next-title">
-        <h2 id="static-resources-next-title">UPN, UCV, UTP y más universidades</h2>
-        <p>La biblioteca crecerá con líneas de investigación, reglamentos, plantillas y guías de titulación verificadas de cada institución.</p>
+        <h2 id="static-resources-next-title">Cobertura nacional progresiva</h2>
+        <p>El piloto conecta UPN, UCV, UNSA, UNAP, UPCH y UPC. UTP y más universidades se incorporarán cuando exista un canal interoperable estable y sus metadatos superen la validación exclusiva para tesis.</p>
       </section>`,
   },
 ];
@@ -587,7 +603,7 @@ function createNavigation(route) {
             <a class="nav-link${route.path === "/docentes" ? " nav-link--active" : ""}" href="/docentes"${route.path === "/docentes" ? ' aria-current="page"' : ""}>Docentes</a>
             <a class="nav-link" href="/evidencias">Evidencias</a>
             <a class="nav-link" href="/contrato">Contrato</a>
-            <a class="nav-link" href="/recursos">Recursos</a>
+            <a class="nav-link" href="/recursos">Recursos y repositorio</a>
           </nav>
           <a class="whatsapp-button header-cta" href="https://api.whatsapp.com/send?phone=51918714054">Quiero orientación</a>
         </div>
@@ -604,7 +620,7 @@ function createNavigation(route) {
         <a href="/docentes">Docentes</a>
         <a href="/evidencias">Evidencias</a>
         <a href="/contrato">Contrato</a>
-        <a href="/recursos">Recursos</a>
+        <a href="/recursos">Recursos y repositorio</a>
       </nav>
     </header>`;
 }
@@ -618,7 +634,7 @@ function createStaticMarkup(route) {
         </footer>`
       : route.directory
         ? `<footer data-static-directory-footer>
-            <div><strong>Tesis20</strong><span>Asesoría y acompañamiento académico</span><nav aria-label="Enlaces del pie"><a href="/carreras">Carreras</a><a href="/docentes">Docentes</a><a href="/contrato">Contrato</a><a href="/recursos">Recursos</a></nav></div>
+            <div><strong>Tesis20</strong><span>Asesoría y acompañamiento académico</span><nav aria-label="Enlaces del pie"><a href="/carreras">Carreras</a><a href="/docentes">Docentes</a><a href="/contrato">Contrato</a><a href="/recursos">Recursos y repositorio</a></nav></div>
             <p><a href="/nido">Nido20</a> · plataforma infantil independiente.</p>
           </footer>`
         : `<footer>
@@ -807,7 +823,7 @@ function createStructuredData(route) {
     graph.push({
       "@type": "ItemList",
       "@id": `${canonicalUrl}#documents`,
-      name: "Recursos académicos por universidad",
+      name: "Recursos institucionales por universidad",
       numberOfItems: documents.length,
       itemListElement: documents.map(({ institution, document }, index) => ({
         "@type": "ListItem",

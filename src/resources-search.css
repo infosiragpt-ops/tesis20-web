@@ -1,0 +1,556 @@
+.thesis-search {
+  padding: 72px 0 78px;
+  border-bottom: 1px solid var(--line);
+  background: #fff;
+}
+
+.thesis-search__heading {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 38px;
+}
+
+.thesis-search__heading p,
+.thesis-result__body > p:first-child {
+  color: #6b581b;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+.thesis-search__heading h2 {
+  max-width: 720px;
+  margin-top: 7px;
+  font-family: var(--display);
+  font-size: clamp(38px, 5vw, 58px);
+  font-weight: 600;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.thesis-search__heading > div:first-child > span {
+  max-width: 700px;
+  margin-top: 15px;
+  display: block;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.thesis-search__metrics {
+  display: flex;
+  gap: 9px;
+}
+
+.thesis-search__metrics > span {
+  min-width: 118px;
+  padding: 13px 15px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 800;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.thesis-search__metrics strong {
+  display: block;
+  color: var(--ink);
+  font-family: var(--display);
+  font-size: 27px;
+  line-height: 1;
+}
+
+.thesis-search__form {
+  margin-top: 31px;
+  padding: 22px;
+  border: 1px solid rgba(30, 32, 34, .2);
+  border-radius: 17px;
+  background: var(--cream);
+  box-shadow: 0 16px 40px rgba(62, 47, 17, .08);
+}
+
+.thesis-search__query {
+  display: grid;
+  gap: 8px;
+  color: var(--ink);
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.thesis-search__query > span:last-child {
+  min-height: 58px;
+  padding: 0 17px;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: #fff;
+}
+
+.thesis-search__query svg {
+  flex: 0 0 auto;
+  color: #806a24;
+}
+
+.thesis-search__query input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 16px;
+  font-weight: 600;
+  text-transform: none;
+}
+
+.thesis-search__filters {
+  margin-top: 14px;
+  padding-right: 68px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
+  align-items: end;
+  gap: 11px;
+}
+
+.thesis-search__filters label {
+  display: grid;
+  gap: 6px;
+  color: #55595d;
+  font-size: 10px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.thesis-search__filters select,
+.thesis-search__filters button {
+  min-height: 46px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.thesis-search__filters button {
+  padding-inline: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-color: var(--ink);
+  background: var(--ink);
+  color: var(--yellow);
+  cursor: pointer;
+}
+
+.thesis-search__filters button:disabled {
+  opacity: .55;
+  cursor: not-allowed;
+}
+
+.thesis-search__examples {
+  margin-top: 14px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.thesis-search__examples button {
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #fff;
+  color: #4c5054;
+  font: inherit;
+  cursor: pointer;
+}
+
+.thesis-search__examples button:hover {
+  border-color: #9b7d20;
+  background: var(--yellow-soft);
+}
+
+.thesis-search__sources {
+  margin-top: 18px;
+  display: flex;
+  align-items: center;
+  gap: 13px;
+}
+
+.thesis-search__sources > span {
+  flex: 0 0 auto;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.thesis-search__sources ul {
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  list-style: none;
+}
+
+.thesis-search__sources li {
+  min-height: 38px;
+  padding: 3px 8px 3px 3px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: #fff;
+  color: #4e5255;
+  font-size: 9px;
+  font-weight: 900;
+}
+
+.thesis-search__sources .resources-institution-logo {
+  width: 40px;
+  height: 30px;
+  border: 0;
+  border-radius: 6px;
+}
+
+.thesis-search__sources .resources-institution-logo img {
+  padding: 3px;
+}
+
+.thesis-search__state,
+.thesis-search__no-results {
+  min-height: 116px;
+  margin-top: 24px;
+  padding: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  border: 1px dashed rgba(30, 32, 34, .28);
+  border-radius: 14px;
+  color: var(--muted);
+  font-size: 13px;
+  text-align: center;
+}
+
+.thesis-search__state svg {
+  color: #8a711e;
+}
+
+.thesis-search__state--error {
+  border-color: #c75b5b;
+  color: #8b2929;
+}
+
+.thesis-search__results {
+  margin-top: 28px;
+}
+
+.thesis-search__results > header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.thesis-search__results > header h3 {
+  font-size: 18px;
+}
+
+.thesis-search__results > header span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.thesis-search__result-list {
+  margin-top: 15px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 15px;
+}
+
+.thesis-result {
+  min-width: 0;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--line);
+  border-radius: 15px;
+  background: #fff;
+  box-shadow: 0 10px 28px rgba(62, 47, 17, .06);
+}
+
+.thesis-result__source {
+  display: grid;
+  grid-template-columns: 58px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 11px;
+}
+
+.resources-institution-logo {
+  position: relative;
+  width: 58px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: #fff;
+  color: var(--yellow);
+  font-family: var(--display);
+}
+
+.resources-institution-logo:not(.resources-institution-logo--image) {
+  background: var(--ink);
+}
+
+.resources-institution-logo img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  padding: 5px;
+  object-fit: contain;
+}
+
+.resources-institution-logo[data-institution="upn"] img {
+  transform: scale(1.45);
+}
+
+.resources-institution-logo[data-institution="ucv"] img {
+  transform: scale(1.65);
+}
+
+.resources-institution-logo[data-institution="utp"] img {
+  transform: scale(2.6);
+}
+
+.resources-institution-logo[data-institution="upch"] {
+  border-color: #242424;
+  background: #0e0e0e;
+}
+
+.thesis-result__source div {
+  min-width: 0;
+}
+
+.thesis-result__source div > span,
+.thesis-result__source small {
+  display: block;
+}
+
+.thesis-result__source div > span {
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.thesis-result__source small {
+  margin-top: 2px;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.thesis-result__source > span:last-child {
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: var(--yellow-soft);
+  color: #685414;
+  font-size: 9px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.thesis-result__body {
+  margin-top: 16px;
+  flex: 1;
+}
+
+.thesis-result__body h3 {
+  margin-top: 5px;
+  font-size: 17px;
+  line-height: 1.35;
+}
+
+.thesis-result__authors,
+.thesis-result__abstract {
+  margin-top: 9px;
+  display: block;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.55;
+}
+
+.thesis-result__authors {
+  color: #44484b;
+  font-weight: 700;
+}
+
+.thesis-result__subjects {
+  margin: 12px 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  list-style: none;
+}
+
+.thesis-result__subjects li {
+  max-width: 100%;
+  padding: 5px 7px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #eef0f3;
+  color: #55595d;
+  font-size: 9px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.thesis-result__link {
+  min-height: 43px;
+  margin-top: 17px;
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 9px;
+  border-radius: 9px;
+  background: var(--ink);
+  color: var(--yellow);
+  font-size: 11px;
+  font-weight: 900;
+  text-decoration: none;
+}
+
+.thesis-search__method {
+  margin-top: 22px;
+  padding: 17px 19px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  border-left: 4px solid #2b9b65;
+  border-radius: 10px;
+  background: #f4faf6;
+  color: #4e5550;
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.thesis-search__method svg {
+  flex: 0 0 auto;
+  color: #258c5c;
+}
+
+.resources-university__header {
+  grid-template-columns: 96px minmax(0, 1fr) auto;
+}
+
+.resources-university__header > .resources-institution-logo {
+  width: 96px;
+  height: 68px;
+  border-radius: 13px;
+  background: #fff;
+}
+
+.resources-university__header > .resources-institution-logo img {
+  padding: 8px;
+}
+
+@media (max-width: 860px) {
+  .thesis-search__heading {
+    grid-template-columns: 1fr;
+  }
+
+  .thesis-search__metrics {
+    justify-content: flex-start;
+  }
+
+  .thesis-search__filters {
+    padding-right: 0;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .thesis-search__filters button {
+    min-height: 48px;
+  }
+}
+
+@media (max-width: 640px) {
+  .thesis-search {
+    padding: 52px 0 58px;
+  }
+
+  .thesis-search__heading h2 {
+    font-size: 40px;
+  }
+
+  .thesis-search__metrics {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .thesis-search__form {
+    padding: 16px;
+  }
+
+  .thesis-search__filters,
+  .thesis-search__result-list {
+    grid-template-columns: 1fr;
+  }
+
+  .thesis-search__filters button {
+    width: 100%;
+  }
+
+  .thesis-search__results > header {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .thesis-search__sources {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .thesis-result__source {
+    grid-template-columns: 52px minmax(0, 1fr);
+  }
+
+  .thesis-result__source > span:last-child {
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
+
+  .resources-university__header {
+    grid-template-columns: 82px minmax(0, 1fr);
+  }
+
+  .resources-university__header > .resources-institution-logo {
+    width: 82px;
+    height: 58px;
+  }
+}

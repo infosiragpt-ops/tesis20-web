@@ -3,6 +3,9 @@ export const ACADEMIC_RESOURCES = [
     id: "isam",
     shortName: "ISAM",
     name: "Escuela ISAM",
+    logo: "/assets/resources/institutions/isam.jpg",
+    logoWidth: 283,
+    logoHeight: 134,
     description:
       "Documento institucional identificado con la R. M. 405-2024-MINEDU.",
     sourceUrl: "https://escuelaisam.edu.pe/",

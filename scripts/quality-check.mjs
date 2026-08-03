@@ -10,6 +10,7 @@ import {
   TEACHER_PORTRAIT_COUNT,
   TEACHER_PORTRAIT_POOLS,
 } from "../src/teacher-portrait.js";
+import { ACTIVE_THESIS_REPOSITORIES } from "../src/data/thesis-repositories.js";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const siteOrigin = "https://www.tesis20.com";
@@ -87,9 +88,9 @@ const routeSpecs = [
   {
     path: "/recursos",
     output: "dist/recursos.html",
-    title: "Recursos académicos por universidad | Tesis20",
-    h1: "Recursos por universidad",
-    content: ["Escuela ISAM", "Líneas de investigación y ejes temáticos", "UPN, UCV, UTP"],
+    title: "Buscador de tesis y recursos académicos | Tesis20",
+    h1: "Recursos y repositorio de tesis",
+    content: ["Escuela ISAM", "Líneas de investigación y ejes temáticos", "seis universidades peruanas", "OAI-PMH"],
     schemaType: "CollectionPage",
   },
   {
@@ -328,6 +329,8 @@ const teacherSearchSource = await read("src/teacher-search.js");
 const teacherDirectoryRuntime = await read("public/assets/academic-directory-v1.js");
 const teacherPortraitAsset = await read("dist/assets/teacher-portrait-v1.js");
 const teacherPhotoManifest = JSON.parse(await read("public/assets/docentes/synthetic-v1/manifest.json"));
+const thesisIndexText = await read("public/data/theses-index.json");
+const thesisIndex = JSON.parse(thesisIndexText);
 const manifest = JSON.parse(manifestText);
 const vercel = JSON.parse(vercelText);
 
@@ -438,6 +441,54 @@ check(
     teacherDirectoryRuntime.includes("data-directory-previous") &&
     teacherDirectoryRuntime.includes("data-directory-next"),
   "La búsqueda de docentes debe interpretar necesidades y limitar la cantidad renderizada por página.",
+);
+
+// El repositorio piloto solo admite tesis validadas por metadatos interoperables.
+const allowedThesisLevels = new Set(["bachelor", "master", "doctoral", "thesis"]);
+const activeThesisSourceIds = new Set(ACTIVE_THESIS_REPOSITORIES.map((repository) => repository.id));
+check(thesisIndex.version === 1, "El índice de tesis debe declarar su versión de esquema.");
+check(
+  thesisIndex.methodology.includes("OAI-PMH") && thesisIndex.methodology.includes("dc:type/COAR"),
+  "El índice debe documentar su validación OAI-PMH y dc:type/COAR.",
+);
+check(
+  Array.isArray(thesisIndex.records) && thesisIndex.records.length >= 200,
+  "El índice piloto debe contener al menos 200 tesis verificadas.",
+);
+check(
+  Buffer.byteLength(thesisIndexText) <= 210 * 1024,
+  "El índice piloto de tesis supera 210 KiB.",
+);
+check(
+  new Set(thesisIndex.records.map((record) => record.id)).size === thesisIndex.records.length &&
+    new Set(thesisIndex.records.map((record) => record.u.replace(/\/$/, ""))).size === thesisIndex.records.length,
+  "El índice de tesis contiene IDs o enlaces duplicados.",
+);
+check(
+  thesisIndex.records.every((record) =>
+    typeof record.t === "string" &&
+    record.t.length >= 8 &&
+    Array.isArray(record.a) &&
+    Array.isArray(record.k) &&
+    allowedThesisLevels.has(record.l) &&
+    activeThesisSourceIds.has(record.s) &&
+    /^https:\/\//.test(record.u) &&
+    !/\.pdf(?:$|[?#])/i.test(record.u) &&
+    (!record.d || record.d.length <= 220)
+  ),
+  "Cada tesis debe conservar metadatos compactos, fuente activa y enlace institucional seguro.",
+);
+check(
+  thesisIndex.records.every((record) =>
+    !/(artículo científico|informe por servicios profesionales|monografía|proyectos? profesionales|trabajo académico|trabajo de investigación|trabajo de suficiencia profesional)/i.test(record.t)
+  ),
+  "El índice contiene documentos excluidos que no deben presentarse como tesis.",
+);
+check(
+  thesisIndex.records.every((record) =>
+    !/(artículo científico|informe por servicios profesionales|monografía|proyectos? profesionales|trabajo académico|trabajo de suficiencia profesional)/i.test(record.d || "")
+  ),
+  "El resumen del índice delata documentos que no son tesis.",
 );
 
 // El sitemap debe describir exactamente las páginas indexables que entrega el build.
@@ -771,9 +822,12 @@ check(
 // 2026-07-28 (octies): 767 → 772 KiB por el pase P0/P1 de jugabilidad:
 // ciclo de frutas field/held/basket, catch pop+pointer capture, path delay
 // en error y skip de celebración. El JS inicial sigue en 450 KiB.
+// 2026-08-03: 772 → 792 KiB por el buscador especializado de /recursos:
+// carga, filtrado y ranking local de tesis. Su chunk es diferido y el JS
+// inicial conserva el límite de 450 KiB.
 check(
-  javascriptBytes <= 772 * 1024,
-  `El JavaScript total con rutas diferidas no debe superar 772 KiB (${Math.ceil(javascriptBytes / 1024)} KiB).`,
+  javascriptBytes <= 792 * 1024,
+  `El JavaScript total con rutas diferidas no debe superar 792 KiB (${Math.ceil(javascriptBytes / 1024)} KiB).`,
 );
 check(
   initialStylesheetBytes > 0 && initialStylesheetBytes <= 85 * 1024,
@@ -789,9 +843,11 @@ check(
 // interactivos que comparten los 540 juegos.
 // 2026-07-27: 190 → 196 KiB por la dinámica adictiva de los 540.
 // 2026-07-28: 196 → 202 KiB por feedback de orden/path y catch pop seguro.
+// 2026-08-03: 202 → 212 KiB para el buscador diferido de tesis en /recursos;
+// el CSS inicial conserva su límite de 85 KiB.
 check(
-  stylesheetBytes <= 202 * 1024,
-  `El CSS total con rutas diferidas no debe superar 202 KiB (${Math.ceil(stylesheetBytes / 1024)} KiB).`,
+  stylesheetBytes <= 212 * 1024,
+  `El CSS total con rutas diferidas no debe superar 212 KiB (${Math.ceil(stylesheetBytes / 1024)} KiB).`,
 );
 // 2026-08-02: 9 → 9.5 MiB para 64 fotografías sintéticas empaquetadas en
 // cuatro hojas AVIF locales (267 KiB medidos). Solo /docentes las referencia;

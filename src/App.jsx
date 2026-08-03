@@ -80,7 +80,7 @@ const whatsappMessages = {
   services: "¡Hola! Deseo orientación para elegir el servicio adecuado para mi investigación.",
   evidence: "¡Hola! Revisé los resultados reportados por estudiantes y deseo información sobre el acompañamiento de Tesis20.",
   contract: "¡Hola! Revisé el contrato general de Tesis20 y deseo orientación antes de comenzar.",
-  resources: "¡Hola! Revisé los recursos académicos por universidad y deseo orientación para mi investigación.",
+  resources: "¡Hola! Revisé los recursos y el repositorio de tesis y deseo orientación para mi investigación.",
   careers: "¡Hola! Revisé el catálogo de carreras de Tesis20 y deseo ayuda para ubicar mi especialidad.",
   teachers: "¡Hola! Revisé el directorio de docentes y deseo ayuda para elegir un asesor según mi carrera y tema.",
 };
@@ -152,7 +152,7 @@ const navigation = [
     page: "evidence",
   },
   { label: "Contrato", href: "/contrato", page: "contract" },
-  { label: "Recursos", href: "/recursos", page: "resources" },
+  { label: "Recursos y repositorio", href: "/recursos", page: "resources" },
   // Cierra la barra a la derecha: es la puerta al portal
   // de gestión (antes se llamaba «Pagos») y se dibuja como botón de cuenta.
   {
@@ -2080,7 +2080,7 @@ function Footer() {
           <a href="/docentes">Docentes</a>
           <a href="/evidencias">Evidencias</a>
           <a href="/contrato">Contrato</a>
-          <a href="/recursos">Recursos</a>
+          <a href="/recursos">Recursos y repositorio</a>
           <a
             href="https://www.gestion.tesis20.com"
             target="_blank"
