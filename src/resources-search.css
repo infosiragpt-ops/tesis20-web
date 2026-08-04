@@ -41,16 +41,19 @@
 
 .thesis-search__metrics {
   display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
   gap: 9px;
+  max-width: 380px;
 }
 
 .thesis-search__metrics > span {
-  min-width: 118px;
+  min-width: 108px;
   padding: 13px 15px;
   border: 1px solid var(--line);
   border-radius: 12px;
   color: var(--muted);
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 800;
   text-align: center;
   text-transform: uppercase;
@@ -58,10 +61,13 @@
 
 .thesis-search__metrics strong {
   display: block;
+  margin-bottom: 3px;
   color: var(--ink);
   font-family: var(--display);
-  font-size: 27px;
+  font-size: 24px;
   line-height: 1;
+  letter-spacing: 0;
+  text-transform: none;
 }
 
 .thesis-search__form {
@@ -113,9 +119,9 @@
 
 .thesis-search__filters {
   margin-top: 14px;
-  padding-right: 68px;
+  padding-right: 0;
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
+  grid-template-columns: repeat(5, minmax(0, 1fr)) auto;
   align-items: end;
   gap: 11px;
 }
@@ -330,11 +336,55 @@
   box-shadow: 0 10px 28px rgba(62, 47, 17, .06);
 }
 
+.thesis-result--global {
+  border-color: rgba(30, 90, 160, .18);
+}
+
+.thesis-result--local {
+  border-color: rgba(155, 125, 32, .28);
+}
+
 .thesis-result__source {
   display: grid;
   grid-template-columns: 58px minmax(0, 1fr) auto;
   align-items: center;
   gap: 11px;
+}
+
+.thesis-result__badges {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 5px;
+  font-size: 10px;
+  font-weight: 800;
+  text-align: right;
+}
+
+.thesis-result__citations {
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: #1e2a3a;
+  color: #f5bd42;
+  font-style: normal;
+  font-size: 10px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.resources-institution-logo--global {
+  background: linear-gradient(145deg, #1e2a3a, #2f4a6a);
+  color: #f5bd42;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: .04em;
+}
+
+.thesis-search__global-note {
+  margin: 14px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+  text-align: center;
 }
 
 .resources-institution-logo {
@@ -528,6 +578,7 @@
 
   .thesis-search__filters button {
     min-height: 48px;
+    grid-column: 1 / -1;
   }
 }
 
@@ -542,6 +593,7 @@
 
   .thesis-search__metrics {
     display: grid;
+    max-width: none;
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 

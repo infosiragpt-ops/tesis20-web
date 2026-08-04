@@ -35,7 +35,7 @@ npm run preview -- --port 3000
 - `/servicios` — Servicios
 - `/evidencias` — Evidencias
 - `/contrato` — Contrato general y descarga del PDF
-- `/recursos` — Buscador especializado de tesis y recursos académicos; piloto OAI-PMH con seis universidades peruanas
+- `/recursos` — Buscador híbrido de tesis: repositorios PE (OAI-PMH) + corpus global OpenAlex (disertaciones, ranking por relevancia y citas)
 
 ## Aviso
 

@@ -445,20 +445,20 @@ const routeDefinitions = [
     content: `
       <p class="eyebrow">Recursos académicos + buscador especializado</p>
       <h1>Recursos y repositorio de tesis</h1>
-      <p>Busca tesis peruanas por tema, autor, universidad, nivel y año, o consulta documentos institucionales útiles para orientar tu investigación.</p>
+      <p>Busca tesis y disertaciones de mayor relevancia citada en un corpus académico global automatizado, o en repositorios universitarios peruanos verificados. Solo documentos tipados como tesis; ranking por relevancia y citas.</p>
       <section aria-labelledby="static-thesis-search-title">
-        <h2 id="static-thesis-search-title">Encuentra tesis, no documentos mezclados</h2>
-        <p>El índice piloto acepta únicamente registros identificados como tesis en los metadatos oficiales de seis universidades peruanas. Cada resultado conserva autor, año, temas y enlace al repositorio original.</p>
+        <h2 id="static-thesis-search-title">Tesis de mayor relevancia citada</h2>
+        <p>Motor híbrido: capa global OpenAlex (millones de disertaciones de más de 100&nbsp;000 instituciones, filtro type:dissertation) y capa PE verificada con OAI-PMH en seis universidades. Cada resultado conserva autor, año, temas, citas cuando existen y enlace a la fuente original.</p>
         <form action="/recursos" method="get" role="search">
           <label for="static-thesis-query">Tema, título, autor o palabra clave</label>
           <input id="static-thesis-query" name="q" type="search" placeholder="Ej.: inteligencia artificial en educación">
           <button type="submit">Buscar tesis</button>
         </form>
-        <h3>Repositorios universitarios conectados</h3>
+        <h3>Repositorios universitarios conectados (PE)</h3>
         <ul>${ACTIVE_THESIS_REPOSITORIES.map(
           (repository) => `<li><img src="${escapeAttribute(repository.logo)}" alt="" width="${repository.logoWidth || 320}" height="${repository.logoHeight || 180}"> ${escapeAttribute(repository.acronym)} — ${escapeAttribute(repository.name)}</li>`,
         ).join("")}</ul>
-        <p>La cosecha utiliza OAI-PMH y valida los tipos de tesis de pregrado, maestría y doctorado sin copiar ni alojar los archivos.</p>
+        <p>La capa PE cosecha OAI-PMH y valida tipos de pregrado, maestría y doctorado. La capa global prioriza relevancia semántica y citas académicas. No copiamos ni alojamos los archivos.</p>
       </section>
       <section aria-labelledby="static-resources-title">
         <h2 id="static-resources-title">Recursos institucionales disponibles</h2>
