@@ -90,7 +90,7 @@ const routeSpecs = [
     output: "dist/recursos.html",
     title: "Buscador de tesis y recursos académicos | Tesis20",
     h1: "Recursos y repositorio de tesis",
-    content: ["Escuela ISAM", "Líneas de investigación y ejes temáticos", "seis universidades peruanas", "OAI-PMH"],
+    content: ["Tesis de mayor relevancia citada", "seis universidades", "OAI-PMH", "disertaciones"],
     schemaType: "CollectionPage",
   },
   {

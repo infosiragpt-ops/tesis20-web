@@ -1,7 +1,6 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { CAREER_AREAS, CAREER_COUNT, TEACHERS } from "../src/data/academic-directory.js";
-import { ACADEMIC_RESOURCES } from "../src/data/academic-resources.js";
 import { ACTIVE_THESIS_REPOSITORIES } from "../src/data/thesis-repositories.js";
 import { assignTeacherPortraits, teacherMediaMarkup } from "../src/teacher-portrait.js";
 
@@ -460,33 +459,9 @@ const routeDefinitions = [
         ).join("")}</ul>
         <p>La capa PE cosecha OAI-PMH y valida tipos de pregrado, maestría y doctorado. La capa global prioriza relevancia semántica y citas académicas. No copiamos ni alojamos los archivos.</p>
       </section>
-      <section aria-labelledby="static-resources-title">
-        <h2 id="static-resources-title">Recursos institucionales disponibles</h2>
-        ${ACADEMIC_RESOURCES.map(
-          (institution) => `<article>
-            ${institution.logo ? `<img src="${escapeAttribute(institution.logo)}" alt="" width="${institution.logoWidth || 320}" height="${institution.logoHeight || 180}">` : ""}
-            <h3>${escapeAttribute(institution.name)}</h3>
-            <p>${escapeAttribute(institution.description)}</p>
-            <p><a href="${escapeAttribute(institution.sourceUrl)}" target="_blank" rel="noopener noreferrer">Visitar sitio institucional</a></p>
-            ${institution.documents.map(
-              (document) => `<section>
-                <h4>${escapeAttribute(document.title)}</h4>
-                <p><strong>${escapeAttribute(document.category)}</strong> · ${escapeAttribute(document.format)} · ${document.pages} página</p>
-                <p>${escapeAttribute(document.description)}</p>
-                <p>Programas incluidos: ${document.programs.map(escapeAttribute).join("; ")}.</p>
-                <p><a href="${escapeAttribute(document.href)}" target="_blank" rel="noopener noreferrer">Abrir PDF</a> · <a href="${escapeAttribute(document.href)}" download="${escapeAttribute(document.fileName)}">Descargar documento</a></p>
-              </section>`,
-            ).join("\n")}
-          </article>`,
-        ).join("\n")}
-      </section>
-      <section aria-labelledby="static-resources-validity-title">
-        <h2 id="static-resources-validity-title">Verifica siempre la versión vigente</h2>
-        <p>Los documentos se publican como referencia académica y pertenecen a sus instituciones de origen. Confirma con la universidad si existe una edición más reciente o una norma específica para tu programa.</p>
-      </section>
       <section aria-labelledby="static-resources-next-title">
-        <h2 id="static-resources-next-title">Cobertura nacional progresiva</h2>
-        <p>El piloto conecta UPN, UCV, UNSA, UNAP, UPCH y UPC. UTP y más universidades se incorporarán cuando exista un canal interoperable estable y sus metadatos superen la validación exclusiva para tesis.</p>
+        <h2 id="static-resources-next-title">Millones de disertaciones, sin mezclar ruido</h2>
+        <p>El motor combina el grafo académico abierto con repositorios peruanos verificados (UPN, UCV, UNSA, UNAP, UPCH y UPC). Solo se admiten registros tipados como tesis o disertación.</p>
       </section>`,
   },
 ];
@@ -813,32 +788,6 @@ function createStructuredData(route) {
       inLanguage: "es-PE",
       isAccessibleForFree: true,
       publisher: { "@id": `${SITE_ORIGIN}/#organization` },
-    });
-  }
-
-  if (route.path === "/recursos") {
-    const documents = ACADEMIC_RESOURCES.flatMap((institution) =>
-      institution.documents.map((document) => ({ institution, document })),
-    );
-    graph.push({
-      "@type": "ItemList",
-      "@id": `${canonicalUrl}#documents`,
-      name: "Recursos institucionales por universidad",
-      numberOfItems: documents.length,
-      itemListElement: documents.map(({ institution, document }, index) => ({
-        "@type": "ListItem",
-        position: index + 1,
-        url: `${SITE_ORIGIN}${document.href}`,
-        item: {
-          "@type": "DigitalDocument",
-          name: `${document.title} de ${institution.name}`,
-          description: document.description,
-          url: `${SITE_ORIGIN}${document.href}`,
-          encodingFormat: "application/pdf",
-          inLanguage: "es-PE",
-          isAccessibleForFree: true,
-        },
-      })),
     });
   }
 

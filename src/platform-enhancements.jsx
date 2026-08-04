@@ -476,32 +476,6 @@ export function SeoManager({
             publisher: { "@id": `${SITE_ORIGIN}/#organization` },
           }
         : null;
-    const resourcesCatalog =
-      pageKey === "resources"
-        ? {
-            "@type": "ItemList",
-            "@id": `${canonicalUrl}#documents`,
-            name: "Recursos institucionales por universidad",
-            numberOfItems: 1,
-            itemListElement: [
-              {
-                "@type": "ListItem",
-                position: 1,
-                url: `${SITE_ORIGIN}/downloads/recursos/isam-lineas-investigacion-ejes-tematicos.pdf`,
-                item: {
-                  "@type": "DigitalDocument",
-                  name: "Líneas de investigación y ejes temáticos de la Escuela ISAM",
-                  description:
-                    "Documento institucional con líneas, temas y objetivos de investigación organizados por programa de estudio.",
-                  url: `${SITE_ORIGIN}/downloads/recursos/isam-lineas-investigacion-ejes-tematicos.pdf`,
-                  encodingFormat: "application/pdf",
-                  inLanguage: "es-PE",
-                  isAccessibleForFree: true,
-                },
-              },
-            ],
-          }
-        : null;
     const faqSchema =
       !isNotFound && safeFaqItems.length > 0
         ? {
@@ -525,7 +499,6 @@ export function SeoManager({
         ...(servicesCatalog ? [servicesCatalog] : []),
         ...(selectedServiceSchema ? [selectedServiceSchema] : []),
         ...(contractDocument ? [contractDocument] : []),
-        ...(resourcesCatalog ? [resourcesCatalog] : []),
         ...(faqSchema ? [faqSchema] : []),
       ],
     };
