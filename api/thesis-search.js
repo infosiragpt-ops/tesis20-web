@@ -143,8 +143,9 @@ function buildOpenAlexUrl({ q, yearFrom, sort, minCitations, page, perPage }) {
   // Solo disertaciones/tesis; se excluyen retractados para precisión de contenido.
   const filters = ["type:dissertation", "is_retracted:false"];
 
-  if (yearFrom) filters.push(`publication_year:>=${yearFrom}`);
-  if (minCitations > 0) filters.push(`cited_by_count:>=${minCitations}`);
+  // OpenAlex usa rangos con comparadores > / < (p. ej. year:>2014 ≈ desde 2015).
+  if (yearFrom) filters.push(`publication_year:>${yearFrom - 1}`);
+  if (minCitations > 0) filters.push(`cited_by_count:>${minCitations - 1}`);
 
   url.searchParams.set("search", q);
   url.searchParams.set("filter", filters.join(","));
