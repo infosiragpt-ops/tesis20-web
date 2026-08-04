@@ -19,9 +19,11 @@ import { trackInteraction } from "./platform-enhancements.jsx";
 import "./resources-search.css";
 
 const SEARCH_EXAMPLES = [
-  "inteligencia artificial en educación",
+  "educación",
   "gestión pública",
   "salud ocupacional",
+  "enfermería",
+  "inteligencia artificial",
 ];
 
 function getInitialSearchQuery() {
@@ -134,6 +136,25 @@ function ThesisSearch() {
     return () => controller.abort();
   }, []);
 
+  // Búsqueda en vivo (debounce) al escribir en el campo
+  useEffect(() => {
+    const trimmed = draftQuery.trim();
+    if (trimmed.length < 2) {
+      if (query) setQuery("");
+      return undefined;
+    }
+    if (trimmed === query) return undefined;
+
+    const timer = window.setTimeout(() => {
+      setQuery(trimmed);
+      const url = new URL(window.location.href);
+      url.searchParams.set("q", trimmed);
+      window.history.replaceState({}, "", `${url.pathname}${url.search}#buscar-tesis`);
+    }, 320);
+
+    return () => window.clearTimeout(timer);
+  }, [draftQuery, query]);
+
   const results = useMemo(
     () =>
       query && index
@@ -142,8 +163,7 @@ function ThesisSearch() {
     [index, level, query, sourceId, yearFrom],
   );
 
-  const submitSearch = (event, nextQuery = draftQuery) => {
-    event?.preventDefault();
+  const applySearch = (nextQuery, { track = true } = {}) => {
     const trimmedQuery = nextQuery.trim();
     if (trimmedQuery.length < 2) return;
     setDraftQuery(trimmedQuery);
@@ -151,18 +171,26 @@ function ThesisSearch() {
     const url = new URL(window.location.href);
     url.searchParams.set("q", trimmedQuery);
     window.history.replaceState({}, "", `${url.pathname}${url.search}#buscar-tesis`);
-    trackInteraction("thesis_search", {
-      queryLength: trimmedQuery.length,
-      level,
-      institution: sourceId,
-      yearFrom,
-    });
+    if (track) {
+      trackInteraction("thesis_search", {
+        queryLength: trimmedQuery.length,
+        level,
+        institution: sourceId,
+        yearFrom,
+      });
+    }
+  };
+
+  const submitSearch = (event, nextQuery = draftQuery) => {
+    event?.preventDefault();
+    applySearch(nextQuery);
   };
 
   const indexedSourceIds = new Set(index?.sources?.map((source) => source.id) || []);
   const indexedRepositories = THESIS_REPOSITORIES.filter((repository) =>
     indexedSourceIds.has(repository.id),
   );
+  const canSearch = status === "ready" && draftQuery.trim().length >= 2;
 
   return (
     <section className="thesis-search" id="buscar-tesis" aria-labelledby="thesis-search-title">
@@ -192,9 +220,10 @@ function ThesisSearch() {
                 type="search"
                 value={draftQuery}
                 onChange={(event) => setDraftQuery(event.target.value)}
-                placeholder="Ej.: inteligencia artificial en educación"
+                placeholder="Ej.: gestión pública, educación, enfermería"
                 minLength="2"
                 autoComplete="off"
+                enterKeyHint="search"
               />
             </span>
           </label>
@@ -226,7 +255,7 @@ function ThesisSearch() {
                 <option value="2015">Desde 2015</option>
               </select>
             </label>
-            <button type="submit" disabled={status !== "ready" || draftQuery.trim().length < 2}>
+            <button type="submit" disabled={!canSearch}>
               <MagnifyingGlass size={19} weight="bold" aria-hidden="true" />
               Buscar tesis
             </button>
@@ -236,7 +265,13 @@ function ThesisSearch() {
         <div className="thesis-search__examples" aria-label="Ejemplos de búsqueda">
           <span>Prueba con:</span>
           {SEARCH_EXAMPLES.map((example) => (
-            <button type="button" key={example} onClick={(event) => submitSearch(event, example)}>
+            <button
+              type="button"
+              key={example}
+              disabled={status !== "ready"}
+              aria-pressed={query === example}
+              onClick={(event) => submitSearch(event, example)}
+            >
               {example}
             </button>
           ))}
@@ -264,7 +299,28 @@ function ThesisSearch() {
         )}
         {status === "error" && (
           <div className="thesis-search__state thesis-search__state--error" role="alert">
-            No se pudo cargar el índice en este momento. Intenta nuevamente más tarde.
+            <p>No se pudo cargar el índice en este momento.</p>
+            <button
+              type="button"
+              className="thesis-search__retry"
+              onClick={() => {
+                setStatus("loading");
+                setIndex(null);
+                fetch("/data/theses-index.json")
+                  .then((response) => {
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                    return response.json();
+                  })
+                  .then((payload) => {
+                    if (!Array.isArray(payload.records)) throw new Error("Índice inválido");
+                    setIndex(payload);
+                    setStatus("ready");
+                  })
+                  .catch(() => setStatus("error"));
+              }}
+            >
+              Reintentar carga
+            </button>
           </div>
         )}
         {status === "ready" && !query && (
@@ -285,8 +341,9 @@ function ThesisSearch() {
               </div>
             ) : (
               <p className="thesis-search__no-results">
-                Prueba con menos palabras o cambia el nivel, universidad o año. El buscador exige
-                que todos los términos importantes aparezcan en el registro para evitar ruido.
+                No hay coincidencias con estos filtros. Prueba con términos más generales (por
+                ejemplo «educación» o «salud»), quita el filtro de universidad/año o usa otra
+                palabra clave del título o del autor.
               </p>
             )}
           </div>

@@ -17,7 +17,8 @@ const SEARCH_STOP_WORDS = new Set([
   "y",
 ]);
 
-const MIN_SEARCH_SCORE = 45;
+/** Puntuación mínima para considerar un resultado relevante. */
+const MIN_SEARCH_SCORE = 28;
 
 export const THESIS_LEVEL_LABELS = {
   bachelor: "Tesis de pregrado",
@@ -43,6 +44,16 @@ function getQueryTokens(query) {
   return [...new Set(tokens)];
 }
 
+/**
+ * Cantidad mínima de tokens de la consulta que deben aparecer en el registro.
+ * - 1–2 términos: todos (AND estricto).
+ * - 3+ términos: al menos 2 o ceil(2/3), para no devolver vacío en frases largas.
+ */
+function requiredTokenMatches(tokenCount) {
+  if (tokenCount <= 2) return tokenCount;
+  return Math.max(2, Math.ceil(tokenCount * (2 / 3)));
+}
+
 function scoreThesis(record, phrase, tokens) {
   const title = normalizeThesisSearchText(record.title);
   const authors = normalizeThesisSearchText(record.authors.join(" "));
@@ -50,35 +61,40 @@ function scoreThesis(record, phrase, tokens) {
   const abstract = normalizeThesisSearchText(record.abstract);
   const searchable = `${title} ${subjects} ${authors} ${abstract}`;
 
-  if (!tokens.every((token) => searchable.includes(token))) return 0;
-  const phraseMatchesOneField = [title, subjects, authors, abstract].some((field) =>
-    field.includes(phrase),
-  );
-  const allTokensMatchTitle = tokens.every((token) => title.includes(token));
-  const allTokensMatchAuthor = tokens.every((token) => authors.includes(token));
-  if (
-    tokens.length > 1 &&
-    !phraseMatchesOneField &&
-    !allTokensMatchTitle &&
-    !allTokensMatchAuthor
-  ) return 0;
+  const matchedTokens = tokens.filter((token) => searchable.includes(token));
+  if (matchedTokens.length < requiredTokenMatches(tokens.length)) return 0;
 
   let score = 0;
-  if (title === phrase) score += 180;
-  else if (title.includes(phrase)) score += 95;
-  if (subjects.includes(phrase)) score += 58;
-  if (authors.includes(phrase)) score += 42;
-  if (abstract.includes(phrase)) score += 18;
-  if (tokens.every((token) => title.includes(token))) score += 72;
-  if (tokens.every((token) => subjects.includes(token))) score += 34;
 
-  for (const token of tokens) {
-    if (title.split(" ").includes(token)) score += 22;
-    else if (title.includes(token)) score += 14;
-    if (subjects.includes(token)) score += 10;
-    if (authors.includes(token)) score += 7;
-    if (abstract.includes(token)) score += 2;
+  // Coincidencia de frase completa
+  if (title === phrase) score += 180;
+  else if (title.includes(phrase)) score += 100;
+  if (subjects.includes(phrase)) score += 60;
+  if (authors.includes(phrase)) score += 45;
+  if (abstract.includes(phrase)) score += 20;
+
+  // Todos los tokens en un campo
+  if (tokens.every((token) => title.includes(token))) score += 80;
+  if (tokens.every((token) => subjects.includes(token))) score += 40;
+  if (tokens.every((token) => authors.includes(token))) score += 36;
+  if (tokens.every((token) => abstract.includes(token))) score += 16;
+
+  // Proporción de tokens coincidentes
+  const matchRatio = matchedTokens.length / tokens.length;
+  score += Math.round(matchRatio * 40);
+
+  for (const token of matchedTokens) {
+    const titleWords = title.split(" ");
+    if (titleWords.includes(token)) score += 24;
+    else if (title.includes(token)) score += 16;
+    if (subjects.includes(token)) score += 12;
+    if (authors.includes(token)) score += 8;
+    if (abstract.includes(token)) score += 3;
   }
+
+  // Penalización suave si faltan tokens en consultas largas
+  const missing = tokens.length - matchedTokens.length;
+  if (missing > 0) score -= missing * 8;
 
   return score;
 }

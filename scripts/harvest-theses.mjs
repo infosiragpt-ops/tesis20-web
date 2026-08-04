@@ -164,11 +164,8 @@ function parseInputArguments() {
   return inputs;
 }
 
-async function fetchOaiPage(repository) {
-  const url = new URL(repository.oaiUrl);
-  url.searchParams.set("verb", "ListRecords");
-  url.searchParams.set("metadataPrefix", "oai_dc");
-  const response = await fetch(url, {
+async function fetchOaiXml(requestUrl) {
+  const response = await fetch(requestUrl, {
     headers: { Accept: "application/xml,text/xml;q=0.9", "User-Agent": userAgent },
     signal: AbortSignal.timeout(45_000),
   });
@@ -178,16 +175,53 @@ async function fetchOaiPage(repository) {
   return xml;
 }
 
+function extractResumptionToken(xml) {
+  const match = xml.match(/<resumptionToken\b[^>]*>([^<]+)<\/resumptionToken>/i);
+  return match?.[1]?.trim() || null;
+}
+
+/**
+ * Cosecha páginas OAI-PMH hasta completar el cupo del repositorio.
+ * Usa resumptionToken cuando el servidor lo expone.
+ */
+async function harvestRepository(repository) {
+  const collected = [];
+  const limit = repository.initialRecordLimit || 40;
+  const maxPages = Math.max(3, Math.ceil(limit / 20) + 2);
+
+  let requestUrl = new URL(repository.oaiUrl);
+  requestUrl.searchParams.set("verb", "ListRecords");
+  requestUrl.searchParams.set("metadataPrefix", "oai_dc");
+
+  for (let page = 0; page < maxPages && collected.length < limit; page += 1) {
+    const xml = await fetchOaiXml(requestUrl);
+    const pageRecords = parseRecords(xml, repository);
+    for (const record of pageRecords) {
+      collected.push(record);
+      if (collected.length >= limit) break;
+    }
+
+    const token = extractResumptionToken(xml);
+    if (!token || collected.length >= limit) break;
+
+    requestUrl = new URL(repository.oaiUrl);
+    requestUrl.searchParams.set("verb", "ListRecords");
+    requestUrl.searchParams.set("resumptionToken", token);
+  }
+
+  return collected.slice(0, limit);
+}
+
 async function main() {
   const inputs = parseInputArguments();
   const records = [];
   const sourceSummaries = [];
 
   for (const repository of ACTIVE_THESIS_REPOSITORIES) {
-    const xml = inputs.has(repository.id)
-      ? await readFile(path.resolve(inputs.get(repository.id)), "utf8")
-      : await fetchOaiPage(repository);
-    const parsed = parseRecords(xml, repository).slice(0, repository.initialRecordLimit);
+    const parsed = inputs.has(repository.id)
+      ? parseRecords(await readFile(path.resolve(inputs.get(repository.id)), "utf8"), repository)
+          .slice(0, repository.initialRecordLimit)
+      : await harvestRepository(repository);
     records.push(...parsed);
     sourceSummaries.push({ id: repository.id, records: parsed.length });
     console.log(`✓ ${repository.acronym}: ${parsed.length} tesis verificadas`);

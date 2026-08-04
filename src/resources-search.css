@@ -179,7 +179,40 @@
   cursor: pointer;
 }
 
-.thesis-search__examples button:hover {
+.thesis-search__examples button:hover:not(:disabled) {
+  border-color: #9b7d20;
+  background: var(--yellow-soft);
+}
+
+.thesis-search__examples button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.thesis-search__examples button[aria-pressed="true"] {
+  border-color: #9b7d20;
+  background: var(--yellow-soft);
+  color: #1a1a1a;
+  font-weight: 700;
+}
+
+.thesis-search__retry {
+  margin-top: 0.75rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.5rem;
+  padding: 0.45rem 1rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #fff;
+  color: #1a1a1a;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.thesis-search__retry:hover {
   border-color: #9b7d20;
   background: var(--yellow-soft);
 }
