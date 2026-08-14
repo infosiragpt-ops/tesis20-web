@@ -321,7 +321,7 @@ const services = [
   {
     id: "suficiencia-profesional",
     title: "Trabajo de suficiencia profesional",
-    price: "S/ 1900",
+    price: "S/ 1600",
     category: "Titulación",
     summary: "Acompañamiento completo para convertir tu experiencia en un trabajo sustentable.",
     audio: "/assets/audio/servicio-suficiencia-profesional.mp3",

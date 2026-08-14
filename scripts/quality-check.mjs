@@ -125,7 +125,7 @@ const routeSpecs = [
     output: "dist/servicios/suficiencia-profesional.html",
     title: "Trabajo de suficiencia profesional | Tesis20",
     h1: "Asesoría para trabajo de suficiencia profesional",
-    content: ["Revisión de conclusiones, bibliografía y anexos", "S/ 1900", "Solicitar"],
+    content: ["Revisión de conclusiones, bibliografía y anexos", "S/ 1600", "Solicitar"],
     schemaType: "WebPage",
     service: true,
   },

@@ -112,7 +112,7 @@ const services = [
   },
   {
     name: "Trabajo de suficiencia profesional",
-    price: 1900,
+    price: 1600,
     description:
       "Acompañamiento para convertir la experiencia profesional en un trabajo académico sustentable.",
     anchor: "suficiencia-profesional",
