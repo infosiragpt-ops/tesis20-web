@@ -760,6 +760,21 @@ function createStructuredData(route) {
     });
   }
 
+  if (route.path === "/recursos") {
+    graph.push({
+      "@type": "ItemList",
+      "@id": `${canonicalUrl}#documents`,
+      name: "Repositorios de tesis conectados",
+      numberOfItems: ACTIVE_THESIS_REPOSITORIES.length,
+      itemListElement: ACTIVE_THESIS_REPOSITORIES.map((repository, index) => ({
+        "@type": "ListItem",
+        position: index + 1,
+        name: `${repository.acronym} — ${repository.name}`,
+        url: repository.repositoryUrl,
+      })),
+    });
+  }
+
   if (route.service) {
     graph.push({
       "@type": "Service",

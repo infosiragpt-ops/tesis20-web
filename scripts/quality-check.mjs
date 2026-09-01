@@ -857,7 +857,9 @@ check(
 // 2026-08-02: 9 → 9.5 MiB para 64 fotografías sintéticas empaquetadas en
 // cuatro hojas AVIF locales (267 KiB medidos). Solo /docentes las referencia;
 // no se incorporaron 4,000 binarios ni dependencias externas.
-check(deployBytesWithoutAudioAndPdf <= 9.5 * 1024 * 1024, `El build sin audios/PDF supera 9.5 MiB (${(deployBytesWithoutAudioAndPdf / 1024 / 1024).toFixed(2)} MiB).`);
+// 2026-09-01: 9.5 → 9.51 MiB por el ItemList estático de repositorios en
+// /recursos (el .docx del contrato no entra: se excluye junto a PDF y MP3).
+check(deployBytesWithoutAudioAndPdf <= 9.51 * 1024 * 1024, `El build sin audios/PDF supera 9.51 MiB (${(deployBytesWithoutAudioAndPdf / 1024 / 1024).toFixed(2)} MiB).`);
 
 for (const htmlFile of distFiles.filter((file) => file.endsWith(".html"))) {
   check((await fileSize(htmlFile)) <= 300 * 1024, `${htmlFile} supera 300 KiB.`);
