@@ -44,7 +44,7 @@ const PAGE_META = {
   contract: {
     title: "Contrato general de asesoría académica | Tesis20",
     description:
-      "Lee y descarga el modelo general informativo de contrato de asesoría académica de Tesis20 para revisarlo antes de contratar.",
+      "Lee y descarga el modelo general informativo de contrato de asesoría académica de Tesis20 en Word editable o PDF para revisarlo antes de contratar.",
     path: "/contrato",
     schemaType: "WebPage",
     image: DEFAULT_SHARE_IMAGE,
@@ -469,11 +469,28 @@ export function SeoManager({
             "@id": `${canonicalUrl}#document`,
             name: "Modelo general informativo de contrato de asesoría académica",
             description:
-              "Documento informativo para lectura previa; sus condiciones deben completarse y aceptarse por las partes antes de contratar.",
-            url: `${SITE_ORIGIN}/downloads/contrato-general-asesoria-academica-tesis20.pdf`,
+              "Documento informativo editable para lectura previa; sus condiciones deben completarse y aceptarse por las partes antes de contratar.",
+            url: `${SITE_ORIGIN}/downloads/contrato-general-asesoria-academica-tesis20.docx`,
+            encodingFormat:
+              "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
             inLanguage: "es-PE",
             isAccessibleForFree: true,
             publisher: { "@id": `${SITE_ORIGIN}/#organization` },
+            associatedMedia: [
+              {
+                "@type": "MediaObject",
+                name: "Contrato general de asesoría académica (Word)",
+                contentUrl: `${SITE_ORIGIN}/downloads/contrato-general-asesoria-academica-tesis20.docx`,
+                encodingFormat:
+                  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+              },
+              {
+                "@type": "MediaObject",
+                name: "Contrato general de asesoría académica (PDF)",
+                contentUrl: `${SITE_ORIGIN}/downloads/contrato-general-asesoria-academica-tesis20.pdf`,
+                encodingFormat: "application/pdf",
+              },
+            ],
           }
         : null;
     const faqSchema =

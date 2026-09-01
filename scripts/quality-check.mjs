@@ -82,7 +82,7 @@ const routeSpecs = [
     output: "dist/contrato.html",
     title: "Contrato general de asesoría académica | Tesis20",
     h1: "Contrato general de asesoría académica",
-    content: ["Descargar contrato general en PDF", "responsabilidades", "conserva la autoría"],
+    content: ["Descargar contrato en Word", "Descargar PDF", "responsabilidades", "conserva la autoría"],
     schemaType: "WebPage",
   },
   {
@@ -651,7 +651,12 @@ for (const route of routeSpecs) {
     check(schemaNodes.some((node) => hasSchemaType(node, "ItemList")), "dist/servicios.html debe incluir el catálogo ItemList.");
   }
   if (route.path === "/contrato") {
-    check(schemaNodes.some((node) => hasSchemaType(node, "DigitalDocument")), "dist/contrato.html debe describir el contrato como DigitalDocument.");
+    const contractNode = schemaNodes.find((node) => hasSchemaType(node, "DigitalDocument"));
+    check(Boolean(contractNode), "dist/contrato.html debe describir el contrato como DigitalDocument.");
+    check(
+      typeof contractNode?.url === "string" && contractNode.url.endsWith(".docx"),
+      "dist/contrato.html debe priorizar la URL Word del contrato en DigitalDocument.",
+    );
   }
   if (route.path === "/recursos") {
     check(schemaNodes.some((node) => hasSchemaType(node, "ItemList")), "dist/recursos.html debe describir los documentos como ItemList.");
@@ -746,7 +751,7 @@ for (const distFile of distFiles) {
   const bytes = await fileSize(distFile);
   // El directorio se controla por separado con un presupuesto comprimido,
   // que representa mejor su transferencia real que el JSON minificado en disco.
-  if (!/\.(?:mp3|pdf)$/i.test(distFile) && distFile !== "dist/data/academic-directory.json") {
+  if (!/\.(?:mp3|pdf|docx)$/i.test(distFile) && distFile !== "dist/data/academic-directory.json") {
     deployBytesWithoutAudioAndPdf += bytes;
   }
 }
@@ -852,7 +857,9 @@ check(
 // 2026-08-02: 9 → 9.5 MiB para 64 fotografías sintéticas empaquetadas en
 // cuatro hojas AVIF locales (267 KiB medidos). Solo /docentes las referencia;
 // no se incorporaron 4,000 binarios ni dependencias externas.
-check(deployBytesWithoutAudioAndPdf <= 9.5 * 1024 * 1024, `El build sin audios/PDF supera 9.5 MiB (${(deployBytesWithoutAudioAndPdf / 1024 / 1024).toFixed(2)} MiB).`);
+// 2026-09-01: 9.5 → 9.51 MiB por el ItemList estático de repositorios en
+// /recursos (el .docx del contrato no entra: se excluye junto a PDF y MP3).
+check(deployBytesWithoutAudioAndPdf <= 9.51 * 1024 * 1024, `El build sin audios/PDF supera 9.51 MiB (${(deployBytesWithoutAudioAndPdf / 1024 / 1024).toFixed(2)} MiB).`);
 
 for (const htmlFile of distFiles.filter((file) => file.endsWith(".html"))) {
   check((await fileSize(htmlFile)) <= 300 * 1024, `${htmlFile} supera 300 KiB.`);
