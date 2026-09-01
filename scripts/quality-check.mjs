@@ -82,7 +82,7 @@ const routeSpecs = [
     output: "dist/contrato.html",
     title: "Contrato general de asesoría académica | Tesis20",
     h1: "Contrato general de asesoría académica",
-    content: ["Descargar contrato general en PDF", "responsabilidades", "conserva la autoría"],
+    content: ["Descargar contrato en Word", "Descargar PDF", "responsabilidades", "conserva la autoría"],
     schemaType: "WebPage",
   },
   {

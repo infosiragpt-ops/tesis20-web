@@ -410,14 +410,15 @@ const routeDefinitions = [
     path: "/contrato",
     title: "Contrato general de asesoría académica | Tesis20",
     description:
-      "Lee y descarga el modelo general informativo de contrato de asesoría académica de Tesis20 para revisarlo antes de contratar.",
+      "Lee y descarga el modelo general informativo de contrato de asesoría académica de Tesis20 en Word editable o PDF para revisarlo antes de contratar.",
     heading: "Contrato general de asesoría académica",
     schemaType: "WebPage",
     content: `
       <p class="eyebrow">Lectura previa y transparente</p>
       <h1>Contrato general de asesoría académica</h1>
-      <p>Consulta el modelo informativo que organiza el alcance, las responsabilidades, el cronograma y las condiciones del acompañamiento académico.</p>
-      <p><a href="/downloads/contrato-general-asesoria-academica-tesis20.pdf" download>Descargar contrato general en PDF</a></p>
+      <p>Consulta el modelo informativo que organiza el alcance, las responsabilidades, el cronograma y las condiciones del acompañamiento académico. Descárgalo en Word editable para completar tus datos.</p>
+      <p><a href="/downloads/contrato-general-asesoria-academica-tesis20.docx" download="contrato-general-asesoria-academica-tesis20.docx">Descargar contrato en Word</a></p>
+      <p><a href="/downloads/contrato-general-asesoria-academica-tesis20.pdf" download="contrato-general-asesoria-academica-tesis20.pdf">Descargar PDF</a></p>
       <section aria-labelledby="static-contract-summary-title">
         <h2 id="static-contract-summary-title">Aspectos principales del modelo</h2>
         <ul>
@@ -784,10 +785,27 @@ function createStructuredData(route) {
       "@type": "DigitalDocument",
       "@id": `${canonicalUrl}#document`,
       name: "Modelo general informativo de contrato de asesoría académica",
-      url: `${SITE_ORIGIN}/downloads/contrato-general-asesoria-academica-tesis20.pdf`,
+      url: `${SITE_ORIGIN}/downloads/contrato-general-asesoria-academica-tesis20.docx`,
+      encodingFormat:
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
       inLanguage: "es-PE",
       isAccessibleForFree: true,
       publisher: { "@id": `${SITE_ORIGIN}/#organization` },
+      associatedMedia: [
+        {
+          "@type": "MediaObject",
+          name: "Contrato general de asesoría académica (Word)",
+          contentUrl: `${SITE_ORIGIN}/downloads/contrato-general-asesoria-academica-tesis20.docx`,
+          encodingFormat:
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        },
+        {
+          "@type": "MediaObject",
+          name: "Contrato general de asesoría académica (PDF)",
+          contentUrl: `${SITE_ORIGIN}/downloads/contrato-general-asesoria-academica-tesis20.pdf`,
+          encodingFormat: "application/pdf",
+        },
+      ],
     });
   }
 

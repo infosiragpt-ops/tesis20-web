@@ -163,7 +163,10 @@ const navigation = [
   },
 ];
 
-const contractDownloadHref = "/downloads/contrato-general-asesoria-academica-tesis20.pdf";
+const contractDocxHref = "/downloads/contrato-general-asesoria-academica-tesis20.docx";
+const contractPdfHref = "/downloads/contrato-general-asesoria-academica-tesis20.pdf";
+const contractDocxFilename = "contrato-general-asesoria-academica-tesis20.docx";
+const contractPdfFilename = "contrato-general-asesoria-academica-tesis20.pdf";
 
 const evidenceGroups = [
   {
@@ -1914,17 +1917,26 @@ function ContractPage() {
             <p>
               Conoce por anticipado el alcance, las responsabilidades, los pagos y la
               protección de tu información. Puedes leer el modelo completo aquí o descargarlo
-              en PDF para revisarlo con calma.
+              en Word editable para completar tus datos, o en PDF para revisarlo con calma.
             </p>
             <div className="contract-hero__actions">
               <a
                 className="contract-button contract-button--primary"
-                href={contractDownloadHref}
-                download="contrato-general-asesoria-academica-tesis20.pdf"
-                onClick={() => trackInteraction("contract_download", { location: "hero" })}
+                href={contractDocxHref}
+                download={contractDocxFilename}
+                onClick={() => trackInteraction("contract_download", { location: "hero", format: "docx" })}
               >
                 <DownloadSimple size={22} weight="bold" aria-hidden="true" />
-                <span>Descargar contrato en PDF</span>
+                <span>Descargar contrato en Word</span>
+              </a>
+              <a
+                className="contract-button contract-button--outline"
+                href={contractPdfHref}
+                download={contractPdfFilename}
+                onClick={() => trackInteraction("contract_download", { location: "hero", format: "pdf" })}
+              >
+                <FileText size={21} weight="bold" aria-hidden="true" />
+                <span>Descargar PDF</span>
               </a>
               <button className="contract-button contract-button--secondary" type="button" onClick={handlePrint}>
                 <Printer size={21} weight="bold" aria-hidden="true" />
@@ -1938,7 +1950,7 @@ function ContractPage() {
               <FileText size={42} weight="light" />
             </span>
             <p>Modelo general para Perú</p>
-            <h2>Dos páginas, claras y listas para completar</h2>
+            <h2>Word editable, listo para completar</h2>
             <ul>
               <li><CheckCircle size={18} weight="fill" aria-hidden="true" /> 12 cláusulas generales</li>
               <li><CheckCircle size={18} weight="fill" aria-hidden="true" /> Campos para ambas partes</li>
@@ -1961,14 +1973,26 @@ function ContractPage() {
               <li>Revisa cada cláusula y conserva una copia firmada.</li>
             </ol>
             <p>{contractTemplate.notice}</p>
-            <a
-              href={contractDownloadHref}
-              download="contrato-general-asesoria-academica-tesis20.pdf"
-              onClick={() => trackInteraction("contract_download", { location: "reader_guide" })}
-            >
-              <DownloadSimple size={19} weight="bold" aria-hidden="true" />
-              Descargar PDF de 2 páginas
-            </a>
+            <div className="contract-guide__actions">
+              <a
+                className="contract-guide__download contract-guide__download--primary"
+                href={contractDocxHref}
+                download={contractDocxFilename}
+                onClick={() => trackInteraction("contract_download", { location: "reader_guide", format: "docx" })}
+              >
+                <DownloadSimple size={19} weight="bold" aria-hidden="true" />
+                Descargar contrato en Word
+              </a>
+              <a
+                className="contract-guide__download contract-guide__download--outline"
+                href={contractPdfHref}
+                download={contractPdfFilename}
+                onClick={() => trackInteraction("contract_download", { location: "reader_guide", format: "pdf" })}
+              >
+                <FileText size={18} weight="bold" aria-hidden="true" />
+                Descargar PDF
+              </a>
+            </div>
           </aside>
 
           <article className="contract-document">
@@ -2040,15 +2064,27 @@ function ContractPage() {
         <div>
           <FileText size={42} weight="light" aria-hidden="true" />
           <p>¿Listo para revisarlo fuera de la web?</p>
-          <h2 id="contract-download-title">Descarga el modelo completo en PDF</h2>
-          <a
-            href={contractDownloadHref}
-            download="contrato-general-asesoria-academica-tesis20.pdf"
-            onClick={() => trackInteraction("contract_download", { location: "bottom_cta" })}
-          >
-            <DownloadSimple size={21} weight="bold" aria-hidden="true" />
-            Descargar contrato
-          </a>
+          <h2 id="contract-download-title">Descarga el modelo completo en Word editable</h2>
+          <div className="contract-download__actions">
+            <a
+              className="contract-download__primary"
+              href={contractDocxHref}
+              download={contractDocxFilename}
+              onClick={() => trackInteraction("contract_download", { location: "bottom_cta", format: "docx" })}
+            >
+              <DownloadSimple size={21} weight="bold" aria-hidden="true" />
+              Descargar contrato en Word
+            </a>
+            <a
+              className="contract-download__outline"
+              href={contractPdfHref}
+              download={contractPdfFilename}
+              onClick={() => trackInteraction("contract_download", { location: "bottom_cta", format: "pdf" })}
+            >
+              <FileText size={20} weight="bold" aria-hidden="true" />
+              Descargar PDF
+            </a>
+          </div>
         </div>
       </section>
     </main>

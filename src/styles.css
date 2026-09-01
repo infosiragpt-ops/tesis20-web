@@ -5472,6 +5472,15 @@ main:focus-visible {
   background: rgba(255, 255, 255, 0.55);
 }
 
+.contract-button--outline {
+  background: transparent;
+  color: var(--ink);
+}
+
+.contract-button--outline:hover {
+  background: rgba(255, 255, 255, 0.42);
+}
+
 .contract-summary {
   padding: 30px;
   border: 1px solid rgba(255, 255, 255, 0.13);
@@ -5589,22 +5598,36 @@ main:focus-visible {
   line-height: 1.55;
 }
 
-.contract-guide > a {
+.contract-guide__actions {
+  margin-top: 20px;
+  display: grid;
+  gap: 8px;
+}
+
+.contract-guide__download {
   width: 100%;
   min-height: 46px;
-  margin-top: 20px;
   padding: 11px 13px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
   border-radius: 8px;
-  background: var(--ink);
-  color: var(--yellow);
   font-size: 12px;
   font-weight: 900;
   text-align: center;
   text-decoration: none;
+}
+
+.contract-guide__download--primary {
+  background: var(--ink);
+  color: var(--yellow);
+}
+
+.contract-guide__download--outline {
+  border: 1px solid var(--ink);
+  background: transparent;
+  color: var(--ink);
 }
 
 .contract-document {
@@ -5823,20 +5846,37 @@ main:focus-visible {
   text-transform: uppercase;
 }
 
-.contract-download a {
-  min-height: 50px;
+.contract-download__actions {
   margin-top: 22px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+}
+
+.contract-download__actions a {
+  min-height: 50px;
+  margin-top: 0;
   padding: 12px 19px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 9px;
   border-radius: 9px;
-  background: var(--ink);
-  color: var(--yellow);
   font-size: 14px;
   font-weight: 900;
   text-decoration: none;
+}
+
+.contract-download__primary {
+  background: var(--ink);
+  color: var(--yellow);
+}
+
+.contract-download__outline {
+  border: 1px solid var(--ink);
+  background: transparent;
+  color: var(--ink);
 }
 
 @media (max-width: 930px) {
