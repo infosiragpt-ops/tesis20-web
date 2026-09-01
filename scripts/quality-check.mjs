@@ -651,7 +651,12 @@ for (const route of routeSpecs) {
     check(schemaNodes.some((node) => hasSchemaType(node, "ItemList")), "dist/servicios.html debe incluir el catálogo ItemList.");
   }
   if (route.path === "/contrato") {
-    check(schemaNodes.some((node) => hasSchemaType(node, "DigitalDocument")), "dist/contrato.html debe describir el contrato como DigitalDocument.");
+    const contractNode = schemaNodes.find((node) => hasSchemaType(node, "DigitalDocument"));
+    check(Boolean(contractNode), "dist/contrato.html debe describir el contrato como DigitalDocument.");
+    check(
+      typeof contractNode?.url === "string" && contractNode.url.endsWith(".docx"),
+      "dist/contrato.html debe priorizar la URL Word del contrato en DigitalDocument.",
+    );
   }
   if (route.path === "/recursos") {
     check(schemaNodes.some((node) => hasSchemaType(node, "ItemList")), "dist/recursos.html debe describir los documentos como ItemList.");
@@ -746,7 +751,7 @@ for (const distFile of distFiles) {
   const bytes = await fileSize(distFile);
   // El directorio se controla por separado con un presupuesto comprimido,
   // que representa mejor su transferencia real que el JSON minificado en disco.
-  if (!/\.(?:mp3|pdf)$/i.test(distFile) && distFile !== "dist/data/academic-directory.json") {
+  if (!/\.(?:mp3|pdf|docx)$/i.test(distFile) && distFile !== "dist/data/academic-directory.json") {
     deployBytesWithoutAudioAndPdf += bytes;
   }
 }
