@@ -12,6 +12,9 @@
   --amber: #e0a545;
   --navy: #1d2749;
   --gold: #ffd766;
+  --walnut: #4a2d1c;
+  --brass: #c89a43;
+  --glass: rgba(18, 25, 48, 0.78);
   --font-ui: ui-rounded, "SF Pro Rounded", "Nunito", "Trebuchet MS", system-ui, -apple-system, sans-serif;
   --font-story: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
 
@@ -269,11 +272,14 @@
   display: flex;
   justify-content: flex-start;
   gap: 14px;
-  margin: 0;
+  width: min(820px, calc(100vw - 140px));
+  margin: 0 auto;
   padding: 4px 0 6px;
   list-style: none;
   overflow-x: auto;
   scrollbar-width: none;
+  scroll-snap-type: x mandatory;
+  scroll-padding-inline: 14px;
 }
 
 .cuentos-picker__row::-webkit-scrollbar {
@@ -282,6 +288,7 @@
 
 .cuentos-picker__row li {
   flex: 0 0 auto;
+  scroll-snap-align: center;
 }
 
 .cuentos-picker__row li:first-child {
@@ -294,9 +301,12 @@
 
 .cuentos-picker__row button {
   display: grid;
-  gap: 8px;
-  width: 196px;
-  padding: 12px 14px;
+  grid-template-columns: 56px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  width: 254px;
+  min-height: 92px;
+  padding: 10px 13px;
   border-radius: 16px;
   border: 3px solid #2a3661;
   background: linear-gradient(180deg, #fff9ea, #f6e7c6);
@@ -308,18 +318,40 @@
 .cuentos-picker__row li.is-focus button,
 .cuentos-picker__row button:hover,
 .cuentos-picker__row button:focus-visible {
-  transform: translateY(-6px);
+  transform: translateY(-7px) scale(1.025);
   box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.08), 0 14px 22px rgba(40, 20, 5, 0.42);
   outline: none;
 }
 
 .cuentos-picker__row strong {
   display: block;
-  min-height: 2.4em;
+  min-height: 2.3em;
   font-size: 15px;
   line-height: 1.2;
   font-weight: 900;
   text-shadow: 0 1px 0 #fff;
+}
+
+.cuentos-picker__cover {
+  display: block;
+  width: 54px;
+  aspect-ratio: 10 / 14;
+  overflow: hidden;
+  border-radius: 4px;
+  background: #1d2749;
+  box-shadow: 0 5px 10px rgba(24, 12, 5, 0.35);
+}
+
+.cuentos-picker__cover svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.cuentos-picker__copy {
+  display: grid;
+  min-width: 0;
+  gap: 7px;
 }
 
 .cuentos-picker__bar,
@@ -376,9 +408,10 @@
 .cuentos-desk {
   position: absolute;
   inset: 0;
-  display: grid;
-  place-items: end center;
-  padding: 80px 16px 5vh;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 84px 5vw 5vh;
   pointer-events: none;
   z-index: 10;
 }
@@ -386,8 +419,8 @@
 .cuentos-desk__panel {
   pointer-events: auto;
   position: relative;
-  width: min(520px, 100%);
-  padding: 26px 30px 24px;
+  width: min(390px, 34vw);
+  padding: 24px 24px 22px;
   border-radius: 16px;
   background:
     radial-gradient(ellipse at 50% 0%, rgba(255, 255, 255, 0.5), transparent 50%),
@@ -481,13 +514,18 @@
   box-shadow: 0 18px 40px rgba(20, 10, 5, 0.4), inset 0 0 0 1px rgba(120, 90, 40, 0.15);
 }
 
-.cuentos-card--floating {
+.cuentos-card--page-copy {
   position: absolute;
-  left: max(16px, 4vw);
-  top: 24%;
-  width: min(440px, 40vw);
-  transform: rotate(-0.6deg);
-  animation: cuento-card-in 0.5s ease;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+  box-shadow: none;
 }
 
 .cuentos-card::before,
@@ -1242,52 +1280,184 @@
 
 @media (max-width: 760px) {
   .cuentos-top {
-    flex-wrap: wrap;
-    padding: 10px 12px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 7px 8px;
+    padding: max(8px, env(safe-area-inset-top)) 10px 6px;
+  }
+
+  .cuentos-logo {
+    gap: 7px;
+    min-width: 0;
+  }
+
+  .cuentos-logo__comet {
+    width: 36px;
+    height: 36px;
+  }
+
+  .cuentos-logo small {
+    font-size: 8px;
+    letter-spacing: 2px;
   }
 
   .cuentos-logo strong {
-    font-size: 15px;
+    font-size: 14px;
   }
 
   .cuentos-stats {
-    order: 3;
+    grid-column: 1 / -1;
+    grid-row: 2;
     width: 100%;
     justify-content: space-around;
+    padding: 3px 6px;
+    border-radius: 16px;
+    background: linear-gradient(180deg, rgba(42, 54, 97, 0.94), rgba(22, 30, 61, 0.94));
+    backdrop-filter: blur(10px);
   }
 
   .cuentos-stat em {
     display: none;
   }
 
+  .cuentos-stat {
+    min-width: 0;
+    padding: 4px 8px;
+    font-size: 12px;
+  }
+
+  .cuentos-stat b {
+    font-size: 14px;
+  }
+
+  .cuentos-tools {
+    grid-column: 2;
+    grid-row: 1;
+    gap: 4px;
+  }
+
   .cuentos-round {
-    width: 40px;
-    height: 40px;
-    font-size: 16px;
+    width: 36px;
+    height: 36px;
+    border-width: 2px;
+    font-size: 15px;
   }
 
   .cuentos-arrow {
-    top: 38%;
-    width: 44px;
-    height: 44px;
-    font-size: 24px;
+    top: 43%;
+    width: 40px;
+    height: 40px;
+    border-width: 2px;
+    font-size: 22px;
+  }
+
+  .cuentos-arrow--left {
+    left: 8px;
+  }
+
+  .cuentos-arrow--right {
+    right: 8px;
+  }
+
+  .cuentos-picker {
+    padding: 4px 8px max(8px, env(safe-area-inset-bottom));
+    background: linear-gradient(180deg, transparent, rgba(22, 12, 6, 0.36) 28%, rgba(22, 12, 6, 0.68));
+  }
+
+  .cuentos-picker__title {
+    margin: 0 0 4px;
+    font-size: 16px;
   }
 
   .cuentos-picker__row {
     justify-content: flex-start;
-    padding-left: 4px;
+    gap: 8px;
+    width: calc(100vw - 82px);
+    padding: 2px 0 3px 4px;
   }
 
   .cuentos-picker__row button {
-    width: 164px;
+    grid-template-columns: 52px minmax(0, 1fr);
+    width: min(72vw, 280px);
+    min-height: 88px;
+    gap: 9px;
+    padding: 8px 10px;
+    border-width: 2px;
+    border-radius: 12px;
+    box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.08), 0 5px 10px rgba(22, 10, 4, 0.34);
+  }
+
+  .cuentos-picker__row li.is-focus button,
+  .cuentos-picker__row button:hover,
+  .cuentos-picker__row button:focus-visible {
+    transform: translateY(-3px);
+  }
+
+  .cuentos-picker__cover {
+    width: 50px;
+    border-radius: 3px;
+  }
+
+  .cuentos-picker__copy {
+    gap: 4px;
+  }
+
+  .cuentos-picker__row strong {
+    min-height: 0;
+    display: -webkit-box;
+    overflow: hidden;
+    font-size: 13px;
+    line-height: 1.16;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  .cuentos-picker__bar {
+    height: 5px;
+  }
+
+  .cuentos-picker__meta {
+    font-size: 9px;
+  }
+
+  .cuentos-picker__pins {
+    display: none;
   }
 
   .cuentos-desk {
-    padding-top: 120px;
+    align-items: flex-end;
+    justify-content: center;
+    padding: 120px 10px max(72px, env(safe-area-inset-bottom));
+  }
+
+  .cuentos-desk__panel {
+    width: min(100%, 440px);
+    padding: 16px 14px 14px;
+    border-radius: 14px;
+  }
+
+  .cuentos-desk__panel h2 {
+    margin-block: 2px 5px;
+    font-size: clamp(21px, 7vw, 29px);
+  }
+
+  .cuentos-desk__tagline {
+    margin-bottom: 3px;
+    font-size: 13px;
+  }
+
+  .cuentos-desk__meta {
+    margin-bottom: 8px;
+    font-size: 10px;
+  }
+
+  .cuentos-desk__panel .cuentos-btn {
+    margin: 2px 3px;
+    padding: 10px 13px;
   }
 
   .cuentos-stars-row {
-    top: 112px;
+    top: 100px;
     font-size: 12px;
   }
 
@@ -1295,33 +1465,10 @@
     font-size: 14px;
   }
 
-  .cuentos-card--floating {
-    left: 10px;
-    right: 10px;
-    top: auto;
-    bottom: 96px;
-    width: auto;
-    transform: none;
-    padding: 14px 16px 10px;
-  }
-
-  .cuentos-card__title {
-    font-size: 19px;
-    margin-bottom: 6px;
-  }
-
-  .cuentos-card__text {
-    font-size: 16px;
-    line-height: 1.55;
-  }
-
-  .cuentos-card__hint {
-    display: none;
-  }
-
   .cuentos-controls {
     gap: 8px;
-    bottom: 10px;
+    bottom: max(8px, env(safe-area-inset-bottom));
+    padding-inline: 8px;
   }
 
   .cuentos-btn--nav {
@@ -1331,13 +1478,13 @@
   }
 
   .cuentos-btn--read {
-    padding: 10px 16px;
-    font-size: 14px;
+    padding: 9px 13px;
+    font-size: 13px;
   }
 
   .cuentos-btn--ghost {
-    padding: 8px 12px;
-    font-size: 13px;
+    padding: 8px 10px;
+    font-size: 12px;
   }
 
   .cuentos-album__head {

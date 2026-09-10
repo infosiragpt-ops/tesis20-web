@@ -226,14 +226,18 @@ function noiseSweep({ dur = 0.5, from = 900, to = 2600, gain = 0.16 }) {
 
 export const sfx = {
   // "ten" corto al pasar por cada libro de la repisa.
-  hover() {
-    blip({ freq: 1318.51, type: "sine", dur: 0.3, gain: 0.13 });
-    blip({ freq: 1975.53, type: "sine", dur: 0.22, gain: 0.05 });
+  hover(key = "") {
+    const color = [...String(key)].reduce((sum, char) => sum + char.charCodeAt(0), 0) % 7;
+    const base = [880, 987.77, 1046.5, 1174.66, 1318.51, 1396.91, 1567.98][color];
+    blip({ freq: base, type: "sine", dur: 0.28, gain: 0.12 });
+    blip({ freq: base * 1.5, type: "sine", dur: 0.2, gain: 0.045 });
   },
   // "tok" de madera + campanita al tocar una figura de la repisa.
-  toy() {
-    blip({ freq: 420, type: "triangle", dur: 0.09, gain: 0.16, slide: -180 });
-    window.setTimeout(() => blip({ freq: 1567.98, type: "sine", dur: 0.26, gain: 0.08 }), 40);
+  toy(key = "") {
+    const color = [...String(key)].reduce((sum, char) => sum + char.charCodeAt(0), 0) % 6;
+    const chime = [1174.66, 1318.51, 1396.91, 1567.98, 1760, 1975.53][color];
+    blip({ freq: 380 + color * 34, type: "triangle", dur: 0.09, gain: 0.15, slide: -160 });
+    window.setTimeout(() => blip({ freq: chime, type: "sine", dur: 0.26, gain: 0.075 }), 40);
   },
   land() {
     blip({ freq: 180, type: "triangle", dur: 0.16, gain: 0.18, slide: -90 });

@@ -11,7 +11,7 @@ export const BOOKS = [
     tagline: "Un osito de anteojos quiere despertar a la luna",
     set: "andes-night",
     accent: "#f5c451",
-    cover: { ink: "#fdf2d0", sub: "#c9b489" },
+    cover: { ink: "#fdf2d0", sub: "#c9b489", image: "/assets/nido/cuentos/covers/kusi-premium-v1.avif" },
     pages: [
       {
         t: "El bosque de nubes",
@@ -104,7 +104,7 @@ export const BOOKS = [
     tagline: "Un bufeo rosado busca las luces que se apagaron",
     set: "amazon-river",
     accent: "#7fd7c4",
-    cover: { ink: "#eafaf4", sub: "#8fb9ad" },
+    cover: { ink: "#eafaf4", sub: "#8fb9ad", image: "/assets/nido/cuentos/covers/amaru-premium-v1.avif" },
     pages: [
       {
         t: "El río que brillaba",
@@ -197,7 +197,7 @@ export const BOOKS = [
     tagline: "Una cometa se escapa y cruza todo el valle",
     set: "highland-day",
     accent: "#ff9d6c",
-    cover: { ink: "#fff3e6", sub: "#c99a7a" },
+    cover: { ink: "#fff3e6", sub: "#c99a7a", image: "/assets/nido/cuentos/covers/sami-premium-v1.avif" },
     pages: [
       {
         t: "Viento de agosto",
@@ -290,7 +290,7 @@ export const BOOKS = [
     tagline: "Una noche de arena, estrellas y huellas",
     set: "desert-night",
     accent: "#c9a3ff",
-    cover: { ink: "#f3ecff", sub: "#a58fc7" },
+    cover: { ink: "#f3ecff", sub: "#a58fc7", image: "/assets/nido/cuentos/covers/killa-premium-v1.avif" },
     pages: [
       {
         t: "Arena fría",
@@ -383,7 +383,7 @@ export const BOOKS = [
     tagline: "Un picaflor cruza la niebla para llegar a tiempo",
     set: "cloud-forest",
     accent: "#8ed2a0",
-    cover: { ink: "#eefaf0", sub: "#8fb99a" },
+    cover: { ink: "#eefaf0", sub: "#8fb99a", image: "/assets/nido/cuentos/covers/chaska-premium-v1.avif" },
     pages: [
       {
         t: "Alas rapidísimas",
@@ -476,7 +476,7 @@ export const BOOKS = [
     tagline: "Un tren pequeño sube hasta donde vive la neblina",
     set: "mountain-day",
     accent: "#7fb6ff",
-    cover: { ink: "#eaf3ff", sub: "#8ba7c9" },
+    cover: { ink: "#eaf3ff", sub: "#8ba7c9", image: "/assets/nido/cuentos/covers/tico-premium-v1.avif" },
     pages: [
       {
         t: "La estación chiquita",
@@ -569,7 +569,7 @@ export const BOOKS = [
     tagline: "En la orilla del mar se puede escuchar muy lejos",
     set: "ocean-day",
     accent: "#5fc8e8",
-    cover: { ink: "#e8f8ff", sub: "#7ba9bd" },
+    cover: { ink: "#e8f8ff", sub: "#7ba9bd", image: "/assets/nido/cuentos/covers/ana-premium-v1.avif" },
     pages: [
       {
         t: "La niña de la orilla",
@@ -662,7 +662,7 @@ export const BOOKS = [
     tagline: "Una vicuñita descubre de dónde viene la música",
     set: "forest-dusk",
     accent: "#f2a0b5",
-    cover: { ink: "#fdeef2", sub: "#c294a2" },
+    cover: { ink: "#fdeef2", sub: "#c294a2", image: "/assets/nido/cuentos/covers/wayra-premium-v1.avif" },
     pages: [
       {
         t: "Orejas atentas",

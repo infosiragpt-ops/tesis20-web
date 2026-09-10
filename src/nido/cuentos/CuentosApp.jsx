@@ -25,7 +25,7 @@ import {
   wordTrack,
 } from "./cuentos-audio.js";
 import { createStage } from "./three/stage.js";
-import { svgElementToTexture } from "./three/textures.js";
+import { coverArtTexture, storyPageTexture, svgElementToTexture } from "./three/textures.js";
 import "./cuentos.css";
 
 const prefersReducedMotion = () =>
@@ -97,8 +97,9 @@ export default function CuentosApp() {
     let lastHover = null;
     const stage = createStage(canvas, {
       books: BOOKS,
+      initialBookId: latest.current.state.lastBook || BOOKS[0].id,
       reduceMotion: prefersReducedMotion(),
-      coverTexture: (book) => svgElementToTexture(`cover-${book.id}`, <BookCover book={book} />, 512, 744),
+      coverTexture: (book) => coverArtTexture(book),
       emblemTexture: (pinId) => {
         const emblem = emblemFor(pinId);
         const Art = CAST[pinId]?.Art;
@@ -113,16 +114,16 @@ export default function CuentosApp() {
         );
       },
       onHoverBook: (id) => {
-        if (id && id !== lastHover) sfx.hover();
+        if (id && id !== lastHover) sfx.hover(id);
         lastHover = id;
       },
       onClickBook: (id) => openDesk(id),
       onHoverToy: (id) => {
-        if (id) sfx.toy();
+        if (id) sfx.toy(id);
       },
       onClickToy: (pinId) => {
         const owned = latest.current.allPins.includes(pinId);
-        sfx.toy();
+        sfx.toy(pinId);
         latest.current.showToast(
           owned ? PIN_LABELS[pinId] || pinId : `${PIN_LABELS[pinId] || "Souvenir"} · todavía escondido`,
           pinId,
@@ -204,6 +205,7 @@ export default function CuentosApp() {
     const start = entry?.pages.length && last + 1 < book.pages.length ? last + 1 : 0;
     const tex = await pageTexture(book, start);
     stage.setPopupTextureNow(tex);
+    stage.setStoryPage(storyPageTexture(book, book.pages[start], start, book.pages.length), book.pages[start]);
     setPage(start);
     setReading(true);
     stage.openBook();
@@ -225,6 +227,7 @@ export default function CuentosApp() {
       const book = BOOKS.find((b) => b.id === latest.current.selectedId);
       if (!book || next < 0 || next >= book.pages.length) return;
       const tex = await pageTexture(book, next);
+      stageRef.current?.setStoryPage(storyPageTexture(book, book.pages[next], next, book.pages.length), book.pages[next]);
       stageRef.current?.showPage(tex);
       setPage(next);
     },
@@ -261,10 +264,6 @@ export default function CuentosApp() {
           state={state}
           onFocus={(id) => stageRef.current?.focusBook(id)}
           onOpen={openDesk}
-          onPan={(dir) => {
-            sfx.hover();
-            stageRef.current?.panShelf(dir);
-          }}
         />
       ) : null}
 
@@ -383,9 +382,22 @@ function TopBar({ stats, muted, onToggleSound, onAlbum, onHelp }) {
 
 /* ========================== estante =========================== */
 
-function ShelfOverlay({ state, onFocus, onOpen, onPan }) {
-  const [focus, setFocus] = useState(-1);
+function ShelfOverlay({ state, onFocus, onOpen }) {
+  const [focus, setFocus] = useState(() => Math.max(0, BOOKS.findIndex((book) => book.id === state.lastBook)));
   const lastHover = useRef(-1);
+  const rowRef = useRef(null);
+
+  useEffect(() => {
+    rowRef.current?.children[focus]?.scrollIntoView({
+      behavior: prefersReducedMotion() ? "auto" : "smooth",
+      block: "nearest",
+      inline: "center",
+    });
+    const frame = window.requestAnimationFrame(() => onFocus(BOOKS[focus].id));
+    return () => window.cancelAnimationFrame(frame);
+    // El foco del carrusel es la fuente de verdad para la cámara 3D.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focus]);
 
   const hover = (index, id) => {
     if (lastHover.current === index) return;
@@ -394,18 +406,26 @@ function ShelfOverlay({ state, onFocus, onOpen, onPan }) {
     onFocus(id);
   };
 
+  const move = (direction) => {
+    sfx.hover();
+    const next = (focus + direction + BOOKS.length) % BOOKS.length;
+    setFocus(next);
+    lastHover.current = next;
+    onFocus(BOOKS[next].id);
+  };
+
   return (
     <div className="cuentos-shelf-ui">
-      <button type="button" className="cuentos-arrow cuentos-arrow--left" onClick={() => onPan(-1)} aria-label="Ver cuentos anteriores">
+      <button type="button" className="cuentos-arrow cuentos-arrow--left" onClick={() => move(-1)} aria-label="Ver cuentos anteriores">
         ‹
       </button>
-      <button type="button" className="cuentos-arrow cuentos-arrow--right" onClick={() => onPan(1)} aria-label="Ver más cuentos">
+      <button type="button" className="cuentos-arrow cuentos-arrow--right" onClick={() => move(1)} aria-label="Ver más cuentos">
         ›
       </button>
 
       <section className="cuentos-picker" aria-label="Elige un cuento">
         <p className="cuentos-picker__title">Elige un cuento</p>
-        <ul className="cuentos-picker__row">
+        <ul ref={rowRef} className="cuentos-picker__row">
           {BOOKS.map((book, index) => {
             const status = bookStatus(state, book);
             const pins = bookPins(book);
@@ -418,16 +438,21 @@ function ShelfOverlay({ state, onFocus, onOpen, onPan }) {
                   onFocus={() => hover(index, book.id)}
                   aria-label={`Abrir ${book.title}. ${status.pct}% leído.`}
                 >
-                  <strong style={{ color: book.accent }}>{book.title}</strong>
-                  <span className="cuentos-picker__bar">
-                    <i style={{ width: `${status.pct}%`, background: book.accent }} />
+                  <span className="cuentos-picker__cover" aria-hidden="true">
+                    <BookCover book={book} />
                   </span>
-                  <span className="cuentos-picker__meta">
-                    <em>{status.finished ? "Terminado ★ Léelo otra vez" : `${book.pages.length} páginas`}</em>
-                    <span className="cuentos-picker__pins">
-                      {pins.map((pin) => (
-                        <i key={pin.id} className={status.pins.includes(pin.id) ? "is-owned" : ""} />
-                      ))}
+                  <span className="cuentos-picker__copy">
+                    <strong style={{ color: book.accent }}>{book.title}</strong>
+                    <span className="cuentos-picker__bar">
+                      <i style={{ width: `${status.pct}%`, background: book.accent }} />
+                    </span>
+                    <span className="cuentos-picker__meta">
+                      <em>{status.finished ? "Terminado ★ Léelo otra vez" : `${book.pages.length} páginas`}</em>
+                      <span className="cuentos-picker__pins">
+                        {pins.map((pin) => (
+                          <i key={pin.id} className={status.pins.includes(pin.id) ? "is-owned" : ""} />
+                        ))}
+                      </span>
                     </span>
                   </span>
                 </button>
@@ -493,7 +518,10 @@ function Reader({ book, page, state, pinRef, onPage, onClose, onStar, onPin, onQ
 
   useEffect(() => {
     onStar(book.id, page);
-  }, [book.id, page, onStar]);
+    // La página es el evento: la función del progreso puede cambiar de
+    // referencia después de guardar y no debe volver a marcarla en bucle.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [book.id, page]);
 
   // La voz de estudio de esta página y de la siguiente se descargan antes de
   // que se pidan, para que «Léemelo» y el pase de hoja no esperen a la red.
@@ -600,7 +628,7 @@ function Reader({ book, page, state, pinRef, onPage, onClose, onStar, onPin, onQ
         ))}
       </div>
 
-      <article className="cuentos-card cuentos-card--floating">
+      <article className="cuentos-card cuentos-card--page-copy" aria-live="polite">
         <p className="cuentos-card__eyebrow">
           Página {page + 1} de {book.pages.length}
         </p>
