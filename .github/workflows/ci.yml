@@ -45,6 +45,9 @@ jobs:
       - name: Compilar
         run: npm run build
 
+      - name: Verificar distribución íntegra de la voz de cuentos
+        run: node scripts/check-nido-voice-delivery.mjs
+
       - name: Verificar currículo y retos de Nido
         run: npm run check:nido
 

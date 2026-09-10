@@ -1,6 +1,6 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
-import { rm } from "node:fs/promises";
+import { readdir, readFile, rm, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 
 function removeInternalQaArtifacts() {
@@ -26,6 +26,28 @@ function removeInternalQaArtifacts() {
           rm(resolve(outputDirectory, artifact), { recursive: true, force: true }),
         ),
       );
+    },
+  };
+}
+
+/** Conserva los originales de voz; publica solo datos usados por el lector. */
+function optimizeNidoVoiceDelivery() {
+  return {
+    name: "tesis20-optimize-nido-voice-delivery",
+    apply: "build",
+    async closeBundle() {
+      const audioDirectory = resolve(process.cwd(), "dist/assets/nido/audio");
+      for (const name of ["manifest.json", "cuentos-manifest.json"]) {
+        const file = resolve(audioDirectory, name);
+        const data = JSON.parse(await readFile(file, "utf8"));
+        await writeFile(file, JSON.stringify(data));
+      }
+      // Los sidecars son caché del generador: sus tiempos ya se incluyen en
+      // cuentos-manifest.json. No borrar fuentes ni ningún MP3 de producción.
+      const cuentosDirectory = resolve(audioDirectory, "cuentos");
+      for (const name of await readdir(cuentosDirectory)) {
+        if (/^[a-f0-9]{28}\.json$/.test(name)) await rm(resolve(cuentosDirectory, name));
+      }
     },
   };
 }
@@ -126,5 +148,5 @@ export default defineConfig({
       clientFiles: ["./src/main.jsx"],
     },
   },
-  plugins: [react(), thesisSearchDevApi(), removeInternalQaArtifacts()],
+  plugins: [react(), thesisSearchDevApi(), removeInternalQaArtifacts(), optimizeNidoVoiceDelivery()],
 });

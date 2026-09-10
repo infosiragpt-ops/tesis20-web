@@ -17,6 +17,8 @@ Escena y figuras originales en Three.js. Hyper3D MCP no estuvo disponible y no s
 
 El sonido sigue requiriendo la primera interacción del visitante por las restricciones de reproducción automática del navegador. No se cambia el proveedor de narración ni se incluyen credenciales en este cambio.
 
+La distribución compacta los manifiestos sin cambiar sus datos y omite los sidecars de alineación duplicados, que solo usa el generador y permanecen en las fuentes. Se conservan todos los MP3, tiempos por palabra y portadas; el control de distribución comprueba los manifiestos y cada archivo de audio. El presupuesto de 10.1 MiB no se amplía.
+
 ## Verificación
 
 CI ejecuta las cuatro pruebas de límites/inercia/escala/cobertura del reparto, además de compilación, currículo y presupuesto. La batería general mantiene tres fallos previos ajenos a Nido en `thesis-search.test.mjs`; no forman parte de esta modificación.
