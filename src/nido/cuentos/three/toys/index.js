@@ -28,8 +28,12 @@ import * as tambor from "./tambor.js";
 import * as tren from "./tren.js";
 import * as vicuna from "./vicuna.js";
 import * as zorro from "./zorro.js";
+import * as mariposa from "./mariposa.js";
+import * as pelicano from "./pelicano.js";
+import * as carpintero from "./carpintero.js";
+import { nina, nino, nina2, maquinista } from "./personajes.js";
 
-const REGISTRY = { arbol, ballena, barco, bufeo, buho, cactus, campana, caracola, casa, cohete, cometa, estrella, farol, frasco, luna, oso, oveja, pez, picaflor, quena, rana, tambor, tren, vicuna, zorro };
+const REGISTRY = { arbol, ballena, barco, bufeo, buho, cactus, campana, caracola, casa, cohete, cometa, estrella, farol, frasco, luna, oso, oveja, pez, picaflor, quena, rana, tambor, tren, vicuna, zorro, mariposa, pelicano, carpintero, nina, nino, nina2, maquinista };
 
 export function registerToys(modules) {
   modules.forEach((module) => {
@@ -39,6 +43,10 @@ export function registerToys(modules) {
 
 export function hasToy(id) {
   return Boolean(REGISTRY[id]);
+}
+
+export function toyLabel(id) {
+  return REGISTRY[id]?.label || "Figura mágica";
 }
 
 // Qué figura representa cada souvenir de los cuentos.

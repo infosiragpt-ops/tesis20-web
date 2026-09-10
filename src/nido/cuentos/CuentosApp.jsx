@@ -19,6 +19,7 @@ import {
   warmUpVoices,
 } from "./cuentos-audio.js";
 import { createStage } from "./three/stage.js";
+import { MagicCursor } from "./MagicCursor.jsx";
 import { coverArtTexture, storyPageTexture, svgElementToTexture } from "./three/textures.js";
 import "./cuentos.css";
 
@@ -38,6 +39,8 @@ export default function CuentosApp() {
   const [muted, setMuted] = useState(() => isMuted());
   const [toast, setToast] = useState(null);
   const [stageReady, setStageReady] = useState(false);
+  const [focusedId, setFocusedId] = useState(() => state.lastBook || BOOKS[0].id);
+  const [zoom, setZoom] = useState(100);
   const toastTimer = useRef(null);
   const canvasRef = useRef(null);
   const stageRef = useRef(null);
@@ -111,17 +114,14 @@ export default function CuentosApp() {
         if (id && id !== lastHover) sfx.hover(id);
         lastHover = id;
       },
+      onFocusBook: setFocusedId,
+      onZoom: setZoom,
       onClickBook: (id) => openDesk(id),
       onHoverToy: (id) => {
         if (id) sfx.toy(id);
       },
       onClickToy: (pinId) => {
-        const owned = latest.current.allPins.includes(pinId);
         sfx.toy(pinId);
-        latest.current.showToast(
-          owned ? PIN_LABELS[pinId] || pinId : `${PIN_LABELS[pinId] || "Souvenir"} · todavía escondido`,
-          pinId,
-        );
       },
       onFrame: () => {
         const btn = pinRef.current;
@@ -185,7 +185,7 @@ export default function CuentosApp() {
 
   const pageTexture = useCallback(
     (book, pageIndex) =>
-      svgElementToTexture(`page-${book.id}-${pageIndex}`, <Scene book={book} pageIndex={pageIndex} interactive={false} showPin={false} />, 1000, 640),
+      svgElementToTexture(`page-${book.id}-${pageIndex}`, <Scene book={book} pageIndex={pageIndex} interactive={false} showPin={false} showCast={false} />, 1000, 640),
     [],
   );
 
@@ -229,8 +229,13 @@ export default function CuentosApp() {
   );
 
   return (
-    <div className="cuentos cuentos--3d">
+    <div className={`cuentos cuentos--3d${reading ? " cuentos--reading" : ""}`}>
       <canvas ref={canvasRef} className="cuentos-canvas" aria-hidden="true" />
+      <div className="cuentos-zoom" role="group" aria-label="Zoom de la escena 3D">
+        <button type="button" aria-label="Alejar escena" disabled={zoom <= 80} onClick={() => stageRef.current?.setZoom((zoom - 10) / 100)}>−</button>
+        <button type="button" aria-label="Restablecer zoom" onClick={() => stageRef.current?.setZoom(1)}>{zoom}%</button>
+        <button type="button" aria-label="Acercar escena" disabled={zoom >= 155} onClick={() => stageRef.current?.setZoom((zoom + 10) / 100)}>+</button>
+      </div>
       {!stageReady ? <div className="cuentos-loading">Abriendo la biblioteca…</div> : null}
 
       <TopBar
@@ -256,6 +261,7 @@ export default function CuentosApp() {
       {!selectedId ? (
         <ShelfOverlay
           state={state}
+          focusedId={focusedId}
           onFocus={(id) => stageRef.current?.focusBook(id)}
           onOpen={openDesk}
         />
@@ -311,7 +317,7 @@ export default function CuentosApp() {
         </div>
       ) : null}
 
-      <SparkleTrail />
+      <MagicCursor />
     </div>
   );
 }
@@ -376,10 +382,19 @@ function TopBar({ stats, muted, onToggleSound, onAlbum, onHelp }) {
 
 /* ========================== estante =========================== */
 
-function ShelfOverlay({ state, onFocus, onOpen }) {
-  const [focus, setFocus] = useState(() => Math.max(0, BOOKS.findIndex((book) => book.id === state.lastBook)));
+function ShelfOverlay({ state, focusedId, onFocus, onOpen }) {
+  const focus = Math.max(0, BOOKS.findIndex(book => book.id === focusedId));
   const lastHover = useRef(-1);
   const rowRef = useRef(null);
+  const dragRef = useRef(null);
+  const suppressClick = useRef(false);
+
+  useEffect(() => {
+    const end = () => { dragRef.current = null; };
+    window.addEventListener("pointerup", end);
+    window.addEventListener("blur", end);
+    return () => { window.removeEventListener("pointerup", end); window.removeEventListener("blur", end); };
+  }, []);
 
   useEffect(() => {
     rowRef.current?.children[focus]?.scrollIntoView({
@@ -387,25 +402,36 @@ function ShelfOverlay({ state, onFocus, onOpen }) {
       block: "nearest",
       inline: "center",
     });
-    const frame = window.requestAnimationFrame(() => onFocus(BOOKS[focus].id));
-    return () => window.cancelAnimationFrame(frame);
-    // El foco del carrusel es la fuente de verdad para la cámara 3D.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [focus]);
 
   const hover = (index, id) => {
-    if (lastHover.current === index) return;
+    if ((lastHover.current === index && focus === index) || dragRef.current) return;
     lastHover.current = index;
-    setFocus(index);
     onFocus(id);
   };
 
   const move = (direction) => {
     sfx.hover();
     const next = (focus + direction + BOOKS.length) % BOOKS.length;
-    setFocus(next);
     lastHover.current = next;
     onFocus(BOOKS[next].id);
+  };
+
+  const dragStart = (event) => {
+    if (event.button !== 0) return;
+    suppressClick.current = false;
+    dragRef.current = { x: event.clientX, index: focus, moved: false, next: focus };
+  };
+  const dragMove = (event) => {
+    const drag = dragRef.current;
+    if (!drag) return;
+    const dx = event.clientX - drag.x;
+    if (Math.abs(dx) > 8) {
+      drag.moved = true; suppressClick.current = true;
+      rowRef.current.setPointerCapture(event.pointerId);
+      const next = Math.max(0, Math.min(BOOKS.length - 1, drag.index - Math.round(dx / 145)));
+      if (next !== drag.next) { drag.next = next; onFocus(BOOKS[next].id); }
+    }
   };
 
   return (
@@ -418,8 +444,12 @@ function ShelfOverlay({ state, onFocus, onOpen }) {
       </button>
 
       <section className="cuentos-picker" aria-label="Elige un cuento">
-        <p className="cuentos-picker__title">Elige un cuento</p>
-        <ul ref={rowRef} className="cuentos-picker__row">
+        <p className="cuentos-picker__title">Elige un cuento <small>Arrastra para explorar · pellizca o usa + para acercarte</small></p>
+        <ul ref={rowRef} className="cuentos-picker__row"
+          onPointerDown={dragStart} onPointerMove={dragMove}
+          onPointerUp={() => { dragRef.current = null; }}
+          onPointerCancel={() => { dragRef.current = null; suppressClick.current = true; }}
+          onClickCapture={event => { if (suppressClick.current) { event.preventDefault(); event.stopPropagation(); suppressClick.current = false; } }}>
           {BOOKS.map((book, index) => {
             const status = bookStatus(state, book);
             const pins = bookPins(book);
@@ -428,7 +458,7 @@ function ShelfOverlay({ state, onFocus, onOpen }) {
                 <button
                   type="button"
                   onClick={() => onOpen(book.id)}
-                  onMouseEnter={() => hover(index, book.id)}
+                  onPointerMove={event => { if (event.pointerType === "mouse" && !event.buttons) hover(index, book.id); }}
                   onFocus={() => hover(index, book.id)}
                   aria-label={`Abrir ${book.title}. ${status.pct}% leído.`}
                 >
@@ -902,50 +932,4 @@ function Help({ onClose }) {
       </div>
     </div>
   );
-}
-
-/* ========================= chispitas =========================== */
-
-function SparkleTrail() {
-  const layer = useRef(null);
-
-  useEffect(() => {
-    if (prefersReducedMotion()) return undefined;
-    if (!window.matchMedia?.("(hover: hover) and (pointer: fine)").matches) return undefined;
-    const host = layer.current;
-    if (!host) return undefined;
-
-    const pool = Array.from({ length: 16 }).map(() => {
-      const dot = document.createElement("i");
-      dot.className = "cuentos-spark";
-      host.appendChild(dot);
-      return dot;
-    });
-    let cursor = 0;
-    let last = 0;
-
-    const onMove = (event) => {
-      const now = performance.now();
-      if (now - last < 46) return;
-      last = now;
-      const dot = pool[cursor % pool.length];
-      cursor += 1;
-      const size = 4 + Math.random() * 7;
-      dot.style.width = `${size}px`;
-      dot.style.height = `${size}px`;
-      dot.style.left = `${event.clientX + (Math.random() * 18 - 9)}px`;
-      dot.style.top = `${event.clientY + (Math.random() * 18 - 9)}px`;
-      dot.classList.remove("is-live");
-      void dot.offsetWidth;
-      dot.classList.add("is-live");
-    };
-
-    window.addEventListener("pointermove", onMove, { passive: true });
-    return () => {
-      window.removeEventListener("pointermove", onMove);
-      pool.forEach((dot) => dot.remove());
-    };
-  }, []);
-
-  return <div className="cuentos-sparks" ref={layer} aria-hidden="true" />;
 }

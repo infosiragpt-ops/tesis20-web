@@ -39,6 +39,9 @@ jobs:
       - name: Validar sintaxis del control de calidad
         run: node --check scripts/quality-check.mjs
 
+      - name: Verificar gestos y personajes de la biblioteca 3D
+        run: node --test tests/nido-game/library-gestures.test.mjs
+
       - name: Compilar
         run: npm run build
 

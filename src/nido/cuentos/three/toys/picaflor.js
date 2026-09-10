@@ -94,6 +94,7 @@ export function build() {
     const wing = new THREE.Group();
     wing.position.set(side * 0.028, 0.02, -0.01);
     orient(wing, new THREE.Vector3(side * 0.95, 0.78, -0.32), new THREE.Vector3(side * 0.3, 0.25, 0.9));
+    wing.userData.flutter = side;
     wing.add(plate(leafShape(0.12, 0.056), 0.007, turquoise));
     bird.add(wing);
   });
