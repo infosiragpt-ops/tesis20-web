@@ -82,13 +82,13 @@ const PAGE_META = {
     noindex: true,
   },
   nido: {
-    title: "Videojuegos educativos para niños | Tesis20 Nido",
+    title: "Cuentos ilustrados con narración para niños | Tesis20 Nido",
     description:
-      "Videojuegos educativos para niñas y niños de 2 a 6 años: lógica, matemáticas, atención y memoria, habla en inglés, con narración profesional.",
+      "Biblioteca de cuentos ilustrados para niñas y niños de 3 a 6 años: ocho historias originales del Perú, narración en voz alta, souvenirs escondidos y quiz final.",
     path: "/nido",
     schemaType: "CollectionPage",
     image: `${SITE_ORIGIN}/assets/nido/nido-platform-preview.jpg`,
-    imageAlt: "Catálogo de juegos educativos de Tesis20 Nido",
+    imageAlt: "Biblioteca de cuentos ilustrados de Tesis20 Nido",
     imageWidth: 1536,
     imageHeight: 1024,
   },

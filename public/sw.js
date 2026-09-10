@@ -1,4 +1,4 @@
-const CACHE_VERSION = "v5";
+const CACHE_VERSION = "v6";
 const SHELL_CACHE = `tesis20-shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `tesis20-runtime-${CACHE_VERSION}`;
 const CACHE_PREFIX = "tesis20-";

@@ -60,12 +60,12 @@ const routeSpecs = [
   {
     path: "/nido",
     output: "dist/nido.html",
-    title: "Videojuegos educativos para niños | Tesis20 Nido",
-    h1: "Aprender jugando, crecer con confianza",
+    title: "Cuentos ilustrados con narración para niños | Tesis20 Nido",
+    h1: "Cuentos para leer, escuchar y coleccionar",
     content: [
-      "Explorar juegos",
-      "Misión del Bosque",
-      "no necesitan saber leer",
+      "Explorar cuentos",
+      "Kusi y la luna dormilona",
+      "No necesitan saber leer",
     ],
     schemaType: "CollectionPage",
   },

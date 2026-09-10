@@ -321,56 +321,60 @@ const routeDefinitions = [
   {
     output: "nido.html",
     path: "/nido",
-    title: "Videojuegos educativos para niños | Tesis20 Nido",
+    title: "Cuentos ilustrados con narración para niños | Tesis20 Nido",
     description:
-      "Videojuegos educativos para niñas y niños de 2 a 6 años: lógica, matemáticas, atención y memoria, habla en inglés, con narración profesional.",
-    heading: "Aprender jugando, crecer con confianza",
+      "Biblioteca de cuentos ilustrados para niñas y niños de 3 a 6 años: ocho historias originales del Perú, narración en voz alta, souvenirs escondidos y quiz final.",
+    heading: "Cuentos para leer, escuchar y coleccionar",
     schemaType: "CollectionPage",
     image: `${SITE_ORIGIN}/assets/nido/nido-platform-preview.jpg`,
-    imageAlt: "Catálogo de juegos educativos de Tesis20 Nido",
+    imageAlt: "Biblioteca de cuentos ilustrados de Tesis20 Nido",
     imageWidth: 1536,
     imageHeight: 1024,
     faqItems: [
       {
-        question: "¿Necesito crear una cuenta para jugar?",
+        question: "¿Necesito crear una cuenta para leer?",
         answer:
-          "No. Los juegos de Tesis20 Nido se juegan directamente desde el navegador, sin registro ni datos del menor.",
+          "No. Los cuentos de Tesis20 Nido se abren directamente desde el navegador, sin registro ni datos del menor. El progreso se guarda solo en el dispositivo.",
       },
       {
         question: "¿Los niños necesitan saber leer?",
         answer:
-          "No. Cada consigna se narra en voz alta y las respuestas son tarjetas grandes con dibujos, pensadas para deditos pequeños.",
+          "No. Cada página puede narrarse en voz alta con la voz del navegador, y las palabras se van marcando mientras suenan. También se puede tocar una palabra suelta para escucharla.",
       },
       {
-        question: "¿Qué edades cubre la plataforma?",
+        question: "¿Qué hay en cada cuento?",
         answer:
-          "Rutas adaptadas a tres etapas: 2–3, 4–5 y 6 años, con dificultad y ayudas propias de cada una.",
+          "Diez páginas ilustradas, cinco souvenirs escondidos que se coleccionan en una repisa y un quiz final de cinco preguntas sobre la historia.",
       },
     ],
     content: `
       <p class="eyebrow">Tesis20 Nido</p>
-      <h1>Aprender jugando, crecer con confianza</h1>
-      <p>Videojuegos educativos para niñas y niños, organizados por edad y área de aprendizaje.</p>
-      <p><a href="/nido#clases">Explorar juegos</a></p>
-      <section id="clases" aria-labelledby="static-nido-classes-title">
-        <h2 id="static-nido-classes-title">Juegos pensados para aprender haciendo</h2>
-        <p>Rutas de lógica, matemáticas, atención y memoria, desarrollo del habla e inglés, más la Misión del Bosque: un videojuego de exploración y matemáticas.</p>
+      <h1>Cuentos para leer, escuchar y coleccionar</h1>
+      <p>Una biblioteca de cuentos ilustrados con narración, pensada para niñas y niños de 3 a 6 años y para las familias que leen con ellos.</p>
+      <p><a href="/nido#cuentos">Explorar cuentos</a></p>
+      <section id="cuentos" aria-labelledby="static-nido-books-title">
+        <h2 id="static-nido-books-title">Ocho historias originales con sabor a Perú</h2>
+        <p>Cada libro tiene diez páginas ilustradas, un personaje protagonista y una idea sencilla por página, con vocabulario concreto y frases cortas.</p>
         <ul>
-          <li>Lógica: observar, relacionar, clasificar y resolver patrones.</li>
-          <li>Matemáticas: comparar, contar y reconocer relaciones numéricas.</li>
-          <li>Misión del Bosque: correr, saltar y recolectar para aprender a contar en movimiento.</li>
+          <li>Kusi y la luna dormilona: un osito de anteojos quiere despertar a la luna.</li>
+          <li>Amaru y el río de estrellas: un bufeo rosado busca las luces que se apagaron.</li>
+          <li>Sami y la cometa viajera: una cometa se escapa y cruza todo el valle.</li>
+          <li>Killa y el zorro del desierto: una noche de arena, estrellas y huellas.</li>
+          <li>Chaska y la flor de cristal: un picaflor cruza la niebla para llegar a tiempo.</li>
+          <li>Tico y el tren de las nubes: un tren pequeño sube hasta donde vive la neblina.</li>
+          <li>Ana y la ballena: en la orilla del mar se puede escuchar muy lejos.</li>
+          <li>Wayra y el bosque que canta: una vicuñita descubre de dónde viene la música.</li>
         </ul>
       </section>
-      <section id="como-jugar" aria-labelledby="static-nido-steps-title">
-        <h2 id="static-nido-steps-title">Cinco formas de aprender jugando</h2>
+      <section id="como-se-lee" aria-labelledby="static-nido-steps-title">
+        <h2 id="static-nido-steps-title">Cómo se juega</h2>
         <ol>
-          <li>Tocar y seleccionar directamente figuras, emociones u objetos.</li>
-          <li>Arrastrar y soltar piezas, con alternativa de tocar pieza y destino.</li>
-          <li>Ordenar tamaños y completar secuencias.</li>
-          <li>Emparejar palabras, cantidades, animales e imágenes.</li>
-          <li>Caminar por recorridos hasta la respuesta correcta.</li>
+          <li>Elegir un libro de la repisa y abrirlo.</li>
+          <li>Pedir que lo lean en voz alta o leerlo por su cuenta, tocando las palabras para escucharlas.</li>
+          <li>Buscar el souvenir escondido que brilla en cinco de las páginas y guardarlo en la repisa.</li>
+          <li>Responder el quiz final de cinco preguntas sobre la historia.</li>
         </ol>
-        <p>Los juegos se adaptan a 2–3, 4–5 y 6 años, con piezas, recorridos y ayudas adecuados para cada etapa. No necesitan saber leer: cada consigna se narra y puede repetirse.</p>
+        <p>No necesitan saber leer: la narración marca cada palabra mientras suena. Todo el progreso se guarda solo en el dispositivo y no se piden datos del menor.</p>
       </section>`,
   },
   {
@@ -560,8 +564,8 @@ function createNavigation(route) {
         <a href="/nido" aria-label="Tesis20 Nido, inicio">Tesis20 Nido</a>
         <nav aria-label="Navegación principal de Nido">
           <a href="/nido">Inicio</a>
-          <a href="/nido#clases">Juegos</a>
-          <a href="/nido#como-jugar">Cómo se juega</a>
+          <a href="/nido#cuentos">Cuentos</a>
+          <a href="/nido#como-se-lee">Cómo se juega</a>
           <a href="/">Tesis20.com</a>
         </nav>
       </header>`;

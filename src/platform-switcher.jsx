@@ -18,7 +18,7 @@ const platforms = [
   {
     id: "nido",
     name: "Nido20",
-    description: "Aprendizaje y estimulación temprana",
+    description: "Cuentos ilustrados con narración",
     href: "/nido",
     Icon: Baby,
     available: true,
