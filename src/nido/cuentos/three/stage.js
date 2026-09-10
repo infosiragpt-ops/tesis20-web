@@ -45,6 +45,12 @@ const DESK_SLOTS = [
 ];
 
 const STORY_PROP_TO_TOY = {
+  pipo: "cerdito",
+  lolo: "cerdito",
+  tito: "cerdito",
+  paja: "casa",
+  madera: "casa",
+  ladrillos: "casa",
   arboles: "arbol",
   agua: "bufeo",
   arroyo: "rana",

@@ -1,9 +1,103 @@
-// Biblioteca de cuentos originales de Tesis20 Nido.
+// Biblioteca de cuentos de Tesis20 Nido: ocho historias originales y una
+// adaptación propia de «Los tres cerditos».
 // Cada libro tiene 10 páginas narradas, 5 souvenirs escondidos y 5 preguntas
 // finales. Los textos están escritos para niñas y niños de 3 a 6 años: frases
 // cortas, vocabulario concreto y una idea por página.
 
 export const BOOKS = [
+  {
+    id: "cerditos",
+    title: "Los tres cerditos",
+    hero: "Pipo, Lolo y Tito",
+    tagline: "Tres hermanos, tres casas y un lobo que sopla",
+    set: "meadow-day",
+    accent: "#f4a6c1",
+    cover: { ink: "#fff1f6", sub: "#d9a3b8", image: "/assets/nido/cuentos/covers/cerditos-premium-v1.avif" },
+    pages: [
+      {
+        t: "Tres hermanos cerditos",
+        x: "Pipo, Lolo y Tito eran tres cerditos hermanos. Vivían con su mamá en una casita junto al bosque. —Ya son grandes —dijo mamá—. Cada uno hará su propia casa.",
+        light: "day",
+        cast: ["pipo", "lolo", "tito"],
+        props: ["sol", "nubes", "casa", "arboles", "flores"],
+      },
+      {
+        t: "La casa de paja",
+        x: "Pipo quería terminar rápido para ir a jugar. Juntó paja seca y la amontonó. En un ratito su casa estuvo lista. —¡Qué fácil! —dijo, y se fue a jugar.",
+        light: "day",
+        cast: ["pipo"],
+        props: ["sol", "nubes", "paja", "pasto", "flores"],
+      },
+      {
+        t: "La casa de madera",
+        x: "Lolo era un poco glotón. Hizo su casa con palos de madera y tardó un poco más. Después se sentó a la sombra a comer manzanas rojas.",
+        light: "day",
+        cast: ["lolo"],
+        props: ["sol", "madera", "arboles", "pasto"],
+        pin: "manzana",
+      },
+      {
+        t: "La casa de ladrillos",
+        x: "Tito era muy trabajador. Puso ladrillo sobre ladrillo y los pegó con cemento. Trabajó todo el día. Al final, su casa quedó firme y bonita.",
+        light: "dusk",
+        cast: ["tito"],
+        props: ["sol", "ladrillos", "pasto", "flores"],
+        pin: "casita",
+      },
+      {
+        t: "Un aullido en el bosque",
+        x: "Esa noche se oyó un aullido: ¡Auuu! Era el lobo, y tenía mucha hambre. Olfateó el aire y caminó derechito a la casa de paja.",
+        light: "night",
+        cast: ["lobo"],
+        props: ["luna", "estrellas", "arboles", "paja"],
+        pin: "lobo",
+      },
+      {
+        t: "¡Soplaré y soplaré!",
+        x: "—¡Ábreme la puerta, cerdito! —gritó el lobo. —¡No, no y no! —dijo Pipo. El lobo sopló y sopló, y la casa de paja voló por los aires. Pipo corrió a la casa de Lolo.",
+        light: "night",
+        cast: ["pipo", "lobo"],
+        props: ["luna", "estrellas", "viento", "paja"],
+      },
+      {
+        t: "La casa de madera cruje",
+        x: "El lobo llegó a la casa de madera. —¡Ábranme la puerta! —¡No, no y no! —dijeron los dos cerditos. El lobo sopló muy fuerte. La casa crujió y se cayó. Los dos corrieron a la casa de Tito.",
+        light: "night",
+        cast: ["lolo", "pipo", "lobo"],
+        props: ["luna", "estrellas", "viento", "madera"],
+      },
+      {
+        t: "La casa que no se mueve",
+        x: "—¡Ábranme o soplaré! —gritó el lobo. Sopló y sopló hasta quedarse sin aire. Pero la casa de ladrillos no se movió ni un poquito. Entonces trajo una escalera y subió al techo.",
+        light: "night",
+        cast: ["lobo"],
+        props: ["luna", "estrellas", "ladrillos", "viento"],
+        pin: "escalera",
+      },
+      {
+        t: "¡Plaf! en la olla",
+        x: "El lobo se metió por la chimenea. Pero abajo, Tito había puesto una olla de sopa muy caliente. ¡Plaf! El lobo cayó en la olla. —¡Ay, ay, qué calor! —gritó, y salió corriendo al bosque.",
+        light: "moonrise",
+        cast: ["tito", "lobo"],
+        props: ["luna", "estrellas", "ladrillos", "olla"],
+        pin: "olla",
+      },
+      {
+        t: "Tres casas de ladrillos",
+        x: "El lobo nunca más volvió. Pipo y Lolo aprendieron que trabajar con calma vale la pena. Con la ayuda de Tito, hicieron dos casas de ladrillos. Y los tres hermanos vivieron felices y seguros.",
+        light: "day",
+        cast: ["pipo", "lolo", "tito"],
+        props: ["sol", "nubes", "ladrillos", "flores", "pasto"],
+      },
+    ],
+    quiz: [
+      { q: "¿Cuántos cerditos hermanos había?", a: ["Tres", "Cinco", "Uno"] },
+      { q: "¿De qué hizo Pipo su casa?", a: ["De paja", "De ladrillos", "De hielo"] },
+      { q: "¿Qué comía Lolo a la sombra?", a: ["Manzanas rojas", "Helado", "Sopa"] },
+      { q: "¿Qué casa no pudo tirar el lobo?", a: ["La de ladrillos", "La de paja", "La de madera"] },
+      { q: "¿Dónde cayó el lobo al bajar por la chimenea?", a: ["En una olla de sopa caliente", "En una cama", "En el río"] },
+    ],
+  },
   {
     id: "kusi",
     title: "Kusi y la luna dormilona",
@@ -751,6 +845,11 @@ export const BOOKS = [
 ];
 
 export const PIN_LABELS = {
+  manzana: "Manzana de Lolo",
+  casita: "Casita de ladrillos",
+  lobo: "Lobo soplador",
+  escalera: "Escalera del lobo",
+  olla: "Olla de sopa caliente",
   buho: "Búho del bosque",
   farol: "Farol de vidrio",
   panal: "Panal de miel",
