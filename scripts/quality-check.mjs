@@ -761,7 +761,14 @@ for (const buildAsset of buildAssets) {
   if (buildAsset.endsWith(".js")) {
     javascriptBytes += bytes;
     if (isEagerAsset) initialJavascriptBytes += bytes;
-    check(bytes <= 250 * 1024, `${buildAsset} supera el máximo de 250 KiB por chunk.`);
+    // 2026-09-10: /nido pasa a un escenario WebGL (Three.js). El motor va en
+    // su propio chunk diferido `vendor-three`, que solo se descarga al entrar
+    // a /nido; el resto de chunks conserva su tope de 250 KiB.
+    const chunkLimit = /vendor-three-/.test(buildAsset) ? 760 * 1024 : 250 * 1024;
+    check(
+      bytes <= chunkLimit,
+      `${buildAsset} supera el máximo de ${Math.round(chunkLimit / 1024)} KiB por chunk.`,
+    );
   }
   if (buildAsset.endsWith(".css")) {
     stylesheetBytes += bytes;
@@ -827,12 +834,17 @@ check(
 // 2026-07-28 (octies): 767 → 772 KiB por el pase P0/P1 de jugabilidad:
 // ciclo de frutas field/held/basket, catch pop+pointer capture, path delay
 // en error y skip de celebración. El JS inicial sigue en 450 KiB.
+// 2026-09-10: 792 → 1400 KiB porque /nido pasa de juegos 2D a una biblioteca
+// de cuentos en WebGL: Three.js (~600 KiB minificado) va en el chunk diferido
+// `vendor-three`, que solo se descarga al entrar a /nido. A cambio salen del
+// bundle el motor de juegos y la matriz de 529 juegos (~270 KiB). El
+// JavaScript inicial conserva el límite de 450 KiB.
 // 2026-08-03: 772 → 792 KiB por el buscador especializado de /recursos:
 // carga, filtrado y ranking local de tesis. Su chunk es diferido y el JS
 // inicial conserva el límite de 450 KiB.
 check(
-  javascriptBytes <= 792 * 1024,
-  `El JavaScript total con rutas diferidas no debe superar 792 KiB (${Math.ceil(javascriptBytes / 1024)} KiB).`,
+  javascriptBytes <= 1400 * 1024,
+  `El JavaScript total con rutas diferidas no debe superar 1400 KiB (${Math.ceil(javascriptBytes / 1024)} KiB).`,
 );
 check(
   initialStylesheetBytes > 0 && initialStylesheetBytes <= 85 * 1024,
@@ -859,7 +871,10 @@ check(
 // no se incorporaron 4,000 binarios ni dependencias externas.
 // 2026-09-01: 9.5 → 9.51 MiB por el ItemList estático de repositorios en
 // /recursos (el .docx del contrato no entra: se excluye junto a PDF y MP3).
-check(deployBytesWithoutAudioAndPdf <= 9.51 * 1024 * 1024, `El build sin audios/PDF supera 9.51 MiB (${(deployBytesWithoutAudioAndPdf / 1024 / 1024).toFixed(2)} MiB).`);
+// 2026-09-10: 9.51 → 10.1 MiB por el escenario WebGL de /nido: Three.js va en
+// el chunk diferido `vendor-three` (~560 KiB) que solo se descarga en /nido;
+// el motor de juegos anterior ya no se compila. Sin binarios nuevos.
+check(deployBytesWithoutAudioAndPdf <= 10.1 * 1024 * 1024, `El build sin audios/PDF supera 10.1 MiB (${(deployBytesWithoutAudioAndPdf / 1024 / 1024).toFixed(2)} MiB).`);
 
 for (const htmlFile of distFiles.filter((file) => file.endsWith(".html"))) {
   check((await fileSize(htmlFile)) <= 300 * 1024, `${htmlFile} supera 300 KiB.`);

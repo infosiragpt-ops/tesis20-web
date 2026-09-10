@@ -93,6 +93,12 @@ export default defineConfig({
             return "vendor-react";
           }
 
+          // Three.js solo lo usa /nido: va en su propio chunk diferido para
+          // que el resto del sitio no lo descargue y para cachearlo aparte.
+          if (id.includes("node_modules/three/")) {
+            return "vendor-three";
+          }
+
           // La matriz de 500 juegos es contenido estático y cambia con mucha
           // menos frecuencia que el motor. Mantenerla en un chunk propio
           // evita que la ruta diferida de Nido supere el presupuesto por
