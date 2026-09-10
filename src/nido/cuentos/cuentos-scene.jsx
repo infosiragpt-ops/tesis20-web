@@ -181,7 +181,7 @@ export function Souvenir({ id, size = 54, locked = false }) {
   );
 }
 
-/** Portada del libro: recorta la escena de la primera página en vertical. */
+/** Portada editorial: arte original generado para el cuento + texto exacto. */
 export function BookCover({ book, className = "" }) {
   const words = book.title.split(" ");
   const lines = [];
@@ -197,25 +197,35 @@ export function BookCover({ book, className = "" }) {
   if (current.trim()) lines.push(current.trim());
 
   return (
-    <svg className={`cuento-cover ${className}`} xmlns="http://www.w3.org/2000/svg" viewBox="280 0 440 640" aria-hidden="true" focusable="false">
-      <svg x="280" y="0" width="440" height="640" viewBox={`0 0 ${VIEW_W} ${VIEW_H}`} preserveAspectRatio="xMidYMid slice">
-        <SceneBody book={book} pageIndex={0} interactive={false} foundPin showPin={false} />
-      </svg>
-      <rect x="280" y="0" width="440" height="250" fill="#0b1226" opacity="0.32" />
-      <rect x="280" y="470" width="440" height="170" fill="#0b1226" opacity="0.26" />
+    <svg className={`cuento-cover ${className}`} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 440 640" aria-hidden="true" focusable="false">
+      <defs>
+        <linearGradient id={`cover-top-${book.id}`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#071023" stopOpacity="0.9" />
+          <stop offset="0.72" stopColor="#071023" stopOpacity="0.26" />
+          <stop offset="1" stopColor="#071023" stopOpacity="0" />
+        </linearGradient>
+        <linearGradient id={`cover-bottom-${book.id}`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#071023" stopOpacity="0" />
+          <stop offset="1" stopColor="#071023" stopOpacity="0.78" />
+        </linearGradient>
+      </defs>
+      <rect width="440" height="640" fill={book.accent} />
+      <image href={book.cover.image} x="0" y="0" width="440" height="660" preserveAspectRatio="xMidYMid slice" />
+      <rect width="440" height="270" fill={`url(#cover-top-${book.id})`} />
+      <rect y="450" width="440" height="190" fill={`url(#cover-bottom-${book.id})`} />
       <g>
         {lines.map((line, i) => (
           <text
             key={line}
-            x="500"
-            y={78 + i * 52}
+            x="220"
+            y={64 + i * 48}
             textAnchor="middle"
             fill={book.cover.ink}
-            stroke="#1b2033"
-            strokeWidth="6"
+            stroke="#131b31"
+            strokeWidth="7"
             paintOrder="stroke"
-            fontSize={lines.length > 3 ? 34 : lines.length > 2 ? 40 : 48}
-            fontWeight="800"
+            fontSize={lines.length > 3 ? 32 : lines.length > 2 ? 39 : 45}
+            fontWeight="900"
             fontFamily="ui-rounded, 'Trebuchet MS', system-ui, sans-serif"
           >
             {line}
@@ -223,18 +233,21 @@ export function BookCover({ book, className = "" }) {
         ))}
       </g>
       <text
-        x="500"
-        y="600"
+        x="220"
+        y="604"
         textAnchor="middle"
         fill={book.cover.sub}
-        fontSize="21"
-        letterSpacing="4"
-        fontWeight="700"
+        stroke="#10182c"
+        strokeWidth="3"
+        paintOrder="stroke"
+        fontSize="18"
+        letterSpacing="3"
+        fontWeight="900"
         fontFamily="ui-rounded, 'Trebuchet MS', system-ui, sans-serif"
       >
         TESIS20 · NIDO
       </text>
-      <rect x="292" y="12" width="416" height="616" rx="10" fill="none" stroke={book.cover.ink} strokeOpacity="0.35" strokeWidth="3" />
+      <rect x="10" y="10" width="420" height="620" rx="9" fill="none" stroke="#ffe3a2" strokeOpacity="0.72" strokeWidth="3" />
     </svg>
   );
 }

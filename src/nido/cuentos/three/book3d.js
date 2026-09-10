@@ -5,10 +5,10 @@
 import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
 
-export const BOOK_W = 0.34;
-export const BOOK_H = 0.48;
-export const BOOK_T = 0.05;
-const COVER_T = 0.007;
+export const BOOK_W = 0.5;
+export const BOOK_H = 0.75;
+export const BOOK_T = 0.075;
+const COVER_T = 0.01;
 
 export function createBook3D(book, { coverTexture, spineTexture, edgeTexture, paperTexture, insideColor = "#f7efdc" }) {
   const group = new THREE.Group();
@@ -16,7 +16,15 @@ export function createBook3D(book, { coverTexture, spineTexture, edgeTexture, pa
 
   const edgeMat = new THREE.MeshStandardMaterial({ map: edgeTexture, roughness: 0.86 });
   const paperMat = new THREE.MeshStandardMaterial({ map: paperTexture, roughness: 0.94 });
-  const coverMat = new THREE.MeshPhysicalMaterial({ map: coverTexture, roughness: 0.42, metalness: 0.025, clearcoat: 0.12, clearcoatRoughness: 0.72 });
+  const coverMat = new THREE.MeshPhysicalMaterial({
+    map: coverTexture,
+    roughness: 0.32,
+    metalness: 0.035,
+    clearcoat: 0.3,
+    clearcoatRoughness: 0.48,
+    emissive: new THREE.Color(book.accent).multiplyScalar(0.08),
+    emissiveIntensity: 0.06,
+  });
   const insideMat = new THREE.MeshStandardMaterial({ color: insideColor, roughness: 0.95 });
   const backMat = new THREE.MeshPhysicalMaterial({ color: new THREE.Color(book.accent).multiplyScalar(0.35), roughness: 0.5, clearcoat: 0.08 });
   const spineMat = new THREE.MeshPhysicalMaterial({ map: spineTexture, roughness: 0.48, clearcoat: 0.1 });

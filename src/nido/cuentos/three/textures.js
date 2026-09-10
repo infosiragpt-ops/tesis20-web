@@ -182,7 +182,7 @@ const MOTIFS = {
 };
 
 export const WALL_THEMES = {
-  default: { bg: "#d5dbc3", ink: "#a9b393", accent: "#c9b06a", motifs: ["kite", "bird", "star"] },
+  default: { bg: "#75624f", ink: "#9b846a", accent: "#c9aa6d", motifs: ["kite", "bird", "star"] },
   kusi: { bg: "#3a4466", ink: "#5c6a95", accent: "#e0c46a", motifs: ["moon", "star", "star"] },
   amaru: { bg: "#2f5c52", ink: "#4d8a7c", accent: "#9fe0b0", motifs: ["leaf", "fish", "wave"] },
   sami: { bg: "#e8dcc0", ink: "#c9b28a", accent: "#e0704f", motifs: ["kite", "flower", "bird"] },
@@ -220,7 +220,7 @@ export function wallpaperTexture(theme = WALL_THEMES.default, size = 512) {
       const s = step * (0.32 + rand() * 0.14);
       const ink = (gx + gy) % 3 === 0 ? theme.accent : theme.ink;
       ctx.save();
-      ctx.globalAlpha = 0.75;
+      ctx.globalAlpha = 0.48;
       ctx.translate(x, y);
       ctx.rotate((rand() - 0.5) * 0.5);
       MOTIFS[motif]?.(ctx, 0, 0, s, ink);
@@ -360,6 +360,105 @@ export function flatTexture(color, size = 8) {
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
   return tex;
+}
+
+const coverArtCache = new Map();
+
+/**
+ * Convierte la ilustración editorial de cada cuento en una portada nítida.
+ * El arte vive como AVIF optimizado, mientras el título se compone aquí para
+ * conservar español perfecto y la misma jerarquía en los ocho libros.
+ */
+export function coverArtTexture(book, width = 560, height = 840) {
+  const key = `${book.id}:${book.cover.image}:${width}x${height}`;
+  if (coverArtCache.has(key)) return coverArtCache.get(key);
+
+  const promise = new Promise((resolve) => {
+    const c = canvas(width, height);
+    const ctx = c.getContext("2d");
+    const tex = new THREE.CanvasTexture(c);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    tex.anisotropy = 8;
+
+    const paint = (img) => {
+      ctx.fillStyle = book.accent;
+      ctx.fillRect(0, 0, width, height);
+
+      if (img) {
+        const scale = Math.max(width / img.naturalWidth, height / img.naturalHeight);
+        const drawW = img.naturalWidth * scale;
+        const drawH = img.naturalHeight * scale;
+        ctx.drawImage(img, (width - drawW) / 2, (height - drawH) / 2, drawW, drawH);
+      }
+
+      const topShade = ctx.createLinearGradient(0, 0, 0, height * 0.48);
+      topShade.addColorStop(0, "rgba(7,15,35,.86)");
+      topShade.addColorStop(0.58, "rgba(7,15,35,.38)");
+      topShade.addColorStop(1, "rgba(7,15,35,0)");
+      ctx.fillStyle = topShade;
+      ctx.fillRect(0, 0, width, height * 0.5);
+
+      const bottomShade = ctx.createLinearGradient(0, height * 0.72, 0, height);
+      bottomShade.addColorStop(0, "rgba(7,15,35,0)");
+      bottomShade.addColorStop(1, "rgba(7,15,35,.72)");
+      ctx.fillStyle = bottomShade;
+      ctx.fillRect(0, height * 0.7, width, height * 0.3);
+
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.lineJoin = "round";
+      ctx.shadowColor = "rgba(0,0,0,.48)";
+      ctx.shadowBlur = 18;
+      ctx.shadowOffsetY = 8;
+
+      let fontSize = book.title.length > 29 ? 77 : 88;
+      let lines = [];
+      do {
+        ctx.font = `900 ${fontSize}px ui-rounded, "Trebuchet MS", system-ui, sans-serif`;
+        lines = wrapWords(ctx, book.title, width * 0.82);
+        fontSize -= 3;
+      } while (lines.length > 3 && fontSize > 58);
+
+      const lineHeight = (fontSize + 3) * 1.04;
+      const startY = 112 + lineHeight / 2;
+      lines.slice(0, 3).forEach((line, index) => {
+        ctx.lineWidth = 13;
+        ctx.strokeStyle = "rgba(22,28,48,.82)";
+        ctx.strokeText(line, width / 2, startY + index * lineHeight);
+        ctx.lineWidth = 4;
+        ctx.strokeStyle = "rgba(222,169,72,.92)";
+        ctx.strokeText(line, width / 2, startY + index * lineHeight);
+        ctx.fillStyle = book.cover.ink;
+        ctx.fillText(line, width / 2, startY + index * lineHeight);
+      });
+
+      ctx.shadowColor = "transparent";
+      ctx.fillStyle = "rgba(10,20,40,.72)";
+      ctx.fillRect(width * 0.27, height - 93, width * 0.46, 46);
+      ctx.fillStyle = book.cover.ink;
+      ctx.font = `800 24px ui-rounded, "Trebuchet MS", system-ui, sans-serif`;
+      ctx.fillText("TESIS20 · NIDO", width / 2, height - 70);
+
+      ctx.strokeStyle = "rgba(255,224,153,.72)";
+      ctx.lineWidth = 6;
+      ctx.strokeRect(22, 22, width - 44, height - 44);
+      ctx.strokeStyle = "rgba(255,255,255,.25)";
+      ctx.lineWidth = 2;
+      ctx.strokeRect(34, 34, width - 68, height - 68);
+
+      tex.needsUpdate = true;
+      resolve(tex);
+    };
+
+    const img = new Image();
+    img.decoding = "async";
+    img.onload = () => paint(img);
+    img.onerror = () => paint(null);
+    img.src = book.cover.image;
+  });
+
+  coverArtCache.set(key, promise);
+  return promise;
 }
 
 const storyTextureCache = new Map();
@@ -554,6 +653,8 @@ export function svgToTexture(key, markup, width, height) {
 export function disposeTextureCache() {
   textureCache.forEach((promise) => promise.then((tex) => tex.dispose()));
   textureCache.clear();
+  coverArtCache.forEach((promise) => promise.then((tex) => tex.dispose()));
+  coverArtCache.clear();
   storyTextureCache.forEach((tex) => tex.dispose());
   storyTextureCache.clear();
 }

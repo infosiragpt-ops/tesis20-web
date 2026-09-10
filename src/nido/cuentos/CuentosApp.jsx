@@ -19,7 +19,7 @@ import {
   warmUpVoices,
 } from "./cuentos-audio.js";
 import { createStage } from "./three/stage.js";
-import { storyPageTexture, svgElementToTexture } from "./three/textures.js";
+import { coverArtTexture, storyPageTexture, svgElementToTexture } from "./three/textures.js";
 import "./cuentos.css";
 
 const prefersReducedMotion = () =>
@@ -91,8 +91,9 @@ export default function CuentosApp() {
     let lastHover = null;
     const stage = createStage(canvas, {
       books: BOOKS,
+      initialBookId: latest.current.state.lastBook || BOOKS[0].id,
       reduceMotion: prefersReducedMotion(),
-      coverTexture: (book) => svgElementToTexture(`cover-${book.id}`, <BookCover book={book} />, 512, 744),
+      coverTexture: (book) => coverArtTexture(book),
       emblemTexture: (pinId) => {
         const emblem = emblemFor(pinId);
         const Art = CAST[pinId]?.Art;
@@ -257,10 +258,6 @@ export default function CuentosApp() {
           state={state}
           onFocus={(id) => stageRef.current?.focusBook(id)}
           onOpen={openDesk}
-          onPan={(dir) => {
-            sfx.hover();
-            stageRef.current?.panShelf(dir);
-          }}
         />
       ) : null}
 
@@ -379,9 +376,22 @@ function TopBar({ stats, muted, onToggleSound, onAlbum, onHelp }) {
 
 /* ========================== estante =========================== */
 
-function ShelfOverlay({ state, onFocus, onOpen, onPan }) {
-  const [focus, setFocus] = useState(0);
+function ShelfOverlay({ state, onFocus, onOpen }) {
+  const [focus, setFocus] = useState(() => Math.max(0, BOOKS.findIndex((book) => book.id === state.lastBook)));
   const lastHover = useRef(-1);
+  const rowRef = useRef(null);
+
+  useEffect(() => {
+    rowRef.current?.children[focus]?.scrollIntoView({
+      behavior: prefersReducedMotion() ? "auto" : "smooth",
+      block: "nearest",
+      inline: "center",
+    });
+    const frame = window.requestAnimationFrame(() => onFocus(BOOKS[focus].id));
+    return () => window.cancelAnimationFrame(frame);
+    // El foco del carrusel es la fuente de verdad para la cámara 3D.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focus]);
 
   const hover = (index, id) => {
     if (lastHover.current === index) return;
@@ -390,18 +400,26 @@ function ShelfOverlay({ state, onFocus, onOpen, onPan }) {
     onFocus(id);
   };
 
+  const move = (direction) => {
+    sfx.hover();
+    const next = (focus + direction + BOOKS.length) % BOOKS.length;
+    setFocus(next);
+    lastHover.current = next;
+    onFocus(BOOKS[next].id);
+  };
+
   return (
     <div className="cuentos-shelf-ui">
-      <button type="button" className="cuentos-arrow cuentos-arrow--left" onClick={() => onPan(-1)} aria-label="Ver cuentos anteriores">
+      <button type="button" className="cuentos-arrow cuentos-arrow--left" onClick={() => move(-1)} aria-label="Ver cuentos anteriores">
         ‹
       </button>
-      <button type="button" className="cuentos-arrow cuentos-arrow--right" onClick={() => onPan(1)} aria-label="Ver más cuentos">
+      <button type="button" className="cuentos-arrow cuentos-arrow--right" onClick={() => move(1)} aria-label="Ver más cuentos">
         ›
       </button>
 
       <section className="cuentos-picker" aria-label="Elige un cuento">
         <p className="cuentos-picker__title">Elige un cuento</p>
-        <ul className="cuentos-picker__row">
+        <ul ref={rowRef} className="cuentos-picker__row">
           {BOOKS.map((book, index) => {
             const status = bookStatus(state, book);
             const pins = bookPins(book);

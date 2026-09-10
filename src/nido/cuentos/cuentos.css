@@ -272,11 +272,14 @@
   display: flex;
   justify-content: flex-start;
   gap: 14px;
-  margin: 0;
+  width: min(820px, calc(100vw - 140px));
+  margin: 0 auto;
   padding: 4px 0 6px;
   list-style: none;
   overflow-x: auto;
   scrollbar-width: none;
+  scroll-snap-type: x mandatory;
+  scroll-padding-inline: 14px;
 }
 
 .cuentos-picker__row::-webkit-scrollbar {
@@ -285,6 +288,7 @@
 
 .cuentos-picker__row li {
   flex: 0 0 auto;
+  scroll-snap-align: center;
 }
 
 .cuentos-picker__row li:first-child {
@@ -297,11 +301,12 @@
 
 .cuentos-picker__row button {
   display: grid;
-  grid-template-columns: 48px minmax(0, 1fr);
+  grid-template-columns: 56px minmax(0, 1fr);
   align-items: center;
-  gap: 8px;
-  width: 232px;
-  padding: 10px 12px;
+  gap: 10px;
+  width: 254px;
+  min-height: 92px;
+  padding: 10px 13px;
   border-radius: 16px;
   border: 3px solid #2a3661;
   background: linear-gradient(180deg, #fff9ea, #f6e7c6);
@@ -313,7 +318,7 @@
 .cuentos-picker__row li.is-focus button,
 .cuentos-picker__row button:hover,
 .cuentos-picker__row button:focus-visible {
-  transform: translateY(-6px);
+  transform: translateY(-7px) scale(1.025);
   box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.08), 0 14px 22px rgba(40, 20, 5, 0.42);
   outline: none;
 }
@@ -329,7 +334,7 @@
 
 .cuentos-picker__cover {
   display: block;
-  width: 44px;
+  width: 54px;
   aspect-ratio: 10 / 14;
   overflow: hidden;
   border-radius: 4px;
@@ -403,9 +408,10 @@
 .cuentos-desk {
   position: absolute;
   inset: 0;
-  display: grid;
-  place-items: end center;
-  padding: 80px 16px 5vh;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 84px 5vw 5vh;
   pointer-events: none;
   z-index: 10;
 }
@@ -413,8 +419,8 @@
 .cuentos-desk__panel {
   pointer-events: auto;
   position: relative;
-  width: min(520px, 100%);
-  padding: 26px 30px 24px;
+  width: min(390px, 34vw);
+  padding: 24px 24px 22px;
   border-radius: 16px;
   background:
     radial-gradient(ellipse at 50% 0%, rgba(255, 255, 255, 0.5), transparent 50%),
@@ -1347,15 +1353,16 @@
   .cuentos-picker__row {
     justify-content: flex-start;
     gap: 8px;
+    width: calc(100vw - 82px);
     padding: 2px 0 3px 4px;
   }
 
   .cuentos-picker__row button {
-    grid-template-columns: 38px minmax(0, 1fr);
-    width: 142px;
-    min-height: 68px;
-    gap: 7px;
-    padding: 6px 7px;
+    grid-template-columns: 52px minmax(0, 1fr);
+    width: min(72vw, 280px);
+    min-height: 88px;
+    gap: 9px;
+    padding: 8px 10px;
     border-width: 2px;
     border-radius: 12px;
     box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.08), 0 5px 10px rgba(22, 10, 4, 0.34);
@@ -1368,7 +1375,7 @@
   }
 
   .cuentos-picker__cover {
-    width: 36px;
+    width: 50px;
     border-radius: 3px;
   }
 
@@ -1380,8 +1387,8 @@
     min-height: 0;
     display: -webkit-box;
     overflow: hidden;
-    font-size: 11px;
-    line-height: 1.12;
+    font-size: 13px;
+    line-height: 1.16;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
   }
@@ -1399,7 +1406,35 @@
   }
 
   .cuentos-desk {
-    padding-top: 120px;
+    align-items: flex-end;
+    justify-content: center;
+    padding: 120px 10px max(72px, env(safe-area-inset-bottom));
+  }
+
+  .cuentos-desk__panel {
+    width: min(100%, 440px);
+    padding: 16px 14px 14px;
+    border-radius: 14px;
+  }
+
+  .cuentos-desk__panel h2 {
+    margin-block: 2px 5px;
+    font-size: clamp(21px, 7vw, 29px);
+  }
+
+  .cuentos-desk__tagline {
+    margin-bottom: 3px;
+    font-size: 13px;
+  }
+
+  .cuentos-desk__meta {
+    margin-bottom: 8px;
+    font-size: 10px;
+  }
+
+  .cuentos-desk__panel .cuentos-btn {
+    margin: 2px 3px;
+    padding: 10px 13px;
   }
 
   .cuentos-stars-row {
