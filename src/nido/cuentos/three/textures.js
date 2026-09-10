@@ -234,6 +234,57 @@ export function wallpaperTexture(theme = WALL_THEMES.default, size = 512) {
   return tex;
 }
 
+export function observatoryWindowTexture(width = 1024, height = 768) {
+  const c = canvas(width, height);
+  const ctx = c.getContext("2d");
+  const sky = ctx.createLinearGradient(0, 0, 0, height);
+  sky.addColorStop(0, "#07132e");
+  sky.addColorStop(0.58, "#183a68");
+  sky.addColorStop(1, "#6f5672");
+  ctx.fillStyle = sky;
+  ctx.fillRect(0, 0, width, height);
+
+  const rand = seededRandom(20260910);
+  for (let i = 0; i < 150; i += 1) {
+    const r = rand() * 2.4 + 0.7;
+    ctx.fillStyle = rand() > 0.78 ? "#ffe7a8" : "#d9e8ff";
+    ctx.globalAlpha = 0.35 + rand() * 0.65;
+    ctx.beginPath();
+    ctx.arc(rand() * width, rand() * height * 0.7, r, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+
+  const moon = ctx.createRadialGradient(width * 0.72, height * 0.26, 4, width * 0.72, height * 0.26, 94);
+  moon.addColorStop(0, "#fffce9");
+  moon.addColorStop(0.62, "#f6e3a5");
+  moon.addColorStop(1, "rgba(246,227,165,0)");
+  ctx.fillStyle = moon;
+  ctx.beginPath();
+  ctx.arc(width * 0.72, height * 0.26, 98, 0, Math.PI * 2);
+  ctx.fill();
+
+  const mountains = ["#263957", "#1d2b45", "#162238"];
+  mountains.forEach((color, layer) => {
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.moveTo(0, height);
+    const base = height * (0.7 + layer * 0.07);
+    for (let x = 0; x <= width; x += 70) {
+      const peak = base - (80 + rand() * 150) * (1 - layer * 0.12);
+      ctx.lineTo(x, peak);
+    }
+    ctx.lineTo(width, height);
+    ctx.closePath();
+    ctx.fill();
+  });
+
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 8;
+  return tex;
+}
+
 export function paperTexture(size = 256) {
   const c = canvas(size, size);
   const ctx = c.getContext("2d");
@@ -308,6 +359,114 @@ export function flatTexture(color, size = 8) {
   ctx.fillRect(0, 0, size, size);
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
+const storyTextureCache = new Map();
+
+function wrapWords(ctx, text, maxWidth) {
+  const words = text.split(/\s+/).filter(Boolean);
+  const lines = [];
+  let line = [];
+  words.forEach((word) => {
+    const next = [...line, word].join(" ");
+    if (line.length && ctx.measureText(next).width > maxWidth) {
+      lines.push(line.join(" "));
+      line = [word];
+    } else {
+      line.push(word);
+    }
+  });
+  if (line.length) lines.push(line.join(" "));
+  return lines;
+}
+
+/**
+ * Página editorial que se imprime sobre la cara interior izquierda del libro.
+ * El texto deja de vivir en una tarjeta flotante y pasa a formar parte del
+ * objeto físico 3D, con una textura nítida incluso en pantallas Retina.
+ */
+export function storyPageTexture(book, page, pageIndex, totalPages) {
+  const compact = typeof window !== "undefined" && window.matchMedia?.("(max-width: 760px)").matches;
+  const key = `${book.id}:${pageIndex}:${compact ? "mobile" : "desktop"}`;
+  if (storyTextureCache.has(key)) return storyTextureCache.get(key);
+
+  const c = canvas(1024, 1448);
+  const ctx = c.getContext("2d");
+  const paper = ctx.createLinearGradient(0, 0, 1024, 1448);
+  paper.addColorStop(0, "#fffaf0");
+  paper.addColorStop(0.55, "#f7ecd5");
+  paper.addColorStop(1, "#ead9b8");
+  ctx.fillStyle = paper;
+  ctx.fillRect(0, 0, c.width, c.height);
+
+  const rand = seededRandom(pageIndex * 7919 + book.id.length * 101);
+  for (let i = 0; i < 2400; i += 1) {
+    ctx.fillStyle = rand() > 0.5 ? "rgba(91,62,30,.035)" : "rgba(255,255,255,.12)";
+    const size = rand() * 2 + 0.5;
+    ctx.fillRect(rand() * c.width, rand() * c.height, size, size);
+  }
+
+  ctx.strokeStyle = "rgba(178,133,62,.62)";
+  ctx.lineWidth = 4;
+  ctx.strokeRect(54, 54, 916, 1340);
+  ctx.strokeStyle = "rgba(178,133,62,.26)";
+  ctx.lineWidth = 2;
+  ctx.strokeRect(70, 70, 884, 1308);
+
+  ctx.textAlign = "center";
+  ctx.fillStyle = "#9a6b2f";
+  ctx.font = `700 ${compact ? 34 : 30}px ui-rounded, "Trebuchet MS", sans-serif`;
+  ctx.letterSpacing = "7px";
+  ctx.fillText(`PÁGINA ${pageIndex + 1} DE ${totalPages}`, 512, 142);
+
+  ctx.fillStyle = "#5a3b24";
+  ctx.font = `900 ${compact ? 92 : 76}px ui-rounded, "Trebuchet MS", sans-serif`;
+  const titleLines = wrapWords(ctx, page.t, 790).slice(0, 3);
+  const titleStart = titleLines.length > 1 ? 250 : 285;
+  titleLines.forEach((line, index) => ctx.fillText(line, 512, titleStart + index * 82));
+
+  const ruleY = titleStart + titleLines.length * 82 + 22;
+  ctx.strokeStyle = book.accent;
+  ctx.lineWidth = 8;
+  ctx.beginPath();
+  ctx.moveTo(360, ruleY);
+  ctx.lineTo(664, ruleY);
+  ctx.stroke();
+  ctx.fillStyle = book.accent;
+  ctx.save();
+  ctx.translate(512, ruleY);
+  ctx.rotate(Math.PI / 4);
+  ctx.fillRect(-12, -12, 24, 24);
+  ctx.restore();
+
+  ctx.textAlign = "left";
+  ctx.fillStyle = "#3a2a21";
+  ctx.font = `500 ${compact ? 88 : 53}px "Iowan Old Style", "Palatino Linotype", Georgia, serif`;
+  const bodyLines = wrapWords(ctx, page.x, 790);
+  const bodyStart = ruleY + (compact ? 102 : 115);
+  const lineHeight = compact ? (bodyLines.length > 8 ? 82 : 96) : bodyLines.length > 7 ? 69 : 76;
+  bodyLines.slice(0, 10).forEach((line, index) => {
+    const y = bodyStart + index * lineHeight;
+    ctx.fillText(line, 116, y);
+    ctx.strokeStyle = "rgba(174,124,59,.26)";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(116, y + 13);
+    ctx.lineTo(Math.min(908, 116 + ctx.measureText(line).width), y + 13);
+    ctx.stroke();
+  });
+
+  ctx.textAlign = "center";
+  ctx.fillStyle = "rgba(92,63,34,.58)";
+  ctx.font = `600 ${compact ? 29 : 25}px ui-rounded, "Trebuchet MS", sans-serif`;
+  ctx.fillText("Toca Léemelo para escuchar el cuento", 512, 1325);
+
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 8;
+  tex.needsUpdate = true;
+  storyTextureCache.set(key, tex);
   return tex;
 }
 
@@ -395,4 +554,6 @@ export function svgToTexture(key, markup, width, height) {
 export function disposeTextureCache() {
   textureCache.forEach((promise) => promise.then((tex) => tex.dispose()));
   textureCache.clear();
+  storyTextureCache.forEach((tex) => tex.dispose());
+  storyTextureCache.clear();
 }

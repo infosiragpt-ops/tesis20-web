@@ -10,6 +10,8 @@ let nextNoteTime = 0;
 let step = 0;
 let muted = false;
 let unlocked = false;
+let storyTracks = {};
+let storyManifestPromise = null;
 
 const listeners = new Set();
 
@@ -220,14 +222,18 @@ function noiseSweep({ dur = 0.5, from = 900, to = 2600, gain = 0.16 }) {
 
 export const sfx = {
   // "ten" corto al pasar por cada libro de la repisa.
-  hover() {
-    blip({ freq: 1318.51, type: "sine", dur: 0.3, gain: 0.13 });
-    blip({ freq: 1975.53, type: "sine", dur: 0.22, gain: 0.05 });
+  hover(key = "") {
+    const color = [...String(key)].reduce((sum, char) => sum + char.charCodeAt(0), 0) % 7;
+    const base = [880, 987.77, 1046.5, 1174.66, 1318.51, 1396.91, 1567.98][color];
+    blip({ freq: base, type: "sine", dur: 0.28, gain: 0.12 });
+    blip({ freq: base * 1.5, type: "sine", dur: 0.2, gain: 0.045 });
   },
   // "tok" de madera + campanita al tocar una figura de la repisa.
-  toy() {
-    blip({ freq: 420, type: "triangle", dur: 0.09, gain: 0.16, slide: -180 });
-    window.setTimeout(() => blip({ freq: 1567.98, type: "sine", dur: 0.26, gain: 0.08 }), 40);
+  toy(key = "") {
+    const color = [...String(key)].reduce((sum, char) => sum + char.charCodeAt(0), 0) % 6;
+    const chime = [1174.66, 1318.51, 1396.91, 1567.98, 1760, 1975.53][color];
+    blip({ freq: 380 + color * 34, type: "triangle", dur: 0.09, gain: 0.15, slide: -160 });
+    window.setTimeout(() => blip({ freq: chime, type: "sine", dur: 0.26, gain: 0.075 }), 40);
   },
   land() {
     blip({ freq: 180, type: "triangle", dur: 0.16, gain: 0.18, slide: -90 });
@@ -276,6 +282,7 @@ export const sfx = {
 /* ----------------------------- narración -------------------------- */
 
 let currentUtterance = null;
+let currentAudio = null;
 let wordTimer = null;
 
 function pickVoice() {
@@ -305,6 +312,16 @@ export function stopSpeech() {
     wordTimer = null;
   }
   currentUtterance = null;
+  if (currentAudio) {
+    const audio = currentAudio;
+    currentAudio = null;
+    audio.onended = null;
+    audio.onerror = null;
+    audio.ontimeupdate = null;
+    audio.pause();
+    audio.removeAttribute("src");
+    audio.load();
+  }
   if (speechAvailable()) window.speechSynthesis.cancel();
 }
 
@@ -313,14 +330,49 @@ export function stopSpeech() {
  * Usa los eventos `boundary` cuando el navegador los emite y, si no, avanza
  * con un temporizador calculado por número de sílabas.
  */
-export function speak(text, { onWord, onEnd, rate = 0.86 } = {}) {
-  if (!speechAvailable() || muted) {
+export function speak(text, { audioKey, onWord, onEnd, rate = 0.86 } = {}) {
+  const recordedSrc = audioKey ? storyTracks[audioKey] : null;
+  if ((!speechAvailable() && !recordedSrc) || muted) {
     onEnd?.();
     return () => {};
   }
   stopSpeech();
 
   const words = text.split(/\s+/).filter(Boolean);
+  if (recordedSrc) {
+    const audio = new Audio(recordedSrc);
+    currentAudio = audio;
+    audio.preload = "auto";
+    let lastIndex = -1;
+    const updateWord = () => {
+      if (!Number.isFinite(audio.duration) || audio.duration <= 0) return;
+      const next = Math.min(words.length - 1, Math.floor((audio.currentTime / audio.duration) * words.length));
+      if (next !== lastIndex) {
+        lastIndex = next;
+        onWord?.(next);
+      }
+    };
+    audio.ontimeupdate = updateWord;
+    audio.onended = () => {
+      if (currentAudio !== audio) return;
+      onWord?.(-1);
+      currentAudio = null;
+      onEnd?.();
+    };
+    audio.onerror = () => {
+      if (currentAudio !== audio) return;
+      currentAudio = null;
+      speak(text, { onWord, onEnd, rate });
+    };
+    onWord?.(0);
+    audio.play().catch(() => {
+      if (currentAudio !== audio) return;
+      currentAudio = null;
+      speak(text, { onWord, onEnd, rate });
+    });
+    return () => stopSpeech();
+  }
+
   const offsets = [];
   let cursor = 0;
   words.forEach((word) => {
@@ -391,6 +443,10 @@ export function speak(text, { onWord, onEnd, rate = 0.86 } = {}) {
 }
 
 export function pauseSpeech() {
+  if (currentAudio) {
+    currentAudio.pause();
+    return;
+  }
   if (!speechAvailable()) return;
   window.speechSynthesis.pause();
   if (wordTimer) {
@@ -400,20 +456,35 @@ export function pauseSpeech() {
 }
 
 export function resumeSpeech() {
+  if (currentAudio) {
+    currentAudio.play().catch(() => {});
+    return;
+  }
   if (!speechAvailable()) return;
   window.speechSynthesis.resume();
 }
 
 export function isSpeaking() {
-  return speechAvailable() && window.speechSynthesis.speaking;
+  return Boolean(currentAudio && !currentAudio.paused) || (speechAvailable() && window.speechSynthesis.speaking);
 }
 
 export function warmUpVoices() {
-  if (!speechAvailable()) return;
-  window.speechSynthesis.getVoices();
-  window.speechSynthesis.addEventListener?.("voiceschanged", () => {
+  if (speechAvailable()) {
     window.speechSynthesis.getVoices();
-  });
+    window.speechSynthesis.addEventListener?.("voiceschanged", () => {
+      window.speechSynthesis.getVoices();
+    });
+  }
+  if (!storyManifestPromise) {
+    storyManifestPromise = fetch("/assets/nido/audio/manifest.json", { cache: "no-store" })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((manifest) => {
+        storyTracks = manifest?.storyTracks && typeof manifest.storyTracks === "object" ? manifest.storyTracks : {};
+      })
+      .catch(() => {
+        storyTracks = {};
+      });
+  }
 }
 
 export function audioUnlocked() {
