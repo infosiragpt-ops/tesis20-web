@@ -5,10 +5,11 @@ import { BOOKS } from "../../src/nido/cuentos/cuentos-data.js";
 import { hasToy, buildToy, toyLabel } from "../../src/nido/cuentos/three/toys/index.js";
 
 test("la biblioteca encaja todos los libros y no sale de sus extremos", () => {
-  for (let i = 0; i < 8; i++) assert.equal(bookIndexAt(bookPositionAt(i, 8, .82), 8, .82), i);
-  assert.equal(bookIndexAt(-100, 8, .82), 0);
-  assert.equal(bookIndexAt(100, 8, .82), 7);
-  assert.equal(bookPositionAt(-4, 8, .82), bookPositionAt(0, 8, .82));
+  const count = BOOKS.length;
+  for (let i = 0; i < count; i++) assert.equal(bookIndexAt(bookPositionAt(i, count, .82), count, .82), i);
+  assert.equal(bookIndexAt(-100, count, .82), 0);
+  assert.equal(bookIndexAt(100, count, .82), count - 1);
+  assert.equal(bookPositionAt(-4, count, .82), bookPositionAt(0, count, .82));
 });
 test("la inercia avanza en ambas direcciones, limitada a un libro extra", () => {
   const x = bookPositionAt(3, 8, .82);

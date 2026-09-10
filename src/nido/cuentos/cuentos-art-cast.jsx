@@ -383,6 +383,109 @@ function Carpintero() {
   );
 }
 
+/* ------------------------- Los tres cerditos ------------------------- */
+
+// Cerdito base: los tres hermanos comparten cuerpo y cambian de ropa.
+function Cerdito({ shirt = "#5aa0d8", hat = false, overalls = true }) {
+  const tone = "#f7b4c4";
+  const dark = "#e58fa6";
+  return (
+    <g>
+      <Shadow rx={46} ry={9} />
+      <g className="cuento-breathe">
+        <rect x="-30" y="-30" width="16" height="30" rx="7" fill={tone} />
+        <rect x="10" y="-30" width="16" height="30" rx="7" fill={tone} />
+        <ellipse cx="-22" cy="-2" rx="11" ry="5" fill={dark} />
+        <ellipse cx="18" cy="-2" rx="11" ry="5" fill={dark} />
+        <path d="M -46 -72 q -16 -10 -10 -22 q 6 -8 14 -2" stroke={dark} strokeWidth="4" fill="none" strokeLinecap="round" />
+        <ellipse cx="-4" cy="-64" rx="44" ry="40" fill={tone} />
+        {overalls ? (
+          <g fill={shirt}>
+            <path d="M -40 -70 q 36 20 72 0 v 38 q -36 16 -72 0 z" />
+            <rect x="-22" y="-98" width="9" height="32" rx="4" />
+            <rect x="6" y="-98" width="9" height="32" rx="4" />
+            <rect x="-14" y="-62" width="20" height="14" rx="3" fill="#ffffff" opacity="0.35" />
+          </g>
+        ) : (
+          <path d="M -46 -80 q 42 24 84 0 v 34 q -42 18 -84 0 z" fill={shirt} />
+        )}
+        <ellipse cx="-42" cy="-60" rx="13" ry="9" fill={tone} transform="rotate(-24 -42 -60)" />
+        <ellipse cx="36" cy="-58" rx="13" ry="9" fill={tone} transform="rotate(22 36 -58)" />
+        <circle cx="10" cy="-118" r="40" fill={tone} />
+        <path d="M -20 -140 l -8 -32 l 26 16 z" fill={tone} />
+        <path d="M 30 -146 l 12 -28 l 10 30 z" fill={tone} />
+        <path d="M -18 -141 l -4 -18 l 14 9 z" fill={dark} />
+        <path d="M 32 -144 l 8 -16 l 5 18 z" fill={dark} />
+        <ellipse cx="34" cy="-106" rx="17" ry="12" fill={dark} />
+        <circle cx="29" cy="-107" r="3.2" fill="#b5637e" />
+        <circle cx="40" cy="-107" r="3.2" fill="#b5637e" />
+        <Eye x={12} y={-126} r={5} look={1} />
+        <Eye x={36} y={-128} r={5} look={1} />
+        <Blush x={-8} y={-108} />
+        <path d="M 14 -94 q 10 8 22 0" stroke="#b5637e" strokeWidth="2.6" fill="none" strokeLinecap="round" />
+        {hat ? (
+          <g>
+            <ellipse cx="8" cy="-152" rx="48" ry="10" fill="#dcb95f" />
+            <path d="M -22 -152 q 6 -28 30 -28 q 24 0 30 28 z" fill="#f0d27f" />
+            <path d="M -18 -158 h 52" stroke="#c98b4c" strokeWidth="4" strokeLinecap="round" />
+          </g>
+        ) : null}
+      </g>
+    </g>
+  );
+}
+
+// Pipo: el juguetón, sombrero de paja y overol celeste.
+function Pipo() {
+  return <Cerdito shirt="#5aa0d8" hat />;
+}
+
+// Lolo: el glotón, camiseta verde.
+function Lolo() {
+  return <Cerdito shirt="#5cb56a" overalls={false} />;
+}
+
+// Tito: el trabajador, overol rojo.
+function Tito() {
+  return <Cerdito shirt="#d9483f" />;
+}
+
+// Lobo gris de pie, con panza clara, colmillo y cejas de pillo.
+function Lobo() {
+  const fur = "#7d8494";
+  const furDark = "#5d6373";
+  const cream = "#e6e6ea";
+  return (
+    <g>
+      <Shadow rx={54} ry={10} />
+      <g className="cuento-breathe">
+        <path d="M -50 -66 q -48 -8 -62 -50 q 32 2 54 28 q 16 10 8 24 z" fill={furDark} />
+        <rect x="-34" y="-36" width="16" height="36" rx="7" fill={furDark} />
+        <rect x="8" y="-36" width="16" height="36" rx="7" fill={furDark} />
+        <ellipse cx="-26" cy="-2" rx="12" ry="5" fill="#3f4452" />
+        <ellipse cx="16" cy="-2" rx="12" ry="5" fill="#3f4452" />
+        <ellipse cx="-6" cy="-84" rx="42" ry="52" fill={fur} />
+        <ellipse cx="2" cy="-80" rx="24" ry="36" fill={cream} opacity="0.9" />
+        <path d="M -40 -104 q -24 20 -10 46" stroke={fur} strokeWidth="14" fill="none" strokeLinecap="round" />
+        <path d="M 30 -100 q 26 16 16 46" stroke={fur} strokeWidth="14" fill="none" strokeLinecap="round" />
+        <circle cx="14" cy="-150" r="36" fill={fur} />
+        <path d="M -14 -172 l -6 -40 l 30 22 z" fill={fur} />
+        <path d="M 30 -178 l 12 -36 l 12 32 z" fill={fur} />
+        <path d="M -12 -172 l -2 -24 l 16 14 z" fill="#c9a0b0" />
+        <path d="M 32 -176 l 8 -22 l 6 20 z" fill="#c9a0b0" />
+        <path d="M 28 -154 q 38 -8 50 10 q -10 20 -36 16 q -16 -6 -14 -26 z" fill={cream} />
+        <ellipse cx="72" cy="-144" rx="8" ry="6" fill="#2b2b33" />
+        <path d="M 40 -132 q 12 10 26 2" stroke="#2b2b33" strokeWidth="2.6" fill="none" strokeLinecap="round" />
+        <path d="M 50 -129 l 3 8 l 3 -8 z" fill="#ffffff" />
+        <Eye x={6} y={-158} r={5.2} look={1} />
+        <Eye x={30} y={-160} r={5.2} look={1} />
+        <path d="M -4 -172 l 18 6" stroke={furDark} strokeWidth="4" strokeLinecap="round" />
+        <path d="M 22 -174 l 16 6" stroke={furDark} strokeWidth="4" strokeLinecap="round" />
+      </g>
+    </g>
+  );
+}
+
 export const CAST = {
   oso: { Art: Oso, h: 178 },
   buho: { Art: Buho, h: 150 },
@@ -401,4 +504,8 @@ export const CAST = {
   pelicano: { Art: Pelicano, h: 130 },
   ballena: { Art: Ballena, h: 140, floats: true },
   carpintero: { Art: Carpintero, h: 96, floats: true },
+  pipo: { Art: Pipo, h: 178 },
+  lolo: { Art: Lolo, h: 160 },
+  tito: { Art: Tito, h: 160 },
+  lobo: { Art: Lobo, h: 214 },
 };

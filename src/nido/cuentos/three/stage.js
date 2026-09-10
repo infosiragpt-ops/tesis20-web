@@ -45,6 +45,9 @@ const DESK_SLOTS = [
 ];
 
 const STORY_PROP_TO_TOY = {
+  paja: "casa",
+  madera: "casa",
+  ladrillos: "casa",
   arboles: "arbol",
   boleto: "tren",
   canoa: "barco",
@@ -380,7 +383,7 @@ export function createStage(canvas, options) {
     const candidates = [...(page.cast || []), ...(page.props || [])]
       .map((id) => (hasToy(id) ? id : STORY_PROP_TO_TOY[id]))
       .filter((id, index, list) => id && hasToy(id) && list.indexOf(id) === index)
-      .slice(0, 2);
+      .slice(0, 3);
 
     const platform = new THREE.Mesh(
       new THREE.CylinderGeometry(0.13, 0.15, 0.012, 48),
@@ -402,8 +405,8 @@ export function createStage(canvas, options) {
       const holder = new THREE.Group();
       const actor = buildToy(id);
       const count = candidates.length;
-      const target = count === 1 ? 0.74 : 0.58;
-      holder.position.set((index - (count - 1) / 2) * 0.16, 0.018, 0.032 + index * 0.004);
+      const target = count === 1 ? 0.74 : count === 2 ? 0.58 : 0.48;
+      holder.position.set((index - (count - 1) / 2) * (count === 3 ? 0.135 : 0.16), 0.018, 0.032 + index * 0.004);
       holder.scale.setScalar(target);
       holder.userData.baseY = holder.position.y;
       holder.userData.phase = index * 1.7 + page.t.length * 0.03;

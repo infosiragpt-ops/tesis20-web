@@ -23,6 +23,10 @@ const PLACE = {
   pelicano: { s: 1.2, y: 556 },
   ballena: { s: 0.95, y: 500 },
   carpintero: { s: 1.5, y: 430 },
+  pipo: { s: 1.15, y: 568 },
+  lolo: { s: 1.15, y: 568 },
+  tito: { s: 1.15, y: 568 },
+  lobo: { s: 0.95, y: 568 },
 };
 
 const CAST_X = {

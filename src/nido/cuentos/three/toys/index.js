@@ -12,12 +12,17 @@ import * as cactus from "./cactus.js";
 import * as campana from "./campana.js";
 import * as caracola from "./caracola.js";
 import * as casa from "./casa.js";
+import * as cerdito from "./cerdito.js";
 import * as cohete from "./cohete.js";
 import * as cometa from "./cometa.js";
+import * as escalera from "./escalera.js";
 import * as estrella from "./estrella.js";
 import * as farol from "./farol.js";
 import * as frasco from "./frasco.js";
+import * as lobo from "./lobo.js";
 import * as luna from "./luna.js";
+import * as manzana from "./manzana.js";
+import * as olla from "./olla.js";
 import * as oso from "./oso.js";
 import * as oveja from "./oveja.js";
 import * as pez from "./pez.js";
@@ -33,7 +38,10 @@ import * as pelicano from "./pelicano.js";
 import * as carpintero from "./carpintero.js";
 import { nina, nino, nina2, maquinista } from "./personajes.js";
 
-const REGISTRY = { arbol, ballena, barco, bufeo, buho, cactus, campana, caracola, casa, cohete, cometa, estrella, farol, frasco, luna, oso, oveja, pez, picaflor, quena, rana, tambor, tren, vicuna, zorro, mariposa, pelicano, carpintero, nina, nino, nina2, maquinista };
+const pipo = { id: "pipo", label: "Pipo", build: () => cerdito.build({ hat: true }) };
+const lolo = { id: "lolo", label: "Lolo", build: () => cerdito.build({ outfit: "#5cb56a" }) };
+const tito = { id: "tito", label: "Tito", build: () => cerdito.build({ outfit: "#d9483f" }) };
+const REGISTRY = { arbol, ballena, barco, bufeo, buho, cactus, campana, caracola, casa, cerdito, cohete, cometa, escalera, estrella, farol, frasco, lobo, luna, manzana, olla, oso, oveja, pez, picaflor, quena, rana, tambor, tren, vicuna, zorro, mariposa, pelicano, carpintero, nina, nino, nina2, maquinista, pipo, lolo, tito };
 
 export function registerToys(modules) {
   modules.forEach((module) => {
@@ -51,6 +59,11 @@ export function toyLabel(id) {
 
 // Qué figura representa cada souvenir de los cuentos.
 export const PIN_TOY = {
+  manzana: "manzana",
+  casita: "casa",
+  lobo: "lobo",
+  escalera: "escalera",
+  olla: "olla",
   buho: "buho",
   luna: "luna",
   farol: "farol",

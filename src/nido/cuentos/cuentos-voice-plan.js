@@ -40,10 +40,15 @@ export function wordKey(token) {
   return clean || null;
 }
 
-/** Cómo se dicta una palabra suelta: con punto final para que la voz cierre. */
+/**
+ * Cómo se dicta una palabra suelta: en minúsculas y con punto final para que
+ * la voz cierre. Se normaliza para que el clip no dependa de en qué cuento
+ * apareció primero la palabra («Y» al inicio de frase y «y» comparten mp3):
+ * añadir un libro al principio de la biblioteca no debe regrabar nada.
+ */
 export function wordSpeechText(token) {
-  const clean = String(token ?? "").replace(/[^\p{L}\p{N}]/gu, "");
-  return clean ? `${clean}.` : "";
+  const key = wordKey(token);
+  return key ? `${key}.` : "";
 }
 
 /** Una opción del quiz se dicta como frase cerrada. */

@@ -11,6 +11,7 @@ import {
   splitWords,
   wordIndexAt,
   wordKey,
+  wordSpeechText,
   wordStartsFromAlignment,
 } from "../../src/nido/cuentos/cuentos-voice-plan.js";
 
@@ -31,6 +32,8 @@ test("las claves de palabra ignoran puntuación y mayúsculas", () => {
   assert.equal(wordKey("dónde?"), "dónde");
   assert.equal(wordKey("Kusi."), "kusi");
   assert.equal(wordKey("—"), null);
+  assert.equal(wordSpeechText("¡Kusi!"), "kusi.");
+  assert.equal(wordSpeechText("—"), "");
   assert.equal(optionSpeechText("Un zorro"), "Un zorro.");
   assert.equal(optionSpeechText("¿Qué animal es Kusi?"), "¿Qué animal es Kusi?");
 });
