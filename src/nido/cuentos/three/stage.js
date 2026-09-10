@@ -12,6 +12,7 @@ import {
   pagesEdgeTexture,
   spineTexture,
   flatTexture,
+  observatoryWindowTexture,
 } from "./textures.js";
 import { createBook3D, BOOK_W, BOOK_H, BOOK_T } from "./book3d.js";
 import { buildToy, ghostify, PIN_TOY, hasToy } from "./toys/index.js";
@@ -27,9 +28,11 @@ const CAM = {
 
 // En pantallas verticales la cámara se aleja y se centra en el pop-up.
 const CAM_PORTRAIT = {
-  shelf: { pos: [0, 1.4, 5.2], look: [0, 1.15, 0] },
-  desk: { pos: [0, 2.6, 3.6], look: [0, 0.2, 0.5] },
-  reading: { pos: [0.2, 1.7, 2.5], look: [0.2, 0.42, 0.55] },
+  shelf: { pos: [0, 1.42, 4.75], look: [0, 0.84, 0] },
+  desk: { pos: [0, 2.8, 4.2], look: [0, 0.2, 0.72] },
+  // La distancia conserva las dos páginas completas dentro del ancho estrecho
+  // del teléfono; la textura móvil aporta el tamaño extra de lectura.
+  reading: { pos: [-0.33, 2.58, 4.25], look: [-0.33, 0.3, 0.92] },
 };
 
 const DESK_BOOK = { x: 0.06, z: 1.24, scale: 2.05 };
@@ -40,6 +43,35 @@ const DESK_SLOTS = [
   [0.84, 1.36],
   [0.0, 0.08],
 ];
+
+const STORY_PROP_TO_TOY = {
+  arboles: "arbol",
+  agua: "bufeo",
+  arroyo: "rana",
+  boleto: "tren",
+  canoa: "barco",
+  cueva: "pez",
+  dunas: "cactus",
+  "estrella-mar": "estrella",
+  estrellas: "estrella",
+  flores: "picaflor",
+  "flor-cristal": "estrella",
+  hojas: "arbol",
+  luciernagas: "frasco",
+  mar: "ballena",
+  montanas: "vicuna",
+  nenufar: "rana",
+  niebla: "luna",
+  nubes: "luna",
+  orquidea: "picaflor",
+  pasto: "oveja",
+  puente: "tren",
+  raices: "arbol",
+  roca: "caracola",
+  selva: "arbol",
+  sol: "estrella",
+  viento: "cometa",
+};
 
 export function createStage(canvas, options) {
   const {
@@ -92,6 +124,22 @@ export function createStage(canvas, options) {
   lampLight.position.set(-1.72, 0.78, 1.0);
   scene.add(lampLight);
 
+  // Polvo luminoso de la habitación: profundidad y movimiento muy baratos
+  // para móvil, visible sobre todo cuando la cámara baja al libro.
+  const dustPositions = new Float32Array(42 * 3);
+  for (let i = 0; i < 42; i += 1) {
+    dustPositions[i * 3] = -2.3 + ((i * 47) % 97) / 97 * 4.6;
+    dustPositions[i * 3 + 1] = 0.35 + ((i * 29) % 89) / 89 * 2.25;
+    dustPositions[i * 3 + 2] = 0.12 + ((i * 61) % 83) / 83 * 1.65;
+  }
+  const dustGeometry = new THREE.BufferGeometry();
+  dustGeometry.setAttribute("position", new THREE.BufferAttribute(dustPositions, 3));
+  const ambientDust = new THREE.Points(
+    dustGeometry,
+    new THREE.PointsMaterial({ color: "#ffe6a1", size: isMobile ? 0.018 : 0.014, transparent: true, opacity: 0.48, depthWrite: false }),
+  );
+  scene.add(ambientDust);
+
   // Foco cálido que se enciende sobre el libro elegido / señalado.
   const spot = new THREE.SpotLight("#fff2c4", 0, 4, Math.PI / 9, 0.6, 1.2);
   spot.position.set(0, 2.6, 1.2);
@@ -114,6 +162,28 @@ export function createStage(canvas, options) {
   wallB.material.map.repeat.set(7, 2.5);
   wallB.position.set(0, 1.8, -0.435);
   scene.add(wallB);
+
+  // Ventana central del observatorio: aporta una profundidad real y una luz
+  // nocturna coherente sin convertir el fondo completo en una imagen plana.
+  const windowGroup = new THREE.Group();
+  windowGroup.position.set(0, 2.12, -0.41);
+  const nightView = new THREE.Mesh(
+    new THREE.PlaneGeometry(2.45, 1.55),
+    new THREE.MeshStandardMaterial({ map: observatoryWindowTexture(), roughness: 0.88, emissive: "#0d2348", emissiveIntensity: 0.24 }),
+  );
+  windowGroup.add(nightView);
+  const frameMat = mat("#5a3824", { rough: 0.48, metal: 0.04 });
+  windowGroup.add(box(2.62, 0.1, 0.08, frameMat, { y: 0.81, z: 0.025 }));
+  windowGroup.add(box(2.62, 0.1, 0.08, frameMat, { y: -0.81, z: 0.025 }));
+  windowGroup.add(box(0.1, 1.7, 0.08, frameMat, { x: -1.28, z: 0.025 }));
+  windowGroup.add(box(0.1, 1.7, 0.08, frameMat, { x: 1.28, z: 0.025 }));
+  windowGroup.add(box(0.055, 1.58, 0.055, frameMat, { z: 0.04 }));
+  windowGroup.add(box(2.5, 0.055, 0.055, frameMat, { z: 0.04 }));
+  scene.add(windowGroup);
+
+  const moonLight = new THREE.PointLight("#a9c8ff", 0.75, 5.5, 1.8);
+  moonLight.position.set(0.8, 2.4, -0.1);
+  scene.add(moonLight);
 
   const baseboard = box(10, 0.14, 0.05, mat("#f2e8d6", { rough: 0.8 }), { y: 0.07, z: -0.42 });
   scene.add(baseboard);
@@ -211,6 +281,7 @@ export function createStage(canvas, options) {
   }
 
   const deskToys = [];
+  let pageActors = [];
 
   function spawnDeskToys(book, ownedPins) {
     clearDeskToys(true);
@@ -260,6 +331,76 @@ export function createStage(canvas, options) {
         state.wiggle = 0;
       },
     });
+  }
+
+  function clearPageDiorama() {
+    pageActors.forEach((holder) => {
+      holder.parent?.remove(holder);
+      holder.traverse((obj) => {
+        obj.geometry?.dispose?.();
+        const materials = Array.isArray(obj.material) ? obj.material : obj.material ? [obj.material] : [];
+        materials.forEach((material) => material.dispose?.());
+      });
+    });
+    pageActors = [];
+  }
+
+  function updatePageDiorama(page) {
+    if (!selected?.dioramaRoot || !page) return;
+    clearPageDiorama();
+
+    const candidates = [...(page.cast || []), ...(page.props || [])]
+      .map((id) => (hasToy(id) ? id : STORY_PROP_TO_TOY[id]))
+      .filter((id, index, list) => id && hasToy(id) && list.indexOf(id) === index)
+      .slice(0, 2);
+
+    const platform = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.13, 0.15, 0.012, 48),
+      new THREE.MeshPhysicalMaterial({
+        color: "#6abfc0",
+        transparent: true,
+        opacity: 0.28,
+        roughness: 0.18,
+        metalness: 0.05,
+        clearcoat: 0.8,
+      }),
+    );
+    platform.position.set(0, 0.012, 0.018);
+    platform.scale.set(1.25, 1, 0.58);
+    selected.dioramaRoot.add(platform);
+    pageActors.push(platform);
+
+    candidates.forEach((id, index) => {
+      const holder = new THREE.Group();
+      const actor = buildToy(id);
+      const count = candidates.length;
+      const target = count === 1 ? 0.62 : 0.48;
+      holder.position.set((index - (count - 1) / 2) * 0.12, 0.018, 0.032 + index * 0.004);
+      holder.scale.setScalar(target);
+      holder.userData.baseY = holder.position.y;
+      holder.userData.phase = index * 1.7 + page.t.length * 0.03;
+      holder.userData.storyActor = id;
+      holder.add(actor);
+      selected.dioramaRoot.add(holder);
+      pageActors.push(holder);
+      if (!reduceMotion) {
+        holder.scale.setScalar(0.001);
+        tween(holder.scale, { x: target, y: target, z: target }, { duration: 0.55, delay: index * 0.08, easing: ease.outBack });
+      }
+    });
+
+    for (let i = 0; i < 7; i += 1) {
+      const spark = blob(
+        0.006 + (i % 3) * 0.0015,
+        mat(i % 2 ? "#fff0a8" : "#b8fbef", { emissive: i % 2 ? "#ffd967" : "#73e0d0", emissiveIntensity: 2 }),
+        { x: -0.13 + (i / 6) * 0.26, y: 0.055 + (i % 3) * 0.045, z: 0.038 },
+      );
+      spark.userData.baseY = spark.position.y;
+      spark.userData.phase = i * 0.9;
+      spark.userData.storySpark = true;
+      selected.dioramaRoot.add(spark);
+      pageActors.push(spark);
+    }
   }
 
   /* --------------------------- interacción --------------------------- */
@@ -501,6 +642,14 @@ export function createStage(canvas, options) {
     const entry = selected;
     const pivot = entry.popupPivot;
     const d = reduceMotion ? 0.01 : 0.28;
+    const leaf = { t: 0 };
+    entry.setTurn(0);
+    tween(leaf, { t: 1 }, {
+      duration: reduceMotion ? 0.01 : 0.74,
+      easing: ease.inOut,
+      onUpdate: () => entry.setTurn(leaf.t),
+      onComplete: () => entry.endTurn(),
+    });
     tween(pivot.scale, { y: 0.0001 }, {
       duration: d,
       easing: ease.in,
@@ -514,6 +663,11 @@ export function createStage(canvas, options) {
 
   function setPopupTextureNow(texture) {
     selected?.setPopupTexture(texture);
+  }
+
+  function setStoryPage(texture, page) {
+    selected?.setStoryTexture(texture);
+    updatePageDiorama(page);
   }
 
   const tmpVec = new THREE.Vector3();
@@ -592,8 +746,25 @@ export function createStage(canvas, options) {
       toy.rotation.y = reduceMotion ? 0 : Math.sin(clock.t * 0.9 + state.phase) * 0.06;
     });
 
+    pageActors.forEach((actor) => {
+      if (reduceMotion) return;
+      const phase = actor.userData.phase || 0;
+      const baseY = actor.userData.baseY ?? actor.position.y;
+      if (actor.userData.storySpark) {
+        actor.position.y = baseY + Math.sin(clock.t * 2.2 + phase) * 0.012;
+        actor.scale.setScalar(0.75 + Math.sin(clock.t * 3.1 + phase) * 0.22);
+        return;
+      }
+      if (!actor.userData.storyActor) return;
+      actor.position.y = baseY + Math.sin(clock.t * 1.8 + phase) * 0.009;
+      actor.rotation.y = Math.sin(clock.t * 0.85 + phase) * 0.16;
+      actor.rotation.z = Math.sin(clock.t * 1.25 + phase) * 0.025;
+    });
+
     // Luz de la lámpara con un parpadeo casi imperceptible.
     lampLight.intensity = 1.35 + Math.sin(clock.t * 7.3) * 0.03 + Math.sin(clock.t * 2.1) * 0.03;
+    ambientDust.rotation.y = Math.sin(clock.t * 0.12) * 0.05;
+    ambientDust.position.y = Math.sin(clock.t * 0.28) * 0.025;
 
     const panX = mode === "shelf" ? shelfPan.x : 0;
     camera.position.set(camPos.x + panX, camPos.y, camPos.z);
@@ -607,6 +778,7 @@ export function createStage(canvas, options) {
     running = false;
     cancelAnimationFrame(frame);
     cancelAllTweens();
+    clearPageDiorama();
     window.removeEventListener("resize", resize);
     document.removeEventListener("visibilitychange", onVisibility);
     canvas.removeEventListener("pointermove", onPointerMove);
@@ -631,6 +803,7 @@ export function createStage(canvas, options) {
     closeBook,
     showPage,
     setPopupTextureNow,
+    setStoryPage,
     projectPopup,
     focusBook,
     panShelf,
