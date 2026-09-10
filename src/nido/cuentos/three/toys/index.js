@@ -10,6 +10,8 @@ import * as bufeo from "./bufeo.js";
 import * as buho from "./buho.js";
 import * as cactus from "./cactus.js";
 import * as campana from "./campana.js";
+import * as canasta from "./canasta.js";
+import * as caperucita from "./caperucita.js";
 import * as caracola from "./caracola.js";
 import * as casa from "./casa.js";
 import * as cerdito from "./cerdito.js";
@@ -19,22 +21,25 @@ import * as escalera from "./escalera.js";
 import * as estrella from "./estrella.js";
 import * as farol from "./farol.js";
 import * as frasco from "./frasco.js";
+import * as gorro from "./gorro.js";
 import * as lobo from "./lobo.js";
 import * as luna from "./luna.js";
 import * as manzana from "./manzana.js";
 import * as olla from "./olla.js";
 import * as oso from "./oso.js";
 import * as oveja from "./oveja.js";
+import * as pajarito from "./pajarito.js";
 import * as pez from "./pez.js";
 import * as picaflor from "./picaflor.js";
 import * as quena from "./quena.js";
+import * as ramo from "./ramo.js";
 import * as rana from "./rana.js";
 import * as tambor from "./tambor.js";
 import * as tren from "./tren.js";
 import * as vicuna from "./vicuna.js";
 import * as zorro from "./zorro.js";
 
-const REGISTRY = { arbol, ballena, barco, bufeo, buho, cactus, campana, caracola, casa, cerdito, cohete, cometa, escalera, estrella, farol, frasco, lobo, luna, manzana, olla, oso, oveja, pez, picaflor, quena, rana, tambor, tren, vicuna, zorro };
+const REGISTRY = { arbol, ballena, barco, bufeo, buho, cactus, campana, canasta, caperucita, caracola, casa, cerdito, cohete, cometa, escalera, estrella, farol, frasco, gorro, lobo, luna, manzana, olla, oso, oveja, pajarito, pez, picaflor, quena, ramo, rana, tambor, tren, vicuna, zorro };
 
 export function registerToys(modules) {
   modules.forEach((module) => {
@@ -48,6 +53,11 @@ export function hasToy(id) {
 
 // Qué figura representa cada souvenir de los cuentos.
 export const PIN_TOY = {
+  caperuza: "caperucita",
+  canasta: "canasta",
+  pajarito: "pajarito",
+  ramo: "ramo",
+  gorro: "gorro",
   manzana: "manzana",
   casita: "casa",
   lobo: "lobo",

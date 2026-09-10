@@ -69,6 +69,8 @@ export const SETS = {
   "forest-dusk": { far: "#6b5a7d", mid: "#4f4363", near: "#39304b", tint: "#a98fbd" },
   // Pradera junto al bosque de «Los tres cerditos»: verdes claros y cálidos.
   "meadow-day": { far: "#9fcb7d", mid: "#74b060", near: "#54924a", tint: "#d3e9ae" },
+  // Bosque de día de «Caperucita Roja»: verdes profundos con luz filtrada.
+  "forest-day": { far: "#8fbf78", mid: "#5f9a55", near: "#3f7a42", tint: "#c8e2a8" },
 };
 
 export function mix(hexA, hexB, amount) {

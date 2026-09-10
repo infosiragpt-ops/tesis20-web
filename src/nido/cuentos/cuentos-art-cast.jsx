@@ -486,6 +486,149 @@ function Lobo() {
   );
 }
 
+/* --------------------------- Caperucita Roja --------------------------- */
+
+// Caperucita: capa roja con capucha, vestido crema y canasta con pastel.
+function Caperucita() {
+  const skin = "#f2c9a8";
+  const red = "#d63b3b";
+  const redDark = "#b12d2d";
+  return (
+    <g>
+      <Shadow rx={44} ry={9} />
+      <g className="cuento-breathe">
+        <rect x="-18" y="-40" width="14" height="40" rx="6" fill={skin} />
+        <rect x="6" y="-40" width="14" height="40" rx="6" fill={skin} />
+        <ellipse cx="-11" cy="0" rx="14" ry="6" fill="#5b3a2a" />
+        <ellipse cx="14" cy="0" rx="14" ry="6" fill="#5b3a2a" />
+        <path d="M -30 -40 q 6 -60 30 -62 q 24 2 30 62 z" fill="#f4e4c8" />
+        <path d="M -46 -36 q -6 -90 46 -96 q 52 6 46 96 z" fill={red} />
+        <path d="M -46 -36 q 46 -14 92 0 v 5 q -46 -12 -92 0 z" fill={redDark} />
+        <path d="M 30 -86 q 24 10 28 40" stroke={skin} strokeWidth="11" fill="none" strokeLinecap="round" />
+        <path d="M 42 -46 q 18 -30 36 0" fill="none" stroke="#a5713f" strokeWidth="4" strokeLinecap="round" />
+        <rect x="38" y="-30" width="30" height="12" rx="3" fill="#f7d9e4" />
+        <path d="M 36 -46 h 48 l -6 28 h -36 z" fill="#c9955c" />
+        <path d="M 40 -36 h 40 M 42 -27 h 36" stroke="#a5713f" strokeWidth="2.5" />
+        <circle cx="4" cy="-122" r="28" fill={skin} />
+        <path d="M -24 -128 q 4 -30 28 -30 q 24 0 28 30 q -10 -12 -28 -12 q -18 0 -28 12 z" fill="#6b3f26" />
+        <path d="M -30 -124 q 0 -52 34 -54 q 34 2 34 54 q -8 -28 -34 -28 q -26 0 -34 28 z" fill={red} />
+        <Eye x={0} y={-124} r={4.4} look={1} />
+        <Eye x={18} y={-124} r={4.4} look={1} />
+        <Blush x={-6} y={-112} />
+        <Blush x={24} y={-112} />
+        <path d="M 4 -108 q 8 6 16 0" stroke="#b5637e" strokeWidth="2.4" fill="none" strokeLinecap="round" />
+      </g>
+    </g>
+  );
+}
+
+// Abuelita: moño blanco, lentes, chal claro sobre vestido morado y bastón.
+function Abuelita() {
+  const skin = "#efc3a3";
+  return (
+    <g>
+      <Shadow rx={44} ry={9} />
+      <g className="cuento-breathe">
+        <rect x="-16" y="-30" width="12" height="30" rx="5" fill="#8a6a5a" />
+        <rect x="6" y="-30" width="12" height="30" rx="5" fill="#8a6a5a" />
+        <ellipse cx="-10" cy="0" rx="13" ry="6" fill="#4a2f22" />
+        <ellipse cx="12" cy="0" rx="13" ry="6" fill="#4a2f22" />
+        <path d="M -40 -28 q 4 -90 42 -92 q 38 2 42 92 z" fill="#7a5aa8" />
+        <path d="M -30 -50 h 62" stroke="#f4e4c8" strokeWidth="2" strokeDasharray="4 6" />
+        <path d="M -42 -98 q 44 -30 88 0 v 16 q -44 -22 -88 0 z" fill="#f1e2cf" />
+        <path d="M 48 -66 v 66" stroke="#8a5a33" strokeWidth="6" strokeLinecap="round" />
+        <path d="M 48 -66 q 0 -14 12 -10" stroke="#8a5a33" strokeWidth="6" fill="none" strokeLinecap="round" />
+        <path d="M 30 -90 q 22 6 20 24" stroke={skin} strokeWidth="10" fill="none" strokeLinecap="round" />
+        <circle cx="49" cy="-68" r="7" fill={skin} />
+        <circle cx="2" cy="-126" r="27" fill={skin} />
+        <circle cx="-4" cy="-154" r="14" fill="#e9e4e0" />
+        <path d="M -26 -134 q 4 -22 28 -22 q 24 0 28 22 q -12 -8 -28 -8 q -16 0 -28 8 z" fill="#e9e4e0" />
+        <circle cx="-4" cy="-126" r="8" fill="none" stroke="#5a4a3a" strokeWidth="2.5" />
+        <circle cx="16" cy="-126" r="8" fill="none" stroke="#5a4a3a" strokeWidth="2.5" />
+        <path d="M 4 -126 h 4" stroke="#5a4a3a" strokeWidth="2.5" />
+        <Eye x={-4} y={-126} r={3.6} look={1} />
+        <Eye x={16} y={-126} r={3.6} look={1} />
+        <Blush x={-10} y={-114} />
+        <path d="M 0 -110 q 8 6 16 0" stroke="#b5637e" strokeWidth="2.4" fill="none" strokeLinecap="round" />
+      </g>
+    </g>
+  );
+}
+
+// Cazador: chaqueta verde, sombrero con pluma y barba castaña.
+function Cazador() {
+  const skin = "#d8a172";
+  const green = "#4f7a3a";
+  const greenDark = "#3c5f2c";
+  return (
+    <g>
+      <Shadow rx={46} ry={10} />
+      <g className="cuento-breathe">
+        <rect x="-24" y="-56" width="20" height="56" rx="9" fill="#5b4a3a" />
+        <rect x="6" y="-56" width="20" height="56" rx="9" fill="#5b4a3a" />
+        <ellipse cx="-14" cy="2" rx="16" ry="7" fill="#3a2a20" />
+        <ellipse cx="16" cy="2" rx="16" ry="7" fill="#3a2a20" />
+        <path d="M -38 -52 q -4 -74 40 -74 q 44 0 40 74 z" fill={green} />
+        <path d="M 2 -124 v 68" stroke={greenDark} strokeWidth="4" />
+        <circle cx="2" cy="-100" r="3" fill="#f2c14e" />
+        <circle cx="2" cy="-80" r="3" fill="#f2c14e" />
+        <path d="M -38 -68 h 80" stroke="#8a5a33" strokeWidth="7" />
+        <rect x="-50" y="-120" width="16" height="54" rx="8" fill={green} transform="rotate(10 -42 -92)" />
+        <rect x="34" y="-120" width="16" height="54" rx="8" fill={green} transform="rotate(-10 42 -92)" />
+        <circle cx="-44" cy="-66" r="8" fill={skin} />
+        <circle cx="44" cy="-66" r="8" fill={skin} />
+        <circle cx="2" cy="-152" r="31" fill={skin} />
+        <path d="M -24 -142 q 26 32 52 0 q -6 28 -26 28 q -20 0 -26 -28 z" fill="#6b3f26" />
+        <path d="M -36 -166 h 76 l -6 -8 h -64 z" fill={greenDark} />
+        <path d="M -24 -172 q 2 -26 26 -26 q 24 0 26 26 z" fill={green} />
+        <path d="M 20 -188 q 20 -18 34 -10 q -14 6 -26 16 z" fill="#d9483f" />
+        <Eye x={-8} y={-152} r={4.4} look={1} />
+        <Eye x={14} y={-152} r={4.4} look={1} />
+        <path d="M -8 -140 q 10 5 20 0" stroke="#3a2a20" strokeWidth="2.6" fill="none" strokeLinecap="round" />
+      </g>
+    </g>
+  );
+}
+
+// El lobo metido en la cama de la abuelita, con gorro de dormir y la frazada
+// hasta la nariz. La cama forma parte del personaje para que la escena de
+// interior no necesite más piezas.
+function LoboCama() {
+  const fur = "#7d8494";
+  const furDark = "#5d6373";
+  const cream = "#e6e6ea";
+  return (
+    <g>
+      <Shadow rx={104} ry={10} />
+      <g className="cuento-breathe">
+        <rect x="-112" y="-126" width="18" height="90" rx="6" fill="#8a5a33" />
+        <rect x="-100" y="-58" width="200" height="52" rx="10" fill="#a5713f" />
+        <rect x="-100" y="-14" width="14" height="14" fill="#7a4f2a" />
+        <rect x="86" y="-14" width="14" height="14" fill="#7a4f2a" />
+        <rect x="-96" y="-74" width="192" height="30" rx="12" fill="#f4e4c8" />
+        <ellipse cx="-30" cy="-82" rx="44" ry="24" fill="#ffffff" />
+        <circle cx="-30" cy="-108" r="30" fill={fur} />
+        <path d="M -18 -114 q 36 -10 48 8 q -10 20 -34 16 q -14 -6 -14 -24 z" fill={cream} />
+        <ellipse cx="24" cy="-104" rx="7" ry="5" fill="#2b2b33" />
+        <path d="M -52 -130 l -6 -30 l 26 16 z" fill={fur} />
+        <path d="M -14 -136 l 10 -30 l 12 26 z" fill={fur} />
+        <path d="M -50 -130 l -2 -18 l 14 10 z" fill="#c9a0b0" />
+        <path d="M -12 -134 l 6 -18 l 6 16 z" fill="#c9a0b0" />
+        <path d="M -62 -126 q 30 -36 68 -10 q -30 -6 -68 10 z" fill="#ffffff" />
+        <path d="M -62 -124 q -22 -30 4 -48 q 30 -12 62 24" fill="#ffffff" stroke="#e5d9d9" strokeWidth="2" />
+        <circle cx="-58" cy="-172" r="8" fill="#f2c14e" />
+        <Eye x={-38} y={-112} r={5} look={1} />
+        <Eye x={-14} y={-114} r={5} look={1} />
+        <path d="M -48 -126 l 16 6 M -22 -128 l 16 6" stroke={furDark} strokeWidth="3.5" strokeLinecap="round" />
+        <path d="M -96 -70 q 96 -26 192 0 v 26 h -192 z" fill="#d63b3b" />
+        <path d="M -70 -60 q 30 -8 60 0 M 10 -58 q 30 -8 60 0" stroke="#ffffff" strokeWidth="2" fill="none" opacity="0.5" />
+        <ellipse cx="8" cy="-70" rx="14" ry="8" fill={fur} />
+        <ellipse cx="40" cy="-68" rx="14" ry="8" fill={fur} />
+      </g>
+    </g>
+  );
+}
+
 export const CAST = {
   oso: { Art: Oso, h: 178 },
   buho: { Art: Buho, h: 150 },
@@ -508,4 +651,8 @@ export const CAST = {
   lolo: { Art: Lolo, h: 160 },
   tito: { Art: Tito, h: 160 },
   lobo: { Art: Lobo, h: 214 },
+  caperucita: { Art: Caperucita, h: 178 },
+  abuelita: { Art: Abuelita, h: 168 },
+  cazador: { Art: Cazador, h: 198 },
+  "lobo-cama": { Art: LoboCama, h: 180 },
 };

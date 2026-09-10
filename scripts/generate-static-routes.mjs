@@ -323,7 +323,7 @@ const routeDefinitions = [
     path: "/nido",
     title: "Cuentos ilustrados con narración para niños | Tesis20 Nido",
     description:
-      "Cuentos ilustrados para niñas y niños de 3 a 6 años: Los tres cerditos y ocho historias del Perú, con narración en voz alta, souvenirs escondidos y quiz final.",
+      "Cuentos ilustrados para niñas y niños de 3 a 6 años: Los tres cerditos, Caperucita Roja y ocho historias del Perú, con narración en voz alta, souvenirs y quiz.",
     heading: "Cuentos para leer, escuchar y coleccionar",
     schemaType: "CollectionPage",
     image: `${SITE_ORIGIN}/assets/nido/nido-platform-preview.jpg`,
@@ -353,10 +353,11 @@ const routeDefinitions = [
       <p>Una biblioteca de cuentos ilustrados con narración, pensada para niñas y niños de 3 a 6 años y para las familias que leen con ellos.</p>
       <p><a href="/nido#cuentos">Explorar cuentos</a></p>
       <section id="cuentos" aria-labelledby="static-nido-books-title">
-        <h2 id="static-nido-books-title">Nueve historias para leer y escuchar</h2>
+        <h2 id="static-nido-books-title">Diez historias para leer y escuchar</h2>
         <p>Cada libro tiene diez páginas ilustradas, un personaje protagonista y una idea sencilla por página, con vocabulario concreto y frases cortas.</p>
         <ul>
           <li>Los tres cerditos: tres hermanos, tres casas y un lobo que sopla.</li>
+          <li>Caperucita Roja: una niña, un bosque y un lobo con voz finita.</li>
           <li>Kusi y la luna dormilona: un osito de anteojos quiere despertar a la luna.</li>
           <li>Amaru y el río de estrellas: un bufeo rosado busca las luces que se apagaron.</li>
           <li>Sami y la cometa viajera: una cometa se escapa y cruza todo el valle.</li>

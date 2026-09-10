@@ -877,7 +877,9 @@ check(
 // 2026-09-10 (bis): 10.1 → 10.2 MiB por «Los tres cerditos» en /nido: cuatro
 // personajes y cuatro escenografías SVG, cinco figuras 3D, su portada AVIF
 // (13 KiB) y las entradas del manifiesto de voz. Los mp3 siguen excluidos.
-check(deployBytesWithoutAudioAndPdf <= 10.2 * 1024 * 1024, `El build sin audios/PDF supera 10.2 MiB (${(deployBytesWithoutAudioAndPdf / 1024 / 1024).toFixed(2)} MiB).`);
+// 2026-09-10 (ter): 10.2 → 10.3 MiB por «Caperucita Roja»: cuatro personajes,
+// dos escenografías, cinco figuras 3D, su portada AVIF (64 KiB) y el manifiesto.
+check(deployBytesWithoutAudioAndPdf <= 10.3 * 1024 * 1024, `El build sin audios/PDF supera 10.3 MiB (${(deployBytesWithoutAudioAndPdf / 1024 / 1024).toFixed(2)} MiB).`);
 
 for (const htmlFile of distFiles.filter((file) => file.endsWith(".html"))) {
   check((await fileSize(htmlFile)) <= 300 * 1024, `${htmlFile} supera 300 KiB.`);
