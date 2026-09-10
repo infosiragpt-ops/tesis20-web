@@ -937,6 +937,100 @@ function Sombrero() {
   );
 }
 
+/* --------------------- casas de «Los tres cerditos» --------------------- */
+
+function Paja({ light }) {
+  const straw = isDark(light) ? "#a08a4a" : "#e9c96a";
+  const strawDark = isDark(light) ? "#7e6b36" : "#c9a54a";
+  return (
+    <g transform="translate(780 560)">
+      <ellipse cx="0" cy="6" rx="130" ry="12" fill="#0b1226" opacity="0.22" />
+      <path d="M -120 0 q 0 -150 120 -190 q 120 40 120 190 z" fill={straw} />
+      {[-70, -30, 10, 50, 90].map((x, i) => (
+        <path key={x} d={`M ${x} -10 q ${-8 - i * 2} -70 ${-20 + i * 4} -130`} stroke={strawDark} strokeWidth="4" fill="none" strokeLinecap="round" opacity="0.7" />
+      ))}
+      <path d="M -128 -8 q 128 -30 256 0" stroke={strawDark} strokeWidth="8" fill="none" strokeLinecap="round" />
+      <path d="M -20 -104 q 20 -30 40 0" stroke={strawDark} strokeWidth="6" fill="none" strokeLinecap="round" />
+      <path d="M -30 0 v -64 a 30 30 0 0 1 60 0 v 64 z" fill="#8a5a33" />
+      <circle cx="16" cy="-30" r="4" fill="#f2c14e" />
+    </g>
+  );
+}
+
+function Madera({ light }) {
+  const wood = isDark(light) ? "#7a5a3a" : "#c58a52";
+  const woodDark = isDark(light) ? "#5b4229" : "#9c6a3c";
+  return (
+    <g transform="translate(780 560)">
+      <ellipse cx="0" cy="6" rx="130" ry="12" fill="#0b1226" opacity="0.22" />
+      <rect x="-100" y="-120" width="200" height="120" rx="6" fill={wood} />
+      {[-96, -72, -48, -24, 0, 24, 48, 72].map((y) => (
+        <path key={y} d={`M -100 ${y} h 200`} stroke={woodDark} strokeWidth="4" opacity="0.8" />
+      ))}
+      <path d="M -120 -120 L 0 -196 L 120 -120 Z" fill={woodDark} />
+      <path d="M -120 -120 h 240 v 12 h -240 z" fill="#6f4a2a" />
+      <rect x="-26" y="-68" width="52" height="68" rx="5" fill="#5b3d22" />
+      <circle cx="14" cy="-34" r="4" fill="#f2c14e" />
+      <rect x="40" y="-96" width="34" height="30" rx="4" fill={isDark(light) ? "#ffd98a" : "#a9d4e8"} />
+      <path d="M 40 -81 h 34 M 57 -96 v 30" stroke="#5b3d22" strokeWidth="3" />
+    </g>
+  );
+}
+
+function Ladrillos({ light }) {
+  const brick = isDark(light) ? "#8a4a3e" : "#c9634f";
+  const mortar = isDark(light) ? "#a27a6c" : "#e8b9a6";
+  const glass = isDark(light) ? "#ffd98a" : "#a9d4e8";
+  const rows = [-104, -84, -64, -44, -24, -4, 16];
+  return (
+    <g transform="translate(780 560)">
+      <ellipse cx="0" cy="6" rx="136" ry="12" fill="#0b1226" opacity="0.22" />
+      <rect x="-104" y="-124" width="208" height="124" rx="6" fill={brick} />
+      <g stroke={mortar} strokeWidth="3" opacity="0.8">
+        {rows.map((y) => (
+          <path key={y} d={`M -104 ${y} h 208`} />
+        ))}
+        {rows.map((y, i) =>
+          [0, 1, 2, 3, 4].map((j) => <path key={`${y}-${j}`} d={`M ${-104 + (i % 2) * 22 + j * 44} ${y} v 20`} />),
+        )}
+      </g>
+      <rect x="40" y="-190" width="26" height="50" fill={brick} />
+      <rect x="36" y="-196" width="34" height="10" fill="#7d2f27" />
+      <path d="M -122 -124 L 0 -200 L 122 -124 Z" fill="#a83f33" />
+      <path d="M -122 -124 h 244 v 12 h -244 z" fill="#7d2f27" />
+      <rect x="-26" y="-70" width="52" height="70" rx="5" fill="#6b4a33" />
+      <circle cx="14" cy="-36" r="4" fill="#f2c14e" />
+      <rect x="-80" y="-100" width="36" height="32" rx="4" fill={glass} />
+      <rect x="44" y="-100" width="36" height="32" rx="4" fill={glass} />
+      <path d="M -80 -84 h 36 M -62 -100 v 32 M 44 -84 h 36 M 62 -100 v 32" stroke="#6b4a33" strokeWidth="3" />
+    </g>
+  );
+}
+
+function Olla() {
+  return (
+    <g transform="translate(150 560)">
+      <ellipse cx="0" cy="6" rx="70" ry="10" fill="#0b1226" opacity="0.22" />
+      <path d="M -22 -6 q 12 -34 22 -4 q 10 -30 22 4 q -22 12 -44 0 z" fill="#ff9d3c">
+        <animate attributeName="opacity" values="0.7;1;0.7" dur="0.9s" repeatCount="indefinite" />
+      </path>
+      <path d="M -34 0 l 8 -26 M 34 0 l -8 -26 M 0 0 v -26" stroke="#2b2b33" strokeWidth="7" strokeLinecap="round" />
+      <path d="M -58 -28 q 0 -66 58 -66 q 58 0 58 66 q -20 14 -58 14 q -38 0 -58 -14 z" fill="#3a3f4c" />
+      <ellipse cx="0" cy="-94" rx="58" ry="13" fill="#2b2f3a" />
+      <ellipse cx="0" cy="-94" rx="46" ry="8" fill="#e8a24a" />
+      <path d="M -70 -80 q -16 -12 -2 -22 M 70 -80 q 16 -12 2 -22" stroke="#2b2f3a" strokeWidth="7" fill="none" strokeLinecap="round" />
+      <g stroke="#ffffff" strokeOpacity="0.55" strokeWidth="5" fill="none" strokeLinecap="round">
+        <path d="M -20 -110 q -10 -20 4 -34 q 12 -12 2 -28">
+          <animate attributeName="stroke-opacity" values="0.15;0.6;0.15" dur="2.4s" repeatCount="indefinite" />
+        </path>
+        <path d="M 18 -114 q 12 -18 -2 -34 q -10 -12 4 -26">
+          <animate attributeName="stroke-opacity" values="0.6;0.15;0.6" dur="2.8s" repeatCount="indefinite" />
+        </path>
+      </g>
+    </g>
+  );
+}
+
 const PROP_LIST = {
   luna: Luna,
   sol: Sol,
@@ -988,6 +1082,10 @@ const PROP_LIST = {
   lineas: Lineas,
   quena: Quena,
   sombrero: Sombrero,
+  paja: Paja,
+  madera: Madera,
+  ladrillos: Ladrillos,
+  olla: Olla,
 };
 
 // Orden de dibujo: cielo y fondo primero, suelo y objetos después.
@@ -1000,6 +1098,7 @@ const LAYER = {
   estacion: 4, tren: 5, boleto: 7, silbato: 7, campana: 4, cactus: 5,
   orquidea: 6, "flor-cristal": 6, gota: 7, estrella: 6, luciernagas: 7,
   huellas: 5, vasija: 6, lineas: 5, quena: 6, sombrero: 7,
+  paja: 4, madera: 4, ladrillos: 4, olla: 5,
 };
 
 export function propLayer(id) {
@@ -1016,6 +1115,39 @@ export function Prop({ id, rand, light, set }) {
 // Dibujos pequeños (caja de -40 a 40) para el álbum y la repisa.
 
 const EMBLEMS = {
+  manzana: (
+    <g>
+      <circle cx="0" cy="6" r="28" fill="#e2453b" />
+      <circle cx="-9" cy="-3" r="9" fill="#ffffff" opacity="0.28" />
+      <path d="M 0 -20 q 2 -12 8 -16" stroke="#6b4a2a" strokeWidth="4" fill="none" strokeLinecap="round" />
+      <path d="M 2 -24 q 18 -12 24 4 q -18 8 -24 -4 z" fill="#5cb56a" />
+    </g>
+  ),
+  casita: (
+    <g>
+      <rect x="-26" y="-6" width="52" height="34" rx="3" fill="#c9634f" />
+      <path d="M -32 -6 L 0 -30 L 32 -6 Z" fill="#a83f33" />
+      <rect x="12" y="-26" width="8" height="14" fill="#c9634f" />
+      <rect x="-7" y="10" width="14" height="18" rx="2" fill="#6b4a33" />
+      <path d="M -26 8 h 52 M -26 20 h 52" stroke="#e8b9a6" strokeWidth="2" />
+    </g>
+  ),
+  escalera: (
+    <g stroke="#b98756" strokeWidth="6" strokeLinecap="round" fill="none">
+      <path d="M -14 32 L -6 -32 M 14 32 L 6 -32" />
+      <path d="M -12 18 h 24 M -10 4 h 20 M -8 -10 h 16 M -7 -24 h 14" strokeWidth="4" />
+    </g>
+  ),
+  olla: (
+    <g>
+      <path d="M -26 -4 q 0 -28 26 -28 q 26 0 26 28 q -8 8 -26 8 q -18 0 -26 -8 z" fill="#3a3f4c" />
+      <ellipse cx="0" cy="-32" rx="26" ry="6" fill="#2b2f3a" />
+      <ellipse cx="0" cy="-32" rx="20" ry="4" fill="#e8a24a" />
+      <path d="M -30 -20 q -8 -6 -2 -12 M 30 -20 q 8 -6 2 -12" stroke="#2b2f3a" strokeWidth="4" fill="none" strokeLinecap="round" />
+      <path d="M -12 16 q 8 -18 12 -4 q 4 -14 12 4 q -12 8 -24 0 z" fill="#ff9d3c" />
+      <path d="M -8 -40 q -4 -8 2 -14 M 8 -40 q 4 -8 -2 -14" stroke="#ffffff" strokeOpacity="0.6" strokeWidth="3" fill="none" strokeLinecap="round" />
+    </g>
+  ),
   luna: (
     <g>
       <path d="M 12 -30 a 32 32 0 1 0 8 58 a 26 26 0 1 1 -8 -58 z" fill="#ffe9a8" />

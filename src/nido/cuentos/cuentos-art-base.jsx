@@ -67,6 +67,8 @@ export const SETS = {
   "mountain-day": { far: "#9db9d6", mid: "#7d99bb", near: "#5f7ea3", tint: "#d7e6f3" },
   "ocean-day": { far: "#3f9fc4", mid: "#2b83ad", near: "#e6d3a8", tint: "#7fd0e8" },
   "forest-dusk": { far: "#6b5a7d", mid: "#4f4363", near: "#39304b", tint: "#a98fbd" },
+  // Pradera junto al bosque de «Los tres cerditos»: verdes claros y cálidos.
+  "meadow-day": { far: "#9fcb7d", mid: "#74b060", near: "#54924a", tint: "#d3e9ae" },
 };
 
 export function mix(hexA, hexB, amount) {

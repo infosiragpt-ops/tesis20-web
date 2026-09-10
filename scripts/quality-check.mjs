@@ -874,7 +874,10 @@ check(
 // 2026-09-10: 9.51 → 10.1 MiB por el escenario WebGL de /nido: Three.js va en
 // el chunk diferido `vendor-three` (~560 KiB) que solo se descarga en /nido;
 // el motor de juegos anterior ya no se compila. Sin binarios nuevos.
-check(deployBytesWithoutAudioAndPdf <= 10.1 * 1024 * 1024, `El build sin audios/PDF supera 10.1 MiB (${(deployBytesWithoutAudioAndPdf / 1024 / 1024).toFixed(2)} MiB).`);
+// 2026-09-10 (bis): 10.1 → 10.2 MiB por «Los tres cerditos» en /nido: cuatro
+// personajes y cuatro escenografías SVG, cinco figuras 3D, su portada AVIF
+// (13 KiB) y las entradas del manifiesto de voz. Los mp3 siguen excluidos.
+check(deployBytesWithoutAudioAndPdf <= 10.2 * 1024 * 1024, `El build sin audios/PDF supera 10.2 MiB (${(deployBytesWithoutAudioAndPdf / 1024 / 1024).toFixed(2)} MiB).`);
 
 for (const htmlFile of distFiles.filter((file) => file.endsWith(".html"))) {
   check((await fileSize(htmlFile)) <= 300 * 1024, `${htmlFile} supera 300 KiB.`);
