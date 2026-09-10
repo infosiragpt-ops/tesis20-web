@@ -7,16 +7,22 @@ import { CAST } from "./cuentos-art-cast.jsx";
 import { MEDALS, bookStatus, totals, useProgress } from "./cuentos-progress.js";
 import {
   isMuted,
+  loadCuentosVoices,
   onMuteChange,
+  pageTrack,
+  prefetchTracks,
+  quizTracks,
   setMusicIntensity,
   sfx,
   speak,
+  speakSequence,
   speechAvailable,
   startMusic,
   stopSpeech,
   toggleMuted,
   unlockAudio,
   warmUpVoices,
+  wordTrack,
 } from "./cuentos-audio.js";
 import { createStage } from "./three/stage.js";
 import { MagicCursor } from "./MagicCursor.jsx";
@@ -537,12 +543,27 @@ function Reader({ book, page, state, pinRef, onPage, onClose, onStar, onPin, onQ
   }, [words]);
 
   const isLast = page === book.pages.length - 1;
+  const pageRef = useRef(page);
+  pageRef.current = page;
 
   useEffect(() => {
     onStar(book.id, page);
     // La página es el evento: la función del progreso puede cambiar de
     // referencia después de guardar y no debe volver a marcarla en bucle.
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [book.id, page]);
+
+  // La voz de estudio de esta página y de la siguiente se descargan antes de
+  // que se pidan, para que «Léemelo» y el pase de hoja no esperen a la red.
+  useEffect(() => {
+    let cancelled = false;
+    loadCuentosVoices().then(() => {
+      if (cancelled) return;
+      prefetchTracks([pageTrack(book.id, page), pageTrack(book.id, page + 1)]);
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [book.id, page]);
 
   useEffect(() => () => stopSpeech(), []);
@@ -562,25 +583,30 @@ function Reader({ book, page, state, pinRef, onPage, onClose, onStar, onPin, onQ
   const readAloud = useCallback(() => {
     if (!speechAvailable()) return;
     setSpeaking(true);
-    speak(`${pageData.t}. ${pageData.x}`, {
-      audioKey: `${book.id}:${page}`,
-      onWord: (index) => {
-        const titleWords = pageData.t.split(/\s+/).filter(Boolean).length;
-        setActiveWord(index < 0 ? -1 : index - titleWords);
-      },
-      onEnd: () => {
-        setSpeaking(false);
-        setActiveWord(-1);
-        if (autoRef.current) {
-          window.setTimeout(() => {
-            if (!autoRef.current) return;
-            if (page < book.pages.length - 1) turnTo(page + 1);
-            else setAutoRead(false);
-          }, 900);
-        }
-      },
+    // Se espera al manifiesto de voces (ya pedido al abrir la biblioteca) para
+    // que la primera página no salga con la voz del navegador por una carrera.
+    loadCuentosVoices().then(() => {
+      if (pageRef.current !== page || !autoRef.current) return;
+      speak(`${pageData.t}. ${pageData.x}`, {
+        track: pageTrack(book.id, page),
+        onWord: (index) => {
+          const titleWords = pageData.t.split(/\s+/).filter(Boolean).length;
+          setActiveWord(index < 0 ? -1 : index - titleWords);
+        },
+        onEnd: () => {
+          setSpeaking(false);
+          setActiveWord(-1);
+          if (autoRef.current) {
+            window.setTimeout(() => {
+              if (!autoRef.current) return;
+              if (page < book.pages.length - 1) turnTo(page + 1);
+              else setAutoRead(false);
+            }, 900);
+          }
+        },
+      });
     });
-  }, [pageData, page, book.pages.length, turnTo]);
+  }, [pageData, page, book.id, book.pages.length, turnTo]);
 
   useEffect(() => {
     autoRef.current = autoRead;
@@ -617,7 +643,7 @@ function Reader({ book, page, state, pinRef, onPage, onClose, onStar, onPin, onQ
     const clean = token.replace(/[^\wáéíóúüñÁÉÍÓÚÜÑ¿?¡!.,";:-]/g, "");
     if (!clean) return;
     sfx.hover();
-    speak(clean, { rate: 0.8 });
+    speak(clean, { rate: 0.8, track: wordTrack(token) });
   };
 
   const pinFound = pageData.pin ? entry.pins.includes(pageData.pin) : true;
@@ -724,7 +750,7 @@ function Quiz({ book, entry, onAnswer, onClose }) {
   const question = book.quiz[index];
 
   const options = useMemo(() => {
-    const list = question.a.map((text, i) => ({ text, correct: i === 0 }));
+    const list = question.a.map((text, i) => ({ text, correct: i === 0, index: i }));
     const rand = seeded(`${book.id}-quiz-${index}`);
     for (let i = list.length - 1; i > 0; i -= 1) {
       const j = Math.floor(rand() * (i + 1));
@@ -733,8 +759,28 @@ function Quiz({ book, entry, onAnswer, onClose }) {
     return list;
   }, [question, index, book.id]);
 
+  // La pregunta y sus opciones se leen en el orden en que se ven: los peques
+  // de tres años no leen todavía, pero sí eligen lo que escuchan.
+  const readQuestion = useCallback(() => {
+    return speakSequence(quizTracks(book.id, index, options.map((option) => option.index)));
+  }, [book.id, index, options]);
+
+  useEffect(() => {
+    if (done) return undefined;
+    let stop = () => {};
+    let cancelled = false;
+    loadCuentosVoices().then(() => {
+      if (!cancelled) stop = readQuestion();
+    });
+    return () => {
+      cancelled = true;
+      stop();
+    };
+  }, [done, readQuestion]);
+
   const choose = (option) => {
     if (picked) return;
+    stopSpeech();
     setPicked(option);
     onAnswer(book.id, index, option.correct);
     if (option.correct) {
@@ -782,6 +828,9 @@ function Quiz({ book, entry, onAnswer, onClose }) {
               {entry.quiz.includes(index) ? " · ya respondida" : ""}
             </p>
             <h2>{question.q}</h2>
+            <button type="button" className="cuentos-quiz__replay" onClick={readQuestion} aria-label="Escuchar la pregunta otra vez">
+              🔊 Escuchar otra vez
+            </button>
             <ul className="cuentos-quiz__options">
               {options.map((option) => (
                 <li key={option.text}>
@@ -925,7 +974,7 @@ function Help({ onClose }) {
             </li>
           ))}
         </ul>
-        <p className="cuentos-help__note">La narración usa la voz del navegador. Si no se escucha, revisa que el dispositivo no esté en silencio y que el sonido de la aplicación esté activado.</p>
+        <p className="cuentos-help__note">La narración usa una voz de estudio grabada para Tesis20 Nido; si un audio no se puede descargar, lee la voz del navegador. Si no se escucha, revisa que el dispositivo no esté en silencio y que el sonido de la aplicación esté activado.</p>
         <button type="button" className="cuentos-btn cuentos-btn--read" onClick={onClose}>
           Empezar a leer
         </button>

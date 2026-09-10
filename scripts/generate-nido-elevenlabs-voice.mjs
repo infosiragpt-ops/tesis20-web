@@ -25,7 +25,6 @@ import {
   NIDO_CURRICULUM_GAME_COUNT,
   buildCurriculumChallenge,
 } from "../src/nido/nido-curriculum.js";
-import { BOOKS } from "../src/nido/cuentos/cuentos-data.js";
 import { enumerateForestVoiceLines } from "../src/nido/game/content/forest-voice-lines.js";
 import { enumerateArcadeVoiceLines } from "../src/nido/game/content/arcade-voice-lines.js";
 import {
@@ -55,9 +54,6 @@ const PROVIDER = "elevenlabs";
 // La comprobación de huella de más abajo lo impide por si se olvida.
 const GENERATOR_VERSION = "nido-teacher-v5";
 const MODEL = process.env.NIDO_TTS_MODEL || "eleven_multilingual_v2";
-// Los cuentos usan el modelo expresivo de larga duración sin obligar a
-// regenerar las miles de consignas educativas ya grabadas con Multilingual v2.
-const STORY_MODEL = process.env.NIDO_STORY_TTS_MODEL || "eleven_v3";
 // «Jhenny Cozy»: femenina, tierna y con la entonación más viva de las ocho
 // candidatas medidas (variación de tono 0,29 y energía 0,63).
 const VOICE = process.env.NIDO_TTS_VOICE || "EDitztUwd7lban76PAZs";
@@ -139,9 +135,9 @@ function getChallengeText(challenge) {
   ).trim();
 }
 
-function getAudioHash({ ageId, text, model = MODEL }) {
+function getAudioHash({ ageId, text }) {
   return createHash("sha256")
-    .update([GENERATOR_VERSION, model, VOICE, ageId, text].join("\n"), "utf8")
+    .update([GENERATOR_VERSION, MODEL, VOICE, ageId, text].join("\n"), "utf8")
     .digest("hex")
     .slice(0, 28);
 }
@@ -151,13 +147,13 @@ function getSeed(hash) {
   return Number.parseInt(hash.slice(0, 8), 16) % 4_294_967_295;
 }
 
-function addJob(jobsByHash, { key, ageId, text, model = MODEL }, tracksTarget) {
+function addJob(jobsByHash, { key, ageId, text }, tracksTarget) {
   if (!text) throw new Error(`${key} no tiene texto narrable.`);
-  const hash = getAudioHash({ ageId, text, model });
+  const hash = getAudioHash({ ageId, text });
   const fileName = `${hash}.mp3`;
   tracksTarget[key] = `/assets/nido/audio/generated/${fileName}`;
   if (!jobsByHash.has(hash)) {
-    jobsByHash.set(hash, { hash, fileName, text, ageId, model, ids: [key] });
+    jobsByHash.set(hash, { hash, fileName, text, ageId, ids: [key] });
   } else {
     jobsByHash.get(hash).ids.push(key);
   }
@@ -167,7 +163,6 @@ function enumerateAudioPlan() {
   const jobsByHash = new Map();
   const tracks = {};
   const bosqueTracks = {};
-  const storyTracks = {};
 
   for (const age of NIDO_AGE_GROUPS) {
     for (const area of NIDO_CURRICULUM) {
@@ -234,22 +229,7 @@ function enumerateAudioPlan() {
     );
   }
 
-  for (const book of BOOKS) {
-    book.pages.forEach((page, pageIndex) => {
-      addJob(
-        jobsByHash,
-        {
-          key: `${book.id}:${pageIndex}`,
-          ageId: CELEBRATION_AGE_ID,
-          text: `${page.t}. ${page.x}`,
-          model: STORY_MODEL,
-        },
-        storyTracks,
-      );
-    });
-  }
-
-  return { jobs: [...jobsByHash.values()], tracks, bosqueTracks, storyTracks };
+  return { jobs: [...jobsByHash.values()], tracks, bosqueTracks };
 }
 
 function wait(milliseconds) {
@@ -355,7 +335,7 @@ async function synthesizeAudio(apiKey, job) {
           },
           body: JSON.stringify({
             text: job.text,
-            model_id: job.model,
+            model_id: MODEL,
             seed: getSeed(job.hash),
             voice_settings: {
               stability: profile.stability,
@@ -466,9 +446,11 @@ function assertProfilesMatchVersion() {
 async function main() {
   assertProfilesMatchVersion();
   await mkdir(GENERATED_AUDIO_DIR, { recursive: true });
+  const apiKey = getApiKey();
+  if (!apiKey) throw new Error("ELEVENLABS_API_KEY está vacía.");
 
   const plan = enumerateAudioPlan();
-  const { tracks, bosqueTracks, storyTracks } = plan;
+  const { tracks, bosqueTracks } = plan;
   // Presupuesto sin gastar: imprime el plan y sale. Sirve para saber cuántos
   // caracteres costaría un cambio de guion antes de lanzar el lote.
   if (process.env.NIDO_TTS_PLAN_ONLY === "1") {
@@ -488,14 +470,11 @@ async function main() {
     );
     console.log(
       `Plan: ${Object.keys(tracks).length} retos, ${plan.jobs.length} audios únicos, ${planCharacters} caracteres.\n` +
-        `Cuentos: ${Object.keys(storyTracks).length} páginas con ${STORY_MODEL}.\n` +
         `Pendientes de grabar: ${pending.length} audios, ${pendingCharacters} caracteres.`,
     );
     if (pending.length) console.log(`Ejemplo pendiente: «${pending[0].text}»`);
     return;
   }
-  const apiKey = getApiKey();
-  if (!apiKey) throw new Error("ELEVENLABS_API_KEY está vacía.");
   // Ensayo acotado antes de gastar el lote completo: genera solo las primeras
   // locuciones y no reescribe el manifiesto.
   const limit = Number.parseInt(process.env.NIDO_TTS_LIMIT || "0", 10);
@@ -507,7 +486,7 @@ async function main() {
   const failures = [];
 
   console.log(
-    `Plan de voz (${VOICE_NAME}/${MODEL}; cuentos ${STORY_MODEL}): ${Object.keys(tracks).length} retos, ${Object.keys(bosqueTracks).length} líneas de Misión del Bosque, ${Object.keys(storyTracks).length} páginas de cuentos, ${jobs.length} audios únicos, ${totalCharacters} caracteres, concurrencia ${CONCURRENCY}.`,
+    `Plan de voz (${VOICE_NAME}/${MODEL}): ${Object.keys(tracks).length} retos, ${Object.keys(bosqueTracks).length} líneas de Misión del Bosque, ${jobs.length} audios únicos, ${totalCharacters} caracteres, concurrencia ${CONCURRENCY}.`,
   );
 
   await runPool(
@@ -550,7 +529,6 @@ async function main() {
     version: 2,
     provider: PROVIDER,
     model: MODEL,
-    storyModel: STORY_MODEL,
     voiceId: VOICE,
     voiceName: VOICE_NAME,
     generatorVersion: GENERATOR_VERSION,
@@ -569,7 +547,6 @@ async function main() {
     ),
     tracks,
     bosqueTracks,
-    storyTracks,
   };
 
   await writeFile(MANIFEST_PATH, `${JSON.stringify(manifest, null, 2)}\n`);
