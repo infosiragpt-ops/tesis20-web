@@ -59,6 +59,25 @@
   touch-action: none;
 }
 
+.cuentos-magic-trail { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 70; }
+.cuentos-magic-hand { position: fixed; left: 0; top: 0; width: 37px; height: 44px; pointer-events: none; z-index: 71; filter: drop-shadow(1px 3px 2px #211e3250); will-change: transform; }
+.cuentos-magic-hand[data-pressed="true"] { width: 34px; height: 41px; }
+.cuentos-magic-hand[hidden] { display: none; }
+.cuentos.has-magic-cursor, .cuentos.has-magic-cursor * { cursor: none !important; }
+.cuentos-canvas[data-dragging="true"] { cursor: grabbing; }
+.cuentos-zoom { position: absolute; left: 20px; bottom: 162px; z-index: 12; display: flex; align-items: center; padding: 4px; gap: 2px; border: 1px solid #d9b779; border-radius: 28px; background: #fff5dfe8; box-shadow: 0 4px 16px #34270d24; }
+.cuentos-zoom button { color: #514529; background: transparent; border: 0; border-radius: 50%; min-width: 38px; height: 36px; font-size: 20px; font-weight: 700; }
+.cuentos-zoom button:nth-child(2) { font-size: 11px; }
+.cuentos-zoom button:disabled { opacity: .35; }
+.cuentos-zoom button:hover { background: #eadbb5; }
+.cuentos-zoom button:focus-visible { outline: 3px solid #263864; outline-offset: 2px; }
+.cuentos-picker__title small { display: block; font: 500 11px/1.6 sans-serif; color: #ffefd0; letter-spacing: .03em; text-shadow: 0 1px 4px #392813; }
+@media (max-width: 760px) {
+  .cuentos-zoom { left: 10px; bottom: 166px; padding: 2px; }
+  .cuentos-zoom button { min-width: 32px; height: 32px; }
+  .cuentos-picker__title small { font-size: 9px; }
+}
+
 .cuentos-loading {
   position: absolute;
   inset: 0;
@@ -269,6 +288,8 @@
 }
 
 .cuentos-picker__row {
+  touch-action: none;
+  user-select: none;
   display: flex;
   justify-content: flex-start;
   gap: 14px;
@@ -526,6 +547,17 @@
   white-space: nowrap;
   border: 0;
   box-shadow: none;
+}
+
+@media (max-width: 760px) and (orientation: portrait) {
+  .cuentos--reading { background: linear-gradient(180deg, #92744e, #c39253 52%, #d1a369); }
+  .cuentos--reading .cuentos-canvas { top: 130px; height: calc(61% - 130px); }
+  .cuentos--reading .cuentos-zoom { top: 138px; bottom: auto; z-index: 15; }
+  .cuentos-card--page-copy { left: 12px; right: 12px; bottom: max(108px, calc(env(safe-area-inset-bottom) + 100px)); width: auto; height: auto; max-height: calc(39dvh - 116px); padding: 14px 16px; margin: 0; overflow: auto; clip: auto; clip-path: none; white-space: normal; border: 1px solid #d8bd89; box-shadow: 0 5px 16px #55330e26; }
+  .cuentos-card--page-copy .cuentos-card__eyebrow { font-size: 9px; letter-spacing: 2px; }
+  .cuentos-card--page-copy .cuentos-card__title { font-size: 19px; margin-bottom: 7px; }
+  .cuentos-card--page-copy .cuentos-card__text { font-size: 16px; line-height: 1.5; margin: 0; }
+  .cuentos-card--page-copy .cuentos-card__hint { display: none; }
 }
 
 .cuentos-card::before,
@@ -1115,27 +1147,6 @@
 .cuentos-toast .cuento-souvenir {
   border-radius: 50%;
   background: radial-gradient(circle at 35% 35%, #fff8e6, #f2d38a);
-}
-
-.cuentos-sparks {
-  position: fixed;
-  inset: 0;
-  z-index: 60;
-  pointer-events: none;
-}
-
-.cuentos-spark {
-  position: absolute;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: radial-gradient(circle, #fff9d6, #ffd766 60%, transparent 70%);
-  opacity: 0;
-  transform: translate(-50%, -50%);
-}
-
-.cuentos-spark.is-live {
-  animation: cuento-spark 0.7s ease-out forwards;
 }
 
 /* --------------------------- animación -------------------------- */

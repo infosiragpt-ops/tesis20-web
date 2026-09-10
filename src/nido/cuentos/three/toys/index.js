@@ -33,8 +33,15 @@ import * as tambor from "./tambor.js";
 import * as tren from "./tren.js";
 import * as vicuna from "./vicuna.js";
 import * as zorro from "./zorro.js";
+import * as mariposa from "./mariposa.js";
+import * as pelicano from "./pelicano.js";
+import * as carpintero from "./carpintero.js";
+import { nina, nino, nina2, maquinista } from "./personajes.js";
 
-const REGISTRY = { arbol, ballena, barco, bufeo, buho, cactus, campana, caracola, casa, cerdito, cohete, cometa, escalera, estrella, farol, frasco, lobo, luna, manzana, olla, oso, oveja, pez, picaflor, quena, rana, tambor, tren, vicuna, zorro };
+const pipo = { id: "pipo", label: "Pipo", build: () => cerdito.build({ hat: true }) };
+const lolo = { id: "lolo", label: "Lolo", build: () => cerdito.build({ outfit: "#5cb56a" }) };
+const tito = { id: "tito", label: "Tito", build: () => cerdito.build({ outfit: "#d9483f" }) };
+const REGISTRY = { arbol, ballena, barco, bufeo, buho, cactus, campana, caracola, casa, cerdito, cohete, cometa, escalera, estrella, farol, frasco, lobo, luna, manzana, olla, oso, oveja, pez, picaflor, quena, rana, tambor, tren, vicuna, zorro, mariposa, pelicano, carpintero, nina, nino, nina2, maquinista, pipo, lolo, tito };
 
 export function registerToys(modules) {
   modules.forEach((module) => {
@@ -44,6 +51,10 @@ export function registerToys(modules) {
 
 export function hasToy(id) {
   return Boolean(REGISTRY[id]);
+}
+
+export function toyLabel(id) {
+  return REGISTRY[id]?.label || "Figura mágica";
 }
 
 // Qué figura representa cada souvenir de los cuentos.
