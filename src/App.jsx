@@ -569,19 +569,19 @@ const servicesFaqs = [
 
 const nidoFaqs = [
   {
-    question: "¿Los precios son definitivos?",
+    question: "¿Necesito crear una cuenta para leer?",
     answer:
-      "No. Los importes visibles después de iniciar la demostración son referenciales y no permiten reservar ni pagar.",
+      "No. Los cuentos de Tesis20 Nido se abren directamente desde el navegador, sin registro ni datos del menor. El progreso se guarda solo en el dispositivo.",
   },
   {
-    question: "¿Este inicio de sesión ya es real?",
+    question: "¿Los niños necesitan saber leer?",
     answer:
-      "No. Es una vista local de producto. La versión final requerirá autenticación segura y roles asignados desde el servidor.",
+      "No. Cada página puede narrarse en voz alta y las palabras se van marcando mientras suenan. También se puede tocar una palabra suelta para escucharla.",
   },
   {
-    question: "¿Qué perfiles tendrá la plataforma?",
+    question: "¿Qué hay en cada cuento?",
     answer:
-      "Administrador, Docente y Alumno, cada uno con una experiencia y permisos propios.",
+      "Diez páginas ilustradas, cinco souvenirs escondidos que se coleccionan en una repisa y un quiz final de cinco preguntas sobre la historia.",
   },
 ];
 

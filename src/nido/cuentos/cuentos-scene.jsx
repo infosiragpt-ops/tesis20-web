@@ -1,0 +1,230 @@
+// Compositor de escenas: junta fondo, escenografía, personajes y el souvenir
+// escondido de cada página.
+
+import { Backdrop, seeded, VIEW_W, VIEW_H } from "./cuentos-art-base.jsx";
+import { CAST } from "./cuentos-art-cast.jsx";
+import { Prop, propLayer, emblemFor } from "./cuentos-art-props.jsx";
+
+const PLACE = {
+  oso: { s: 1.15, y: 566 },
+  buho: { s: 1.1, y: 552 },
+  bufeo: { s: 1.05, y: 500 },
+  rana: { s: 1.5, y: 578 },
+  pez: { s: 1.2, y: 470 },
+  nina: { s: 1.15, y: 570 },
+  nina2: { s: 1.15, y: 570 },
+  nino: { s: 1.15, y: 570 },
+  maquinista: { s: 1, y: 570 },
+  oveja: { s: 1.35, y: 574 },
+  zorro: { s: 1.2, y: 570 },
+  picaflor: { s: 1.5, y: 360 },
+  mariposa: { s: 1.4, y: 320 },
+  vicuna: { s: 1.05, y: 568 },
+  pelicano: { s: 1.2, y: 556 },
+  ballena: { s: 0.95, y: 500 },
+  carpintero: { s: 1.5, y: 430 },
+};
+
+const CAST_X = {
+  1: [470],
+  2: [300, 600],
+  3: [230, 500, 780],
+};
+
+const PIN_SPOTS = [
+  [148, 214],
+  [862, 236],
+  [206, 452],
+  [884, 448],
+  [512, 168],
+  [318, 306],
+  [706, 292],
+  [128, 596],
+  [898, 588],
+  [396, 214],
+];
+
+function SceneBody({ book, pageIndex, foundPin, onPin, interactive, showPin = true }) {
+  const page = book.pages[pageIndex];
+  const seed = `${book.id}-${pageIndex}`;
+  const props = [...(page.props || [])].sort((a, b) => propLayer(a) - propLayer(b));
+  const cast = page.cast || [];
+  const castRand = seeded(`${seed}-cast`);
+  // Un solo personaje: se mueve un poco y a veces mira al otro lado, para
+  // que las páginas no se sientan calcadas.
+  const solo = cast.length === 1 && pageIndex > 0;
+  const shift = solo ? (castRand() - 0.5) * 300 : 0;
+  const flip = solo && castRand() > 0.62;
+  const xs = (CAST_X[cast.length] || CAST_X[1]).map((x) => x + shift);
+
+  const spotRand = seeded(`${seed}-pin`);
+  const spot = PIN_SPOTS[Math.floor(spotRand() * PIN_SPOTS.length)];
+
+  return (
+    <>
+      <Backdrop set={book.set} light={page.light} seed={seed} />
+      {props
+        .filter((id) => propLayer(id) <= 5)
+        .map((id) => (
+          <Prop key={id} id={id} rand={seeded(`${seed}-${id}`)} light={page.light} set={book.set} />
+        ))}
+      {cast.map((who, i) => {
+        const entry = CAST[who];
+        if (!entry) return null;
+        const place = PLACE[who] || { s: 1.1, y: 566 };
+        const Art = entry.Art;
+        return (
+          <g
+            key={`${who}-${i}`}
+            transform={`translate(${xs[i] || 500} ${place.y}) scale(${flip ? -place.s : place.s} ${place.s})`}
+          >
+            <Art />
+          </g>
+        );
+      })}
+      {props
+        .filter((id) => propLayer(id) > 5)
+        .map((id) => (
+          <Prop key={id} id={id} rand={seeded(`${seed}-${id}`)} light={page.light} set={book.set} />
+        ))}
+      {page.pin && showPin ? (
+        <PinToken
+          id={page.pin}
+          x={spot[0]}
+          y={spot[1]}
+          found={foundPin}
+          onPin={onPin}
+          interactive={interactive}
+        />
+      ) : null}
+    </>
+  );
+}
+
+export function Scene({ book, pageIndex, foundPin, onPin, interactive = true }) {
+  const page = book.pages[pageIndex];
+  return (
+    <svg
+      className="cuento-scene"
+      viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
+      preserveAspectRatio="xMidYMid slice"
+      role="img"
+      aria-label={`Ilustración: ${page.t}`}
+    >
+      <SceneBody book={book} pageIndex={pageIndex} foundPin={foundPin} onPin={onPin} interactive={interactive} />
+    </svg>
+  );
+}
+
+function PinToken({ id, x, y, found, onPin, interactive }) {
+  const emblem = emblemFor(id);
+  const fallback = CAST[id];
+  const Art = fallback ? fallback.Art : null;
+
+  return (
+    <g
+      className={`cuento-pin ${found ? "is-found" : ""}`}
+      transform={`translate(${x} ${y})`}
+      onClick={interactive && !found ? () => onPin?.(id) : undefined}
+      role={interactive && !found ? "button" : undefined}
+      tabIndex={interactive && !found ? 0 : undefined}
+      aria-label={interactive && !found ? "Souvenir escondido" : undefined}
+      onKeyDown={
+        interactive && !found
+          ? (event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                onPin?.(id);
+              }
+            }
+          : undefined
+      }
+    >
+      <circle className="cuento-pin__halo" cx="0" cy="0" r="34" fill="#fff4c4" opacity="0.35" />
+      <g transform={Art ? "scale(0.24)" : "scale(0.72)"}>{emblem || (Art ? <Art /> : null)}</g>
+      <circle className="cuento-pin__hit" cx="0" cy="0" r="40" fill="transparent" />
+      <g className="cuento-pin__sparks" fill="#ffffff">
+        <circle cx="-22" cy="-18" r="3" />
+        <circle cx="20" cy="-22" r="2.4" />
+        <circle cx="16" cy="20" r="2.8" />
+      </g>
+    </g>
+  );
+}
+
+/** Emblema aislado para el álbum y la repisa de souvenirs. */
+export function Souvenir({ id, size = 54, locked = false }) {
+  const emblem = emblemFor(id);
+  const fallback = CAST[id];
+  const Art = fallback ? fallback.Art : null;
+  return (
+    <svg
+      className={`cuento-souvenir ${locked ? "is-locked" : ""}`}
+      viewBox="-50 -50 100 100"
+      width={size}
+      height={size}
+      aria-hidden="true"
+      focusable="false"
+    >
+      <g transform={Art && !emblem ? "scale(0.3)" : "scale(1)"}>{emblem || (Art ? <Art /> : null)}</g>
+    </svg>
+  );
+}
+
+/** Portada del libro: recorta la escena de la primera página en vertical. */
+export function BookCover({ book, className = "" }) {
+  const words = book.title.split(" ");
+  const lines = [];
+  let current = "";
+  words.forEach((word) => {
+    if ((current + " " + word).trim().length > 15) {
+      lines.push(current.trim());
+      current = word;
+    } else {
+      current = `${current} ${word}`;
+    }
+  });
+  if (current.trim()) lines.push(current.trim());
+
+  return (
+    <svg className={`cuento-cover ${className}`} viewBox="280 0 440 640" aria-hidden="true" focusable="false">
+      <svg x="280" y="0" width="440" height="640" viewBox={`0 0 ${VIEW_W} ${VIEW_H}`} preserveAspectRatio="xMidYMid slice">
+        <SceneBody book={book} pageIndex={0} interactive={false} foundPin showPin={false} />
+      </svg>
+      <rect x="280" y="0" width="440" height="250" fill="#0b1226" opacity="0.32" />
+      <rect x="280" y="470" width="440" height="170" fill="#0b1226" opacity="0.26" />
+      <g>
+        {lines.map((line, i) => (
+          <text
+            key={line}
+            x="500"
+            y={78 + i * 52}
+            textAnchor="middle"
+            fill={book.cover.ink}
+            stroke="#1b2033"
+            strokeWidth="6"
+            paintOrder="stroke"
+            fontSize={lines.length > 3 ? 34 : lines.length > 2 ? 40 : 48}
+            fontWeight="800"
+            fontFamily="ui-rounded, 'Trebuchet MS', system-ui, sans-serif"
+          >
+            {line}
+          </text>
+        ))}
+      </g>
+      <text
+        x="500"
+        y="600"
+        textAnchor="middle"
+        fill={book.cover.sub}
+        fontSize="21"
+        letterSpacing="4"
+        fontWeight="700"
+        fontFamily="ui-rounded, 'Trebuchet MS', system-ui, sans-serif"
+      >
+        TESIS20 · NIDO
+      </text>
+      <rect x="292" y="12" width="416" height="616" rx="10" fill="none" stroke={book.cover.ink} strokeOpacity="0.35" strokeWidth="3" />
+    </svg>
+  );
+}
