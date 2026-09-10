@@ -101,19 +101,29 @@ function SceneBody({ book, pageIndex, foundPin, onPin, interactive, showPin = tr
   );
 }
 
-export function Scene({ book, pageIndex, foundPin, onPin, interactive = true }) {
+export function Scene({ book, pageIndex, foundPin, onPin, interactive = true, showPin = true }) {
   const page = book.pages[pageIndex];
   return (
     <svg
       className="cuento-scene"
+      xmlns="http://www.w3.org/2000/svg"
       viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
       preserveAspectRatio="xMidYMid slice"
       role="img"
       aria-label={`Ilustración: ${page.t}`}
     >
-      <SceneBody book={book} pageIndex={pageIndex} foundPin={foundPin} onPin={onPin} interactive={interactive} />
+      <SceneBody book={book} pageIndex={pageIndex} foundPin={foundPin} onPin={onPin} interactive={interactive} showPin={showPin} />
     </svg>
   );
+}
+
+/** Posición (u, v en 0–1) del souvenir escondido de una página, o null. */
+export function pinSpot(book, pageIndex) {
+  const page = book.pages[pageIndex];
+  if (!page?.pin) return null;
+  const spotRand = seeded(`${book.id}-${pageIndex}-pin`);
+  const spot = PIN_SPOTS[Math.floor(spotRand() * PIN_SPOTS.length)];
+  return { u: spot[0] / VIEW_W, v: spot[1] / VIEW_H };
 }
 
 function PinToken({ id, x, y, found, onPin, interactive }) {
@@ -187,7 +197,7 @@ export function BookCover({ book, className = "" }) {
   if (current.trim()) lines.push(current.trim());
 
   return (
-    <svg className={`cuento-cover ${className}`} viewBox="280 0 440 640" aria-hidden="true" focusable="false">
+    <svg className={`cuento-cover ${className}`} xmlns="http://www.w3.org/2000/svg" viewBox="280 0 440 640" aria-hidden="true" focusable="false">
       <svg x="280" y="0" width="440" height="640" viewBox={`0 0 ${VIEW_W} ${VIEW_H}`} preserveAspectRatio="xMidYMid slice">
         <SceneBody book={book} pageIndex={0} interactive={false} foundPin showPin={false} />
       </svg>

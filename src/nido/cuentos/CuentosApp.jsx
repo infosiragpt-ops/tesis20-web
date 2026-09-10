@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BOOKS, PIN_LABELS, TOTAL_PINS, TOTAL_QUIZ, TOTAL_STARS, bookPins } from "./cuentos-data.js";
-import { BookCover, Scene, Souvenir } from "./cuentos-scene.jsx";
+import { BookCover, Scene, Souvenir, pinSpot } from "./cuentos-scene.jsx";
 import { seeded } from "./cuentos-art-base.jsx";
+import { emblemFor } from "./cuentos-art-props.jsx";
+import { CAST } from "./cuentos-art-cast.jsx";
 import { MEDALS, bookStatus, totals, useProgress } from "./cuentos-progress.js";
 import {
   isMuted,
@@ -16,6 +18,8 @@ import {
   unlockAudio,
   warmUpVoices,
 } from "./cuentos-audio.js";
+import { createStage } from "./three/stage.js";
+import { svgElementToTexture } from "./three/textures.js";
 import "./cuentos.css";
 
 const prefersReducedMotion = () =>
@@ -25,24 +29,30 @@ const prefersReducedMotion = () =>
 
 export default function CuentosApp() {
   const { state, markPage, collectPin, answerQuiz, resetAll } = useProgress();
-  const [reading, setReading] = useState(null); // { bookId, page }
+  const [selectedId, setSelectedId] = useState(null);
+  const [panelReady, setPanelReady] = useState(false);
+  const [reading, setReading] = useState(false);
+  const [page, setPage] = useState(0);
   const [album, setAlbum] = useState(false);
   const [help, setHelp] = useState(false);
   const [muted, setMuted] = useState(() => isMuted());
   const [toast, setToast] = useState(null);
+  const [stageReady, setStageReady] = useState(false);
   const toastTimer = useRef(null);
+  const canvasRef = useRef(null);
+  const stageRef = useRef(null);
+  const pinRef = useRef(null);
+  const latest = useRef({});
 
   const stats = useMemo(() => totals(state), [state]);
+  const selectedBook = useMemo(() => BOOKS.find((b) => b.id === selectedId) || null, [selectedId]);
 
   useEffect(() => warmUpVoices(), []);
 
-  // La música arranca con el primer gesto real: lo pide el navegador.
   useEffect(() => {
     const start = () => {
       unlockAudio();
       startMusic();
-      window.removeEventListener("pointerdown", start);
-      window.removeEventListener("keydown", start);
     };
     window.addEventListener("pointerdown", start, { once: true });
     window.addEventListener("keydown", start, { once: true });
@@ -55,40 +65,171 @@ export default function CuentosApp() {
   useEffect(() => onMuteChange(setMuted), []);
 
   useEffect(() => {
-    // Con el libro abierto la música baja para no tapar la narración.
-    setMusicIntensity(reading ? 0.16 : 0.5);
-  }, [reading]);
+    setMusicIntensity(reading ? 0.16 : selectedId ? 0.32 : 0.5);
+  }, [reading, selectedId]);
 
   const showToast = useCallback((message, icon) => {
     setToast({ message, icon, id: Date.now() });
     window.clearTimeout(toastTimer.current);
     toastTimer.current = window.setTimeout(() => setToast(null), 2600);
   }, []);
-
   useEffect(() => () => window.clearTimeout(toastTimer.current), []);
 
-  const openBook = useCallback(
-    (bookId) => {
-      unlockAudio();
-      startMusic();
-      sfx.open();
-      const entry = state.books[bookId];
-      const last = entry && entry.pages.length ? Math.max(...entry.pages) : -1;
-      const book = BOOKS.find((b) => b.id === bookId);
-      const next = last + 1 < book.pages.length ? last + 1 : 0;
-      setReading({ bookId, page: entry?.pages.length ? next : 0 });
-    },
-    [state.books],
-  );
+  /* ------------------------- escena 3D ------------------------- */
 
-  const closeBook = useCallback(() => {
-    stopSpeech();
-    sfx.close();
-    setReading(null);
+  const allPins = useMemo(() => {
+    const list = [];
+    BOOKS.forEach((book) => (state.books[book.id]?.pins || []).forEach((id) => list.push(id)));
+    return list;
+  }, [state]);
+
+  latest.current = { state, allPins, selectedId, reading, page, showToast };
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return undefined;
+    let lastHover = null;
+    const stage = createStage(canvas, {
+      books: BOOKS,
+      reduceMotion: prefersReducedMotion(),
+      coverTexture: (book) => svgElementToTexture(`cover-${book.id}`, <BookCover book={book} />, 512, 744),
+      emblemTexture: (pinId) => {
+        const emblem = emblemFor(pinId);
+        const Art = CAST[pinId]?.Art;
+        return svgElementToTexture(
+          `emblem-${pinId}`,
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="-50 -50 100 100">
+            <circle cx="0" cy="0" r="50" fill="#fbf0d6" />
+            <g transform={Art && !emblem ? "scale(0.3)" : "scale(1)"}>{emblem || (Art ? <Art /> : null)}</g>
+          </svg>,
+          256,
+          256,
+        );
+      },
+      onHoverBook: (id) => {
+        if (id && id !== lastHover) sfx.hover();
+        lastHover = id;
+      },
+      onClickBook: (id) => openDesk(id),
+      onHoverToy: (id) => {
+        if (id) sfx.toy();
+      },
+      onClickToy: (pinId) => {
+        const owned = latest.current.allPins.includes(pinId);
+        sfx.toy();
+        latest.current.showToast(
+          owned ? PIN_LABELS[pinId] || pinId : `${PIN_LABELS[pinId] || "Souvenir"} · todavía escondido`,
+          pinId,
+        );
+      },
+      onFrame: () => {
+        const btn = pinRef.current;
+        if (!btn) return;
+        const { selectedId: sel, page: p } = latest.current;
+        const book = BOOKS.find((b) => b.id === sel);
+        if (!book) return;
+        const spot = pinSpot(book, p);
+        if (!spot) return;
+        const pos = stage.projectPopup(spot.u, spot.v);
+        if (!pos || !pos.visible) {
+          btn.style.opacity = "0";
+          btn.style.pointerEvents = "none";
+          return;
+        }
+        btn.style.opacity = "1";
+        btn.style.pointerEvents = "auto";
+        btn.style.transform = `translate(${pos.x}px, ${pos.y}px) translate(-50%, -50%)`;
+      },
+    });
+    stageRef.current = stage;
+    stage.setCollected(latest.current.allPins);
+    setStageReady(true);
+    return () => {
+      stage.dispose();
+      stageRef.current = null;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    stageRef.current?.setCollected(allPins);
+  }, [allPins]);
+
+  /* --------------------------- flujo ---------------------------- */
+
+  const openDesk = useCallback((bookId) => {
+    unlockAudio();
+    startMusic();
+    const stage = stageRef.current;
+    if (!stage || latest.current.selectedId) return;
+    sfx.select();
+    const owned = latest.current.state.books[bookId]?.pins || [];
+    stage.selectBook(bookId, owned);
+    setSelectedId(bookId);
+    setPanelReady(false);
+    window.setTimeout(() => {
+      sfx.land();
+      setPanelReady(true);
+    }, prefersReducedMotion() ? 50 : 1150);
+  }, []);
+
+  const backToShelf = useCallback(() => {
+    stopSpeech();
+    sfx.close();
+    stageRef.current?.deselect();
+    setReading(false);
+    setSelectedId(null);
+    setPanelReady(false);
+  }, []);
+
+  const pageTexture = useCallback(
+    (book, pageIndex) =>
+      svgElementToTexture(`page-${book.id}-${pageIndex}`, <Scene book={book} pageIndex={pageIndex} interactive={false} showPin={false} />, 1000, 640),
+    [],
+  );
+
+  const openReading = useCallback(async () => {
+    const book = BOOKS.find((b) => b.id === latest.current.selectedId);
+    const stage = stageRef.current;
+    if (!book || !stage) return;
+    sfx.open();
+    const entry = latest.current.state.books[book.id];
+    const last = entry && entry.pages.length ? Math.max(...entry.pages) : -1;
+    const start = entry?.pages.length && last + 1 < book.pages.length ? last + 1 : 0;
+    const tex = await pageTexture(book, start);
+    stage.setPopupTextureNow(tex);
+    setPage(start);
+    setReading(true);
+    stage.openBook();
+    // Precalienta las páginas siguientes.
+    window.setTimeout(() => {
+      for (let i = 0; i < book.pages.length; i += 1) pageTexture(book, i);
+    }, 800);
+  }, [pageTexture]);
+
+  const closeReading = useCallback(() => {
+    stopSpeech();
+    sfx.close();
+    stageRef.current?.closeBook();
+    setReading(false);
+  }, []);
+
+  const goToPage = useCallback(
+    async (next) => {
+      const book = BOOKS.find((b) => b.id === latest.current.selectedId);
+      if (!book || next < 0 || next >= book.pages.length) return;
+      const tex = await pageTexture(book, next);
+      stageRef.current?.showPage(tex);
+      setPage(next);
+    },
+    [pageTexture],
+  );
+
   return (
-    <div className="cuentos">
+    <div className="cuentos cuentos--3d">
+      <canvas ref={canvasRef} className="cuentos-canvas" aria-hidden="true" />
+      {!stageReady ? <div className="cuentos-loading">Abriendo la biblioteca…</div> : null}
+
       <TopBar
         stats={stats}
         muted={muted}
@@ -109,14 +250,31 @@ export default function CuentosApp() {
         }}
       />
 
-      {reading ? (
-        <Reader
-          key={reading.bookId}
-          book={BOOKS.find((b) => b.id === reading.bookId)}
-          page={reading.page}
+      {!selectedId ? (
+        <ShelfOverlay
           state={state}
-          onPage={(page) => setReading((prev) => ({ ...prev, page }))}
-          onClose={closeBook}
+          onFocus={(id) => stageRef.current?.focusBook(id)}
+          onOpen={openDesk}
+          onPan={(dir) => {
+            sfx.hover();
+            stageRef.current?.panShelf(dir);
+          }}
+        />
+      ) : null}
+
+      {selectedBook && !reading ? (
+        <DeskPanel book={selectedBook} status={bookStatus(state, selectedBook)} ready={panelReady} onOpen={openReading} onBack={backToShelf} />
+      ) : null}
+
+      {selectedBook && reading ? (
+        <Reader
+          key={selectedBook.id}
+          book={selectedBook}
+          page={page}
+          state={state}
+          pinRef={pinRef}
+          onPage={goToPage}
+          onClose={closeReading}
           onStar={(bookId, pageIndex) => {
             if (markPage(bookId, pageIndex)) sfx.star();
           }}
@@ -128,9 +286,7 @@ export default function CuentosApp() {
           }}
           onQuiz={answerQuiz}
         />
-      ) : (
-        <Shelf state={state} onOpen={openBook} />
-      )}
+      ) : null}
 
       {album ? (
         <Album
@@ -219,117 +375,27 @@ function TopBar({ stats, muted, onToggleSound, onAlbum, onHelp }) {
   );
 }
 
-/* =========================== estante ========================== */
+/* ========================== estante =========================== */
 
-function Shelf({ state, onOpen }) {
-  const [focus, setFocus] = useState(0);
-  const trackRef = useRef(null);
+function ShelfOverlay({ state, onFocus, onOpen, onPan }) {
+  const [focus, setFocus] = useState(-1);
   const lastHover = useRef(-1);
 
-  const collected = useMemo(() => {
-    const list = [];
-    BOOKS.forEach((book) => {
-      bookPins(book).forEach((pin) => {
-        list.push({ ...pin, book: book.id, owned: (state.books[book.id]?.pins || []).includes(pin.id) });
-      });
-    });
-    return list;
-  }, [state]);
-
-  const shelfSouvenirs = useMemo(() => {
-    const owned = collected.filter((pin) => pin.owned);
-    const rest = collected.filter((pin) => !pin.owned);
-    return [...owned, ...rest].slice(0, 11);
-  }, [collected]);
-
-  const hover = useCallback((index) => {
+  const hover = (index, id) => {
     if (lastHover.current === index) return;
     lastHover.current = index;
-    sfx.hover();
-  }, []);
-
-  const scrollTo = useCallback((index) => {
-    const clamped = Math.max(0, Math.min(BOOKS.length - 1, index));
-    setFocus(clamped);
-    const track = trackRef.current;
-    const child = track?.children?.[clamped];
-    if (child) {
-      child.scrollIntoView({
-        behavior: prefersReducedMotion() ? "auto" : "smooth",
-        inline: "center",
-        block: "nearest",
-      });
-    }
-  }, []);
+    setFocus(index);
+    onFocus(id);
+  };
 
   return (
-    <main className="cuentos-room" id="nido-main">
-      <div className="cuentos-room__wall" aria-hidden="true" />
-
-      <section className="cuentos-topshelf" aria-label="Repisa de souvenirs">
-        <ul className="cuentos-topshelf__row">
-          {shelfSouvenirs.map((pin) => (
-            <li key={`${pin.book}-${pin.id}`} className={pin.owned ? "is-owned" : "is-locked"}>
-              <Souvenir id={pin.id} size={54} locked={!pin.owned} />
-              <span className="cuentos-sr">{PIN_LABELS[pin.id]}</span>
-            </li>
-          ))}
-        </ul>
-        <div className="cuentos-topshelf__board" aria-hidden="true" />
-      </section>
-
-      <section className="cuentos-books" aria-label="Cuentos disponibles">
-        <button
-          type="button"
-          className="cuentos-arrow cuentos-arrow--left"
-          onClick={() => scrollTo(focus - 1)}
-          aria-label="Ver cuentos anteriores"
-        >
-          ‹
-        </button>
-
-        <ul className="cuentos-books__track" ref={trackRef}>
-          {BOOKS.map((book, index) => {
-            const status = bookStatus(state, book);
-            return (
-              <li key={book.id} className={`cuentos-book ${index === focus ? "is-focus" : ""}`}>
-                <button
-                  type="button"
-                  className="cuentos-book__hit"
-                  onMouseEnter={() => {
-                    hover(index);
-                    setFocus(index);
-                  }}
-                  onFocus={() => {
-                    hover(index);
-                    setFocus(index);
-                  }}
-                  onClick={() => onOpen(book.id)}
-                  aria-label={`Abrir ${book.title}. ${status.pct}% leído.`}
-                >
-                  <span className="cuentos-book__body" style={{ "--accent": book.accent }}>
-                    <span className="cuentos-book__spine" aria-hidden="true" />
-                    <BookCover book={book} />
-                    <span className="cuentos-book__gloss" aria-hidden="true" />
-                  </span>
-                </button>
-                {status.pct > 0 ? <span className="cuentos-book__flag">{status.pct}%</span> : null}
-              </li>
-            );
-          })}
-        </ul>
-
-        <button
-          type="button"
-          className="cuentos-arrow cuentos-arrow--right"
-          onClick={() => scrollTo(focus + 1)}
-          aria-label="Ver más cuentos"
-        >
-          ›
-        </button>
-        <div className="cuentos-books__board" aria-hidden="true" />
-        <div className="cuentos-room__lamp" aria-hidden="true" />
-      </section>
+    <div className="cuentos-shelf-ui">
+      <button type="button" className="cuentos-arrow cuentos-arrow--left" onClick={() => onPan(-1)} aria-label="Ver cuentos anteriores">
+        ‹
+      </button>
+      <button type="button" className="cuentos-arrow cuentos-arrow--right" onClick={() => onPan(1)} aria-label="Ver más cuentos">
+        ›
+      </button>
 
       <section className="cuentos-picker" aria-label="Elige un cuento">
         <p className="cuentos-picker__title">Elige un cuento</p>
@@ -342,17 +408,16 @@ function Shelf({ state, onOpen }) {
                 <button
                   type="button"
                   onClick={() => onOpen(book.id)}
-                  onMouseEnter={() => {
-                    hover(100 + index);
-                    scrollTo(index);
-                  }}
+                  onMouseEnter={() => hover(index, book.id)}
+                  onFocus={() => hover(index, book.id)}
+                  aria-label={`Abrir ${book.title}. ${status.pct}% leído.`}
                 >
                   <strong style={{ color: book.accent }}>{book.title}</strong>
                   <span className="cuentos-picker__bar">
                     <i style={{ width: `${status.pct}%`, background: book.accent }} />
                   </span>
                   <span className="cuentos-picker__meta">
-                    <em>{book.pages.length} páginas</em>
+                    <em>{status.finished ? "Terminado ★ Léelo otra vez" : `${book.pages.length} páginas`}</em>
                     <span className="cuentos-picker__pins">
                       {pins.map((pin) => (
                         <i key={pin.id} className={status.pins.includes(pin.id) ? "is-owned" : ""} />
@@ -365,7 +430,31 @@ function Shelf({ state, onOpen }) {
           })}
         </ul>
       </section>
-    </main>
+    </div>
+  );
+}
+
+/* =========================== mesa ============================= */
+
+function DeskPanel({ book, status, ready, onOpen, onBack }) {
+  return (
+    <div className={`cuentos-desk ${ready ? "is-ready" : ""}`}>
+      <div className="cuentos-desk__panel" style={{ "--accent": book.accent }}>
+        <p className="cuentos-modal__eyebrow">Tesis20 Nido · cuento</p>
+        <h2>{book.title}</h2>
+        <p className="cuentos-desk__tagline">{book.tagline}</p>
+        <p className="cuentos-desk__meta">
+          {book.pages.length} páginas · {status.finished ? "terminado" : `${status.pct}% leído`} · {status.pins.length} de 5 souvenirs
+        </p>
+        <button type="button" className="cuentos-btn cuentos-btn--read" onClick={onOpen} autoFocus>
+          📖 Abrir el libro
+        </button>
+        <button type="button" className="cuentos-btn cuentos-btn--ghost" onClick={onBack}>
+          Volver a la estantería
+        </button>
+        <span className="cuentos-card__corner" aria-hidden="true" />
+      </div>
+    </div>
   );
 }
 
@@ -373,16 +462,14 @@ function Shelf({ state, onOpen }) {
 
 const WORD_SPLIT = /(\s+)/;
 
-function Reader({ book, page, state, onPage, onClose, onStar, onPin, onQuiz }) {
+function Reader({ book, page, state, pinRef, onPage, onClose, onStar, onPin, onQuiz }) {
   const pageData = book.pages[page];
   const entry = state.books[book.id] || { pages: [], pins: [], quiz: [], quizOk: 0 };
   const [activeWord, setActiveWord] = useState(-1);
   const [autoRead, setAutoRead] = useState(false);
   const [speaking, setSpeaking] = useState(false);
-  const [turning, setTurning] = useState(false);
   const [quizOpen, setQuizOpen] = useState(false);
   const autoRef = useRef(false);
-  const stopRef = useRef(null);
 
   const words = useMemo(() => pageData.x.split(WORD_SPLIT), [pageData.x]);
   const wordIndexes = useMemo(() => {
@@ -402,12 +489,23 @@ function Reader({ book, page, state, onPage, onClose, onStar, onPin, onQuiz }) {
 
   useEffect(() => () => stopSpeech(), []);
 
+  const turnTo = useCallback(
+    (next) => {
+      if (next < 0 || next > book.pages.length - 1) return;
+      stopSpeech();
+      setSpeaking(false);
+      setActiveWord(-1);
+      sfx.page();
+      onPage(next);
+    },
+    [book.pages.length, onPage],
+  );
+
   const readAloud = useCallback(() => {
     if (!speechAvailable()) return;
     setSpeaking(true);
-    stopRef.current = speak(`${pageData.t}. ${pageData.x}`, {
+    speak(`${pageData.t}. ${pageData.x}`, {
       onWord: (index) => {
-        // El título va delante: descontamos sus palabras para pintar el texto.
         const titleWords = pageData.t.split(/\s+/).filter(Boolean).length;
         setActiveWord(index < 0 ? -1 : index - titleWords);
       },
@@ -423,21 +521,7 @@ function Reader({ book, page, state, onPage, onClose, onStar, onPin, onQuiz }) {
         }
       },
     });
-  }, [pageData, page, book.pages.length]);
-
-  const turnTo = useCallback(
-    (next) => {
-      if (next < 0 || next > book.pages.length - 1) return;
-      stopSpeech();
-      setSpeaking(false);
-      setActiveWord(-1);
-      sfx.page();
-      setTurning(true);
-      window.setTimeout(() => setTurning(false), prefersReducedMotion() ? 0 : 460);
-      onPage(next);
-    },
-    [book.pages.length, onPage],
-  );
+  }, [pageData, page, book.pages.length, turnTo]);
 
   useEffect(() => {
     autoRef.current = autoRead;
@@ -477,84 +561,66 @@ function Reader({ book, page, state, onPage, onClose, onStar, onPin, onQuiz }) {
     speak(clean, { rate: 0.8 });
   };
 
-  const pinFound = entry.pins.includes(pageData.pin);
+  const pinFound = pageData.pin ? entry.pins.includes(pageData.pin) : true;
 
   return (
-    <main className="cuentos-reader" id="nido-main" style={{ "--accent": book.accent }}>
-      <div className="cuentos-room__wall cuentos-room__wall--dim" aria-hidden="true" />
-
-      <div className={`cuentos-spread ${turning ? "is-turning" : ""}`}>
-        <article className="cuentos-leaf cuentos-leaf--text">
-          <div className="cuentos-card">
-            <p className="cuentos-card__eyebrow">
-              Página {page + 1} de {book.pages.length}
-            </p>
-            <h2 className="cuentos-card__title">{pageData.t}</h2>
-            <p className="cuentos-card__text">
-              {words.map((token, i) => {
-                if (/^\s+$/.test(token) || token === "") return <span key={i}>{token}</span>;
-                const index = wordIndexes[i];
-                return (
-                  <button
-                    key={i}
-                    type="button"
-                    className={`cuentos-word ${index === activeWord ? "is-active" : ""}`}
-                    onClick={() => sayWord(token)}
-                  >
-                    {token}
-                  </button>
-                );
-              })}
-            </p>
-            <p className="cuentos-card__hint">toca las palabras para escucharlas</p>
-            <span className="cuentos-card__corner" aria-hidden="true" />
-          </div>
-
-          <ol className="cuentos-dots" aria-label="Páginas leídas">
-            {book.pages.map((unused, i) => (
-              <li key={i} className={entry.pages.includes(i) ? "is-read" : ""}>
-                <button type="button" onClick={() => turnTo(i)} aria-label={`Ir a la página ${i + 1}`} aria-current={i === page} />
-              </li>
-            ))}
-          </ol>
-        </article>
-
-        <div className="cuentos-leaf cuentos-leaf--art">
-          <div className="cuentos-popup">
-            <Scene
-              book={book}
-              pageIndex={page}
-              foundPin={pinFound}
-              onPin={(pinId) => onPin(book.id, pinId)}
-            />
-          </div>
-          <div className="cuentos-popup__base" aria-hidden="true" />
-        </div>
+    <div className="cuentos-reading">
+      <div className="cuentos-stars-row" aria-label="Páginas leídas">
+        {book.pages.map((unused, i) => (
+          <button key={i} type="button" className={entry.pages.includes(i) ? "is-read" : ""} onClick={() => turnTo(i)} aria-label={`Ir a la página ${i + 1}`} aria-current={i === page}>
+            ★
+          </button>
+        ))}
       </div>
 
-      <div className="cuentos-controls">
+      <article className="cuentos-card cuentos-card--floating">
+        <p className="cuentos-card__eyebrow">
+          Página {page + 1} de {book.pages.length}
+        </p>
+        <h2 className="cuentos-card__title">{pageData.t}</h2>
+        <p className="cuentos-card__text">
+          {words.map((token, i) => {
+            if (/^\s+$/.test(token) || token === "") return <span key={i}>{token}</span>;
+            const index = wordIndexes[i];
+            return (
+              <button key={i} type="button" className={`cuentos-word ${index === activeWord ? "is-active" : ""}`} onClick={() => sayWord(token)}>
+                {token}
+              </button>
+            );
+          })}
+        </p>
+        <p className="cuentos-card__hint">toca las palabras para escucharlas</p>
+        <span className="cuentos-card__corner" aria-hidden="true" />
+      </article>
+
+      {pageData.pin && !pinFound ? (
         <button
+          ref={pinRef}
           type="button"
-          className="cuentos-btn cuentos-btn--nav"
-          onClick={() => turnTo(page - 1)}
-          disabled={page === 0}
-          aria-label="Página anterior"
+          className="cuentos-pin3d"
+          onClick={() => onPin(book.id, pageData.pin)}
+          aria-label="Souvenir escondido"
+          style={{ opacity: 0 }}
         >
+          <Souvenir id={pageData.pin} size={44} />
+          <i />
+          <i />
+          <i />
+        </button>
+      ) : null}
+
+      <div className="cuentos-controls cuentos-controls--reading">
+        <button type="button" className="cuentos-btn cuentos-btn--nav" onClick={() => turnTo(page - 1)} disabled={page === 0} aria-label="Página anterior">
           ←
         </button>
-
         <div className="cuentos-controls__center">
           {speechAvailable() ? (
-            <button
-              type="button"
-              className={`cuentos-btn cuentos-btn--read ${autoRead ? "is-on" : ""}`}
-              onClick={() => setAutoRead((prev) => !prev)}
-            >
-              {autoRead ? (speaking ? "⏸ Pausa" : "⏸ Leyendo…") : "▶ Léeme el cuento"}
+            <button type="button" className={`cuentos-btn cuentos-btn--read ${autoRead ? "is-on" : ""}`} onClick={() => setAutoRead((prev) => !prev)}>
+              {autoRead ? (speaking ? "⏸ Pausa" : "⏸ Leyendo…") : "▶ Léemelo"}
             </button>
           ) : null}
           <button type="button" className="cuentos-btn cuentos-btn--ghost" onClick={onClose}>
-            🏠 Cerrar libro
+            🏠 Cerrar el libro
           </button>
           {isLast ? (
             <button
@@ -569,14 +635,7 @@ function Reader({ book, page, state, onPage, onClose, onStar, onPin, onQuiz }) {
             </button>
           ) : null}
         </div>
-
-        <button
-          type="button"
-          className="cuentos-btn cuentos-btn--nav"
-          onClick={() => turnTo(page + 1)}
-          disabled={isLast}
-          aria-label="Página siguiente"
-        >
+        <button type="button" className="cuentos-btn cuentos-btn--nav" onClick={() => turnTo(page + 1)} disabled={isLast} aria-label="Página siguiente">
           →
         </button>
       </div>
@@ -592,7 +651,7 @@ function Reader({ book, page, state, onPage, onClose, onStar, onPin, onQuiz }) {
           }}
         />
       ) : null}
-    </main>
+    </div>
   );
 }
 
@@ -605,8 +664,6 @@ function Quiz({ book, entry, onAnswer, onClose }) {
   const [done, setDone] = useState(false);
   const question = book.quiz[index];
 
-  // Las opciones se barajan de forma estable por libro y pregunta, para que
-  // la correcta no quede siempre en el mismo lugar.
   const options = useMemo(() => {
     const list = question.a.map((text, i) => ({ text, correct: i === 0 }));
     const rand = seeded(`${book.id}-quiz-${index}`);
@@ -647,11 +704,7 @@ function Quiz({ book, entry, onAnswer, onClose }) {
             <h2>
               {score} de {book.quiz.length} correctas
             </h2>
-            <p>
-              {score === book.quiz.length
-                ? "¡Perfecto! Escuchaste con mucha atención."
-                : "¡Muy bien! Puedes volver a leer el cuento cuando quieras."}
-            </p>
+            <p>{score === book.quiz.length ? "¡Perfecto! Escuchaste con mucha atención." : "¡Muy bien! Puedes volver a leer el cuento cuando quieras."}</p>
             <div className="cuentos-quiz__stars" aria-hidden="true">
               {book.quiz.map((unused, i) => (
                 <span key={i} className={i < score ? "is-on" : ""}>
@@ -673,19 +726,7 @@ function Quiz({ book, entry, onAnswer, onClose }) {
             <ul className="cuentos-quiz__options">
               {options.map((option) => (
                 <li key={option.text}>
-                  <button
-                    type="button"
-                    className={
-                      picked
-                        ? option.correct
-                          ? "is-right"
-                          : option === picked
-                            ? "is-wrong"
-                            : ""
-                        : ""
-                    }
-                    onClick={() => choose(option)}
-                  >
+                  <button type="button" className={picked ? (option.correct ? "is-right" : option === picked ? "is-wrong" : "") : ""} onClick={() => choose(option)}>
                     {option.text}
                   </button>
                 </li>
@@ -712,10 +753,7 @@ function Album({ state, stats, onClose, onReset }) {
           <div>
             <p className="cuentos-modal__eyebrow">Tesis20 Nido · búsqueda del tesoro</p>
             <h2>Mis souvenirs</h2>
-            <p className="cuentos-album__lead">
-              En cada cuento hay cinco souvenirs escondidos. Tócalos cuando los veas brillar y se quedan
-              contigo.
-            </p>
+            <p className="cuentos-album__lead">En cada cuento hay cinco souvenirs escondidos. Tócalos cuando los veas brillar y se quedan contigo en la repisa.</p>
           </div>
           <div className="cuentos-album__totals">
             <span>
@@ -758,8 +796,7 @@ function Album({ state, stats, onClose, onReset }) {
                     <i style={{ width: `${status.pct}%`, background: book.accent }} />
                   </span>
                   <small>
-                    {status.finished ? "Terminado" : `${status.pct}% leído`} · {status.pins.length} de 5
-                    souvenirs · quiz {status.quizOk}/{book.quiz.length}
+                    {status.finished ? "Terminado" : `${status.pct}% leído`} · {status.pins.length} de 5 souvenirs · quiz {status.quizOk}/{book.quiz.length}
                   </small>
                 </div>
                 <div className="cuentos-album__pins">
@@ -803,9 +840,9 @@ function Album({ state, stats, onClose, onReset }) {
 /* ============================ ayuda =========================== */
 
 const STEPS = [
-  { icon: "📚", title: "Elige un cuento", text: "Toca un libro de la repisa. Cada uno tiene 10 páginas ilustradas." },
-  { icon: "🔊", title: "Léeme el cuento", text: "La voz lee en voz alta y va marcando cada palabra. También puedes tocar una palabra suelta." },
-  { icon: "🔍", title: "Busca el souvenir", text: "En cinco páginas hay un objeto escondido que brilla. Tócalo para guardarlo en tu repisa." },
+  { icon: "📚", title: "Elige un cuento", text: "Toca un libro de la repisa: baja a la mesa y puedes abrirlo. Cada uno tiene 10 páginas ilustradas." },
+  { icon: "🔊", title: "Léemelo", text: "La voz lee en voz alta y va marcando cada palabra. También puedes tocar una palabra suelta." },
+  { icon: "🔍", title: "Busca el souvenir", text: "En cinco páginas hay un objeto escondido que brilla sobre la ilustración. Tócalo y aparecerá como figura en la repisa." },
   { icon: "⭐", title: "Responde el quiz", text: "Al terminar el libro aparecen cinco preguntas sobre lo que pasó." },
 ];
 
@@ -829,10 +866,7 @@ function Help({ onClose }) {
             </li>
           ))}
         </ul>
-        <p className="cuentos-help__note">
-          La narración usa la voz del navegador. Si no se escucha, revisa que el dispositivo no esté en
-          silencio y que el sonido de la aplicación esté activado.
-        </p>
+        <p className="cuentos-help__note">La narración usa la voz del navegador. Si no se escucha, revisa que el dispositivo no esté en silencio y que el sonido de la aplicación esté activado.</p>
         <button type="button" className="cuentos-btn cuentos-btn--read" onClick={onClose}>
           Empezar a leer
         </button>

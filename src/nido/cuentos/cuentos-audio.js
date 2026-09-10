@@ -224,6 +224,15 @@ export const sfx = {
     blip({ freq: 1318.51, type: "sine", dur: 0.3, gain: 0.13 });
     blip({ freq: 1975.53, type: "sine", dur: 0.22, gain: 0.05 });
   },
+  // "tok" de madera + campanita al tocar una figura de la repisa.
+  toy() {
+    blip({ freq: 420, type: "triangle", dur: 0.09, gain: 0.16, slide: -180 });
+    window.setTimeout(() => blip({ freq: 1567.98, type: "sine", dur: 0.26, gain: 0.08 }), 40);
+  },
+  land() {
+    blip({ freq: 180, type: "triangle", dur: 0.16, gain: 0.18, slide: -90 });
+    noiseSweep({ dur: 0.25, from: 600, to: 200, gain: 0.08 });
+  },
   select() {
     blip({ freq: 659.25, dur: 0.16, gain: 0.16 });
     window.setTimeout(() => blip({ freq: 987.77, dur: 0.3, gain: 0.14 }), 90);
