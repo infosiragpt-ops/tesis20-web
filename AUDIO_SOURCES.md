@@ -77,6 +77,35 @@ inaudible, así que se descartó.
 para una frase de nueve segundos, uno sin audio analizable, e ignora `speed`, que
 es justo lo que necesitamos a 0,82 para los de 2–3 años.
 
+## Voz de estudio de los cuentos (`/nido`, biblioteca)
+
+La biblioteca de cuentos tiene su propio catálogo grabado, separado del de los
+juegos, en `public/assets/nido/audio/cuentos/` con el manifiesto
+`public/assets/nido/audio/cuentos-manifest.json`:
+
+- Proveedor: ElevenLabs, modelo `eleven_multilingual_v2`, la misma voz «Jhenny»
+  (`EDitztUwd7lban76PAZs`) que narra los juegos, para que en todo el Nido hable
+  una sola maestra.
+- Cobertura: 80 páginas (título + cuerpo, con el segundo en que empieza cada
+  palabra, obtenido del endpoint `with-timestamps`, para el subrayado), 40
+  preguntas y 120 opciones del quiz (se leen en el orden en que se muestran) y
+  una locución por palabra distinta del cuerpo de las páginas (unas 570) para
+  «toca las palabras para escucharlas». En total ~16 400 caracteres por lote
+  completo; las repeticiones comparten mp3.
+- Tres perfiles de voz: `narracion` (0,90 de velocidad), `pregunta` (0,92) y
+  `palabra` (0,85, más estable). Los ajustes entran en el hash del archivo, así
+  que cambiar un perfil regraba solo lo afectado.
+- Entrega: MP3 mono de 64 kbps normalizado a -16 LUFS, cacheado como inmutable
+  (el nombre es el hash del contenido). El reproductor (`cuentos-audio.js`)
+  descarga cada clip entero y lo reproduce desde un blob con un único elemento
+  `<audio>` desbloqueado en el primer gesto (iOS); si el manifiesto o un clip
+  no llega, cae a la voz del navegador para esa lectura.
+- Comandos: `npm run audio:cuentos:plan` (cuenta caracteres sin gastar),
+  `NIDO_TTS_LIMIT=3 node scripts/generate-nido-cuentos-voice.mjs` (ensayo) y
+  `npm run audio:cuentos` (lote completo + tests de cobertura). Requiere
+  `ffmpeg`/`ffprobe` en el PATH y la clave en `ELEVENLABS_API_KEY` o en la
+  entrada `tesis20-elevenlabs-api-key` del llavero de macOS.
+
 Para regenerar:
 
 ```bash

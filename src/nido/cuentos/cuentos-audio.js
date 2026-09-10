@@ -1,5 +1,10 @@
 // Sonido de la biblioteca: música de fondo generada por Web Audio (sin
-// archivos externos), efectos cortos y narración con la voz del navegador.
+// archivos externos), efectos cortos y narración con la voz de estudio grabada
+// para el Nido (mp3 pregrabados con ElevenLabs; ver
+// scripts/generate-nido-cuentos-voice.mjs). Si un clip no existe o no se
+// puede descargar, se cae a la voz del navegador para no dejar mudo al lector.
+
+import { wordIndexAt, wordKey } from "./cuentos-voice-plan.js";
 
 let ctx = null;
 let master = null;
@@ -60,6 +65,7 @@ function ensureContext() {
 
 /** Se llama en el primer gesto real del usuario (política de autoplay). */
 export function unlockAudio() {
+  unlockNarrator();
   const context = ensureContext();
   if (!context) return;
   if (context.state === "suspended") context.resume();
@@ -274,9 +280,250 @@ export const sfx = {
 };
 
 /* ----------------------------- narración -------------------------- */
+//
+// Dos capas. Primero la voz de estudio: un mp3 por página, pregunta, opción y
+// palabra, servido como archivo estático y descrito en cuentos-manifest.json
+// (las páginas traen el segundo en que empieza cada palabra, para subrayarla
+// al ritmo real de la voz). Si el manifiesto no llegó, el clip no existe o
+// no se puede descargar, se usa la voz del navegador de siempre. Las dos
+// avisan qué palabra suena con onWord(índice) y terminan con onEnd().
+
+const MANIFEST_URL = "/assets/nido/audio/cuentos-manifest.json";
+const CLIP_CACHE_LIMIT = 16;
+// Pequeño adelanto para que el subrayado no llegue tarde a la palabra.
+const HIGHLIGHT_LEAD = 0.06;
+
+let manifest = null;
+let manifestPending = null;
+let narrator = null;
+let narratorUnlocked = false;
+let silentClipUrl = null;
+let frameTimer = 0;
+let sequenceTimer = 0;
+let resumeTick = null;
+// Cada reproducción recibe un número; stopSpeech() lo sube y así los
+// callbacks de una descarga o un clip anterior dejan de tener efecto.
+let session = 0;
+const clipCache = new Map();
+const clipPending = new Map();
 
 let currentUtterance = null;
 let wordTimer = null;
+
+/** Descarga el manifiesto una sola vez por sesión. Nunca rechaza. */
+export function loadCuentosVoices() {
+  if (manifest) return Promise.resolve(manifest);
+  if (manifestPending) return manifestPending;
+  if (typeof fetch !== "function") return Promise.resolve(null);
+  manifestPending = fetch(MANIFEST_URL, { cache: "no-cache" })
+    .then((response) => (response.ok ? response.json() : null))
+    .then((data) => {
+      manifest = data && typeof data === "object" && data.books ? data : null;
+      return manifest;
+    })
+    .catch(() => {
+      // Sin red no se cachea el fallo: la próxima llamada vuelve a intentarlo.
+      manifestPending = null;
+      return null;
+    });
+  return manifestPending;
+}
+
+function trackUrl(fileName) {
+  return fileName ? `${manifest?.base || ""}${fileName}` : null;
+}
+
+/** Clip de una página, con los tiempos de sus palabras. */
+export function pageTrack(bookId, pageIndex) {
+  const page = manifest?.books?.[bookId]?.pages?.[pageIndex];
+  if (!page?.src) return null;
+  return { src: trackUrl(page.src), words: Array.isArray(page.words) ? page.words : null, duration: page.duration };
+}
+
+/** Clip de una palabra suelta tocada en la página. */
+export function wordTrack(token) {
+  const key = wordKey(token);
+  const fileName = key ? manifest?.words?.[key] : null;
+  return fileName ? { src: trackUrl(fileName) } : null;
+}
+
+/**
+ * Clips de una pregunta del quiz seguidos de sus opciones en el orden en que
+ * se muestran (`optionOrder` trae los índices originales ya barajados).
+ */
+export function quizTracks(bookId, questionIndex, optionOrder = []) {
+  const question = manifest?.books?.[bookId]?.quiz?.[questionIndex];
+  if (!question) return [];
+  const list = [];
+  if (question.q) list.push({ src: trackUrl(question.q) });
+  for (const index of optionOrder) {
+    const fileName = question.a?.[index];
+    if (fileName) list.push({ src: trackUrl(fileName) });
+  }
+  return list;
+}
+
+function ensureNarrator() {
+  if (narrator) return narrator;
+  if (typeof window === "undefined" || typeof window.Audio !== "function") return null;
+  narrator = new window.Audio();
+  narrator.preload = "auto";
+  narrator.setAttribute("playsinline", "");
+  return narrator;
+}
+
+// WAV mudo de 10 ms como blob (la CSP no admite data:). Reproducirlo dentro
+// del primer gesto deja al elemento autorizado en iOS para los clips que
+// lleguen después de una descarga.
+function getSilentClipUrl() {
+  if (silentClipUrl) return silentClipUrl;
+  const sampleRate = 8000;
+  const samples = 80;
+  const buffer = new ArrayBuffer(44 + samples * 2);
+  const view = new DataView(buffer);
+  const ascii = (offset, text) => {
+    for (let i = 0; i < text.length; i += 1) view.setUint8(offset + i, text.charCodeAt(i));
+  };
+  ascii(0, "RIFF");
+  view.setUint32(4, 36 + samples * 2, true);
+  ascii(8, "WAVE");
+  ascii(12, "fmt ");
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true);
+  view.setUint16(22, 1, true);
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, sampleRate * 2, true);
+  view.setUint16(32, 2, true);
+  view.setUint16(34, 16, true);
+  ascii(36, "data");
+  view.setUint32(40, samples * 2, true);
+  silentClipUrl = URL.createObjectURL(new Blob([buffer], { type: "audio/wav" }));
+  return silentClipUrl;
+}
+
+function unlockNarrator() {
+  const element = ensureNarrator();
+  if (!element || narratorUnlocked) return;
+  narratorUnlocked = true;
+  try {
+    element.src = getSilentClipUrl();
+    const playing = element.play();
+    if (playing?.then) playing.then(() => element.pause()).catch(() => {});
+  } catch {
+    // Sin permiso todavía: el primer clip real lo pedirá dentro de su gesto.
+  }
+}
+
+function rememberClip(src, url) {
+  clipCache.delete(src);
+  clipCache.set(src, url);
+  while (clipCache.size > CLIP_CACHE_LIMIT) {
+    const [oldestSrc, oldestUrl] = clipCache.entries().next().value;
+    clipCache.delete(oldestSrc);
+    if (!narrator || narrator.src !== oldestUrl) URL.revokeObjectURL(oldestUrl);
+  }
+}
+
+// Los clips se descargan enteros y se reproducen desde un blob: así Safari no
+// pide rangos a medias y la página siguiente ya está lista al pasar de hoja.
+function fetchClip(src) {
+  if (clipCache.has(src)) {
+    const url = clipCache.get(src);
+    rememberClip(src, url);
+    return Promise.resolve(url);
+  }
+  if (clipPending.has(src)) return clipPending.get(src);
+  const pending = fetch(src)
+    .then((response) => {
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      return response.blob();
+    })
+    .then((blob) => {
+      const url = URL.createObjectURL(blob);
+      rememberClip(src, url);
+      return url;
+    })
+    .finally(() => clipPending.delete(src));
+  clipPending.set(src, pending);
+  return pending;
+}
+
+/** Adelanta la descarga de clips (página actual y siguiente, quiz). */
+export function prefetchTracks(tracks) {
+  if (typeof fetch !== "function") return;
+  for (const track of tracks || []) {
+    if (track?.src) fetchClip(track.src).catch(() => {});
+  }
+}
+
+function stopFrameLoop() {
+  if (frameTimer) {
+    window.cancelAnimationFrame(frameTimer);
+    frameTimer = 0;
+  }
+  resumeTick = null;
+}
+
+function playRecorded(track, { onWord, onEnd }, mySession) {
+  const element = ensureNarrator();
+  if (!element) return Promise.reject(new Error("sin reproductor"));
+  return fetchClip(track.src).then((url) => {
+    if (mySession !== session) return;
+    const starts = Array.isArray(track.words) && track.words.length ? track.words : null;
+    element.onended = null;
+    element.onerror = null;
+    element.src = url;
+    element.playbackRate = 1;
+    element.currentTime = 0;
+
+    let index = -1;
+    const tick = () => {
+      if (mySession !== session) return;
+      if (starts && onWord) {
+        const next = wordIndexAt(starts, element.currentTime + HIGHLIGHT_LEAD);
+        if (next !== index) {
+          index = next;
+          onWord(next);
+        }
+      }
+      frameTimer = window.requestAnimationFrame(tick);
+    };
+    const finish = () => {
+      if (mySession !== session) return;
+      stopFrameLoop();
+      element.onended = null;
+      element.onerror = null;
+      onWord?.(-1);
+      onEnd?.();
+    };
+
+    // Hasta que play() resuelva, un fallo (clip ilegible, autoplay bloqueado)
+    // llega como rechazo y quien llama decide el respaldo; los manejadores se
+    // enganchan después para no acabar la lectura dos veces.
+    return Promise.resolve(element.play()).then(() => {
+      if (mySession !== session) return;
+      element.onended = finish;
+      element.onerror = finish;
+      if (element.ended) {
+        finish();
+        return;
+      }
+      if (starts && onWord) {
+        resumeTick = tick;
+        tick();
+      }
+    });
+  });
+}
+
+function browserSpeechAvailable() {
+  return typeof window !== "undefined" && "speechSynthesis" in window;
+}
+
+/** Hay alguna voz: la de estudio (cualquier navegador con <audio>) o la del sistema. */
+export function speechAvailable() {
+  return typeof window !== "undefined" && (typeof window.Audio === "function" || browserSpeechAvailable());
+}
 
 function pickVoice() {
   const voices = window.speechSynthesis?.getVoices?.() || [];
@@ -295,30 +542,36 @@ function pickVoice() {
   return female || preferred[0] || null;
 }
 
-export function speechAvailable() {
-  return typeof window !== "undefined" && "speechSynthesis" in window;
-}
-
 export function stopSpeech() {
+  session += 1;
   if (wordTimer) {
     window.clearInterval(wordTimer);
     wordTimer = null;
   }
+  if (sequenceTimer) {
+    window.clearTimeout(sequenceTimer);
+    sequenceTimer = 0;
+  }
+  if (typeof window !== "undefined") stopFrameLoop();
   currentUtterance = null;
-  if (speechAvailable()) window.speechSynthesis.cancel();
+  if (narrator) {
+    narrator.onended = null;
+    narrator.onerror = null;
+    if (!narrator.paused) narrator.pause();
+  }
+  if (browserSpeechAvailable()) window.speechSynthesis.cancel();
 }
 
 /**
- * Lee un texto en voz alta y va avisando qué palabra suena.
- * Usa los eventos `boundary` cuando el navegador los emite y, si no, avanza
- * con un temporizador calculado por número de sílabas.
+ * Respaldo con la voz del navegador. Va avisando qué palabra suena con los
+ * eventos `boundary` cuando el navegador los emite y, si no, con un
+ * temporizador calculado por número de sílabas.
  */
-export function speak(text, { onWord, onEnd, rate = 0.86 } = {}) {
-  if (!speechAvailable() || muted) {
+function speakWithBrowser(text, { onWord, onEnd, rate = 0.86 }, mySession) {
+  if (!browserSpeechAvailable()) {
     onEnd?.();
-    return () => {};
+    return;
   }
-  stopSpeech();
 
   const words = text.split(/\s+/).filter(Boolean);
   const offsets = [];
@@ -346,6 +599,7 @@ export function speak(text, { onWord, onEnd, rate = 0.86 } = {}) {
   };
 
   utterance.onboundary = (event) => {
+    if (mySession !== session) return;
     if (event.name && event.name !== "word") return;
     boundaryWorks = true;
     if (wordTimer) {
@@ -362,6 +616,7 @@ export function speak(text, { onWord, onEnd, rate = 0.86 } = {}) {
   };
 
   utterance.onend = () => {
+    if (mySession !== session) return;
     if (wordTimer) {
       window.clearInterval(wordTimer);
       wordTimer = null;
@@ -386,13 +641,72 @@ export function speak(text, { onWord, onEnd, rate = 0.86 } = {}) {
 
   advance(0);
   window.speechSynthesis.speak(utterance);
+}
 
-  return () => stopSpeech();
+/**
+ * Lee un texto en voz alta. Con `track` (ver pageTrack / wordTrack) suena el
+ * clip de estudio y el subrayado sigue sus marcas de tiempo; sin él, o si el
+ * clip falla, habla el navegador. Devuelve una función para detenerlo.
+ */
+export function speak(text, { track = null, onWord, onEnd, rate = 0.86 } = {}) {
+  if (typeof window === "undefined" || muted) {
+    onEnd?.();
+    return () => {};
+  }
+  stopSpeech();
+  const mySession = session;
+  if (track?.src && ensureNarrator()) {
+    playRecorded(track, { onWord, onEnd }, mySession).catch(() => {
+      if (mySession !== session) return;
+      speakWithBrowser(text, { onWord, onEnd, rate }, mySession);
+    });
+  } else {
+    speakWithBrowser(text, { onWord, onEnd, rate }, mySession);
+  }
+  return () => {
+    if (mySession === session) stopSpeech();
+  };
+}
+
+/**
+ * Encadena varios clips de estudio con una pausa corta entre ellos (la
+ * pregunta del quiz y sus opciones). Un clip que falle se salta.
+ */
+export function speakSequence(tracks, { onEnd, gap = 420 } = {}) {
+  const list = (tracks || []).filter((track) => track?.src);
+  if (typeof window === "undefined" || muted || !list.length || !ensureNarrator()) {
+    onEnd?.();
+    return () => {};
+  }
+  stopSpeech();
+  const mySession = session;
+  prefetchTracks(list.slice(1));
+  const playAt = (position) => {
+    if (mySession !== session) return;
+    if (position >= list.length) {
+      onEnd?.();
+      return;
+    }
+    const next = () => {
+      if (mySession !== session) return;
+      sequenceTimer = window.setTimeout(() => playAt(position + 1), gap);
+    };
+    playRecorded(list[position], { onEnd: next }, mySession).catch(next);
+  };
+  playAt(0);
+  return () => {
+    if (mySession === session) stopSpeech();
+  };
 }
 
 export function pauseSpeech() {
-  if (!speechAvailable()) return;
-  window.speechSynthesis.pause();
+  if (typeof window === "undefined") return;
+  if (narrator && !narrator.paused) narrator.pause();
+  if (frameTimer) {
+    window.cancelAnimationFrame(frameTimer);
+    frameTimer = 0;
+  }
+  if (browserSpeechAvailable()) window.speechSynthesis.pause();
   if (wordTimer) {
     window.clearInterval(wordTimer);
     wordTimer = null;
@@ -400,16 +714,23 @@ export function pauseSpeech() {
 }
 
 export function resumeSpeech() {
-  if (!speechAvailable()) return;
-  window.speechSynthesis.resume();
+  if (typeof window === "undefined") return;
+  if (narrator && narrator.paused && narrator.src && !narrator.ended && narrator.currentTime > 0) {
+    const playing = narrator.play();
+    if (playing?.catch) playing.catch(() => {});
+    if (resumeTick && !frameTimer) resumeTick();
+  }
+  if (browserSpeechAvailable()) window.speechSynthesis.resume();
 }
 
 export function isSpeaking() {
-  return speechAvailable() && window.speechSynthesis.speaking;
+  const recorded = Boolean(narrator && narrator.src && !narrator.paused && !narrator.ended);
+  return recorded || (browserSpeechAvailable() && window.speechSynthesis.speaking);
 }
 
 export function warmUpVoices() {
-  if (!speechAvailable()) return;
+  loadCuentosVoices();
+  if (!browserSpeechAvailable()) return;
   window.speechSynthesis.getVoices();
   window.speechSynthesis.addEventListener?.("voiceschanged", () => {
     window.speechSynthesis.getVoices();

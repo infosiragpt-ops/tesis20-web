@@ -339,7 +339,7 @@ const routeDefinitions = [
       {
         question: "¿Los niños necesitan saber leer?",
         answer:
-          "No. Cada página puede narrarse en voz alta con la voz del navegador, y las palabras se van marcando mientras suenan. También se puede tocar una palabra suelta para escucharla.",
+          "No. Cada página puede narrarse en voz alta con una voz de estudio grabada para Nido, y las palabras se van marcando mientras suenan. También se puede tocar una palabra suelta para escucharla.",
       },
       {
         question: "¿Qué hay en cada cuento?",
