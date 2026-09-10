@@ -805,6 +805,25 @@
   color: #6b4a25;
 }
 
+.cuentos-quiz__replay {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 6px 0 0;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 2px solid #e3cfa2;
+  background: #fff8e6;
+  font-size: 14px;
+  font-weight: 800;
+  color: #6b4a25;
+  cursor: pointer;
+}
+
+.cuentos-quiz__replay:hover {
+  border-color: #cf9a2e;
+}
+
 .cuentos-quiz__options {
   display: grid;
   gap: 10px;
