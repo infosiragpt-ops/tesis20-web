@@ -12,27 +12,27 @@ import {
   pagesEdgeTexture,
   spineTexture,
   flatTexture,
-  observatoryWindowTexture,
 } from "./textures.js";
 import { createBook3D, BOOK_W, BOOK_H, BOOK_T } from "./book3d.js";
 import { buildToy, ghostify, PIN_TOY, hasToy } from "./toys/index.js";
 import { mat, blob, box, cyl, cone } from "./toys/_shared.js";
+import { bookIndexAt, bookPositionAt, clampZoom, dragScale, settleBook } from "./library-gestures.js";
+import { createToyFeedback } from "./toy-feedback.js";
 
 const SHELF_TOYS = ["buho", "luna", "cometa", "oveja", "arbol", "ballena", "frasco", "barco", "tren", "estrella"];
 
 const CAM = {
-  shelf: { pos: [0, 1.42, 3.35], look: [0, 1.25, 0] },
+  shelf: { pos: [0, 1.62, 3.35], look: [0, 1.44, 0] },
   desk: { pos: [0, 2.1, 3.0], look: [0, 0.3, 0.55] },
   reading: { pos: [-0.14, 1.28, 2.1], look: [-0.14, 0.36, 0.6] },
 };
 
 // En pantallas verticales la cámara se aleja y se centra en el pop-up.
 const CAM_PORTRAIT = {
-  shelf: { pos: [0, 1.38, 3.45], look: [0, 1.27, 0] },
+  shelf: { pos: [0, 1.56, 3.45], look: [0, 1.42, 0] },
   desk: { pos: [0, 2.8, 4.2], look: [0, 0.2, 0.72] },
-  // La distancia conserva las dos páginas completas dentro del ancho estrecho
-  // del teléfono; la textura móvil aporta el tamaño extra de lectura.
-  reading: { pos: [-0.33, 2.58, 4.25], look: [-0.33, 0.3, 0.92] },
+  // En vertical el escenario ocupa su propia zona y el texto va debajo.
+  reading: { pos: [0.18, 1.6, 2.1], look: [0.18, 0.26, 0.65] },
 };
 
 const DESK_BOOK = { x: 0.06, z: 1.24, scale: 1.42 };
@@ -45,35 +45,22 @@ const DESK_SLOTS = [
 ];
 
 const STORY_PROP_TO_TOY = {
-  pipo: "cerdito",
-  lolo: "cerdito",
-  tito: "cerdito",
   paja: "casa",
   madera: "casa",
   ladrillos: "casa",
-  "lobo-cama": "lobo",
-  abuelita: "gorro",
   cuarto: "farol",
   arboles: "arbol",
-  agua: "bufeo",
-  arroyo: "rana",
   boleto: "tren",
   canoa: "barco",
-  cueva: "pez",
   dunas: "cactus",
   "estrella-mar": "estrella",
   estrellas: "estrella",
-  flores: "picaflor",
   "flor-cristal": "estrella",
   hojas: "arbol",
   luciernagas: "frasco",
-  mar: "ballena",
-  montanas: "vicuna",
   nenufar: "rana",
   niebla: "luna",
   nubes: "luna",
-  orquidea: "picaflor",
-  pasto: "oveja",
   puente: "tren",
   raices: "arbol",
   roca: "caracola",
@@ -88,6 +75,8 @@ export function createStage(canvas, options) {
     initialBookId,
     reduceMotion = false,
     onHoverBook = () => {},
+    onFocusBook = () => {},
+    onZoom = () => {},
     onClickBook = () => {},
     onHoverToy = () => {},
     onClickToy = () => {},
@@ -113,6 +102,9 @@ export function createStage(canvas, options) {
   const camPos = new THREE.Vector3(...(startPortrait ? CAM_PORTRAIT : CAM).shelf.pos);
   const camLook = new THREE.Vector3(...(startPortrait ? CAM_PORTRAIT : CAM).shelf.look);
   const shelfPan = { x: 0 };
+  const zoom = { value: 1 };
+  let zoomTarget = 1;
+  const feedback = createToyFeedback(scene, camera, reduceMotion);
 
   /* ------------------------------ luces ------------------------------ */
   scene.add(new THREE.HemisphereLight("#fff4e0", "#5d5148", 0.62));
@@ -172,24 +164,6 @@ export function createStage(canvas, options) {
   wallB.material.map.repeat.set(7, 2.5);
   wallB.position.set(0, 1.8, -0.435);
   scene.add(wallB);
-
-  // Ventana central del observatorio: aporta una profundidad real y una luz
-  // nocturna coherente sin convertir el fondo completo en una imagen plana.
-  const windowGroup = new THREE.Group();
-  windowGroup.position.set(0, 2.12, -0.41);
-  const nightView = new THREE.Mesh(
-    new THREE.PlaneGeometry(2.45, 1.55),
-    new THREE.MeshStandardMaterial({ map: observatoryWindowTexture(), roughness: 0.88, emissive: "#0d2348", emissiveIntensity: 0.24 }),
-  );
-  windowGroup.add(nightView);
-  const frameMat = mat("#5a3824", { rough: 0.48, metal: 0.04 });
-  windowGroup.add(box(2.62, 0.1, 0.08, frameMat, { y: 0.81, z: 0.025 }));
-  windowGroup.add(box(2.62, 0.1, 0.08, frameMat, { y: -0.81, z: 0.025 }));
-  windowGroup.add(box(0.1, 1.7, 0.08, frameMat, { x: -1.28, z: 0.025 }));
-  windowGroup.add(box(0.1, 1.7, 0.08, frameMat, { x: 1.28, z: 0.025 }));
-  windowGroup.add(box(0.055, 1.58, 0.055, frameMat, { z: 0.04 }));
-  windowGroup.add(box(2.5, 0.055, 0.055, frameMat, { z: 0.04 }));
-  scene.add(windowGroup);
 
   const moonLight = new THREE.PointLight("#a9c8ff", 0.75, 5.5, 1.8);
   moonLight.position.set(0.8, 2.4, -0.1);
@@ -256,6 +230,53 @@ export function createStage(canvas, options) {
   const shelfToys = new Map();
   const toyState = new Map();
   const collectedPins = new Set();
+  const storyCameo = new THREE.Group();
+  storyCameo.position.y = -0.13;
+  const cameoActors = [];
+  scene.add(storyCameo);
+  const storyLight = new THREE.PointLight("#ffe3a6", 1.6, 2.8, 1.2);
+  scene.add(storyLight);
+
+  function releaseToy(holder) {
+    holder.parent?.remove(holder);
+    const idx = toyGroups.indexOf(holder);
+    if (idx >= 0) toyGroups.splice(idx, 1);
+    toyState.delete(holder);
+    holder.traverse((obj) => {
+      obj.geometry?.dispose();
+      const list = Array.isArray(obj.material) ? obj.material : obj.material ? [obj.material] : [];
+      list.forEach(m => m.dispose());
+    });
+  }
+
+  function updateCameo(book) {
+    feedback.clear();
+    cameoActors.splice(0).forEach(releaseToy);
+    [...storyCameo.children].forEach(releaseToy);
+    const color = new THREE.Color(book.accent);
+    const backing = new THREE.Mesh(new THREE.SphereGeometry(0.52, 40, 24),
+      new THREE.MeshStandardMaterial({ color: color.clone().lerp(new THREE.Color("#fff3d4"), 0.64), roughness: 0.62,
+        emissive: color, emissiveIntensity: 0.22 }));
+    backing.scale.set(1.5, 0.59, 0.055);
+    backing.position.set(0, 2.18, -0.405); storyCameo.add(backing);
+    const rim = new THREE.Mesh(new THREE.TorusGeometry(0.52, 0.013, 8, 64), mat("#e9c780", { rough: 0.36, metal: 0.35 }));
+    rim.scale.set(1.5, 0.59, 1); rim.position.copy(backing.position); rim.position.z += 0.018; storyCameo.add(rim);
+    const cast = [...new Set(book.pages.flatMap(page => page.cast || []))].filter(hasToy);
+    const themeProps = { kusi: "luna", sami: "cometa", killa: "cactus", tico: "tren", ana: "barco", wayra: "arbol" };
+    const ids = [...new Set([...cast, themeProps[book.id]])].filter(hasToy).slice(0, 3);
+    ids.forEach((id, i) => {
+      const holder = new THREE.Group();
+      holder.position.set((i - (ids.length - 1) / 2) * 0.39, 1.985, -0.27);
+      holder.scale.setScalar(1.4); holder.userData.toyId = id; holder.userData.pinId = id;
+      holder.add(buildToy(id)); addHitArea(holder); storyCameo.add(holder); cameoActors.push(holder); toyGroups.push(holder);
+      toyState.set(holder, { phase: i * 1.8, hop: 0, wiggle: 0, spin: 0 });
+      if (!reduceMotion) {
+        holder.scale.setScalar(0.05);
+        tween(holder.scale, { x: 1.4, y: 1.4, z: 1.4 }, { duration: 0.5, delay: i * 0.06, easing: ease.outBack });
+      }
+    });
+    storyLight.color.copy(color).lerp(new THREE.Color("#fff4cf"), 0.6);
+  }
 
   SHELF_TOYS.forEach((id, i) => {
     const holder = new THREE.Group();
@@ -279,6 +300,7 @@ export function createStage(canvas, options) {
       const toy = buildToy(toyId, { emblemTexture: texture });
       if (ghost) ghostify(toy);
       holder.add(toy);
+      addHitArea(holder);
     };
     if (hasToy(toyId) || !emblemTexture) build(null);
     else emblemTexture(toyId).then(build);
@@ -291,6 +313,12 @@ export function createStage(canvas, options) {
     });
     collectedPins.clear();
     next.forEach((id) => collectedPins.add(id));
+  }
+
+  function addHitArea(holder) {
+    // Mantiene fácil el toque aunque la figura salte o tenga patas muy finas.
+    const hit = new THREE.Mesh(new THREE.BoxGeometry(0.29, 0.36, 0.27), new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false }));
+    hit.position.y = 0.18; hit.userData.hitArea = true; holder.add(hit);
   }
 
   const deskToys = [];
@@ -318,12 +346,7 @@ export function createStage(canvas, options) {
 
   function clearDeskToys(immediate = false) {
     deskToys.splice(0).forEach((holder, i) => {
-      const remove = () => {
-        scene.remove(holder);
-        const idx = toyGroups.indexOf(holder);
-        if (idx >= 0) toyGroups.splice(idx, 1);
-        toyState.delete(holder);
-      };
+      const remove = () => releaseToy(holder);
       if (immediate || reduceMotion) remove();
       else tween(holder.position, { y: 1.6 }, { duration: 0.45, delay: i * 0.05, easing: ease.in, onComplete: remove });
     });
@@ -347,13 +370,9 @@ export function createStage(canvas, options) {
   }
 
   function clearPageDiorama() {
+    feedback.clear();
     pageActors.forEach((holder) => {
-      holder.parent?.remove(holder);
-      holder.traverse((obj) => {
-        obj.geometry?.dispose?.();
-        const materials = Array.isArray(obj.material) ? obj.material : obj.material ? [obj.material] : [];
-        materials.forEach((material) => material.dispose?.());
-      });
+      releaseToy(holder);
     });
     pageActors = [];
   }
@@ -365,7 +384,7 @@ export function createStage(canvas, options) {
     const candidates = [...(page.cast || []), ...(page.props || [])]
       .map((id) => (hasToy(id) ? id : STORY_PROP_TO_TOY[id]))
       .filter((id, index, list) => id && hasToy(id) && list.indexOf(id) === index)
-      .slice(0, 2);
+      .slice(0, 3);
 
     const platform = new THREE.Mesh(
       new THREE.CylinderGeometry(0.13, 0.15, 0.012, 48),
@@ -387,15 +406,20 @@ export function createStage(canvas, options) {
       const holder = new THREE.Group();
       const actor = buildToy(id);
       const count = candidates.length;
-      const target = count === 1 ? 0.62 : 0.48;
-      holder.position.set((index - (count - 1) / 2) * 0.12, 0.018, 0.032 + index * 0.004);
+      const target = count === 1 ? 0.74 : count === 2 ? 0.58 : 0.48;
+      holder.position.set((index - (count - 1) / 2) * (count === 3 ? 0.135 : 0.16), 0.018, 0.032 + index * 0.004);
       holder.scale.setScalar(target);
       holder.userData.baseY = holder.position.y;
       holder.userData.phase = index * 1.7 + page.t.length * 0.03;
       holder.userData.storyActor = id;
+      holder.userData.toyId = id;
+      holder.userData.pinId = id;
       holder.add(actor);
+      addHitArea(holder);
       selected.dioramaRoot.add(holder);
       pageActors.push(holder);
+      toyGroups.push(holder);
+      toyState.set(holder, { phase: index * 1.7, hop: 0, wiggle: 0, spin: 0 });
       if (!reduceMotion) {
         holder.scale.setScalar(0.001);
         tween(holder.scale, { x: target, y: target, z: target }, { duration: 0.55, delay: index * 0.08, easing: ease.outBack });
@@ -425,6 +449,20 @@ export function createStage(canvas, options) {
   let mode = "shelf";
   let selected = null;
   let dragging = null;
+  let focusedId = null;
+  let panTween = null;
+  let wheelTimer = 0;
+  const pointers = new Map();
+  let pinch = null;
+
+  function activateBook(entry) {
+    if (!entry || entry.book.id === focusedId) return;
+    focusedId = entry.book.id;
+    canvas.dataset.focusedBook = focusedId;
+    setWall(focusedId);
+    updateCameo(entry.book);
+    onFocusBook(focusedId);
+  }
 
   function liftBook(entry, lifted) {
     if (mode !== "shelf" || selected) return;
@@ -449,7 +487,7 @@ export function createStage(canvas, options) {
     if (hoveredBook === entry) return;
     if (hoveredBook) liftBook(hoveredBook, false);
     hoveredBook = entry;
-    if (entry) liftBook(entry, true);
+    if (entry) { liftBook(entry, true); activateBook(entry); }
     onHoverBook(entry ? entry.book.id : null);
     canvas.style.cursor = entry || hoveredToy ? "pointer" : "";
   }
@@ -457,6 +495,7 @@ export function createStage(canvas, options) {
   function setHoveredToy(holder) {
     if (hoveredToy === holder) return;
     hoveredToy = holder;
+    feedback.show(holder);
     if (holder) {
       popToy(holder);
       onHoverToy(holder.userData.pinId);
@@ -467,7 +506,7 @@ export function createStage(canvas, options) {
   }
 
   function pick() {
-    if (!pointerDirty) return;
+    if (!pointerDirty || dragging?.moved || pinch) return;
     pointerDirty = false;
     raycaster.setFromCamera(pointer, camera);
     if (mode === "shelf" && !selected) {
@@ -480,7 +519,7 @@ export function createStage(canvas, options) {
       }
       setHoveredBook(null);
     }
-    const hitToys = raycaster.intersectObjects(toyGroups, true);
+    const hitToys = raycaster.intersectObjects(toyGroups.filter(holder => holder.visible && (!holder.userData.storyActor || mode === "reading")), true);
     if (hitToys.length) {
       let obj = hitToys[0].object;
       while (obj && !obj.userData.toyId) obj = obj.parent;
@@ -498,37 +537,106 @@ export function createStage(canvas, options) {
   }
 
   const onPointerMove = (event) => {
-    if (dragging && mode === "shelf") {
+    if (pointers.has(event.pointerId)) pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+    if (pinch && pointers.size === 2) {
+      const [a, b] = [...pointers.values()];
+      setZoom(pinch.zoom * Math.hypot(a.x - b.x, a.y - b.y) / pinch.distance);
+      return;
+    }
+    if (dragging && pointers.has(event.pointerId) && mode === "shelf") {
       const dx = event.clientX - dragging.x;
       if (Math.abs(dx) > 6) dragging.moved = true;
-      shelfPan.x = clampPan(dragging.pan - dx * 0.0045);
+      if (dragging.moved) {
+        const next = clampPan(dragging.pan - dx * dragScale(camPos.z, camera.fov, canvas.clientHeight, camera.zoom));
+        const now = performance.now();
+        dragging.velocity = (next - shelfPan.x) / Math.max(8, now - dragging.lastTime);
+        dragging.lastTime = now;
+        shelfPan.x = next;
+        activateBook(bookEntries[bookIndexAt(next, books.length, bookSpacing)]);
+        canvas.dataset.dragging = "true";
+        return;
+      }
     }
     updatePointer(event);
   };
   const onPointerDown = (event) => {
     if (event.button !== 0 && event.pointerType === "mouse") return;
-    dragging = { x: event.clientX, pan: shelfPan.x, moved: false };
+    pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+    canvas.setPointerCapture(event.pointerId);
+    panTween?.cancel();
+    clearTimeout(wheelTimer);
+    if (pointers.size === 2) {
+      const [a, b] = [...pointers.values()];
+      pinch = { distance: Math.max(1, Math.hypot(a.x - b.x, a.y - b.y)), zoom: zoomTarget };
+      if (dragging) dragging.moved = true;
+      return;
+    }
+    dragging = { x: event.clientX, pan: shelfPan.x, moved: false, velocity: 0, lastTime: performance.now() };
     updatePointer(event);
     pick();
+    dragging.toy = hoveredToy;
+    dragging.book = hoveredBook;
   };
   const onPointerUp = (event) => {
+    if (!pointers.has(event.pointerId)) return;
+    pointers.delete(event.pointerId);
+    if (canvas.hasPointerCapture(event.pointerId)) canvas.releasePointerCapture(event.pointerId);
+    if (pinch) {
+      if (!pointers.size) { pinch = null; dragging = null; pointerDirty = false; delete canvas.dataset.dragging; }
+      return;
+    }
     const wasDrag = dragging?.moved;
+    const pressedToy = dragging?.toy;
+    const pressedBook = dragging?.book;
+    const velocity = performance.now() - (dragging?.lastTime || 0) < 100 ? dragging?.velocity || 0 : 0;
     dragging = null;
-    if (wasDrag) return;
+    delete canvas.dataset.dragging;
+    if (wasDrag) {
+      focusBook(bookEntries[settleBook(shelfPan.x, velocity, books.length, bookSpacing)].book.id);
+      pointerDirty = false;
+      return;
+    }
     updatePointer(event);
     pick();
-    if (hoveredBook && mode === "shelf" && !selected) onClickBook(hoveredBook.book.id);
-    else if (hoveredToy) onClickToy(hoveredToy.userData.pinId);
+    if (pressedBook && hoveredBook === pressedBook && mode === "shelf" && !selected) onClickBook(pressedBook.book.id);
+    else if (pressedToy && pressedToy === hoveredToy) {
+      const state = toyState.get(pressedToy);
+      popToy(pressedToy);
+      if (state && !reduceMotion) tween(state, { spin: (state.spin || 0) + Math.PI * 2 }, { duration: 1.1, easing: ease.inOut });
+      feedback.show(pressedToy, true);
+      onClickToy(pressedToy.userData.pinId);
+    }
   };
   const onPointerLeave = () => {
+    if (pointers.size) return;
     pointer.set(-2, -2);
     pointerDirty = true;
     dragging = null;
+  };
+  const onPointerCancel = () => {
+    pointers.clear(); pinch = null; dragging = null; pointerDirty = false;
+    delete canvas.dataset.dragging;
+    setHoveredToy(null); setHoveredBook(null);
+    if (mode === "shelf") focusBook(bookEntries[bookIndexAt(shelfPan.x, books.length, bookSpacing)].book.id);
+  };
+  const onWheel = (event) => {
+    event.preventDefault();
+    if (mode === "shelf" && !event.ctrlKey && (event.shiftKey || Math.abs(event.deltaX) > Math.abs(event.deltaY))) {
+      panTween?.cancel();
+      const delta = (event.deltaX || event.deltaY) * (event.deltaMode === 1 ? 16 : 1);
+      shelfPan.x = clampPan(shelfPan.x + delta * dragScale(camPos.z, camera.fov, canvas.clientHeight, camera.zoom));
+      activateBook(bookEntries[bookIndexAt(shelfPan.x, books.length, bookSpacing)]);
+      clearTimeout(wheelTimer);
+      wheelTimer = setTimeout(() => focusBook(bookEntries[bookIndexAt(shelfPan.x, books.length, bookSpacing)].book.id), 140);
+    } else setZoom(zoomTarget * Math.exp(-event.deltaY * (event.deltaMode === 1 ? 0.025 : 0.002)));
   };
   canvas.addEventListener("pointermove", onPointerMove, { passive: true });
   canvas.addEventListener("pointerdown", onPointerDown);
   canvas.addEventListener("pointerup", onPointerUp);
   canvas.addEventListener("pointerleave", onPointerLeave);
+  canvas.addEventListener("pointercancel", onPointerCancel);
+  canvas.addEventListener("wheel", onWheel, { passive: false });
+  window.addEventListener("blur", onPointerCancel);
 
   function clampPan(x) {
     const half = ((books.length - 1) * bookSpacing) / 2;
@@ -537,7 +645,7 @@ export function createStage(canvas, options) {
 
   /* ---------------------------- estados ----------------------------- */
   function viewFor(name) {
-    return camera.aspect < 0.85 ? CAM_PORTRAIT[name] : CAM[name];
+    return window.innerWidth / window.innerHeight < 0.85 ? CAM_PORTRAIT[name] : CAM[name];
   }
 
   function moveCamera(view, duration = 1.1) {
@@ -551,7 +659,7 @@ export function createStage(canvas, options) {
     const theme = WALL_THEMES[themeKey] || WALL_THEMES.default;
     const nextTex = wallpaperTexture(theme);
     nextTex.repeat.set(7, 2.5);
-    wallB.material.map?.dispose();
+    if (wallB.material.map !== wallA.material.map) wallB.material.map?.dispose();
     wallB.material.map = nextTex;
     wallB.material.needsUpdate = true;
     tween(wallB.material, { opacity: 1 }, {
@@ -570,6 +678,10 @@ export function createStage(canvas, options) {
   function selectBook(bookId, ownedPins = []) {
     const entry = bookEntries.find((e) => e.book.id === bookId);
     if (!entry || selected) return;
+    activateBook(entry);
+    panTween?.cancel();
+    feedback.clear();
+    setZoom(1);
     selected = entry;
     setHoveredBook(null);
     mode = "desk";
@@ -577,8 +689,8 @@ export function createStage(canvas, options) {
     // Otros libros se quedan; el elegido vuela a la mesa.
     const g = entry.group;
     const d = reduceMotion ? 0.01 : 1.15;
-    tween(g.position, { x: entry.home.x, y: entry.home.y + 0.5, z: entry.home.z + 0.4 }, { duration: d * 0.35, easing: ease.out });
-    tween(g.position, { x: DESK_BOOK.x, y: 0.0, z: DESK_BOOK.z }, { duration: d * 0.75, delay: d * 0.3, easing: ease.inOut });
+    tween(g.position, { x: entry.home.x, y: entry.home.y + 0.5, z: entry.home.z + 0.4 }, { duration: d * 0.3, easing: ease.out,
+      onComplete: () => tween(g.position, { x: DESK_BOOK.x, y: 0.0, z: DESK_BOOK.z }, { duration: d * 0.7, easing: ease.inOut }) });
     tween(g.rotation, { x: -Math.PI / 2, y: 0, z: 0.02 }, { duration: d, easing: ease.inOut });
     tween(g.scale, { x: DESK_BOOK.scale, y: DESK_BOOK.scale, z: DESK_BOOK.scale }, { duration: d, easing: ease.inOut });
     moveCamera(viewFor("desk"), d);
@@ -592,9 +704,11 @@ export function createStage(canvas, options) {
   function deselect() {
     if (!selected) return;
     const entry = selected;
+    closeBook(true);
+    clearPageDiorama();
     selected = null;
     mode = "shelf";
-    closeBook(true);
+    setZoom(1);
     clearDeskToys();
     const g = entry.group;
     const d = reduceMotion ? 0.01 : 1.05;
@@ -603,13 +717,16 @@ export function createStage(canvas, options) {
     tween(g.rotation, { x: entry.home.rx, y: entry.home.ry, z: 0 }, { duration: d, easing: ease.inOut });
     tween(g.scale, { x: 1, y: 1, z: 1 }, { duration: d, easing: ease.inOut });
     moveCamera(viewFor("shelf"), d);
-    setWall("default");
+    setWall(entry.book.id);
+    focusBook(entry.book.id);
     tween(spot, { intensity: 0 }, { duration: 0.4 });
   }
 
   function openBook() {
     if (!selected || mode === "reading") return;
     mode = "reading";
+    feedback.clear();
+    setZoom(1);
     const entry = selected;
     const d = reduceMotion ? 0.01 : 1.0;
     const open = { t: 0 };
@@ -696,12 +813,19 @@ export function createStage(canvas, options) {
   function focusBook(bookId) {
     const entry = bookEntries.find((e) => e.book.id === bookId);
     if (!entry || mode !== "shelf") return;
-    tween(shelfPan, { x: clampPan(entry.home.x) }, { duration: reduceMotion ? 0.01 : 0.6, easing: ease.inOut });
+    panTween = tween(shelfPan, { x: clampPan(entry.home.x) }, { duration: reduceMotion ? 0.01 : 0.45, easing: ease.out });
+    activateBook(entry);
     setHoveredBook(entry);
   }
 
   function panShelf(direction) {
-    tween(shelfPan, { x: clampPan(shelfPan.x + direction * 1.1) }, { duration: reduceMotion ? 0.01 : 0.5, easing: ease.inOut });
+    const index = bookIndexAt(shelfPan.x, books.length, bookSpacing) + direction;
+    focusBook(bookEntries[bookIndexAt(bookPositionAt(index, books.length, bookSpacing), books.length, bookSpacing)].book.id);
+  }
+
+  function setZoom(value) {
+    zoomTarget = clampZoom(value);
+    onZoom(Math.round(zoomTarget * 100));
   }
 
   /* ------------------------------ bucle ------------------------------ */
@@ -715,13 +839,14 @@ export function createStage(canvas, options) {
     const w = canvas.clientWidth || window.innerWidth;
     const h = canvas.clientHeight || window.innerHeight;
     renderer.setSize(w, h, false);
-    const wasPortrait = camera.aspect < 0.85;
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
     shelfPan.x = clampPan(shelfPan.x);
-    if (wasPortrait !== camera.aspect < 0.85) moveCamera(viewFor(mode), 0.4);
+    moveCamera(viewFor(mode), 0.4);
   }
   resize();
+  const resizeObserver = new ResizeObserver(resize);
+  resizeObserver.observe(canvas);
   window.addEventListener("resize", resize);
   const onVisibility = () => {
     hidden = document.hidden;
@@ -751,7 +876,19 @@ export function createStage(canvas, options) {
       const idle = reduceMotion ? 0 : Math.sin(clock.t * 1.6 + state.phase) * 0.006;
       toy.position.y = idle + state.hop;
       toy.rotation.z = state.wiggle;
-      toy.rotation.y = reduceMotion ? 0 : Math.sin(clock.t * 0.9 + state.phase) * 0.06;
+      toy.rotation.y = (state.spin || 0) + (reduceMotion ? 0 : Math.sin(clock.t * 0.9 + state.phase) * 0.1);
+      if (!holder.userData.movingParts) {
+        const parts = []; toy.traverse(obj => {
+          if (obj.userData.flutter || obj.userData.sway) { obj.userData.restRotation = obj.rotation.clone(); parts.push(obj); }
+        });
+        holder.userData.movingParts = parts;
+      }
+      holder.userData.movingParts.forEach(part => {
+        part.rotation.copy(part.userData.restRotation);
+        if (reduceMotion) return;
+        if (part.userData.flutter) part.rotation.y += Math.sin(clock.t * 9 + state.phase) * 0.6 * part.userData.flutter;
+        if (part.userData.sway) part.rotation.z += Math.sin(clock.t * 3 + state.phase) * 0.13 * part.userData.sway;
+      });
     });
 
     pageActors.forEach((actor) => {
@@ -785,9 +922,18 @@ export function createStage(canvas, options) {
     const panX = mode === "shelf" ? shelfPan.x : 0;
     camera.position.set(camPos.x + panX, camPos.y, camPos.z);
     camera.lookAt(camLook.x + panX, camLook.y, camLook.z);
+    zoom.value += (zoomTarget - zoom.value) * (reduceMotion ? 1 : 1 - Math.exp(-dt * 12));
+    camera.zoom = zoom.value; camera.updateProjectionMatrix();
+    const cameoX = mode === "shelf" ? shelfPan.x : 0;
+    storyCameo.position.x += (cameoX - storyCameo.position.x) * (reduceMotion ? 1 : 1 - Math.exp(-dt * 10));
+    storyLight.position.set(storyCameo.position.x, 2.3, 0.6);
+    shelfToys.forEach(holder => { holder.visible = Math.abs(holder.position.x - storyCameo.position.x) > 0.86; });
+    feedback.update(dt);
     renderer.render(scene, camera);
     onFrame();
   }
+  activateBook(bookEntries.find(entry => entry.book.id === initialBookId) || bookEntries[0]);
+  storyCameo.position.x = shelfPan.x;
   loop();
 
   function dispose() {
@@ -795,12 +941,18 @@ export function createStage(canvas, options) {
     cancelAnimationFrame(frame);
     cancelAllTweens();
     clearPageDiorama();
+    feedback.dispose();
+    clearTimeout(wheelTimer);
     window.removeEventListener("resize", resize);
+    resizeObserver.disconnect();
     document.removeEventListener("visibilitychange", onVisibility);
     canvas.removeEventListener("pointermove", onPointerMove);
     canvas.removeEventListener("pointerdown", onPointerDown);
     canvas.removeEventListener("pointerup", onPointerUp);
     canvas.removeEventListener("pointerleave", onPointerLeave);
+    canvas.removeEventListener("pointercancel", onPointerCancel);
+    canvas.removeEventListener("wheel", onWheel);
+    window.removeEventListener("blur", onPointerCancel);
     scene.traverse((obj) => {
       if (obj.geometry) obj.geometry.dispose?.();
       const materials = Array.isArray(obj.material) ? obj.material : obj.material ? [obj.material] : [];
@@ -823,6 +975,7 @@ export function createStage(canvas, options) {
     projectPopup,
     focusBook,
     panShelf,
+    setZoom,
     setCollected,
     setWall,
     resize,
@@ -833,6 +986,16 @@ export function createStage(canvas, options) {
     debug() {
       return {
         mode,
+        focus: focusedId,
+        theme: wallTheme,
+        zoom: camera.zoom,
+        label: feedback.label,
+        actors: toyGroups.filter(holder => holder.visible).map(holder => {
+          const p = new THREE.Vector3(); holder.getWorldPosition(p); p.y += 0.13; p.project(camera);
+          return { id: holder.userData.toyId, story: Boolean(holder.userData.storyActor), spin: toyState.get(holder)?.spin || 0,
+            x: canvas.getBoundingClientRect().left + (p.x + 1) / 2 * canvas.clientWidth,
+            y: canvas.getBoundingClientRect().top + (1 - p.y) / 2 * canvas.clientHeight };
+        }),
         selected: selected?.book.id || null,
         book: selected ? { p: selected.group.position.toArray(), r: selected.group.rotation.toArray().slice(0, 3), s: selected.group.scale.x } : null,
         cam: [camPos.toArray(), camLook.toArray(), shelfPan.x],

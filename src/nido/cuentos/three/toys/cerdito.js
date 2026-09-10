@@ -5,11 +5,11 @@ import { mat, mesh, blob, box, cyl, cone, eyes, fit } from "./_shared.js";
 export const id = "cerdito";
 export const label = "Cerdito";
 
-export function build() {
+export function build({ outfit = "#5aa0d8", hat = false } = {}) {
   const g = new THREE.Group();
   const pink = mat("#f7b4c4");
   const pinkDark = mat("#e58fa6");
-  const denim = mat("#5aa0d8", { rough: 0.75 });
+  const denim = mat(outfit, { rough: 0.75 });
   const dark = mat("#b5637e", { rough: 0.4 });
 
   // Cuerpo redondo y overol
@@ -55,6 +55,13 @@ export function build() {
   });
   // Colita en espiral
   g.add(mesh(new THREE.TorusGeometry(0.014, 0.005, 10, 24, Math.PI * 1.5), pinkDark, { y: 0.15, z: -0.085, rx: 0.3, ry: Math.PI / 2 }));
+
+  if (hat) {
+    const straw = mat("#e9c878", { rough: 0.8 });
+    g.add(cyl(0.098, 0.1, 0.012, straw, { y: 0.342 }, 32));
+    g.add(cyl(0.05, 0.062, 0.039, straw, { y: 0.363 }, 32));
+    g.add(cyl(0.062, 0.064, 0.01, mat("#a8673b"), { y: 0.35 }, 32));
+  }
 
   return fit(g, 0.29);
 }

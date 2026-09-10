@@ -3,6 +3,7 @@
 
 import * as THREE from "three";
 import { mat, mesh, cyl, fit } from "./_shared.js";
+import * as abuelita from "./abuelita.js";
 import * as arbol from "./arbol.js";
 import * as ballena from "./ballena.js";
 import * as barco from "./barco.js";
@@ -14,6 +15,7 @@ import * as canasta from "./canasta.js";
 import * as caperucita from "./caperucita.js";
 import * as caracola from "./caracola.js";
 import * as casa from "./casa.js";
+import * as cazador from "./cazador.js";
 import * as cerdito from "./cerdito.js";
 import * as cohete from "./cohete.js";
 import * as cometa from "./cometa.js";
@@ -38,8 +40,17 @@ import * as tambor from "./tambor.js";
 import * as tren from "./tren.js";
 import * as vicuna from "./vicuna.js";
 import * as zorro from "./zorro.js";
+import * as mariposa from "./mariposa.js";
+import * as pelicano from "./pelicano.js";
+import * as carpintero from "./carpintero.js";
+import { nina, nino, nina2, maquinista } from "./personajes.js";
 
-const REGISTRY = { arbol, ballena, barco, bufeo, buho, cactus, campana, canasta, caperucita, caracola, casa, cerdito, cohete, cometa, escalera, estrella, farol, frasco, gorro, lobo, luna, manzana, olla, oso, oveja, pajarito, pez, picaflor, quena, ramo, rana, tambor, tren, vicuna, zorro };
+const pipo = { id: "pipo", label: "Pipo", build: () => cerdito.build({ hat: true }) };
+const lolo = { id: "lolo", label: "Lolo", build: () => cerdito.build({ outfit: "#5cb56a" }) };
+const tito = { id: "tito", label: "Tito", build: () => cerdito.build({ outfit: "#d9483f" }) };
+// El lobo metido en la cama de la abuelita lleva su gorro de dormir.
+const loboCama = { id: "lobo-cama", label: "Lobo disfrazado", build: () => lobo.build({ bonnet: true }) };
+const REGISTRY = { abuelita, arbol, ballena, barco, bufeo, buho, cactus, campana, canasta, caperucita, caracola, casa, cazador, cerdito, cohete, cometa, escalera, estrella, farol, frasco, gorro, lobo, luna, manzana, olla, oso, oveja, pajarito, pez, picaflor, quena, ramo, rana, tambor, tren, vicuna, zorro, mariposa, pelicano, carpintero, nina, nino, nina2, maquinista, pipo, lolo, tito, "lobo-cama": loboCama };
 
 export function registerToys(modules) {
   modules.forEach((module) => {
@@ -49,6 +60,10 @@ export function registerToys(modules) {
 
 export function hasToy(id) {
   return Boolean(REGISTRY[id]);
+}
+
+export function toyLabel(id) {
+  return REGISTRY[id]?.label || "Figura mágica";
 }
 
 // Qué figura representa cada souvenir de los cuentos.

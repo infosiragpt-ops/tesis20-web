@@ -56,9 +56,11 @@ export function build() {
   [-1, 1].forEach((side) => {
     const ear = blob(0.028, dark, { x: side * 0.078, y: 0.242, z: 0.128, ry: side * 0.55, rz: side * -0.55 });
     ear.scale.set(1.5, 0.65, 0.5);
+    ear.userData.sway = side;
     g.add(ear);
     const inner = blob(0.017, pink, { x: side * 0.084, y: 0.24, z: 0.14, ry: side * 0.55, rz: side * -0.55 });
     inner.scale.set(1.5, 0.55, 0.35);
+    inner.userData.sway = side;
     g.add(inner);
   });
   // Ojos blancos con pupila

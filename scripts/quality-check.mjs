@@ -764,7 +764,11 @@ for (const buildAsset of buildAssets) {
     // 2026-09-10: /nido pasa a un escenario WebGL (Three.js). El motor va en
     // su propio chunk diferido `vendor-three`, que solo se descarga al entrar
     // a /nido; el resto de chunks conserva su tope de 250 KiB.
-    const chunkLimit = /vendor-three-/.test(buildAsset) ? 760 * 1024 : 250 * 1024;
+    // 2026-09-10 (bis): el chunk diferido `CuentosApp` (solo /nido) admite
+    // 300 KiB: con diez cuentos lleva el texto de 100 páginas, el arte SVG de
+    // 24 personajes y la geometría de 45 figuras 3D; mide 256 KiB tras
+    // «Caperucita Roja» y las figuras del reparto del PR #9.
+    const chunkLimit = /vendor-three-/.test(buildAsset) ? 760 * 1024 : /CuentosApp-/.test(buildAsset) ? 300 * 1024 : 250 * 1024;
     check(
       bytes <= chunkLimit,
       `${buildAsset} supera el máximo de ${Math.round(chunkLimit / 1024)} KiB por chunk.`,
