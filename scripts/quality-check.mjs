@@ -764,7 +764,11 @@ for (const buildAsset of buildAssets) {
     // 2026-09-10: /nido pasa a un escenario WebGL (Three.js). El motor va en
     // su propio chunk diferido `vendor-three`, que solo se descarga al entrar
     // a /nido; el resto de chunks conserva su tope de 250 KiB.
-    const chunkLimit = /vendor-three-/.test(buildAsset) ? 760 * 1024 : 250 * 1024;
+    // 2026-09-10 (bis): el chunk diferido `CuentosApp` (solo /nido) admite
+    // 300 KiB: con diez cuentos lleva el texto de 100 páginas, el arte SVG de
+    // 24 personajes y la geometría de 45 figuras 3D; mide 256 KiB tras
+    // «Caperucita Roja» y las figuras del reparto del PR #9.
+    const chunkLimit = /vendor-three-/.test(buildAsset) ? 760 * 1024 : /CuentosApp-/.test(buildAsset) ? 300 * 1024 : 250 * 1024;
     check(
       bytes <= chunkLimit,
       `${buildAsset} supera el máximo de ${Math.round(chunkLimit / 1024)} KiB por chunk.`,
@@ -877,7 +881,9 @@ check(
 // 2026-09-10 (bis): 10.1 → 10.2 MiB por «Los tres cerditos» en /nido: cuatro
 // personajes y cuatro escenografías SVG, cinco figuras 3D, su portada AVIF
 // (13 KiB) y las entradas del manifiesto de voz. Los mp3 siguen excluidos.
-check(deployBytesWithoutAudioAndPdf <= 10.2 * 1024 * 1024, `El build sin audios/PDF supera 10.2 MiB (${(deployBytesWithoutAudioAndPdf / 1024 / 1024).toFixed(2)} MiB).`);
+// 2026-09-10 (ter): 10.2 → 10.3 MiB por «Caperucita Roja»: cuatro personajes,
+// dos escenografías, cinco figuras 3D, su portada AVIF (64 KiB) y el manifiesto.
+check(deployBytesWithoutAudioAndPdf <= 10.3 * 1024 * 1024, `El build sin audios/PDF supera 10.3 MiB (${(deployBytesWithoutAudioAndPdf / 1024 / 1024).toFixed(2)} MiB).`);
 
 for (const htmlFile of distFiles.filter((file) => file.endsWith(".html"))) {
   check((await fileSize(htmlFile)) <= 300 * 1024, `${htmlFile} supera 300 KiB.`);

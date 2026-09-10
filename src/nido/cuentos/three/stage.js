@@ -48,6 +48,7 @@ const STORY_PROP_TO_TOY = {
   paja: "casa",
   madera: "casa",
   ladrillos: "casa",
+  cuarto: "farol",
   arboles: "arbol",
   boleto: "tren",
   canoa: "barco",

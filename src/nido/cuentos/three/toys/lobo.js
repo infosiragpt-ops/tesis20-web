@@ -5,7 +5,7 @@ import { mat, mesh, blob, cyl, cone, eyes, fit } from "./_shared.js";
 export const id = "lobo";
 export const label = "Lobo";
 
-export function build() {
+export function build({ bonnet = false } = {}) {
   const g = new THREE.Group();
   const fur = mat("#7d8494");
   const furDark = mat("#5d6373");
@@ -59,6 +59,14 @@ export function build() {
   g.add(blob(0.036, furDark, { y: 0.036, z: -0.075 }));
   g.add(mesh(new THREE.TorusGeometry(0.075, 0.032, 14, 28, Math.PI), furDark, { x: -0.05, y: 0.034, z: -0.015, rx: Math.PI / 2, rz: (2 * Math.PI) / 3 }));
   g.add(blob(0.036, cream, { x: -0.09, y: 0.036, z: 0.055 }));
+
+  // Disfrazado de abuelita: gorro de dormir blanco con volante y pompón.
+  if (bonnet) {
+    const linen = mat("#ffffff", { rough: 0.85 });
+    g.add(mesh(new THREE.TorusGeometry(0.066, 0.012, 10, 32), mat("#f4e4c8", { rough: 0.85 }), { y: 0.325, rx: Math.PI / 2 }));
+    g.add(cone(0.062, 0.11, linen, { y: 0.375, rz: -0.35 }, 28));
+    g.add(blob(0.018, mat("#f2c14e", { rough: 0.9 }), { x: 0.045, y: 0.42 }));
+  }
 
   return fit(g, 0.3);
 }

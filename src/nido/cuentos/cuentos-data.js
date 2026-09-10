@@ -1,5 +1,5 @@
-// Biblioteca de cuentos de Tesis20 Nido: ocho historias originales y una
-// adaptación propia de «Los tres cerditos».
+// Biblioteca de cuentos de Tesis20 Nido: ocho historias originales y dos
+// adaptaciones propias de clásicos («Los tres cerditos», «Caperucita Roja»).
 // Cada libro tiene 10 páginas narradas, 5 souvenirs escondidos y 5 preguntas
 // finales. Los textos están escritos para niñas y niños de 3 a 6 años: frases
 // cortas, vocabulario concreto y una idea por página.
@@ -96,6 +96,101 @@ export const BOOKS = [
       { q: "¿Qué comía Lolo a la sombra?", a: ["Manzanas rojas", "Helado", "Sopa"] },
       { q: "¿Qué casa no pudo tirar el lobo?", a: ["La de ladrillos", "La de paja", "La de madera"] },
       { q: "¿Dónde cayó el lobo al bajar por la chimenea?", a: ["En una olla de sopa caliente", "En una cama", "En el río"] },
+    ],
+  },
+  {
+    id: "caperucita",
+    title: "Caperucita Roja",
+    hero: "Caperucita",
+    tagline: "Una niña, un bosque y un lobo con voz finita",
+    set: "forest-day",
+    accent: "#d63b3b",
+    // La ilustración de portada ya trae el título impreso: `titled` evita
+    // volver a pintarlo encima.
+    cover: { ink: "#fff3ec", sub: "#e0a79a", image: "/assets/nido/cuentos/covers/caperucita-premium-v1.avif", titled: true },
+    pages: [
+      {
+        t: "La caperuza roja",
+        x: "Había una vez una niña muy querida por todos. Su abuelita le regaló una caperuza roja que le quedaba tan bien que nunca se la quitaba. Por eso todos la llamaban Caperucita Roja.",
+        light: "day",
+        cast: ["caperucita"],
+        props: ["sol", "nubes", "casa", "flores", "pasto"],
+        pin: "caperuza",
+      },
+      {
+        t: "Un encargo para la abuelita",
+        x: "Un día su mamá le dijo: —La abuelita está enfermita. Llévale este pastel y este jugo en la canasta. Ve por el sendero y no te apartes de él. —Sí, mamá —dijo Caperucita, y salió contenta.",
+        light: "day",
+        cast: ["caperucita"],
+        props: ["sol", "casa", "sendero", "flores", "arboles"],
+        pin: "canasta",
+      },
+      {
+        t: "El lobo del bosque",
+        x: "En el bosque, Caperucita se encontró con un lobo. Ella no sabía que los lobos son peligrosos y no tuvo miedo. —¿A dónde vas tan temprano? —preguntó el lobo. —A casa de mi abuelita, junto a los tres robles.",
+        light: "day",
+        cast: ["caperucita", "lobo"],
+        props: ["arboles", "sendero", "hojas", "pasto"],
+        pin: "pajarito",
+      },
+      {
+        t: "Las flores del bosque",
+        x: "—Mira qué lindas flores —dijo el lobo—. ¿Por qué no le llevas algunas? Caperucita se salió del sendero para cortar flores. Cortaba una, y otra, y otra más. Mientras tanto, el lobo corrió a la casa de la abuelita.",
+        light: "day",
+        cast: ["caperucita", "mariposa"],
+        props: ["arboles", "flores", "sol", "pasto"],
+        pin: "ramo",
+      },
+      {
+        t: "Toc, toc",
+        x: "El lobo tocó la puerta de la abuelita. —¿Quién es? —Soy Caperucita —dijo el lobo con voz finita. —Pasa, hijita, la puerta está abierta. El lobo entró y, de un solo bocado, se tragó a la abuelita enterita.",
+        light: "dusk",
+        cast: ["lobo"],
+        props: ["casa", "arboles", "sendero", "flores"],
+      },
+      {
+        t: "Disfrazado de abuelita",
+        x: "Después se puso el camisón y el gorro de dormir de la abuelita. Se metió en la cama y se tapó hasta la nariz. Y esperó, muy quieto, a que llegara Caperucita.",
+        light: "day",
+        cast: ["lobo-cama"],
+        props: ["cuarto"],
+      },
+      {
+        t: "¡Qué orejas tan grandes!",
+        x: "Caperucita llegó y entró despacito. —Abuelita, ¡qué orejas tan grandes tienes! —Son para oírte mejor. —¡Y qué ojos tan grandes! —Son para verte mejor. —¡Y qué boca tan grande! —¡Es para comerte mejor!",
+        light: "day",
+        cast: ["caperucita", "lobo-cama"],
+        props: ["cuarto"],
+        pin: "gorro",
+      },
+      {
+        t: "El cazador",
+        x: "El lobo saltó de la cama y también se tragó a Caperucita. Con la panza llena, se durmió y roncó muy fuerte. Un cazador que pasaba por ahí oyó los ronquidos y entró a ver qué pasaba.",
+        light: "day",
+        cast: ["cazador", "lobo-cama"],
+        props: ["cuarto"],
+      },
+      {
+        t: "¡Sanas y salvas!",
+        x: "El cazador abrió con cuidado la panza del lobo dormido. Primero salió Caperucita y después la abuelita, ¡las dos sanas y salvas! Le llenaron la panza de piedras, y el lobo, al despertar, se fue muy lejos y nunca más volvió.",
+        light: "dusk",
+        cast: ["caperucita", "abuelita", "cazador"],
+        props: ["casa", "arboles", "piedras", "pasto"],
+      },
+      {
+        t: "Por el sendero",
+        x: "La abuelita comió el pastel y se sintió mucho mejor. Caperucita la abrazó fuerte y prometió: —Nunca más me saldré del sendero. Y las dos vivieron felices en el bosque.",
+        light: "day",
+        cast: ["caperucita", "abuelita"],
+        props: ["casa", "sol", "flores", "sendero", "pasto"],
+      },
+    ],
+    quiz: [
+      { q: "¿De qué color era la caperuza?", a: ["Roja", "Azul", "Verde"] },
+      { q: "¿Qué llevaba Caperucita en la canasta?", a: ["Un pastel y jugo", "Piedras", "Juguetes"] },
+      { q: "¿Por qué se salió del sendero?", a: ["Para cortar flores", "Para dormir", "Para nadar"] },
+      { q: "¿Quién se puso el gorro de la abuelita?", a: ["El lobo", "El cazador", "Un pajarito"] },
+      { q: "¿Quién ayudó a Caperucita y a la abuelita?", a: ["El cazador", "El lobo", "La mamá"] },
     ],
   },
   {
@@ -845,6 +940,11 @@ export const BOOKS = [
 ];
 
 export const PIN_LABELS = {
+  caperuza: "Caperuza roja",
+  canasta: "Canasta con pastel",
+  pajarito: "Pajarito del bosque",
+  ramo: "Ramo de flores",
+  gorro: "Gorro de la abuelita",
   manzana: "Manzana de Lolo",
   casita: "Casita de ladrillos",
   lobo: "Lobo soplador",

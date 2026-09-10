@@ -3,6 +3,7 @@
 
 import * as THREE from "three";
 import { mat, mesh, cyl, fit } from "./_shared.js";
+import * as abuelita from "./abuelita.js";
 import * as arbol from "./arbol.js";
 import * as ballena from "./ballena.js";
 import * as barco from "./barco.js";
@@ -10,8 +11,11 @@ import * as bufeo from "./bufeo.js";
 import * as buho from "./buho.js";
 import * as cactus from "./cactus.js";
 import * as campana from "./campana.js";
+import * as canasta from "./canasta.js";
+import * as caperucita from "./caperucita.js";
 import * as caracola from "./caracola.js";
 import * as casa from "./casa.js";
+import * as cazador from "./cazador.js";
 import * as cerdito from "./cerdito.js";
 import * as cohete from "./cohete.js";
 import * as cometa from "./cometa.js";
@@ -19,15 +23,18 @@ import * as escalera from "./escalera.js";
 import * as estrella from "./estrella.js";
 import * as farol from "./farol.js";
 import * as frasco from "./frasco.js";
+import * as gorro from "./gorro.js";
 import * as lobo from "./lobo.js";
 import * as luna from "./luna.js";
 import * as manzana from "./manzana.js";
 import * as olla from "./olla.js";
 import * as oso from "./oso.js";
 import * as oveja from "./oveja.js";
+import * as pajarito from "./pajarito.js";
 import * as pez from "./pez.js";
 import * as picaflor from "./picaflor.js";
 import * as quena from "./quena.js";
+import * as ramo from "./ramo.js";
 import * as rana from "./rana.js";
 import * as tambor from "./tambor.js";
 import * as tren from "./tren.js";
@@ -41,7 +48,9 @@ import { nina, nino, nina2, maquinista } from "./personajes.js";
 const pipo = { id: "pipo", label: "Pipo", build: () => cerdito.build({ hat: true }) };
 const lolo = { id: "lolo", label: "Lolo", build: () => cerdito.build({ outfit: "#5cb56a" }) };
 const tito = { id: "tito", label: "Tito", build: () => cerdito.build({ outfit: "#d9483f" }) };
-const REGISTRY = { arbol, ballena, barco, bufeo, buho, cactus, campana, caracola, casa, cerdito, cohete, cometa, escalera, estrella, farol, frasco, lobo, luna, manzana, olla, oso, oveja, pez, picaflor, quena, rana, tambor, tren, vicuna, zorro, mariposa, pelicano, carpintero, nina, nino, nina2, maquinista, pipo, lolo, tito };
+// El lobo metido en la cama de la abuelita lleva su gorro de dormir.
+const loboCama = { id: "lobo-cama", label: "Lobo disfrazado", build: () => lobo.build({ bonnet: true }) };
+const REGISTRY = { abuelita, arbol, ballena, barco, bufeo, buho, cactus, campana, canasta, caperucita, caracola, casa, cazador, cerdito, cohete, cometa, escalera, estrella, farol, frasco, gorro, lobo, luna, manzana, olla, oso, oveja, pajarito, pez, picaflor, quena, ramo, rana, tambor, tren, vicuna, zorro, mariposa, pelicano, carpintero, nina, nino, nina2, maquinista, pipo, lolo, tito, "lobo-cama": loboCama };
 
 export function registerToys(modules) {
   modules.forEach((module) => {
@@ -59,6 +68,11 @@ export function toyLabel(id) {
 
 // Qué figura representa cada souvenir de los cuentos.
 export const PIN_TOY = {
+  caperuza: "caperucita",
+  canasta: "canasta",
+  pajarito: "pajarito",
+  ramo: "ramo",
+  gorro: "gorro",
   manzana: "manzana",
   casita: "casa",
   lobo: "lobo",

@@ -391,12 +391,17 @@ export function coverArtTexture(book, width = 560, height = 840) {
         ctx.drawImage(img, (width - drawW) / 2, (height - drawH) / 2, drawW, drawH);
       }
 
+      // Una ilustración que ya trae el título impreso (cover.titled) se deja
+      // tal cual: sin sombreado superior ni título encima.
+      const paintTitle = !book.cover.titled;
       const topShade = ctx.createLinearGradient(0, 0, 0, height * 0.48);
       topShade.addColorStop(0, "rgba(7,15,35,.86)");
       topShade.addColorStop(0.58, "rgba(7,15,35,.38)");
       topShade.addColorStop(1, "rgba(7,15,35,0)");
-      ctx.fillStyle = topShade;
-      ctx.fillRect(0, 0, width, height * 0.5);
+      if (paintTitle) {
+        ctx.fillStyle = topShade;
+        ctx.fillRect(0, 0, width, height * 0.5);
+      }
 
       const bottomShade = ctx.createLinearGradient(0, height * 0.72, 0, height);
       bottomShade.addColorStop(0, "rgba(7,15,35,0)");
@@ -421,7 +426,7 @@ export function coverArtTexture(book, width = 560, height = 840) {
 
       const lineHeight = (fontSize + 3) * 1.04;
       const startY = 112 + lineHeight / 2;
-      lines.slice(0, 3).forEach((line, index) => {
+      (paintTitle ? lines.slice(0, 3) : []).forEach((line, index) => {
         ctx.lineWidth = 13;
         ctx.strokeStyle = "rgba(22,28,48,.82)";
         ctx.strokeText(line, width / 2, startY + index * lineHeight);

@@ -27,6 +27,10 @@ const PLACE = {
   lolo: { s: 1.15, y: 568 },
   tito: { s: 1.15, y: 568 },
   lobo: { s: 0.95, y: 568 },
+  caperucita: { s: 1.15, y: 568 },
+  abuelita: { s: 1.15, y: 568 },
+  cazador: { s: 1.05, y: 568 },
+  "lobo-cama": { s: 1.15, y: 566 },
 };
 
 const CAST_X = {
@@ -215,10 +219,10 @@ export function BookCover({ book, className = "" }) {
       </defs>
       <rect width="440" height="640" fill={book.accent} />
       <image href={book.cover.image} x="0" y="0" width="440" height="660" preserveAspectRatio="xMidYMid slice" />
-      <rect width="440" height="270" fill={`url(#cover-top-${book.id})`} />
+      {book.cover.titled ? null : <rect width="440" height="270" fill={`url(#cover-top-${book.id})`} />}
       <rect y="450" width="440" height="190" fill={`url(#cover-bottom-${book.id})`} />
       <g>
-        {lines.map((line, i) => (
+        {(book.cover.titled ? [] : lines).map((line, i) => (
           <text
             key={line}
             x="220"

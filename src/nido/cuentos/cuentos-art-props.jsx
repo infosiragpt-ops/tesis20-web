@@ -1031,6 +1031,48 @@ function Olla() {
   );
 }
 
+/* ------------------------ «Caperucita Roja» ------------------------ */
+
+// Interior de la casa de la abuelita: tapa el paisaje con pared, piso,
+// ventana con cortinas y una mesita con lámpara.
+function Cuarto({ light }) {
+  const wall = isDark(light) ? "#a58c73" : "#f1dcc0";
+  const floor = isDark(light) ? "#7a5236" : "#b07a4f";
+  return (
+    <g>
+      <rect x="-20" y="-20" width="1040" height="680" fill={wall} />
+      <rect x="-20" y="560" width="1040" height="100" fill={floor} />
+      {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((i) => (
+        <path key={i} d={`M ${-20 + i * 110} 560 v 100`} stroke="#8f6340" strokeWidth="3" opacity="0.7" />
+      ))}
+      <rect x="-20" y="548" width="1040" height="14" fill="#c99a6a" />
+      <rect x="640" y="120" width="220" height="200" rx="10" fill={isDark(light) ? "#2b3b6b" : "#8ec9f0"} />
+      <path d="M 640 220 h 220 M 750 120 v 200" stroke="#ffffff" strokeWidth="8" />
+      <rect x="630" y="110" width="240" height="220" rx="12" fill="none" stroke="#a5713f" strokeWidth="12" />
+      <path d="M 612 106 q 44 110 0 232 h 34 q -30 -120 0 -232 z" fill="#d9524a" />
+      <path d="M 888 106 q -44 110 0 232 h -34 q 30 -120 0 -232 z" fill="#d9524a" />
+      <rect x="150" y="150" width="120" height="96" rx="6" fill="#f7efe1" stroke="#a5713f" strokeWidth="8" />
+      <circle cx="210" cy="198" r="22" fill="#f7b4c4" />
+      <circle cx="210" cy="198" r="8" fill="#f2c14e" />
+      <rect x="392" y="446" width="76" height="114" rx="6" fill="#8a5a33" />
+      <rect x="400" y="470" width="60" height="10" rx="3" fill="#6b4a33" />
+      <path d="M 396 446 q 34 -70 68 0 z" fill="#f2c14e" />
+      <rect x="426" y="400" width="8" height="46" fill="#6b4a33" />
+    </g>
+  );
+}
+
+// Sendero de tierra que cruza el prado: la regla de mamá es no salirse de él.
+function Sendero({ light }) {
+  const dirt = isDark(light) ? "#8a7454" : "#d9b981";
+  return (
+    <g>
+      <path d="M -20 640 q 240 -60 500 -70 q 260 -10 540 -24 v 34 q -280 8 -540 26 q -260 18 -500 74 z" fill={dirt} opacity="0.9" />
+      <path d="M 40 604 q 220 -44 460 -52 q 240 -8 500 -18" stroke={isDark(light) ? "#a08a66" : "#c7a56a"} strokeWidth="3" fill="none" strokeDasharray="14 18" strokeLinecap="round" />
+    </g>
+  );
+}
+
 const PROP_LIST = {
   luna: Luna,
   sol: Sol,
@@ -1086,6 +1128,8 @@ const PROP_LIST = {
   madera: Madera,
   ladrillos: Ladrillos,
   olla: Olla,
+  cuarto: Cuarto,
+  sendero: Sendero,
 };
 
 // Orden de dibujo: cielo y fondo primero, suelo y objetos después.
@@ -1099,6 +1143,7 @@ const LAYER = {
   orquidea: 6, "flor-cristal": 6, gota: 7, estrella: 6, luciernagas: 7,
   huellas: 5, vasija: 6, lineas: 5, quena: 6, sombrero: 7,
   paja: 4, madera: 4, ladrillos: 4, olla: 5,
+  cuarto: 0, sendero: 5,
 };
 
 export function propLayer(id) {
@@ -1115,6 +1160,56 @@ export function Prop({ id, rand, light, set }) {
 // Dibujos pequeños (caja de -40 a 40) para el álbum y la repisa.
 
 const EMBLEMS = {
+  caperuza: (
+    <g>
+      <path d="M -30 30 q 0 -54 30 -58 q 30 4 30 58 z" fill="#d63b3b" />
+      <path d="M -22 -6 q 0 -30 22 -32 q 22 2 22 32 q -8 -14 -22 -14 q -14 0 -22 14 z" fill="#b12d2d" />
+      <circle cx="0" cy="-2" r="13" fill="#f2c9a8" />
+      <circle cx="-4" cy="-4" r="2.2" fill="#1b1b23" />
+      <circle cx="5" cy="-4" r="2.2" fill="#1b1b23" />
+      <path d="M -3 4 q 3 3 6 0" stroke="#b5637e" strokeWidth="1.6" fill="none" strokeLinecap="round" />
+    </g>
+  ),
+  canasta: (
+    <g>
+      <path d="M -30 -4 q 30 -40 60 0" stroke="#a5713f" strokeWidth="5" fill="none" strokeLinecap="round" />
+      <path d="M -32 -2 h 64 l -8 34 h -48 z" fill="#c9955c" />
+      <path d="M -28 10 h 56 M -26 20 h 52" stroke="#a5713f" strokeWidth="2.5" />
+      <ellipse cx="0" cy="-2" rx="32" ry="6" fill="#dcae74" />
+      <rect x="-14" y="-16" width="28" height="14" rx="3" fill="#f7d9e4" />
+      <circle cx="0" cy="-16" r="4" fill="#e2453b" />
+    </g>
+  ),
+  pajarito: (
+    <g>
+      <path d="M -34 6 l -12 -12 l 20 4 z" fill="#c9634f" />
+      <ellipse cx="-4" cy="6" rx="24" ry="17" fill="#e2453b" />
+      <path d="M -14 4 q 8 -20 26 -8 q -12 4 -18 14 z" fill="#b12d2d" />
+      <circle cx="18" cy="-10" r="13" fill="#e2453b" />
+      <path d="M 30 -10 l 12 4 l -12 4 z" fill="#f2a13c" />
+      <circle cx="20" cy="-13" r="3" fill="#1b1b23" />
+      <path d="M -8 22 v 8 M 4 22 v 8" stroke="#f2a13c" strokeWidth="3" strokeLinecap="round" />
+    </g>
+  ),
+  ramo: (
+    <g>
+      <path d="M -12 34 l 4 -30 M 0 34 v -34 M 12 34 l -4 -30" stroke="#4f8a3a" strokeWidth="3.5" strokeLinecap="round" />
+      <circle cx="-14" cy="-6" r="10" fill="#f2c14e" />
+      <circle cx="4" cy="-18" r="11" fill="#f28fb1" />
+      <circle cx="18" cy="-2" r="9" fill="#9fd0ff" />
+      <circle cx="-14" cy="-6" r="3.5" fill="#c98b1f" />
+      <circle cx="4" cy="-18" r="3.5" fill="#c7527f" />
+      <circle cx="18" cy="-2" r="3" fill="#3f6fa8" />
+      <path d="M -10 22 q 10 -6 20 0 q -6 6 -10 4 q -4 2 -10 -4 z" fill="#d63b3b" />
+    </g>
+  ),
+  gorro: (
+    <g>
+      <path d="M -30 16 q -6 -48 36 -46 q 18 6 10 30 q -20 -6 -46 16 z" fill="#ffffff" stroke="#e5d9d9" strokeWidth="2" />
+      <path d="M -32 18 q 32 -14 64 0 q -32 12 -64 0 z" fill="#f4e4c8" stroke="#e0c9a8" strokeWidth="2" />
+      <circle cx="18" cy="-2" r="7" fill="#f2c14e" />
+    </g>
+  ),
   manzana: (
     <g>
       <circle cx="0" cy="6" r="28" fill="#e2453b" />
