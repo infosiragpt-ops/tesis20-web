@@ -12,6 +12,10 @@
 - Arrastrar el libro hacia arriba, en la mesa o durante la lectura, lo devuelve a la repisa; el aviso en pantalla cambia cuando ya se puede soltar. Un gesto corto vuelve a la pose de partida con un rebote suave.
 - En lectura, arrastrar la tapa abierta hacia la derecha la cierra. Escape, la cancelación táctil y un segundo dedo cancelan el gesto; el pellizco conserva el zoom. Mientras el libro vuela, se abre o se cierra no se aceptan gestos.
 
+- Diorama de cada página en dos filas: personajes delante (el protagonista al centro y algo mayor, hasta tres en arco) y escenografía detrás, a los lados y más pequeña; todas las figuras giran ligeramente hacia el centro. Mientras la narradora lee, el protagonista «habla» con un gesto de cabeza por palabra y los demás personajes se giran a mirarlo y se mecen; al terminar vuelven al bamboleo tranquilo.
+- Iluminación de entorno precalculada (RoomEnvironment) y sombras suaves: reflejos reales en tapas, vidrio y figuras sin coste por fotograma.
+- Sonido: ambiente del escenario en bucle bajo la narración, efectos de interfaz grabados (pasar página, abrir, cerrar, acierto…) y la voz de cada figura al tocarla o al entrar en escena.
+
 ## Implementación y límites
 
 Escena y figuras originales en Three.js. Hyper3D MCP no estuvo disponible y no se utilizó Blender. Los fondos ilustrados siguen siendo texturas, mientras que todos los personajes del reparto tienen geometría volumétrica e interacción. No se duplican los personajes como recortes en las ilustraciones del lector.

@@ -42,9 +42,76 @@ const MUSIC = {
   },
 };
 
+// Ambientes por escenario (`set` de cada libro): suenan en bucle, muy bajo,
+// mientras se lee. Se recortan y se cierran en bucle igual que la música.
+const AMBIENT = {
+  "andes-night": "Quiet Andean night ambience: soft wind over high grassland, distant crickets, very calm, seamless loop, no music",
+  "amazon-river": "Gentle river flowing at night in the Amazon jungle, soft water, distant frogs and insects, calm, seamless loop, no music",
+  "highland-day": "Sunny highland meadow ambience: light breeze, distant sheep bells, birds far away, calm, seamless loop, no music",
+  "desert-night": "Desert night ambience: soft wind over sand dunes, faint crickets, calm and spacious, seamless loop, no music",
+  "cloud-forest": "Misty cloud forest ambience: water drips, soft rain on leaves, distant tropical birds, calm, seamless loop, no music",
+  "mountain-day": "Mountain day ambience: wind over peaks, a distant steam train whistle far away, calm, seamless loop, no music",
+  "ocean-day": "Gentle sea waves on a sandy beach with distant seagulls, calm, seamless loop, no music",
+  "forest-dusk": "Evening forest ambience: soft breeze in the trees, an owl calling far away, crickets, calm, seamless loop, no music",
+  "meadow-day": "Sunny meadow ambience: light breeze, bees buzzing softly, small birds chirping, calm, seamless loop, no music",
+  "forest-day": "Daytime forest ambience: songbirds, leaves rustling in a gentle breeze, calm, seamless loop, no music",
+};
+const AMBIENT_SECONDS = 12;
+
 // Efectos: cada clave se dispara desde una página o desde una palabra de la
-// narración (ver `cues` en cuentos-data.js).
+// narración (ver `cues` en cuentos-data.js), desde la interfaz (`ui-*`, con
+// la síntesis de Web Audio como respaldo) o al tocar una figura (`toy-*`).
 const SFX = {
+  "ui-page": { text: "Single paper page turning in a picture book, soft and close, short", seconds: 1.2 },
+  "ui-open": { text: "Hardcover picture book opening with a soft page rustle and a gentle magical chime, short", seconds: 1.8 },
+  "ui-close": { text: "Hardcover book closing softly with a gentle thump and page flutter, short", seconds: 1.4 },
+  "ui-land": { text: "Soft thud of a book landing on a wooden table with a light paper flutter, short", seconds: 1.2 },
+  "ui-select": { text: "Soft wooden tap with a tiny bright bell, gentle UI click for a kids app, very short", seconds: 0.8 },
+  "ui-pin": { text: "Magical sparkle collect sound, twinkling chime, short and cheerful", seconds: 1.5 },
+  "ui-star": { text: "Short bright star chime, single ascending glockenspiel note, gentle", seconds: 1.0 },
+  "ui-right": { text: "Cheerful correct answer sound: two ascending xylophone notes, warm and short", seconds: 1.2 },
+  "ui-wrong": { text: "Soft gentle wrong answer sound: low marimba double note, friendly, not harsh, short", seconds: 1.2 },
+  "ui-cheer": { text: "Small group of children cheering hooray with a happy xylophone flourish, short", seconds: 2.2 },
+  "toy-oso": { text: "Small friendly bear cub grumble and snuffle, cartoon, cute, short", seconds: 2 },
+  "toy-buho": { text: "Soft owl hooting twice, gentle, night, short", seconds: 2 },
+  "toy-bufeo": { text: "Pink river dolphin surfacing with a small splash and playful clicks, short", seconds: 2 },
+  "toy-rana": { text: "Cute frog croaking twice, cartoon, short", seconds: 1.6 },
+  "toy-pez": { text: "Fish splashing and bubbling in water, playful, short", seconds: 1.6 },
+  "toy-oveja": { text: "Sheep bleating baa, friendly, cartoon, short", seconds: 1.6 },
+  "toy-zorro": { text: "Small fox yipping softly, cute, cartoon, short", seconds: 1.6 },
+  "toy-picaflor": { text: "Hummingbird wings fluttering fast with a tiny chirp, short", seconds: 1.6 },
+  "toy-mariposa": { text: "Soft butterfly wing flutter with a light magical shimmer, short", seconds: 1.6 },
+  "toy-vicuna": { text: "Vicuna soft hum and light hooves on gravel, gentle, short", seconds: 2 },
+  "toy-pelicano": { text: "Pelican squawk and a wing flap, playful, short", seconds: 1.8 },
+  "toy-ballena": { text: "Whale song call, gentle, underwater, short", seconds: 2.5 },
+  "toy-carpintero": { text: "Woodpecker pecking rapidly on a tree trunk, short", seconds: 1.6 },
+  "toy-tren": { text: "Small toy steam train whistle and a few chugs, cheerful, short", seconds: 2.2 },
+  "toy-cerdito": { text: "Cute piglet oink oink, cartoon, short", seconds: 1.4 },
+  "toy-nino": { text: "Young child giggling happily, short", seconds: 1.6 },
+  "toy-abuelita": { text: "Kind old lady soft warm chuckle, short", seconds: 1.6 },
+  "toy-cazador": { text: "Forest hunter's whistle and boots stepping on leaves, friendly, short", seconds: 1.8 },
+  "toy-maquinista": { text: "Train conductor blowing a whistle twice, cheerful, short", seconds: 1.4 },
+  "toy-luna": { text: "Dreamy music box twinkle, three soft notes, short", seconds: 1.8 },
+  "toy-estrella": { text: "Bright magical sparkle twinkle, short", seconds: 1.2 },
+  "toy-farol": { text: "Glass lantern clink and a small flame flicker, short", seconds: 1.4 },
+  "toy-campana": { text: "Small village bell ringing twice, warm, short", seconds: 1.8 },
+  "toy-cometa": { text: "Paper kite fluttering in the wind, short", seconds: 1.6 },
+  "toy-caracola": { text: "Ocean hum heard inside a seashell, soft, short", seconds: 2 },
+  "toy-quena": { text: "Short Andean flute phrase, gentle, two notes", seconds: 2 },
+  "toy-tambor": { text: "Small wooden hand drum, three soft taps, short", seconds: 1.4 },
+  "toy-barco": { text: "Small boat bell and water lapping on a hull, short", seconds: 1.8 },
+  "toy-frasco": { text: "Glass jar tapped gently with a tiny sparkle inside, short", seconds: 1.2 },
+  "toy-casa": { text: "Knocking on a small wooden door and a door creak, short", seconds: 1.6 },
+  "toy-arbol": { text: "Leaves rustling in a light breeze, short", seconds: 1.6 },
+  "toy-cactus": { text: "Dry desert wind gust with a light rattle, short", seconds: 1.6 },
+  "toy-cohete": { text: "Toy rocket whoosh launching upward, cartoon, short", seconds: 1.6 },
+  "toy-manzana": { text: "Crunchy bite into a fresh apple, short", seconds: 1.0 },
+  "toy-olla": { text: "Soup bubbling in a pot, short", seconds: 1.6 },
+  "toy-escalera": { text: "Wooden ladder creaking twice, short", seconds: 1.4 },
+  "toy-canasta": { text: "Wicker basket rustling as it is picked up, short", seconds: 1.2 },
+  "toy-ramo": { text: "Soft flowers rustle with a light happy chime, short", seconds: 1.4 },
+  "toy-gorro": { text: "Soft cloth rustle and a sleepy yawn, short", seconds: 1.6 },
+  "toy-pajarito": { text: "Small bird chirping twice, cheerful, short", seconds: 1.2 },
   "lobo-aullido": { text: "Cartoon wolf howling awoo at the moon, playful and friendly, for a childrens story", seconds: 3 },
   "lobo-soplido": { text: "Cartoon character takes a huge deep breath and blows a giant gust of wind, big whoosh, comedic", seconds: 3 },
   "lobo-ay": { text: "Cartoon wolf yelps ouch in surprise and runs away fast with quick footsteps fading, comedic", seconds: 3 },
@@ -166,6 +233,7 @@ async function request(apiKey, url, body, label) {
 }
 
 async function produce(apiKey, kind, key, recipe) {
+  if (kind === "ambient") recipe = { text: recipe, seconds: AMBIENT_SECONDS };
   const hash = hashOf(kind, key, recipe);
   const fileName = `${hash}.mp3`;
   const outputPath = path.join(OUTPUT_DIR, fileName);
@@ -187,6 +255,8 @@ async function produce(apiKey, kind, key, recipe) {
   try {
     if (kind === "music") {
       normalize(rawPath, temporaryPath, { loudness: recipe.loudness, stereo: true, bitrate: "96k", loop: 2 });
+    } else if (kind === "ambient") {
+      normalize(rawPath, temporaryPath, { loudness: "loudnorm=I=-23:TP=-2:LRA=7", stereo: true, bitrate: "64k", loop: 1.5 });
     } else {
       normalize(rawPath, temporaryPath, { loudness: "loudnorm=I=-16:TP=-1.5:LRA=11", stereo: false, bitrate: "64k", loop: 0 });
     }
@@ -206,16 +276,17 @@ async function main() {
   await mkdir(OUTPUT_DIR, { recursive: true });
   const jobs = [
     ...Object.entries(MUSIC).map(([key, recipe]) => ({ kind: "music", key, recipe })),
+    ...Object.entries(AMBIENT).map(([key, recipe]) => ({ kind: "ambient", key, recipe })),
     ...Object.entries(SFX).map(([key, recipe]) => ({ kind: "sfx", key, recipe })),
   ];
   if (process.env.NIDO_SOUND_PLAN_ONLY === "1") {
     let pending = 0;
-    for (const job of jobs) if (!(await isUsable(path.join(OUTPUT_DIR, `${hashOf(job.kind, job.key, job.recipe)}.mp3`)))) pending += 1;
-    console.log(`Plan: ${Object.keys(MUSIC).length} pistas de música y ${Object.keys(SFX).length} efectos; pendientes: ${pending}.`);
+    for (const job of jobs) if (!(await isUsable(path.join(OUTPUT_DIR, `${hashOf(job.kind, job.key, job.kind === "ambient" ? { text: job.recipe, seconds: AMBIENT_SECONDS } : job.recipe)}.mp3`)))) pending += 1;
+    console.log(`Plan: ${Object.keys(MUSIC).length} pistas de música, ${Object.keys(AMBIENT).length} ambientes y ${Object.keys(SFX).length} efectos; pendientes: ${pending}.`);
     return;
   }
   const apiKey = getApiKey();
-  const manifest = { version: 1, provider: "elevenlabs", generatorVersion: GENERATOR_VERSION, generatedAt: new Date().toISOString(), base: PUBLIC_BASE, music: {}, sfx: {} };
+  const manifest = { version: 2, provider: "elevenlabs", generatorVersion: GENERATOR_VERSION, generatedAt: new Date().toISOString(), base: PUBLIC_BASE, music: {}, ambient: {}, sfx: {} };
   const failures = [];
   let generated = 0;
   for (const job of jobs) {
@@ -231,7 +302,7 @@ async function main() {
   }
   if (failures.length) throw new Error(`${failures.length} pistas no se pudieron generar; el manifiesto no se ha tocado.\n${failures.join("\n")}`);
   await writeFile(MANIFEST_PATH, `${JSON.stringify(manifest)}\n`);
-  const planned = new Set(jobs.map((job) => `${hashOf(job.kind, job.key, job.recipe)}.mp3`));
+  const planned = new Set(jobs.map((job) => `${hashOf(job.kind, job.key, job.kind === "ambient" ? { text: job.recipe, seconds: AMBIENT_SECONDS } : job.recipe)}.mp3`));
   const obsolete = (await readdir(OUTPUT_DIR)).filter((name) => /\.(?:mp3|part|raw)$/.test(name) && !planned.has(name));
   await Promise.all(obsolete.map((name) => unlink(path.join(OUTPUT_DIR, name))));
   console.log(`Manifiesto de sonido actualizado: ${generated} generados, ${jobs.length - generated} reutilizados, ${obsolete.length} obsoletos retirados.`);

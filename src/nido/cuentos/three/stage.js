@@ -3,6 +3,7 @@
 // cuando se elige un cuento. Toda la interfaz de texto vive en HTML encima.
 
 import * as THREE from "three";
+import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 import { tween, ease, after, updateTweens, cancelAllTweens } from "./tween.js";
 import {
   WALL_THEMES,
@@ -93,13 +94,20 @@ export function createStage(canvas, options) {
   const isMobile = window.matchMedia("(max-width: 760px)").matches;
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, isMobile ? 1.6 : 2));
   renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.PCFShadowMap;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.1;
   renderer.outputColorSpace = THREE.SRGBColorSpace;
 
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(WALL_THEMES.default.bg);
+  // Entorno de habitación precalculado: da reflejos y volumen reales a las
+  // tapas brillantes, el vidrio y las figuras sin coste por fotograma.
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  const environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+  pmrem.dispose();
+  scene.environment = environment;
+  scene.environmentIntensity = 0.42;
 
   const camera = new THREE.PerspectiveCamera(36, 1, 0.05, 40);
   const startPortrait = (canvas.clientWidth || window.innerWidth) / (canvas.clientHeight || window.innerHeight) < 0.85;
@@ -383,15 +391,68 @@ export function createStage(canvas, options) {
     pageActors = [];
   }
 
+  /**
+   * Puestos del diorama. Personajes en primera fila: uno al centro; dos a
+   * ±0.085; tres en arco con el protagonista al centro y un pelín adelante.
+   * Escenografía en segunda fila, a los lados y más chica, sin tapar la
+   * ilustración. `face` gira cada figura hacia el centro.
+   */
+  function dioramaLayout(castCount, propCount) {
+    const slots = [];
+    const castScale = castCount === 1 ? 0.72 : castCount === 2 ? 0.6 : 0.52;
+    if (castCount === 1) slots.push({ x: 0, z: 0.05, scale: castScale, face: 0 });
+    if (castCount === 2) {
+      slots.push({ x: -0.085, z: 0.045, scale: castScale, face: 0.28 });
+      slots.push({ x: 0.085, z: 0.045, scale: castScale, face: -0.28 });
+    }
+    if (castCount === 3) {
+      slots.push({ x: 0, z: 0.06, scale: castScale * 1.1, face: 0 });
+      slots.push({ x: -0.135, z: 0.02, scale: castScale, face: 0.42 });
+      slots.push({ x: 0.135, z: 0.02, scale: castScale, face: -0.42 });
+    }
+    // Escenografía detrás y a los lados, más chica, para que no tape a nadie.
+    const propScale = castCount === 0 ? 0.6 : castCount === 1 ? 0.42 : castCount === 2 ? 0.38 : 0.34;
+    const propX = castCount >= 3 ? 0.21 : castCount === 2 ? 0.2 : castCount === 1 ? 0.15 : 0.08;
+    const propZ = castCount === 0 ? 0.02 : -0.08;
+    if (propCount >= 1) slots.push({ x: -propX, z: propZ, scale: propScale, face: 0.35 });
+    if (propCount >= 2) slots.push({ x: propX, z: propZ, scale: propScale, face: -0.35 });
+    return slots;
+  }
+
+  // Narración viva: mientras la voz lee, el protagonista «habla» (un gesto de
+  // cabeza por palabra) y los demás lo miran y se mecen. Sin narración vuelven
+  // al bamboleo tranquilo.
+  let speakingId = null;
+  let talkPulse = 0;
+  function setSpeaking(actorId) {
+    speakingId = actorId || null;
+    talkPulse = 0;
+  }
+  function wordTick() {
+    if (speakingId) talkPulse = 1;
+  }
+
   function updatePageDiorama(page) {
     if (!selected?.dioramaRoot || !page) return;
     clearPageDiorama();
 
     pageActorById.clear();
-    const candidates = [...(page.cast || []), ...(page.props || [])]
+    // Personajes delante (hasta tres, el protagonista al centro y algo mayor)
+    // y escenografía detrás (hasta dos, más pequeña, a los lados), todos
+    // mirando ligeramente al centro: composición de diorama, no fila india.
+    const castIds = (page.cast || [])
       .map((id) => (hasToy(id) ? id : STORY_PROP_TO_TOY[id]))
       .filter((id, index, list) => id && hasToy(id) && list.indexOf(id) === index)
       .slice(0, 3);
+    // Primero los objetos de la historia (la olla, la casa…); el cielo (luna,
+    // estrellas, sol, nubes) solo rellena si sobra sitio.
+    const SKY = new Set(["luna", "estrellas", "estrella", "sol", "nubes", "niebla", "viento", "nieve"]);
+    const propIds = [...(page.props || [])]
+      .sort((a, b) => Number(SKY.has(a)) - Number(SKY.has(b)))
+      .map((id) => (hasToy(id) ? id : STORY_PROP_TO_TOY[id]))
+      .filter((id, index, list) => id && hasToy(id) && !castIds.includes(id) && list.indexOf(id) === index)
+      .slice(0, castIds.length >= 3 ? 1 : 2);
+    const candidates = [...castIds, ...propIds];
 
     const platform = new THREE.Mesh(
       new THREE.CylinderGeometry(0.13, 0.15, 0.012, 48),
@@ -404,19 +465,23 @@ export function createStage(canvas, options) {
         clearcoat: 0.8,
       }),
     );
-    platform.position.set(0, 0.012, 0.018);
-    platform.scale.set(1.25, 1, 0.58);
+    platform.position.set(0, 0.012, 0.0);
+    platform.scale.set(castIds.length >= 3 || propIds.length ? 1.6 : 1.25, 1, 0.72);
     selected.dioramaRoot.add(platform);
     pageActors.push(platform);
 
+    const layout = dioramaLayout(castIds.length, propIds.length);
     candidates.forEach((id, index) => {
       const holder = new THREE.Group();
       const actor = buildToy(id);
-      const count = candidates.length;
-      const target = count === 1 ? 0.74 : count === 2 ? 0.58 : 0.48;
-      holder.position.set((index - (count - 1) / 2) * (count === 3 ? 0.135 : 0.16), 0.018, 0.032 + index * 0.004);
+      const slot = layout[index];
+      const target = slot.scale;
+      holder.position.set(slot.x, 0.018, slot.z);
+      holder.rotation.y = slot.face;
       holder.scale.setScalar(target);
       holder.userData.baseY = holder.position.y;
+      holder.userData.baseRotY = slot.face;
+      holder.userData.isCast = index < castIds.length;
       holder.userData.phase = index * 1.7 + page.t.length * 0.03;
       holder.userData.storyActor = id;
       holder.userData.toyId = id;
@@ -483,9 +548,9 @@ export function createStage(canvas, options) {
     const head = findPart(actor, "head");
     const baseX = actor.userData.baseX ?? actor.position.x;
     actor.position.x = baseX;
+    if (!act) return false;
     actor.rotation.x = 0;
     if (head) head.scale.setScalar(1);
-    if (!act) return false;
     switch (act) {
       case "blow": {
         // Toma aire y sopla: se inclina hacia adelante e hincha la cabeza.
@@ -1282,9 +1347,29 @@ export function createStage(canvas, options) {
         return;
       }
       if (!actor.userData.storyActor) return;
+      const baseRotY = actor.userData.baseRotY || 0;
+      const isSpeaker = speakingId && actor.userData.storyActor === speakingId;
+      const listening = speakingId && !isSpeaker && actor.userData.isCast;
       actor.position.y = baseY + Math.sin(clock.t * 1.8 + phase) * 0.009;
-      actor.rotation.y = Math.sin(clock.t * 0.85 + phase) * 0.16;
-      actor.rotation.z = Math.sin(clock.t * 1.25 + phase) * 0.025;
+      if (isSpeaker) {
+        // Habla: pequeño salto y cabeceo por palabra, que se apaga solo.
+        talkPulse = Math.max(0, talkPulse - dt * 4.5);
+        actor.position.y += talkPulse * 0.014;
+        actor.rotation.y = baseRotY + Math.sin(clock.t * 2.2 + phase) * 0.08;
+        actor.rotation.z = Math.sin(clock.t * 1.25 + phase) * 0.025 + talkPulse * 0.06;
+        actor.rotation.x = -talkPulse * 0.12;
+        const head = findPart(actor, "head");
+        if (head) head.scale.setScalar(1 + talkPulse * 0.09);
+      } else if (listening) {
+        // Los demás se giran hacia quien habla y se mecen despacio.
+        const speaker = pageActorById.get(speakingId);
+        const toward = speaker ? Math.atan2(speaker.position.x - actor.position.x, 0.3) * 0.6 : 0;
+        actor.rotation.y += (toward - actor.rotation.y) * Math.min(1, dt * 3);
+        actor.rotation.z = Math.sin(clock.t * 1.6 + phase) * 0.04;
+      } else {
+        actor.rotation.y = baseRotY + Math.sin(clock.t * 0.85 + phase) * 0.16;
+        actor.rotation.z = Math.sin(clock.t * 1.25 + phase) * 0.025;
+      }
       applyAct(actor, clock.t);
     });
 
@@ -1320,6 +1405,7 @@ export function createStage(canvas, options) {
 
   function dispose() {
     stopHint();
+    environment.dispose();
     running = false;
     cancelAnimationFrame(frame);
     cancelAllTweens();
@@ -1357,6 +1443,8 @@ export function createStage(canvas, options) {
     setPopupTextureNow,
     setStoryPage,
     playAct,
+    setSpeaking,
+    wordTick,
     projectPopup,
     projectCorner,
     /** La app no pudo abrir el cuento: la tapa vuelve a cerrarse. */

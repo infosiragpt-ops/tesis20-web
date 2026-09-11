@@ -125,9 +125,21 @@ generados con ElevenLabs (`scripts/generate-nido-cuentos-sound.mjs`), en
   sonoridad, actividad rítmica y espectrograma); `NIDO_SOUND_FROM_DIR` permite
   fijar un candidato elegido a mano. La música sintetizada por Web Audio queda
   de respaldo y nunca suena a la vez que la grabada.
-- Efectos: aullido, soplido y quejido del lobo, ronquido, paja que vuela, madera
-  que se cae, toc-toc, plaf en la olla, cerditos alegres, pájaros, pasos y
-  abrazo. Mono 64 kbps a −16 LUFS.
+- Efectos de cuento: aullido, soplido y quejido del lobo, ronquido, paja que
+  vuela, madera que se cae, toc-toc, plaf en la olla, cerditos alegres, pájaros,
+  pasos y abrazo. Mono 64 kbps a −16 LUFS.
+- Ambientes por escenario (`ambient.<set>` en el manifiesto, 12 s en bucle sin costura, estéreo
+  a −23 LUFS): noche andina, río amazónico, pradera, desierto, bosque de nubes,
+  montaña con tren lejano, mar, bosque al atardecer, pradera de día y bosque de
+  día. Suenan a 0,2 bajo la narración mientras el libro está abierto.
+- Interfaz grabada (`ui-*`): pasar página, abrir y cerrar el libro, aterrizar
+  en la mesa, seleccionar, souvenir, estrella, acierto, error y festejo. La
+  síntesis de Web Audio queda de respaldo; `hover` y `toy` siguen sintetizados
+  por su frecuencia.
+- Voz de cada figura (`toy-*`): búho, oso, bufeo, rana, pez, oveja, zorro,
+  picaflor, mariposa, vicuña, pelícano, ballena, carpintero, tren, cerdito,
+  niños, abuelita, cazador, maquinista y los objetos souvenir. Suena al tocar la
+  figura en la mesa o en el diorama, y suave cuando un personaje entra en escena.
 - Disparo: por página (`sfx` al abrirla) y por palabra narrada (`cues`, ver
   cuentos-data.js): cuando la voz dice «sopló» suena el soplido y el lobo del
   diorama se inclina e hincha la cabeza (`stage.playAct`).

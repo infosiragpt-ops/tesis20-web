@@ -12,9 +12,11 @@ import {
   onMuteChange,
   pageTrack,
   playCue,
+  playToySound,
   prefetchCues,
   prefetchTracks,
   quizTracks,
+  setAmbient,
   setMusicIntensity,
   setMusicMood,
   sfx,
@@ -89,6 +91,9 @@ export default function CuentosApp() {
   useEffect(() => {
     setMusicIntensity(reading ? 0.16 : selectedId ? 0.32 : 0.5);
     setMusicMood(reading ? "lectura" : "biblioteca");
+    // El ambiente del escenario (río, bosque, mar…) solo suena con el libro abierto.
+    const book = reading ? BOOKS.find((b) => b.id === selectedId) : null;
+    setAmbient(book ? book.set : null);
   }, [reading, selectedId]);
 
   const showToast = useCallback((message, icon) => {
@@ -147,7 +152,7 @@ export default function CuentosApp() {
         if (id) sfx.toy(id);
       },
       onClickToy: (pinId) => {
-        sfx.toy(pinId);
+        if (!playToySound(pinId)) sfx.toy(pinId);
       },
       onFrame: () => {
         const hint = dragHintRef.current;
@@ -379,6 +384,8 @@ export default function CuentosApp() {
           }}
           onQuiz={answerQuiz}
           onAct={(actor, act) => stageRef.current?.playAct(actor, act)}
+          onSpeaking={(actor) => stageRef.current?.setSpeaking(actor)}
+          onWordTick={() => stageRef.current?.wordTick()}
         />
       ) : null}
 
@@ -609,7 +616,7 @@ function DeskPanel({ book, status, ready, onOpen, onBack }) {
 
 const WORD_SPLIT = /(\s+)/;
 
-function Reader({ book, page, state, pinRef, onPage, onClose, onStar, onPin, onQuiz, onAct }) {
+function Reader({ book, page, state, pinRef, onPage, onClose, onStar, onPin, onQuiz, onAct, onSpeaking, onWordTick }) {
   const pageData = book.pages[page];
   const entry = state.books[book.id] || { pages: [], pins: [], quiz: [], quizOk: 0 };
   const [activeWord, setActiveWord] = useState(-1);
@@ -664,13 +671,16 @@ function Reader({ book, page, state, pinRef, onPage, onClose, onStar, onPin, onQ
         prefetchCues([...Object.values(pageData.cues || {}).map((cue) => cue.sfx), ...(pageData.sfxEnd || [])].filter(Boolean));
         // Ambiente de fondo (pájaros…): bajo, para no tapar la voz.
         (pageData.sfx || []).forEach((key) => playCue(key, { volume: 0.35 }));
+        // La figura que entra a escena se presenta con su voz, suave.
+        const newcomer = (pageData.cast || []).find((id) => !(book.pages[page - 1]?.cast || []).includes(id));
+        if (newcomer) playToySound(newcomer, { volume: 0.4 });
       });
     }, 500);
     return () => {
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [book.id, page, pageData]);
+  }, [book.id, page, pageData, book.pages]);
 
   // Una palabra narrada puede disparar un efecto y una acción del escenario
   // («sopló» → soplido del lobo). Cada palabra dispara una sola vez por lectura.
@@ -710,16 +720,19 @@ function Reader({ book, page, state, pinRef, onPage, onClose, onStar, onPin, onQ
     // que la primera página no salga con la voz del navegador por una carrera.
     loadCuentosVoices().then(() => {
       if (pageRef.current !== page || !autoRef.current) return;
+      onSpeaking?.(pageData.cast?.[0] || null);
       speak(`${pageData.t}. ${pageData.x}`, {
         track: pageTrack(book.id, page),
         onWord: (index) => {
           const titleWords = pageData.t.split(/\s+/).filter(Boolean).length;
           setActiveWord(index < 0 ? -1 : index - titleWords);
           if (index >= titleWords) fireCue(index - titleWords);
+          if (index >= 0) onWordTick?.();
         },
         onEnd: () => {
           setSpeaking(false);
           setActiveWord(-1);
+          onSpeaking?.(null);
           // Festejos y remates suenan cuando la narradora termina, no encima.
           (pageData.sfxEnd || []).forEach((key) => playCue(key, { volume: 0.6 }));
           if (autoRef.current) {
@@ -742,6 +755,7 @@ function Reader({ book, page, state, pinRef, onPage, onClose, onStar, onPin, onQ
       stopSpeech();
       setSpeaking(false);
       setActiveWord(-1);
+      onSpeaking?.(null);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoRead]);
