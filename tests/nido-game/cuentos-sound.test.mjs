@@ -31,7 +31,7 @@ test("cada sfx, cue y act de las páginas es válido", async () => {
     book.pages.forEach((page, index) => {
       const where = `${book.id} página ${index + 1}`;
       const cast = new Set(page.cast || []);
-      for (const key of page.sfx || []) assert.ok(manifest.sfx[key], `${where}: sfx «${key}» no grabado.`);
+      for (const key of [...(page.sfx || []), ...(page.sfxEnd || [])]) assert.ok(manifest.sfx[key], `${where}: sfx «${key}» no grabado.`);
       for (const [actor, act] of Object.entries(page.acts || {})) {
         assert.ok(cast.has(actor), `${where}: act para «${actor}», que no está en la página.`);
         assert.ok(ACTS.has(act), `${where}: acción desconocida «${act}».`);
