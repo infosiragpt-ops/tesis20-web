@@ -8,6 +8,9 @@
 - Ratón: mano ilustrada y estela dorada. Táctil: destellos al tocar, sin cursor permanente.
 - Con movimiento reducido se conservan navegación, zoom y nombres, pero se omiten estela, aleteo, saltos, giro y explosión.
 - En teléfonos verticales, escena y transcripción tienen áreas separadas. El texto se puede desplazar sin ocultar los personajes.
+- En la mesa, arrastrar la tapa hacia la izquierda la abre de forma gradual (siguiendo al dedo); al soltar pasada casi la mitad del recorrido, o con un tirón rápido, el libro termina de abrirse. Un toque sobre el libro cerrado también lo abre. El botón «Abrir el libro» sigue disponible. Una pista junto al borde de la tapa y una leve elevación periódica de la esquina invitan al gesto.
+- Arrastrar el libro hacia arriba, en la mesa o durante la lectura, lo devuelve a la repisa; el aviso en pantalla cambia cuando ya se puede soltar. Un gesto corto vuelve a la pose de partida con un rebote suave.
+- En lectura, arrastrar la tapa abierta hacia la derecha la cierra. Escape, la cancelación táctil y un segundo dedo cancelan el gesto; el pellizco conserva el zoom. Mientras el libro vuela, se abre o se cierra no se aceptan gestos.
 
 ## Implementación y límites
 
@@ -21,6 +24,8 @@ La distribución compacta los manifiestos sin cambiar sus datos y omite los side
 
 ## Verificación
 
-CI ejecuta las cuatro pruebas de límites/inercia/escala/cobertura del reparto, además de compilación, currículo y presupuesto. La batería general mantiene tres fallos previos ajenos a Nido en `thesis-search.test.mjs`; no forman parte de esta modificación.
+CI ejecuta las pruebas de límites/inercia/escala/cobertura del reparto y de los gestos del libro (intención, progreso y umbral de confirmación), además de compilación, currículo y presupuesto. La batería general mantiene tres fallos previos ajenos a Nido en `thesis-search.test.mjs`; no forman parte de esta modificación.
 
 Prueba de interfaz antes de publicar: escritorio 1440×900 y móvil 390×844, arrastre en ambos sentidos, carrusel inferior, no apertura accidental al arrastrar, pellizco, zoom, nombres, giro 360°, apertura, cambio de página y regreso. Verificar también movimiento reducido, ausencia de desbordamiento y consola de la compilación de producción.
+
+Para manipulación directa del libro: comprobar tapa parcial y retorno al soltar antes del umbral, apertura completa, cierre desde lectura, regreso desde lectura y mesa, cancelación, pellizco y botones. Las posiciones de arrastre no causan renders de React por fotograma. Las cargas asíncronas usan un identificador de solicitud para no reabrir un libro ya devuelto ni aplicar una página al cuento equivocado.

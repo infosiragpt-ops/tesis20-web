@@ -9,10 +9,13 @@ export const settleBook = (pan, velocity, count, spacing) => bookIndexAt(pan + c
 // Gestos sobre el libro en la mesa: arrastrar la tapa hacia la izquierda la
 // abre; arrastrar el libro hacia arriba lo devuelve a la repisa. Devuelve null
 // mientras el movimiento no supera el umbral (así un toque sigue siendo toque).
-export const deskDragIntent = (dx, dy, threshold = 8) => {
+// En la mesa: hacia la izquierda abre la tapa. En lectura: hacia la derecha
+// la cierra. En ambos, hacia arriba devuelve el libro a la repisa.
+export const deskDragIntent = (dx, dy, threshold = 8, mode = "desk") => {
   if (Math.hypot(dx, dy) < threshold) return null;
-  if (dx < 0 && Math.abs(dx) >= Math.abs(dy) * 0.8) return "open";
   if (dy < 0 && Math.abs(dy) > Math.abs(dx)) return "return";
+  if (mode === "desk" && dx < 0 && Math.abs(dx) >= Math.abs(dy) * 0.8) return "open";
+  if (mode === "reading" && dx > 0 && Math.abs(dx) >= Math.abs(dy) * 0.8) return "close";
   return "none";
 };
 export const dragProgress = (delta, distance) => clamp(delta / Math.max(1, distance), 0, 1);
