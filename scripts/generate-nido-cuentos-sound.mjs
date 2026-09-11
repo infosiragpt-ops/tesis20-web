@@ -7,7 +7,7 @@
 // música sintetizada y a los efectos de Web Audio si un archivo no llega.
 import { createHash } from "node:crypto";
 import { execFileSync, spawnSync } from "node:child_process";
-import { mkdir, readdir, rename, stat, unlink, writeFile } from "node:fs/promises";
+import { mkdir, readdir, readFile, rename, stat, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
 
@@ -22,18 +22,23 @@ const MAX_ATTEMPTS = 4;
 
 // Música: dos pistas en bucle. La API entrega un tema completo; el
 // reproductor lo repite con un fundido corto en los extremos (ffmpeg).
+// Recetas según lo que funciona en apps de cuentos para niños de 3 a 6 años:
+// acústico y juguetón (ukelele, xilófono y glockenspiel, piano de juguete,
+// palmas y shaker suaves), tonalidad mayor, frases cortas que hacen bucle y
+// sin efectos estridentes. Repisa: 104 BPM, alegre. Lectura: lento y escaso,
+// para que la narradora tenga aire (la música va por debajo de la voz).
 const MUSIC = {
   biblioteca: {
     prompt:
-      "Gentle instrumental lullaby for a childrens storybook app: music box, soft plucked charango-like strings and a hint of Andean flute, warm and calm, slow tempo, loopable, no vocals, no drums",
-    seconds: 60,
-    loudness: "loudnorm=I=-20:TP=-2:LRA=9",
+      "Playful, cheerful children's storybook background music: bright ukulele strumming, xylophone and glockenspiel melody, toy piano, pizzicato strings, soft hand claps and shaker, light acoustic percussion, major key, 104 BPM, warm and friendly, whimsical but gentle, short catchy phrases that loop seamlessly, instrumental only, no vocals, no heavy drums, no brass",
+    seconds: 64,
+    loudness: "loudnorm=I=-19:TP=-2:LRA=8",
   },
   lectura: {
     prompt:
-      "Very soft dreamy bedtime ambient pad with sparse music box notes, minimal and quiet, slow, warm, loopable, instrumental, no vocals, no drums",
-    seconds: 60,
-    loudness: "loudnorm=I=-22:TP=-2:LRA=8",
+      "Soft, gentle background music for reading a children's story aloud: sparse music box and xylophone notes, warm ukulele plucks, light glockenspiel, slow rocking tempo around 76 BPM, major key, calm and cozy, leaves space for a narrator's voice, loops seamlessly, instrumental only, no vocals, no drums",
+    seconds: 64,
+    loudness: "loudnorm=I=-22:TP=-2:LRA=7",
   },
 };
 
@@ -92,21 +97,38 @@ function run(bin, args, label) {
   return result.stdout;
 }
 
-function normalize(sourcePath, targetPath, { loudness, stereo, fade, bitrate }) {
-  const filters = [loudness];
-  // Fundidos cortos en los extremos de la música para que el bucle no haga clic.
-  if (fade) filters.push(`afade=t=in:st=0:d=${fade.seconds}`, `afade=t=out:st=${Math.max(0, fade.total - fade.seconds)}:d=${fade.seconds}`);
-  run(
-    "ffmpeg",
-    [
-      "-v", "error", "-y", "-i", sourcePath,
-      "-af", filters.join(","),
-      "-ar", "44100", "-ac", stereo ? "2" : "1",
-      "-codec:a", "libmp3lame", "-b:a", bitrate,
-      "-map_metadata", "-1", "-f", "mp3", targetPath,
-    ],
-    `normalizar ${path.basename(sourcePath)}`,
-  );
+function normalize(sourcePath, targetPath, { loudness, stereo, loop, bitrate }) {
+  const args = ["-v", "error", "-y", "-i", sourcePath];
+  if (loop) {
+    // Bucle sin costura: se descarta la cola de silencio con la que la API
+    // cierra el tema y los últimos `loop` segundos se funden con los primeros
+    // `loop` segundos. El archivo empieza en el segundo `loop` y termina
+    // exactamente donde empieza, así el reproductor lo repite sin clic ni
+    // hueco (los fundidos a cero dejaban un silencio audible en cada vuelta).
+    const end = trailingSilenceStart(sourcePath);
+    args.push(
+      "-filter_complex",
+      `[0:a]atrim=0:${loop},asetpts=N/SR/TB[head];[0:a]atrim=${loop}:${end.toFixed(2)},asetpts=N/SR/TB[body];[body][head]acrossfade=d=${loop}:c1=tri:c2=tri,${loudness}[out]`,
+      "-map", "[out]",
+    );
+  } else {
+    args.push("-af", loudness);
+  }
+  args.push("-ar", "44100", "-ac", stereo ? "2" : "1", "-codec:a", "libmp3lame", "-b:a", bitrate, "-map_metadata", "-1", "-f", "mp3", targetPath);
+  run("ffmpeg", args, `normalizar ${path.basename(sourcePath)}`);
+}
+
+// Segundo en que empieza la cola de silencio con la que la API cierra cada
+// tema (si la hay en los últimos 10 s): el bucle debe cortarse antes.
+function trailingSilenceStart(filePath) {
+  const result = spawnSync("ffmpeg", ["-i", filePath, "-af", "silencedetect=noise=-38dB:d=0.4", "-f", "null", "-"], { encoding: "utf8" });
+  const total = duration(filePath);
+  const starts = [...(result.stderr || "").matchAll(/silence_start: ([\d.]+)/g)].map((m) => Number.parseFloat(m[1]));
+  const tail = starts.filter((t) => t > total - 10).sort((a, b) => a - b)[0];
+  return Number.isFinite(tail) ? Math.max(loopMinimum(total), tail - 0.15) : total;
+}
+function loopMinimum(total) {
+  return Math.max(20, total * 0.6);
 }
 
 function duration(filePath) {
@@ -150,8 +172,12 @@ async function produce(apiKey, kind, key, recipe) {
   if (await isUsable(outputPath)) return { status: "cached", fileName, seconds: duration(outputPath) };
 
   const label = `${kind}:${key}`;
-  const audio =
-    kind === "music"
+  // NIDO_SOUND_FROM_DIR=<carpeta>: si existe <carpeta>/<kind>-<key>.mp3 se usa
+  // ese audio (elegido tras una audición de candidatos) en vez de generarlo.
+  const chosen = process.env.NIDO_SOUND_FROM_DIR ? path.join(process.env.NIDO_SOUND_FROM_DIR, `${kind}-${key}.mp3`) : null;
+  const audio = chosen && (await isUsable(chosen))
+    ? await readFile(chosen)
+    : kind === "music"
       ? await request(apiKey, "https://api.elevenlabs.io/v1/music?output_format=mp3_44100_128", { prompt: recipe.prompt, music_length_ms: recipe.seconds * 1000, force_instrumental: true }, label)
       : await request(apiKey, "https://api.elevenlabs.io/v1/sound-generation?output_format=mp3_44100_128", { text: recipe.text, duration_seconds: recipe.seconds, prompt_influence: 0.4 }, label);
 
@@ -160,9 +186,9 @@ async function produce(apiKey, kind, key, recipe) {
   await writeFile(rawPath, audio);
   try {
     if (kind === "music") {
-      normalize(rawPath, temporaryPath, { loudness: recipe.loudness, stereo: true, bitrate: "96k", fade: { seconds: 1.5, total: duration(rawPath) } });
+      normalize(rawPath, temporaryPath, { loudness: recipe.loudness, stereo: true, bitrate: "96k", loop: 2 });
     } else {
-      normalize(rawPath, temporaryPath, { loudness: "loudnorm=I=-16:TP=-1.5:LRA=11", stereo: false, bitrate: "64k", fade: null });
+      normalize(rawPath, temporaryPath, { loudness: "loudnorm=I=-16:TP=-1.5:LRA=11", stereo: false, bitrate: "64k", loop: 0 });
     }
     const seconds = duration(temporaryPath);
     if (!Number.isFinite(seconds) || seconds < 0.5) throw new Error(`ffprobe rechazó ${label} (${seconds} s).`);
