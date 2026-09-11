@@ -1,6 +1,6 @@
 // Ballena azul rechoncha con chorrito de agua, sobre una peana de olitas.
 import * as THREE from "three";
-import { mat, mesh, blob, cyl, eyes, fit } from "./_shared.js";
+import { mat, mesh, blob, cyl, fit, eyeball } from "./_shared.js";
 
 export const id = "ballena";
 export const label = "Ballena";
@@ -34,45 +34,59 @@ export function build() {
     g.add(wave);
   }
 
+  // La ballena entera es un grupo articulado: escucha, canta y nada como un solo cuerpo.
+  const whale = new THREE.Group();
+  whale.userData.head = 1;
+  whale.userData.body = 1;
+  g.add(whale);
+
   // Cuerpo torneado (eje a lo largo de z) y panza clara desplazada hacia abajo
   const shape = bodyGeometry();
-  g.add(mesh(shape, blue, { y: 0.125, rx: Math.PI / 2, s: [1, 1, 0.92] }));
-  g.add(mesh(shape, belly, { y: 0.095, z: 0.004, rx: Math.PI / 2, s: [0.965, 0.99, 0.9] }));
+  whale.add(mesh(shape, blue, { y: 0.125, rx: Math.PI / 2, s: [1, 1, 0.92] }));
+  whale.add(mesh(shape, belly, { y: 0.095, z: 0.004, rx: Math.PI / 2, s: [0.965, 0.99, 0.9] }));
 
   // Cara
-  eyes(g, { x: 0.052, y: 0.15, z: 0.131, r: 0.017 });
-  g.add(mesh(new THREE.TorusGeometry(0.034, 0.0055, 8, 24, Math.PI), navy, { y: 0.1, z: 0.149, rz: Math.PI }));
+  [-1, 1].forEach((side) => eyeball(g, { x: side * 0.052, y: 0.15, z: 0.128, r: 0.017, iris: "#1f3a63", squash: 0.6 }));
+  whale.add(mesh(new THREE.TorusGeometry(0.034, 0.0055, 8, 24, Math.PI), navy, { y: 0.1, z: 0.149, rz: Math.PI }));
   [-1, 1].forEach((side) => {
     const cheek = blob(0.017, pink, { x: side * 0.072, y: 0.118, z: 0.12 });
     cheek.scale.set(1, 0.8, 0.5);
-    g.add(cheek);
+    whale.add(cheek);
   });
 
   // Aletas laterales y aleta dorsal redondeada
   [-1, 1].forEach((side) => {
     const fin = blob(0.042, blue, { x: side * 0.1, y: 0.1, z: 0.04, rz: side * -0.42, ry: side * 0.25 });
     fin.scale.set(1.3, 0.35, 0.8);
-    g.add(fin);
+    whale.add(fin);
   });
   const dorsal = blob(0.045, blue, { y: 0.21, z: -0.065, rx: -0.5 });
   dorsal.scale.set(0.36, 1, 0.8);
-  g.add(dorsal);
+  whale.add(dorsal);
 
-  // Cola levantada con dos lóbulos
-  g.add(cyl(0.024, 0.052, 0.11, blue, { y: 0.159, z: -0.144, rx: -0.55 }, 16));
+  // Cola levantada con dos lóbulos, articulada desde la base
+  const tail = new THREE.Group();
+  tail.position.set(0, 0.14, -0.1);
+  tail.userData.tail = "x";
+  tail.add(cyl(0.024, 0.052, 0.11, blue, { y: 0.019, z: -0.044, rx: -0.55 }, 16));
   [-1, 1].forEach((side) => {
-    const lobe = blob(0.05, blue, { x: side * 0.05, y: 0.222, z: -0.18, rx: 1.02, ry: side * -0.3 });
+    const lobe = blob(0.05, blue, { x: side * 0.05, y: 0.082, z: -0.08, rx: 1.02, ry: side * -0.3 });
     lobe.scale.set(1.25, 0.28, 0.85);
-    g.add(lobe);
+    tail.add(lobe);
   });
+  whale.add(tail);
 
-  // Chorrito de agua
-  g.add(cyl(0.011, 0.012, 0.04, spray, { y: 0.235, z: 0.04 }, 10));
-  g.add(blob(0.015, spray, { y: 0.262, z: 0.04 }));
+  // Chorrito de agua (crece cuando la ballena canta)
+  const jet = new THREE.Group();
+  jet.position.set(0, 0.215, 0.04);
+  jet.userData.spray = 1;
+  jet.add(cyl(0.011, 0.012, 0.04, spray, { y: 0.02 }, 10));
+  jet.add(blob(0.015, spray, { y: 0.047 }));
   [-1, 1].forEach((side) => {
-    g.add(cyl(0.008, 0.009, 0.04, spray, { x: side * 0.013, y: 0.268, z: 0.04, rz: side * -0.7 }, 10));
-    g.add(blob(0.014, spray, { x: side * 0.028, y: 0.287, z: 0.04 }));
+    jet.add(cyl(0.008, 0.009, 0.04, spray, { x: side * 0.013, y: 0.053, rz: side * -0.7 }, 10));
+    jet.add(blob(0.014, spray, { x: side * 0.028, y: 0.072 }));
   });
+  whale.add(jet);
 
   return fit(g, 0.3);
 }

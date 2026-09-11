@@ -17,7 +17,13 @@ export function build() {
     g.add(wing);
     const antenna = new THREE.Mesh(new THREE.TubeGeometry(new THREE.QuadraticBezierCurve3(new THREE.Vector3(side * 0.01, 0.19, 0), new THREE.Vector3(side * 0.025, 0.24, 0), new THREE.Vector3(side * 0.04, 0.23, 0)), 12, 0.002, 6, false), dark); g.add(antenna);
   });
-  g.add(blob(0.022, dark, { y: 0.198, z: 0.005 }));
-  [-1, 1].forEach(side => g.add(blob(0.005, mat("#ffffff"), { x: side * 0.01, y: 0.204, z: 0.023 })));
+  const head = blob(0.022, dark, { y: 0.198, z: 0.005 });
+  head.userData.head = 1;
+  g.add(head);
+  [-1, 1].forEach((side) => {
+    const eye = blob(0.005, mat("#ffffff"), { x: side * 0.01, y: 0.204, z: 0.023 });
+    eye.userData.eye = 1;
+    g.add(eye);
+  });
   return fit(g, 0.29);
 }

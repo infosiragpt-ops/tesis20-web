@@ -1,6 +1,6 @@
 // Picaflor esmeralda y turquesa suspendido sobre una flor rosada: el mensajero veloz del jardín.
 import * as THREE from "three";
-import { mat, mesh, blob, cyl, cone, eyes, fit, base } from "./_shared.js";
+import { mat, mesh, blob, cyl, cone, fit, base, eyeball } from "./_shared.js";
 
 export const id = "picaflor";
 export const label = "Picaflor";
@@ -79,22 +79,28 @@ export function build() {
   const bird = new THREE.Group();
   bird.position.set(0, 0.292, -0.012);
   bird.rotation.x = -0.45;
+  bird.userData.body = 1;
   const body = blob(0.05, emerald, { y: 0 });
   body.scale.set(0.82, 0.82, 1.4);
   bird.add(body);
   const chest = blob(0.04, cream, { y: -0.012, z: 0.032 });
   chest.scale.set(0.85, 0.85, 0.75);
   bird.add(chest);
-  const head = blob(0.036, turquoise, { y: 0.02, z: 0.066 });
-  bird.add(head);
-  bird.add(cone(0.005, 0.085, black, { y: 0.008, z: 0.14, rx: Math.PI / 2 + 0.2 }, 10));
-  eyes(bird, { x: 0.021, y: 0.03, z: 0.092, r: 0.009 });
+  // Cabeza articulada: pico largo y ojos grandes con brillo
+  const headG = new THREE.Group();
+  headG.position.set(0, 0.02, 0.066);
+  headG.userData.head = 1;
+  headG.add(blob(0.036, turquoise, {}));
+  headG.add(cone(0.005, 0.085, black, { y: -0.012, z: 0.074, rx: Math.PI / 2 + 0.2 }, 10));
+  [-1, 1].forEach((side) => eyeball(headG, { x: side * 0.021, y: 0.01, z: 0.028, r: 0.0095, iris: "#1c1a22", squash: 0.6 }));
+  bird.add(headG);
   // Alas abiertas hacia atrás
   [-1, 1].forEach((side) => {
     const wing = new THREE.Group();
     wing.position.set(side * 0.028, 0.02, -0.01);
     orient(wing, new THREE.Vector3(side * 0.95, 0.78, -0.32), new THREE.Vector3(side * 0.3, 0.25, 0.9));
     wing.userData.flutter = side;
+    wing.userData.wing = side;
     wing.add(plate(leafShape(0.12, 0.056), 0.007, turquoise));
     bird.add(wing);
   });

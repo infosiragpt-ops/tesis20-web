@@ -5,7 +5,7 @@
 // roja, overol azul, badilejo). Cabeza y brazos llevan marcas en userData
 // para que el escenario los anime según la página.
 import * as THREE from "three";
-import { mat, mesh, blob, box, cyl, cone, fit } from "./_shared.js";
+import { mat, mesh, blob, box, cyl, cone, fit, eyeball } from "./_shared.js";
 
 export const id = "cerdito";
 export const label = "Cerdito";
@@ -33,19 +33,6 @@ function plaidTexture() {
   tex.repeat.set(3, 2);
   tex.colorSpace = THREE.SRGBColorSpace;
   return tex;
-}
-
-function eyeball(g, { x, y, z, r }) {
-  const white = mat("#ffffff", { rough: 0.25 });
-  const iris = mat("#3a2418", { rough: 0.3 });
-  const shine = mat("#ffffff", { rough: 0.1 });
-  const ball = blob(r, white, { x, y, z });
-  ball.scale.set(1, 1.15, 0.75);
-  g.add(ball);
-  const pupil = blob(r * 0.55, iris, { x: x * 0.98, y: y - r * 0.05, z: z + r * 0.62 });
-  pupil.scale.set(1, 1.15, 0.5);
-  g.add(pupil);
-  g.add(blob(r * 0.2, shine, { x: x * 0.98 + r * 0.22, y: y + r * 0.3, z: z + r * 0.9 }));
 }
 
 export function build({ outfit = "#5aa0d8", hat = false, shirt = null, plaid = false, item = null } = {}) {

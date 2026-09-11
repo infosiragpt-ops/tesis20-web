@@ -65,6 +65,51 @@ export function eyes(group, { x = 0.03, y = 0.2, z = 0.08, r = 0.014, spread = 1
   });
 }
 
+/**
+ * Ojo de cuento (como los cerditos de la portada): globo blanco achatado, iris
+ * oscuro y un brillo. Las tres piezas llevan `userData.eye` para el parpadeo.
+ * `look` desplaza el iris en x (−1 izquierda … 1 derecha) para dar intención.
+ */
+export function eyeball(group, { x, y, z, r, iris = "#3a2418", sclera = "#ffffff", look = 0, squash = 0.75, tall = 1.15 }) {
+  const white = mat(sclera, { rough: 0.25 });
+  const irisMat = mat(iris, { rough: 0.3 });
+  const shine = mat("#ffffff", { rough: 0.1 });
+  const ball = blob(r, white, { x, y, z });
+  ball.scale.set(1, tall, squash);
+  ball.userData.eye = 1;
+  group.add(ball);
+  const pupil = blob(r * 0.55, irisMat, { x: x + look * r * 0.25, y: y - r * 0.05, z: z + r * 0.62 });
+  pupil.scale.set(1, tall, 0.5);
+  pupil.userData.eye = 1;
+  group.add(pupil);
+  const dot = blob(r * 0.2, shine, { x: x + look * r * 0.25 + r * 0.22, y: y + r * 0.3, z: z + r * 0.9 });
+  dot.userData.eye = 1;
+  group.add(dot);
+  return ball;
+}
+
+/** Ceja: arco fino sobre el ojo. `tilt` inclina el arco (positivo = ceja alzada hacia fuera). */
+export function brow(group, { x, y, z, r = 0.014, thick = 0.0025, color = "#3a2418", tilt = 0, side = 1 }) {
+  const arc = mesh(new THREE.TorusGeometry(r, thick, 8, 20, Math.PI * 0.8), mat(color, { rough: 0.6 }), { x, y, z, rz: side * tilt + Math.PI * 0.1 });
+  group.add(arc);
+  return arc;
+}
+
+/** Sonrisa: arco hacia abajo, centrado en (x, y, z), de radio `r`. */
+export function smile(group, { x = 0, y, z, r = 0.02, thick = 0.003, color = "#5b2a30", span = Math.PI, rx = 0 }) {
+  const arc = mesh(new THREE.TorusGeometry(r, thick, 8, 24, span), mat(color, { rough: 0.5 }), { x, y, z, rz: Math.PI + (Math.PI - span) / 2, rx });
+  group.add(arc);
+  return arc;
+}
+
+/** Mejilla sonrosada: disco suave sobre la cara. */
+export function cheek(group, { x, y, z, r = 0.014, color = "#f0a2a2" }) {
+  const spot = blob(r, mat(color, { rough: 0.7 }), { x, y, z });
+  spot.scale.set(1, 0.7, 0.45);
+  group.add(spot);
+  return spot;
+}
+
 /** Escala uniformemente el grupo para que su altura sea `height`, apoyado en y = 0. */
 export function fit(group, height = 0.28) {
   const bounds = new THREE.Box3().setFromObject(group);

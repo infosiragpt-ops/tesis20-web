@@ -502,7 +502,11 @@ export function createStage(canvas, options) {
   function applyBlink(holder, t) {
     if (!holder.userData.eyeParts) {
       const parts = [];
-      holder.traverse((obj) => { if (obj.userData.eye) parts.push(obj); });
+      holder.traverse((obj) => {
+        if (!obj.userData.eye) return;
+        obj.userData.eyeScaleY ??= obj.scale.y;
+        parts.push(obj);
+      });
       holder.userData.eyeParts = parts;
       holder.userData.blinkPhase = (toyState.get(holder)?.phase || 0) * 1.7;
     }
@@ -510,7 +514,7 @@ export function createStage(canvas, options) {
     const cycle = 3.6 + ((holder.userData.blinkPhase * 13) % 2.4);
     const phase = (t + holder.userData.blinkPhase) % cycle;
     const closed = phase < 0.13 ? 0.12 : 1;
-    holder.userData.eyeParts.forEach((part) => { part.scale.y = closed; });
+    holder.userData.eyeParts.forEach((part) => { part.scale.y = part.userData.eyeScaleY * closed; });
   }
 
   function updatePageDiorama(page) {
@@ -608,7 +612,6 @@ export function createStage(canvas, options) {
     return true;
   }
 
-  const ACT_TWO_PI = Math.PI * 2;
   function findPart(holder, key) {
     const cache = (holder.userData.parts ??= {});
     if (key in cache) return cache[key];
@@ -619,64 +622,221 @@ export function createStage(canvas, options) {
     cache[key] = found;
     return found;
   }
+  function findParts(holder, key) {
+    const cache = (holder.userData.partLists ??= {});
+    if (key in cache) return cache[key];
+    const list = [];
+    holder.traverse((obj) => {
+      if (obj.userData[key]) list.push(obj);
+    });
+    cache[key] = list;
+    return list;
+  }
 
-  // Aplica la acción vigente de un actor: movimientos procedurales sencillos
-  // sobre el grupo entero, la cabeza (userData.head) y los brazos (userData.arm).
+  // Aplica la acción vigente de un actor (catálogo en cuentos-acts.js):
+  // movimientos procedurales sobre el grupo entero y sobre las partes que la
+  // figura declara en userData (head, arm, wing, flutter, tail, ear, leg,
+  // spray). El bucle principal restaura la pose de reposo de esas partes cada
+  // fotograma, así que aquí sólo se suman desplazamientos.
   function applyAct(actor, t) {
     const burst = actor.userData.burst;
     if (burst && performance.now() > burst.until) actor.userData.burst = null;
     const act = actor.userData.burst?.act || actor.userData.act;
-    const head = findPart(actor, "head");
     const baseX = actor.userData.baseX ?? actor.position.x;
+    const baseY = actor.userData.baseY ?? 0;
     actor.position.x = baseX;
     if (!act) return false;
+    const head = findPart(actor, "head");
+    const arms = findParts(actor, "arm");
+    const wings = findParts(actor, "wing");
+    const flutters = findParts(actor, "flutter");
+    const tails = findParts(actor, "tail");
+    const ears = findParts(actor, "ear");
+    const legs = findParts(actor, "leg");
+    const ph = actor.userData.phase || 0;
+    const armsUp = (amount, wobble = 0) => arms.forEach((arm) => { arm.rotation.z += arm.userData.arm * amount + Math.sin(t * 6 + ph) * wobble; });
+    const flap = (speed, amount) => {
+      wings.forEach((wing) => { wing.rotation.z += Math.sin(t * speed + ph) * amount * wing.userData.wing; });
+      flutters.forEach((part) => { part.rotation.y += Math.sin(t * speed + ph) * amount * 0.8 * part.userData.flutter; });
+    };
+    const stride = (speed, amount) => {
+      legs.forEach((leg) => { leg.rotation.x += Math.sin(t * speed + ph) * amount * leg.userData.leg; });
+      arms.forEach((arm) => { arm.rotation.x += Math.sin(t * speed + ph + Math.PI) * amount * 0.8 * arm.userData.arm; });
+    };
+    const wagTail = (speed, amount) => tails.forEach((tail) => { tail.rotation[tail.userData.tail === "x" ? "x" : "y"] += Math.sin(t * speed + ph) * amount; });
     actor.rotation.x = 0;
-    if (head) head.scale.setScalar(1);
     switch (act) {
       case "blow": {
         // Toma aire y sopla: se inclina hacia adelante e hincha la cabeza.
         const k = Math.max(0, Math.sin(t * 5));
         actor.rotation.x = -0.22 - k * 0.12;
-        if (head) head.scale.setScalar(1 + k * 0.22);
+        if (head) head.scale.multiplyScalar(1 + k * 0.22);
         return true;
       }
       case "howl": {
         actor.rotation.x = 0.28;
-        if (head) head.scale.setScalar(1 + Math.max(0, Math.sin(t * 3)) * 0.1);
+        if (head) {
+          head.rotation.x -= 0.35;
+          head.scale.multiplyScalar(1 + Math.max(0, Math.sin(t * 3)) * 0.1);
+        }
         return true;
       }
       case "shiver": {
         actor.position.x = baseX + Math.sin(t * 38) * 0.005;
         actor.rotation.z = Math.sin(t * 38) * 0.03;
+        ears.forEach((ear) => { ear.rotation.z += Math.sin(t * 38) * 0.08; });
         return true;
       }
       case "run": {
-        actor.position.y = (actor.userData.baseY ?? 0) + Math.abs(Math.sin(t * 9)) * 0.022;
+        actor.position.y = baseY + Math.abs(Math.sin(t * 9)) * 0.022;
         actor.rotation.z = Math.sin(t * 9) * 0.09;
         actor.rotation.x = -0.12;
+        stride(9, 0.55);
+        wagTail(9, 0.2);
+        return true;
+      }
+      case "walk": {
+        actor.position.y = baseY + Math.abs(Math.sin(t * 5)) * 0.01;
+        actor.rotation.z = Math.sin(t * 5) * 0.04;
+        actor.rotation.x = -0.05;
+        stride(5, 0.35);
+        wagTail(5, 0.12);
         return true;
       }
       case "build": {
-        const arm = findPart(actor, "arm");
-        if (arm) arm.rotation.x = -0.6 + Math.sin(t * 7) * 0.55;
-        actor.position.y = (actor.userData.baseY ?? 0) + Math.max(0, Math.sin(t * 7)) * 0.006;
+        arms.forEach((arm) => { arm.rotation.x += -0.6 + Math.sin(t * 7 + arm.userData.arm) * 0.55; });
+        actor.position.y = baseY + Math.max(0, Math.sin(t * 7)) * 0.006;
         return true;
       }
       case "cheer": {
-        actor.position.y = (actor.userData.baseY ?? 0) + Math.abs(Math.sin(t * 6 + (actor.userData.phase || 0))) * 0.03;
-        actor.rotation.y = Math.sin(t * 4 + (actor.userData.phase || 0)) * 0.35;
+        actor.position.y = baseY + Math.abs(Math.sin(t * 6 + ph)) * 0.03;
+        actor.rotation.y += Math.sin(t * 4 + ph) * 0.35;
+        armsUp(1.7, 0.25);
+        flap(12, 0.4);
+        wagTail(8, 0.25);
         return true;
       }
       case "sleep": {
         actor.rotation.z = 0.12;
-        if (head) head.scale.setScalar(1 + Math.sin(t * 1.6) * 0.03);
+        if (head) {
+          head.rotation.z += 0.22;
+          head.rotation.x += 0.18;
+          head.scale.multiplyScalar(1 + Math.sin(t * 1.6) * 0.03);
+        }
+        ears.forEach((ear) => { ear.rotation.z += 0.25 * ear.userData.ear; });
+        return true;
+      }
+      case "look": {
+        actor.rotation.x = 0.08;
+        if (head) head.rotation.x -= 0.42 + Math.sin(t * 1.3 + ph) * 0.05;
+        actor.rotation.z = Math.sin(t * 0.9 + ph) * 0.03;
+        return true;
+      }
+      case "listen": {
+        if (head) head.rotation.z += Math.sin(t * 1.4 + ph) * 0.22;
+        ears.forEach((ear) => {
+          ear.rotation.z += Math.sin(t * 5 + ph + ear.userData.ear) * 0.2 * ear.userData.ear;
+          ear.rotation.x -= 0.15;
+        });
+        actor.rotation.y += Math.sin(t * 0.7 + ph) * 0.12;
+        return true;
+      }
+      case "think": {
+        if (head) {
+          head.rotation.z += 0.22;
+          head.rotation.x -= 0.12;
+        }
+        arms.forEach((arm) => {
+          if (arm.userData.arm > 0) {
+            arm.rotation.z += 1.4;
+            arm.rotation.x -= 0.6;
+          }
+        });
+        actor.rotation.y += Math.sin(t * 0.8 + ph) * 0.1;
+        return true;
+      }
+      case "nod": {
+        if (head) head.rotation.x += 0.1 + Math.sin(t * 5 + ph) * 0.18;
+        else actor.rotation.x = Math.sin(t * 5 + ph) * 0.1;
+        return true;
+      }
+      case "sing": {
+        if (head) {
+          head.rotation.x -= 0.3 + Math.sin(t * 3 + ph) * 0.08;
+          head.scale.multiplyScalar(1 + Math.max(0, Math.sin(t * 6 + ph)) * 0.06);
+        }
+        actor.position.y = baseY + Math.abs(Math.sin(t * 3 + ph)) * 0.01;
+        actor.rotation.z = Math.sin(t * 1.5 + ph) * 0.06;
+        armsUp(0.8, 0.15);
+        findParts(actor, "spray").forEach((jet) => jet.scale.multiplyScalar(1.2 + Math.max(0, Math.sin(t * 3 + ph)) * 0.5));
+        return true;
+      }
+      case "raise": {
+        armsUp(2.1, 0.1);
+        if (head) head.rotation.x -= 0.25;
+        actor.position.y = baseY + Math.max(0, Math.sin(t * 2 + ph)) * 0.008;
+        return true;
+      }
+      case "wave": {
+        arms.forEach((arm) => { if (arm.userData.arm > 0) arm.rotation.z += 2.2 + Math.sin(t * 10 + ph) * 0.3; });
+        if (head) head.rotation.z += 0.1;
+        return true;
+      }
+      case "fly": {
+        actor.position.y = baseY + 0.045 + Math.sin(t * 2.5 + ph) * 0.02;
+        actor.rotation.x = -0.1;
+        actor.rotation.z = Math.sin(t * 1.7 + ph) * 0.1;
+        flap(18, 0.55);
+        return true;
+      }
+      case "jump": {
+        const k = Math.max(0, Math.sin(t * 4.2 + ph));
+        actor.position.y = baseY + k * 0.09;
+        actor.rotation.x = -k * 0.25;
+        legs.forEach((leg) => { leg.rotation.x -= k * 0.5; });
+        armsUp(k * 1.2);
+        wagTail(4.2, 0.25);
+        return true;
+      }
+      case "swim": {
+        actor.rotation.z = Math.sin(t * 2.2 + ph) * 0.12;
+        actor.rotation.x = Math.sin(t * 2.2 + ph + 1) * 0.15;
+        actor.position.y = baseY + Math.sin(t * 2.2 + ph) * 0.012;
+        wagTail(6, 0.35);
+        flutters.forEach((part) => { part.rotation.y += Math.sin(t * 6 + ph) * 0.3 * part.userData.flutter; });
+        return true;
+      }
+      case "sniff": {
+        actor.rotation.x = 0.12;
+        if (head) {
+          head.rotation.x += 0.5 + Math.sin(t * 14 + ph) * 0.05;
+          head.rotation.y += Math.sin(t * 2 + ph) * 0.2;
+        }
+        actor.position.y = baseY + Math.abs(Math.sin(t * 2 + ph)) * 0.004;
+        wagTail(4, 0.25);
+        return true;
+      }
+      case "peck": {
+        const k = Math.max(0, Math.sin(t * 14 + ph));
+        if (head) head.rotation.x += k * 0.5;
+        else actor.rotation.x = k * 0.3;
+        actor.position.y = baseY + k * 0.003;
+        return true;
+      }
+      case "dance": {
+        actor.rotation.y += Math.sin(t * 4 + ph) * 0.5;
+        actor.position.y = baseY + Math.abs(Math.sin(t * 8 + ph)) * 0.02;
+        actor.rotation.z = Math.sin(t * 4 + ph) * 0.12;
+        arms.forEach((arm) => { arm.rotation.z += arm.userData.arm * (1.2 + Math.sin(t * 8 + ph + arm.userData.arm) * 0.6); });
+        flap(10, 0.35);
+        ears.forEach((ear) => { ear.rotation.z += Math.sin(t * 8 + ph) * 0.15 * ear.userData.ear; });
+        wagTail(8, 0.3);
         return true;
       }
       default:
         return false;
     }
   }
-  void ACT_TWO_PI;
 
   /* --------------------------- interacción --------------------------- */
   const raycaster = new THREE.Raycaster();
@@ -1412,16 +1572,28 @@ export function createStage(canvas, options) {
       toy.rotation.z = state.wiggle;
       toy.rotation.y = (state.spin || 0) + (reduceMotion ? 0 : Math.sin(clock.t * 0.9 + state.phase) * 0.1);
       if (!holder.userData.movingParts) {
+        // Partes articuladas que declara cada figura (ver toys/*.js): su pose
+        // de reposo se guarda una vez y se restaura cada fotograma; los
+        // movimientos de abajo y las acciones (applyAct) sólo suman sobre ella.
         const parts = []; toy.traverse(obj => {
-          if (obj.userData.flutter || obj.userData.sway) { obj.userData.restRotation = obj.rotation.clone(); parts.push(obj); }
+          const u = obj.userData;
+          if (u.flutter || u.sway || u.head || u.arm || u.wing || u.tail || u.ear || u.leg || u.spray) {
+            u.restRotation = obj.rotation.clone();
+            u.restScale = obj.scale.clone();
+            parts.push(obj);
+          }
         });
         holder.userData.movingParts = parts;
       }
       holder.userData.movingParts.forEach(part => {
         part.rotation.copy(part.userData.restRotation);
+        part.scale.copy(part.userData.restScale);
         if (reduceMotion) return;
         if (part.userData.flutter) part.rotation.y += Math.sin(clock.t * 9 + state.phase) * 0.6 * part.userData.flutter;
         if (part.userData.sway) part.rotation.z += Math.sin(clock.t * 3 + state.phase) * 0.13 * part.userData.sway;
+        // Las colas se mueven solas, despacio; las orejas apenas.
+        if (part.userData.tail) part.rotation[part.userData.tail === "x" ? "x" : "y"] += Math.sin(clock.t * 2.4 + state.phase) * 0.1;
+        if (part.userData.ear && !part.userData.sway) part.rotation.z += Math.sin(clock.t * 1.7 + state.phase + part.userData.ear) * 0.04 * part.userData.ear;
       });
       if (!reduceMotion) applyBlink(holder, clock.t);
       applyGlow(holder, dt);
