@@ -63,6 +63,8 @@ export default function CuentosApp() {
   // pantalla, y un contador de solicitudes para que una página que termina de
   // cargar tarde no reabra un libro ya devuelto ni pise otro cuento.
   const [bookGesture, setBookGesture] = useState(null);
+  // Modo película activo (la cámara está dentro de la ilustración).
+  const [cinemaOn, setCinemaOn] = useState(false);
   const flowRequest = useRef(0);
   const openingRef = useRef(false);
   const readyTimer = useRef(null);
@@ -154,6 +156,7 @@ export default function CuentosApp() {
       onClickToy: (pinId) => {
         if (!playToySound(pinId)) sfx.toy(pinId);
       },
+      onTravel: (actor, act) => latest.current.travelSound?.(actor, act),
       onFrame: () => {
         const hint = dragHintRef.current;
         if (hint) {
@@ -295,10 +298,17 @@ export default function CuentosApp() {
     [pageTexture],
   );
 
-  Object.assign(latest.current, { openReading, closeReading, backToShelf });
+  // Pasos suaves (o chapoteo) cuando una figura entra o se desplaza por la escena.
+  const travelSound = useCallback((actor, act) => {
+    const { selectedId: sel, page: p } = latest.current;
+    const book = BOOKS.find((b) => b.id === sel);
+    const key = stepsKeyFor(book, book?.pages[p], act);
+    if (key) playCue(key, { volume: 0.32 });
+  }, []);
+  Object.assign(latest.current, { openReading, closeReading, backToShelf, travelSound });
 
   return (
-    <div className={`cuentos cuentos--3d${reading ? " cuentos--reading" : ""} ${selectedBook && !reading ? "has-desk" : ""}`} data-book-gesture={bookGesture?.kind}>
+    <div className={`cuentos cuentos--3d${reading ? " cuentos--reading" : ""}${cinemaOn && reading ? " cuentos--cinema" : ""} ${selectedBook && !reading ? "has-desk" : ""}`} data-book-gesture={bookGesture?.kind}>
       <canvas ref={canvasRef} className="cuentos-canvas" aria-hidden="true" />
       <div className="cuentos-zoom" role="group" aria-label="Zoom de la escena 3D">
         <button type="button" aria-label="Alejar escena" disabled={zoom <= 80} onClick={() => stageRef.current?.setZoom((zoom - 10) / 100)}>−</button>
@@ -387,6 +397,11 @@ export default function CuentosApp() {
           onSpeaking={(actor) => stageRef.current?.setSpeaking(actor)}
           onWordTick={() => stageRef.current?.wordTick()}
           onName={(actor) => stageRef.current?.nameActor(actor)}
+          onMove={(actor, where, act, hold) => stageRef.current?.travelTo(actor, where, act, hold)}
+          onCinema={(on) => {
+            setCinemaOn(on);
+            stageRef.current?.setCinema(on);
+          }}
         />
       ) : null}
 
@@ -617,7 +632,27 @@ function DeskPanel({ book, status, ready, onOpen, onBack }) {
 
 const WORD_SPLIT = /(\s+)/;
 
-function Reader({ book, page, state, pinRef, onPage, onClose, onStar, onPin, onQuiz, onAct, onSpeaking, onWordTick, onName }) {
+// Sonido de pasos según el escenario del cuento; una página puede fijar el
+// suyo con `steps` (por ejemplo «pasos-suaves» dentro de una casa).
+const STEPS_BY_SET = {
+  "forest-day": "pasos-bosque",
+  "forest-dusk": "pasos-bosque",
+  "cloud-forest": "pasos-bosque",
+  "amazon-river": "pasos-bosque",
+  "desert-night": "pasos-arena",
+  "ocean-day": "pasos-arena",
+  "meadow-day": "pasos-pasto",
+  "highland-day": "pasos-pasto",
+  "mountain-day": "pasos-pasto",
+  "andes-night": "pasos-pasto",
+};
+export function stepsKeyFor(book, page, act) {
+  if (!book || act === "fly") return null;
+  if (act === "swim" || act === "jump") return "chapoteo-suave";
+  return page?.steps || STEPS_BY_SET[book.set] || "pasos-suaves";
+}
+
+function Reader({ book, page, state, pinRef, onPage, onClose, onStar, onPin, onQuiz, onAct, onSpeaking, onWordTick, onName, onMove, onCinema }) {
   const pageData = book.pages[page];
   const entry = state.books[book.id] || { pages: [], pins: [], quiz: [], quizOk: 0 };
   const [activeWord, setActiveWord] = useState(-1);
@@ -625,6 +660,39 @@ function Reader({ book, page, state, pinRef, onPage, onClose, onStar, onPin, onQ
   const [speaking, setSpeaking] = useState(false);
   const [quizOpen, setQuizOpen] = useState(false);
   const autoRef = useRef(false);
+  // Modo película: con «Léemelo» la cámara entra en la escena y el texto pasa
+  // a subtítulos. Se recuerda si el lector prefirió ver el libro.
+  const [cinema, setCinema] = useState(() => {
+    try {
+      return window.localStorage.getItem("nido-cine") !== "off";
+    } catch {
+      return true;
+    }
+  });
+  const [readNotice, setReadNotice] = useState(null);
+  const onCinemaRef = useRef(onCinema);
+  onCinemaRef.current = onCinema;
+  useEffect(() => {
+    onCinemaRef.current?.(Boolean(autoRead && cinema));
+  }, [autoRead, cinema]);
+  useEffect(() => () => onCinemaRef.current?.(false), []);
+  useEffect(() => {
+    if (!readNotice) return undefined;
+    const timer = window.setTimeout(() => setReadNotice(null), 6500);
+    return () => window.clearTimeout(timer);
+  }, [readNotice]);
+  const toggleCinema = useCallback(() => {
+    sfx.select();
+    setCinema((prev) => {
+      const next = !prev;
+      try {
+        window.localStorage.setItem("nido-cine", next ? "on" : "off");
+      } catch {
+        // Sin almacenamiento: sólo para esta sesión.
+      }
+      return next;
+    });
+  }, []);
 
   const words = useMemo(() => pageData.x.split(WORD_SPLIT), [pageData.x]);
   const wordIndexes = useMemo(() => {
@@ -710,8 +778,10 @@ function Reader({ book, page, state, pinRef, onPage, onClose, onStar, onPin, onQ
       firedCues.current.add(bodyIndex);
       if (cue.sfx) playCue(cue.sfx);
       if (cue.act) Object.entries(cue.act).forEach(([actor, act]) => onAct?.(actor, act, cue.hold));
+      // «corrió» → la figura se desplaza de verdad hasta el punto indicado.
+      if (cue.move) Object.entries(cue.move).forEach(([actor, where]) => onMove?.(actor, where, cue.act?.[actor] || "walk", cue.hold));
     },
-    [pageData.cues, bodyWords, onAct, onName, nameIndex],
+    [pageData.cues, bodyWords, onAct, onName, onMove, nameIndex],
   );
 
   useEffect(() => () => stopSpeech(), []);
@@ -744,15 +814,27 @@ function Reader({ book, page, state, pinRef, onPage, onClose, onStar, onPin, onQ
           if (index >= titleWords) fireCue(index - titleWords);
           if (index >= 0) onWordTick?.();
         },
-        onEnd: () => {
+        onEnd: (result) => {
           setSpeaking(false);
           setActiveWord(-1);
           onSpeaking?.(null);
+          // Si la página no llegó a escucharse (sonido silenciado, clip que
+          // falla, voz del sistema que corta) no se pasa sola: se avisa y se
+          // espera a que el lector vuelva a tocar «Léemelo».
+          if (result && result.ok === false) {
+            setAutoRead(false);
+            setReadNotice(
+              result.reason === "muted"
+                ? "Activa el sonido con el botón 🔊 de arriba para escuchar el cuento."
+                : "No se pudo escuchar esta página. Toca ▶ Léemelo para intentarlo otra vez.",
+            );
+            return;
+          }
           // Festejos y remates suenan cuando la narradora termina, no encima.
           (pageData.sfxEnd || []).forEach((key) => playCue(key, { volume: 0.6 }));
           if (autoRef.current) {
             window.setTimeout(() => {
-              if (!autoRef.current) return;
+              if (!autoRef.current || pageRef.current !== page) return;
               if (page < book.pages.length - 1) turnTo(page + 1);
               else setAutoRead(false);
             }, 900);
@@ -765,6 +847,7 @@ function Reader({ book, page, state, pinRef, onPage, onClose, onStar, onPin, onQ
   useEffect(() => {
     autoRef.current = autoRead;
     if (autoRead) firedCues.current = new Set();
+    if (autoRead) setReadNotice(null);
     if (autoRead) readAloud();
     else {
       stopSpeech();
@@ -788,11 +871,18 @@ function Reader({ book, page, state, pinRef, onPage, onClose, onStar, onPin, onQ
       }
       if (event.key === "ArrowRight") turnTo(page + 1);
       if (event.key === "ArrowLeft") turnTo(page - 1);
-      if (event.key === "Escape") onClose();
+      if (event.key === "Escape") {
+        // En modo película, Escape vuelve primero a la vista del libro.
+        if (autoRead && cinema) {
+          toggleCinema();
+          return;
+        }
+        onClose();
+      }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [page, turnTo, onClose, quizOpen]);
+  }, [page, turnTo, onClose, quizOpen, autoRead, cinema, toggleCinema]);
 
   const sayWord = (token) => {
     if (autoRef.current) return;
@@ -850,6 +940,27 @@ function Reader({ book, page, state, pinRef, onPage, onClose, onStar, onPin, onQ
         </button>
       ) : null}
 
+      {autoRead && cinema ? (
+        <div className="cuentos-captions" aria-hidden="true">
+          <p className="cuentos-captions__title">{pageData.t}</p>
+          <p className="cuentos-captions__text">
+            {words.map((token, i) => {
+              if (/^\s+$/.test(token) || token === "") return <span key={i}>{token}</span>;
+              return (
+                <span key={i} className={`cuentos-captions__word ${wordIndexes[i] === activeWord ? "is-active" : ""}`}>
+                  {token}
+                </span>
+              );
+            })}
+          </p>
+        </div>
+      ) : null}
+      {readNotice ? (
+        <div className="cuentos-read-notice" role="status">
+          {readNotice}
+        </div>
+      ) : null}
+
       <div className="cuentos-controls cuentos-controls--reading">
         <button type="button" className="cuentos-btn cuentos-btn--nav" onClick={() => turnTo(page - 1)} disabled={page === 0} aria-label="Página anterior">
           ←
@@ -860,6 +971,9 @@ function Reader({ book, page, state, pinRef, onPage, onClose, onStar, onPin, onQ
               {autoRead ? (speaking ? "⏸ Pausa" : "⏸ Leyendo…") : "▶ Léemelo"}
             </button>
           ) : null}
+          <button type="button" className={`cuentos-btn cuentos-btn--ghost cuentos-btn--cine ${cinema ? "is-on" : ""}`} onClick={toggleCinema} aria-pressed={cinema} title="Con «Léemelo», la cámara entra en la escena y sigue el cuento">
+            {cinema ? "🎬 Película" : "📖 Libro"}
+          </button>
           <button type="button" className="cuentos-btn cuentos-btn--ghost" onClick={onClose}>
             🏠 Cerrar el libro
           </button>

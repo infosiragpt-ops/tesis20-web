@@ -8,8 +8,13 @@
 //   acts: acción sostenida por actor mientras dura la página (catálogo en
 //         cuentos-acts.js: look, listen, sing, fly, jump, swim, sniff, peck…).
 //   cues: por palabra narrada (clave = palabra en minúsculas sin puntuación):
-//         { sfx, act: { actor: acción }, hold } se dispara cuando la voz la
-//         pronuncia; `hold` (ms) alarga la ráfaga (1,5 s por defecto).
+//         { sfx, act: { actor: acción }, hold, move: { actor: destino } } se
+//         dispara cuando la voz la pronuncia; `hold` (ms) alarga la ráfaga
+//         (1,5 s por defecto) y `move` desplaza a la figura por la escena
+//         (left, right, center, away-left, away-right) con su acción.
+//   enter: { actor: "left" | "right" }: la figura entra caminando (volando,
+//         nadando…) desde ese lado al abrir la página. steps: clave de pasos
+//         para esa página (si no, se elige por el escenario del libro).
 // Cada libro trae `names`: { actor: [palabras] }; cuando la voz dice una de
 // esas palabras, la figura se ilumina y los demás la miran.
 // Cada libro tiene 10 páginas narradas, 5 souvenirs escondidos y 5 preguntas
@@ -71,8 +76,9 @@ export const BOOKS = [
         light: "night",
         cast: ["lobo"],
         props: ["luna", "estrellas", "arboles", "paja"],
+        enter: { lobo: "right" },
         pin: "lobo",
-        cues: { auuu: { sfx: "lobo-aullido", act: { lobo: "howl" } }, derechito: { act: { lobo: "run" } } },
+        cues: { auuu: { sfx: "lobo-aullido", act: { lobo: "howl" } }, derechito: { act: { lobo: "run" } , move: { lobo: "left" }} },
       },
       {
         t: "¡Soplaré y soplaré!",
@@ -84,7 +90,7 @@ export const BOOKS = [
         cues: {
           sopló: { sfx: "lobo-soplido", act: { lobo: "blow" } },
           voló: { sfx: "casa-paja" },
-          corrió: { act: { pipo: "run" } },
+          corrió: { act: { pipo: "run" } , move: { pipo: "away-right" }},
         },
       },
       {
@@ -97,7 +103,7 @@ export const BOOKS = [
         cues: {
           sopló: { sfx: "lobo-soplido", act: { lobo: "blow" } },
           cayó: { sfx: "casa-madera" },
-          corrieron: { act: { lolo: "run", pipo: "run" } },
+          corrieron: { act: { lolo: "run", pipo: "run" } , move: { lolo: "away-right", pipo: "away-right" }},
         },
       },
       {
@@ -120,7 +126,7 @@ export const BOOKS = [
         cues: {
           plaf: { sfx: "olla-plaf", act: { lobo: "shiver" } },
           gritó: { sfx: "lobo-ay", act: { lobo: "run" } },
-          corriendo: { act: { lobo: "run", tito: "cheer" } },
+          corriendo: { act: { lobo: "run", tito: "cheer" } , move: { lobo: "away-left" }},
         },
       },
       {
@@ -171,7 +177,7 @@ export const BOOKS = [
         cast: ["caperucita"],
         props: ["sol", "casa", "sendero", "flores", "arboles"],
         pin: "canasta",
-        cues: { contenta: { sfx: "pasos-bosque", act: { caperucita: "run" } } },
+        cues: { contenta: { sfx: "pasos-bosque", act: { caperucita: "run" } , move: { caperucita: "away-right" }} },
       },
       {
         t: "El lobo del bosque",
@@ -179,6 +185,7 @@ export const BOOKS = [
         light: "day",
         cast: ["caperucita", "lobo"],
         props: ["arboles", "sendero", "hojas", "pasto"],
+        enter: { lobo: "right" },
         acts: { caperucita: "walk", lobo: "sniff" },
         cues: {
           miedo: { act: { caperucita: "nod" } },
@@ -223,6 +230,8 @@ export const BOOKS = [
         light: "day",
         cast: ["caperucita", "lobo-cama"],
         props: ["cuarto"],
+        enter: { caperucita: "left" },
+        steps: "pasos-suaves",
         acts: { caperucita: "walk" },
         cues: {
           orejas: { act: { "lobo-cama": "listen" }, hold: 2500 },
@@ -237,6 +246,8 @@ export const BOOKS = [
         light: "day",
         cast: ["cazador", "lobo-cama"],
         props: ["cuarto"],
+        enter: { cazador: "left" },
+        steps: "pasos-suaves",
         acts: { "lobo-cama": "sleep" },
         cues: { roncó: { sfx: "lobo-ronquido" } },
       },
@@ -246,6 +257,7 @@ export const BOOKS = [
         light: "dusk",
         cast: ["caperucita", "abuelita", "cazador"],
         props: ["casa", "arboles", "piedras", "pasto"],
+        steps: "pasos-suaves",
         acts: { caperucita: "cheer" },
         sfxEnd: ["cerditos-alegres"],
       },
@@ -321,7 +333,7 @@ export const BOOKS = [
         acts: { oso: "think" },
         cues: {
           farol: { sfx: "toy-farol" },
-          caminar: { act: { oso: "walk" }, hold: 4000 },
+          caminar: { act: { oso: "walk" }, hold: 4000 , move: { oso: "right" }},
         },
         pin: "farol",
       },
@@ -331,11 +343,12 @@ export const BOOKS = [
         light: "night",
         cast: ["oso"],
         props: ["puente", "montanas", "estrellas"],
+        enter: { oso: "left" },
         acts: { oso: "walk" },
         cues: {
           puente: { sfx: "puente-crujido" },
           hondo: { act: { oso: "shiver" }, hold: 2000 },
-          despacito: { act: { oso: "walk" } },
+          despacito: { act: { oso: "walk" } , move: { oso: "right" }},
         },
       },
       {
@@ -358,6 +371,7 @@ export const BOOKS = [
         light: "night",
         cast: ["oso"],
         props: ["montanas", "estrellas", "farol"],
+        enter: { oso: "left" },
         acts: { oso: "walk" },
         cues: {
           enorme: { act: { oso: "look" }, hold: 3000 },
@@ -396,6 +410,7 @@ export const BOOKS = [
         light: "moonrise",
         cast: ["oso"],
         props: ["luna", "arboles", "estrellas"],
+        enter: { oso: "right" },
         sfxEnd: ["toy-gorro"],
         acts: { oso: "walk" },
         cues: { cerró: { act: { oso: "sleep" }, hold: 9000 } },
@@ -448,6 +463,7 @@ export const BOOKS = [
         light: "night",
         cast: ["bufeo", "rana"],
         props: ["nenufar", "selva"],
+        enter: { rana: "right" },
         acts: { rana: "jump", bufeo: "listen" },
         cues: {
           saltó: { sfx: "toy-rana" },
@@ -462,7 +478,7 @@ export const BOOKS = [
         cast: ["bufeo"],
         props: ["selva", "agua", "raices"],
         acts: { bufeo: "swim" },
-        cues: { nadó: { sfx: "nado-rio" } },
+        cues: { nadó: { sfx: "nado-rio" , act: { bufeo: "swim" }, move: { bufeo: "left" }} },
       },
       {
         t: "La canoa vacía",
@@ -534,6 +550,7 @@ export const BOOKS = [
         light: "dawn",
         cast: ["bufeo", "pez"],
         props: ["selva", "agua", "estrellas"],
+        enter: { pez: "left" },
         sfxEnd: ["toy-bufeo"],
         acts: { bufeo: "swim", pez: "swim" },
         cues: { comparte: { act: { bufeo: "cheer", pez: "cheer" }, hold: 3000 } },
@@ -596,6 +613,7 @@ export const BOOKS = [
           altísimo: { act: { nina: "look" } },
           soltó: { sfx: "viento-suave", act: { nina: "raise" } },
           volando: { act: { nina: "look" }, hold: 3000 },
+          corrió: { act: { nina: "run" }, move: { nina: "right" } },
         },
       },
       {
@@ -604,6 +622,7 @@ export const BOOKS = [
         light: "day",
         cast: ["nina", "oveja"],
         props: ["pasto", "montanas"],
+        enter: { nina: "left" },
         acts: { nina: "run", oveja: "walk" },
         cues: {
           ovejas: { sfx: "toy-oveja" },
@@ -679,6 +698,7 @@ export const BOOKS = [
         light: "dusk",
         cast: ["nina"],
         props: ["casa", "montanas", "cometa"],
+        enter: { nina: "right" },
         sfxEnd: ["toy-nino"],
         acts: { nina: "walk" },
         cues: { contó: { act: { nina: "wave" }, hold: 2500 } },
@@ -711,7 +731,7 @@ export const BOOKS = [
         props: ["dunas", "estrellas", "cactus"],
         sfx: ["desierto-noche"],
         acts: { zorro: "listen" },
-        cues: { caminar: { act: { zorro: "walk" }, hold: 4000 } },
+        cues: { caminar: { act: { zorro: "walk" }, hold: 4000 , move: { zorro: "right" }} },
       },
       {
         t: "Una estrella que cae",
@@ -732,6 +752,7 @@ export const BOOKS = [
         light: "night",
         cast: ["zorro"],
         props: ["huellas", "dunas"],
+        enter: { zorro: "left" },
         acts: { zorro: "sniff" },
         cues: { caminó: { act: { zorro: "walk" }, hold: 3000 } },
       },
@@ -801,6 +822,7 @@ export const BOOKS = [
         light: "night",
         cast: ["zorro"],
         props: ["estrella", "dunas", "estrellas"],
+        enter: { zorro: "left" },
         acts: { zorro: "walk" },
         cues: {
           encontró: { sfx: "toy-estrella", act: { zorro: "jump" }, hold: 2500 },
@@ -813,6 +835,7 @@ export const BOOKS = [
         light: "dawn",
         cast: ["zorro"],
         props: ["dunas", "cactus", "estrella"],
+        enter: { zorro: "right" },
         sfxEnd: ["toy-gorro"],
         acts: { zorro: "walk" },
         cues: {
@@ -881,9 +904,10 @@ export const BOOKS = [
         light: "mist",
         cast: ["picaflor"],
         props: ["niebla", "arboles"],
+        enter: { picaflor: "left" },
         sfx: ["niebla-goteo"],
         acts: { picaflor: "fly" },
-        cues: { agua: { sfx: "arroyo" } },
+        cues: { agua: { sfx: "arroyo" }, voló: { act: { picaflor: "fly" }, move: { picaflor: "right" } } },
       },
       {
         t: "La gota grande",
@@ -958,7 +982,7 @@ export const BOOKS = [
         props: ["arboles", "nubes"],
         sfxEnd: ["toy-picaflor"],
         acts: { picaflor: "fly", mariposa: "fly" },
-        cues: { pájaros: { sfx: "pajaros" } },
+        cues: { pájaros: { sfx: "pajaros" }, voló: { act: { picaflor: "fly" }, move: { picaflor: "away-left" } } },
         pin: "picaflor",
       },
     ],
@@ -999,6 +1023,7 @@ export const BOOKS = [
         light: "day",
         cast: ["nino", "maquinista"],
         props: ["boleto", "tren"],
+        enter: { maquinista: "left" },
         acts: { maquinista: "nod" },
         cues: {
           boleto: { act: { nino: "cheer" } },
@@ -1026,6 +1051,7 @@ export const BOOKS = [
         light: "day",
         cast: ["vicuna"],
         props: ["pasto", "montanas", "tren"],
+        enter: { vicuna: "left" },
         acts: { vicuna: "walk" },
         cues: {
           vicuñas: { sfx: "toy-vicuna" },
@@ -1079,6 +1105,7 @@ export const BOOKS = [
         light: "mist",
         cast: ["maquinista"],
         props: ["silbato", "nubes"],
+        enter: { maquinista: "right" },
         acts: { maquinista: "look" },
         cues: {
           fiuuu: { sfx: "toy-maquinista", act: { maquinista: "raise" } },
@@ -1138,6 +1165,7 @@ export const BOOKS = [
         light: "day",
         cast: ["nina2"],
         props: ["mar", "caracola", "sol"],
+        enter: { nina2: "left" },
         sfx: ["olas"],
         acts: { nina2: "walk" },
         cues: { caracolas: { sfx: "toy-caracola", act: { nina2: "nod" } } },
@@ -1158,6 +1186,7 @@ export const BOOKS = [
         light: "day",
         cast: ["nina2", "pelicano"],
         props: ["roca", "mar"],
+        enter: { pelicano: "right" },
         acts: { pelicano: "nod", nina2: "listen" },
         cues: {
           pelícano: { sfx: "toy-pelicano", act: { pelicano: "fly" }, hold: 2500 },
@@ -1196,6 +1225,7 @@ export const BOOKS = [
         light: "day",
         cast: ["nina2", "ballena"],
         props: ["mar", "nubes"],
+        enter: { ballena: "right" },
         acts: { ballena: "swim", nina2: "look" },
         cues: {
           sombra: { sfx: "ballena-emerge" },
@@ -1244,6 +1274,7 @@ export const BOOKS = [
         light: "dusk",
         cast: ["nina2"],
         props: ["mar", "sol", "caracola"],
+        enter: { nina2: "left" },
         sfxEnd: ["olas"],
         acts: { nina2: "sing" },
         cues: {
@@ -1290,7 +1321,7 @@ export const BOOKS = [
         acts: { vicuna: "listen" },
         cues: {
           música: { sfx: "toy-quena" },
-          trotando: { act: { vicuna: "run" }, hold: 4000 },
+          trotando: { act: { vicuna: "run" }, hold: 4000 , move: { vicuna: "right" }},
         },
       },
       {
@@ -1299,6 +1330,7 @@ export const BOOKS = [
         light: "dusk",
         cast: ["vicuna"],
         props: ["hojas", "arboles"],
+        enter: { vicuna: "left" },
         acts: { vicuna: "walk" },
         cues: {
           hojas: { sfx: "toy-arbol" },
@@ -1325,6 +1357,7 @@ export const BOOKS = [
         light: "dusk",
         cast: ["vicuna"],
         props: ["arroyo", "piedras"],
+        enter: { vicuna: "left" },
         acts: { vicuna: "walk" },
         cues: {
           arroyo: { sfx: "arroyo" },
@@ -1389,6 +1422,7 @@ export const BOOKS = [
         light: "dusk",
         cast: ["vicuna"],
         props: ["arboles", "montanas", "sol"],
+        enter: { vicuna: "right" },
         sfxEnd: ["pajaros"],
         acts: { vicuna: "walk" },
         cues: {

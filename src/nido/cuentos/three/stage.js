@@ -85,6 +85,8 @@ export function createStage(canvas, options) {
     onBookGesture = () => {},
     onHoverToy = () => {},
     onClickToy = () => {},
+    // Una figura empieza a desplazarse (entra a escena o se mueve por ella).
+    onTravel = () => {},
     onFrame = () => {},
     coverTexture, // (book) => Promise<Texture>
     emblemTexture, // (pinId) => Promise<Texture>
@@ -160,6 +162,11 @@ export function createStage(canvas, options) {
   spot.target.position.set(0, 1, 0);
   scene.add(spot);
   scene.add(spot.target);
+  // Modo película: luz principal cálida y contraluz frío que siguen a la
+  // escena del diorama (se encienden sólo en cine).
+  const cineKey = new THREE.SpotLight("#ffe9c7", 0, 7, Math.PI / 6, 0.55, 1.1);
+  const cineRim = new THREE.SpotLight("#bcd6ff", 0, 7, Math.PI / 5, 0.6, 1.1);
+  scene.add(cineKey, cineKey.target, cineRim, cineRim.target);
 
   /* ------------------------------ sala ------------------------------- */
   const wood = woodTexture({ repeat: [4, 1.6] });
@@ -574,6 +581,20 @@ export function createStage(canvas, options) {
       holder.userData.baseX = holder.position.x;
       // Acción sostenida durante la página (ver `acts` en cuentos-data.js).
       holder.userData.act = page.acts?.[id] || null;
+      holder.userData.pageAct = holder.userData.act;
+      holder.userData.slotX = slot.x;
+      holder.userData.faceTurn = 0;
+      holder.userData.travel = null;
+      // `enter`: la figura entra caminando (o volando, nadando…) desde un lado.
+      const enter = page.enter?.[id];
+      if (enter === "left" || enter === "right") {
+        const act = ["fly", "swim", "run", "jump"].includes(holder.userData.act) ? holder.userData.act : "walk";
+        holder.userData.baseX = slot.x + (enter === "right" ? 0.3 : -0.3);
+        holder.position.x = holder.userData.baseX;
+        holder.userData.travel = { to: slot.x, act, speed: travelSpeed(act), then: holder.userData.pageAct, hide: false };
+        holder.userData.act = act;
+        onTravel(id, act);
+      }
       pageActorById.set(id, holder);
       holder.add(actor);
       addHitArea(holder);
@@ -599,6 +620,9 @@ export function createStage(canvas, options) {
       selected.dioramaRoot.add(spark);
       pageActors.push(spark);
     }
+    after(0.75, () => {
+      if (cinema) measureDiorama();
+    });
   }
 
   /**
@@ -610,6 +634,171 @@ export function createStage(canvas, options) {
     if (!holder) return false;
     holder.userData.burst = { act, until: performance.now() + ms };
     return true;
+  }
+
+  /* ------------------------------ cine ------------------------------ */
+  // La cámara entra en la ilustración y sigue la narración: plano general
+  // con acercamiento lento al empezar la página, reencuadre suave hacia quien
+  // habla y deriva casi imperceptible. El lector puede orbitar arrastrando y
+  // acercarse con la rueda o el pellizco; tras unos segundos sin tocar, la
+  // cámara retoma el paseo automático.
+  let cinema = false;
+  let cineDrag = null;
+  const cine = {
+    yaw: 0, pitch: 0, userUntil: 0, started: 0, seed: 0,
+    radius: 0.16, center: new THREE.Vector3(), focus: new THREE.Vector3(),
+    pos: new THREE.Vector3(), look: new THREE.Vector3(), lastSpeaker: null, cutYaw: 0,
+  };
+  const tmpQuat = new THREE.Quaternion();
+  const tmpBox = new THREE.Box3();
+  const cineFront = new THREE.Vector3();
+  const cineUp = new THREE.Vector3();
+  const cineRight = new THREE.Vector3();
+  const cineTarget = new THREE.Vector3();
+  const cineFocusTarget = new THREE.Vector3();
+  const cineActorPos = new THREE.Vector3();
+
+  function measureDiorama() {
+    if (!selected?.dioramaRoot) return;
+    tmpBox.setFromObject(selected.dioramaRoot);
+    if (tmpBox.isEmpty()) return;
+    tmpBox.getCenter(cine.center);
+    const size = tmpBox.getSize(new THREE.Vector3());
+    cine.radius = Math.max(0.1, Math.max(size.x, size.y, size.z) * 0.5);
+  }
+
+  function setCinema(on) {
+    if (Boolean(on) === cinema) return;
+    cinema = Boolean(on);
+    if (cinema) {
+      cine.yaw = 0;
+      cine.pitch = 0;
+      cine.userUntil = 0;
+      cine.started = clock.t;
+      cine.seed = Math.random() * 6;
+      cine.cutYaw = 0;
+      cine.lastSpeaker = null;
+      measureDiorama();
+      cine.pos.copy(camera.position);
+      cine.look.copy(camLook);
+      cine.focus.copy(cine.center);
+      tween(cineKey, { intensity: 1.4 }, { duration: 0.9 });
+      tween(cineRim, { intensity: 0.9 }, { duration: 0.9 });
+      return;
+    }
+    leaveCinema();
+    moveCamera(viewFor("reading"), reduceMotion ? 0.01 : 0.9);
+  }
+
+  // Al salir del cine la cámara continúa desde donde estaba (sin salto).
+  function leaveCinema() {
+    if (cinema) {
+      camPos.copy(cine.pos);
+      camLook.copy(cine.look);
+    }
+    cinema = false;
+    cineDrag = null;
+    tween(cineKey, { intensity: 0 }, { duration: 0.5 });
+    tween(cineRim, { intensity: 0 }, { duration: 0.5 });
+  }
+
+  function updateCinemaCamera(dt) {
+    if (!selected?.popupPivot) return false;
+    selected.popupPivot.getWorldQuaternion(tmpQuat);
+    cineFront.set(0, 0, 1).applyQuaternion(tmpQuat).normalize();
+    cineUp.set(0, 1, 0).applyQuaternion(tmpQuat).normalize();
+    cineRight.crossVectors(cineUp, cineFront).normalize();
+    const t = clock.t;
+    const since = t - cine.started;
+    // Plano general que se acerca despacio durante los primeros segundos.
+    const push = 1.28 - 0.28 * Math.min(1, since / 8) * (1 - Math.cos(Math.min(1, since / 8) * Math.PI)) * 0.5 * 2;
+    // Reencuadre hacia quien habla (o hacia quien fue nombrado).
+    const speaker = speakingId ? pageActorById.get(speakingId) : null;
+    cineFocusTarget.copy(cine.center).addScaledVector(cineUp, cine.radius * 0.1);
+    if (speaker && speaker.visible) {
+      speaker.getWorldPosition(cineActorPos);
+      cineActorPos.addScaledVector(cineUp, cine.radius * 0.45);
+      cineFocusTarget.lerp(cineActorPos, 0.55);
+      if (cine.lastSpeaker !== speakingId) {
+        cine.lastSpeaker = speakingId;
+        const side = cineActorPos.clone().sub(cine.center).dot(cineRight);
+        cine.cutYaw = Math.sign(side) * 0.16;
+      }
+    } else if (!speakingId) cine.lastSpeaker = null;
+    const userActive = performance.now() < cine.userUntil;
+    if (!userActive) {
+      const k = 1 - Math.exp(-dt * 0.8);
+      cine.yaw += (0 - cine.yaw) * k;
+      cine.pitch += (0 - cine.pitch) * k;
+    }
+    const autoYaw = Math.sin(t * 0.13 + cine.seed) * 0.2 + cine.cutYaw;
+    const autoPitch = 0.12 + Math.sin(t * 0.09 + cine.seed) * 0.04;
+    const yaw = Math.max(-0.85, Math.min(0.85, autoYaw + cine.yaw));
+    const pitch = Math.max(-0.08, Math.min(0.55, autoPitch + cine.pitch));
+    const dist = (cine.radius * 2.35 * push) / Math.max(0.5, zoom.value);
+    cineTarget.copy(cineFocusTarget)
+      .addScaledVector(cineRight, Math.sin(yaw) * Math.cos(pitch) * dist)
+      .addScaledVector(cineUp, Math.sin(pitch) * dist)
+      .addScaledVector(cineFront, Math.cos(yaw) * Math.cos(pitch) * dist);
+    const smooth = reduceMotion ? 1 : 1 - Math.exp(-dt * 2.4);
+    cine.pos.lerp(cineTarget, smooth);
+    cine.focus.lerp(cineFocusTarget, reduceMotion ? 1 : 1 - Math.exp(-dt * 3));
+    cine.look.copy(cine.focus);
+    camera.position.copy(cine.pos);
+    camera.lookAt(cine.look);
+    // Luces de cine alrededor del foco.
+    const reach = cine.radius * 3.2;
+    cineKey.position.copy(cine.focus).addScaledVector(cineRight, -0.6 * reach).addScaledVector(cineUp, 0.9 * reach).addScaledVector(cineFront, 0.8 * reach);
+    cineKey.target.position.copy(cine.focus);
+    cineRim.position.copy(cine.focus).addScaledVector(cineRight, 0.5 * reach).addScaledVector(cineUp, 0.8 * reach).addScaledVector(cineFront, -0.6 * reach);
+    cineRim.target.position.copy(cine.focus);
+    return true;
+  }
+
+  /* --------------------------- desplazamientos ---------------------- */
+  const TRAVEL_X = { left: -0.17, right: 0.17, center: 0, "away-left": -0.55, "away-right": 0.55 };
+  function travelSpeed(act) {
+    if (act === "run") return 0.26;
+    if (act === "fly") return 0.22;
+    if (act === "swim") return 0.18;
+    if (act === "jump") return 0.2;
+    return 0.13;
+  }
+
+  /**
+   * La figura camina (o corre, vuela, nada…) hasta un punto de la escena:
+   * «left», «right», «center» o fuera de escena («away-left»/«away-right»).
+   */
+  function travelTo(actorId, where, act = "walk", ms = 0) {
+    const holder = pageActorById.get(actorId);
+    if (!holder || !(where in TRAVEL_X)) return false;
+    const to = holder.userData.slotX + TRAVEL_X[where];
+    holder.userData.travel = { to, act, speed: travelSpeed(act), then: holder.userData.pageAct ?? null, hide: where.startsWith("away") };
+    holder.userData.burst = { act, until: performance.now() + Math.max(ms || 0, (Math.abs(to - holder.userData.baseX) / travelSpeed(act)) * 1000 + 300) };
+    holder.visible = true;
+    onTravel(actorId, act);
+    return true;
+  }
+
+  function updateTravel(actor, dt) {
+    const travel = actor.userData.travel;
+    let turn = 0;
+    if (travel) {
+      const dx = travel.to - actor.userData.baseX;
+      const step = travel.speed * dt;
+      if (Math.abs(dx) <= step) {
+        actor.userData.baseX = travel.to;
+        actor.userData.travel = null;
+        actor.userData.act = travel.then;
+        if (travel.hide) actor.visible = false;
+      } else {
+        actor.userData.baseX += Math.sign(dx) * step;
+        actor.userData.act = travel.act;
+        turn = Math.sign(dx) * 0.85;
+      }
+    }
+    const current = actor.userData.faceTurn || 0;
+    actor.userData.faceTurn = current + (turn - current) * Math.min(1, dt * 6);
   }
 
   function findPart(holder, key) {
@@ -1188,6 +1377,21 @@ export function createStage(canvas, options) {
       moveDeskDrag(event);
       return;
     }
+    if (cineDrag && event.pointerId === cineDrag.id) {
+      const dx = event.clientX - cineDrag.x;
+      const dy = event.clientY - cineDrag.y;
+      if (Math.hypot(dx, dy) > 6) {
+        cineDrag.moved = true;
+        if (dragging) dragging.moved = true;
+        canvas.dataset.dragging = "true";
+      }
+      if (cineDrag.moved) {
+        cine.yaw = cineDrag.yaw - dx * 0.0055;
+        cine.pitch = Math.max(-0.3, Math.min(0.4, cineDrag.pitch + dy * 0.0035));
+        cine.userUntil = performance.now() + 5000;
+      }
+      return;
+    }
     if (dragging && pointers.has(event.pointerId) && mode === "shelf") {
       const dx = event.clientX - dragging.x;
       if (Math.abs(dx) > 6) dragging.moved = true;
@@ -1223,6 +1427,11 @@ export function createStage(canvas, options) {
     pick();
     dragging.toy = hoveredToy;
     dragging.book = hoveredBook;
+    if (cinema && mode === "reading") {
+      // En cine, arrastrar orbita la cámara alrededor de la escena.
+      cineDrag = { id: event.pointerId, x: event.clientX, y: event.clientY, yaw: cine.yaw, pitch: cine.pitch, moved: false };
+      return;
+    }
     if ((mode === "desk" || mode === "reading") && selected && !hoveredToy && hoveringDeskBook) startDeskDrag(event);
   };
   const onPointerUp = (event) => {
@@ -1239,6 +1448,16 @@ export function createStage(canvas, options) {
       pointerDirty = true;
       return;
     }
+    if (cineDrag && event.pointerId === cineDrag.id) {
+      const orbited = cineDrag.moved;
+      cineDrag = null;
+      if (orbited) {
+        dragging = null;
+        delete canvas.dataset.dragging;
+        pointerDirty = true;
+        return;
+      }
+    }
     const wasDrag = dragging?.moved;
     const pressedToy = dragging?.toy;
     const pressedBook = dragging?.book;
@@ -1246,7 +1465,7 @@ export function createStage(canvas, options) {
     dragging = null;
     delete canvas.dataset.dragging;
     if (wasDrag) {
-      focusBook(bookEntries[settleBook(shelfPan.x, velocity, books.length, bookSpacing)].book.id);
+      if (mode === "shelf") focusBook(bookEntries[settleBook(shelfPan.x, velocity, books.length, bookSpacing)].book.id);
       pointerDirty = false;
       return;
     }
@@ -1270,7 +1489,7 @@ export function createStage(canvas, options) {
   const onPointerCancel = () => {
     if (deskDrag) endDeskDrag(true);
     for (const id of pointers.keys()) if (canvas.hasPointerCapture(id)) canvas.releasePointerCapture(id);
-    pointers.clear(); pinch = null; dragging = null; pointerDirty = false;
+    pointers.clear(); pinch = null; dragging = null; cineDrag = null; pointerDirty = false;
     delete canvas.dataset.dragging;
     setHoveredToy(null); setHoveredBook(null);
     if (mode === "shelf") focusBook(bookEntries[bookIndexAt(shelfPan.x, books.length, bookSpacing)].book.id);
@@ -1433,6 +1652,7 @@ export function createStage(canvas, options) {
 
   function closeBook(instant = false) {
     if (!selected) return;
+    if (cinema) leaveCinema();
     if (deskDrag && !instant) endDeskDrag(true);
     const entry = selected;
     const wasReading = mode === "reading";
@@ -1615,27 +1835,43 @@ export function createStage(canvas, options) {
         return;
       }
       if (!actor.userData.storyActor) return;
+      updateTravel(actor, dt);
+      const faceTurn = actor.userData.faceTurn || 0;
       const baseRotY = actor.userData.baseRotY || 0;
       const isSpeaker = speakingId && actor.userData.storyActor === speakingId;
       const listening = speakingId && !isSpeaker && actor.userData.isCast;
       actor.position.y = baseY + Math.sin(clock.t * 1.8 + phase) * 0.009;
+      // Respiración: el cuerpo entero se hincha apenas.
+      const body = actor.children[0];
+      if (body) body.scale.y = 1 + Math.sin(clock.t * 1.4 + phase) * 0.012;
+      const head = findPart(actor, "head");
       if (isSpeaker) {
-        // Habla: pequeño salto y cabeceo por palabra, que se apaga solo.
+        // Habla: pequeño salto y cabeceo por palabra, que se apaga solo, y
+        // las manos acompañan (gesticula) mientras dura la frase.
         talkPulse = Math.max(0, talkPulse - dt * 4.5);
         actor.position.y += talkPulse * 0.014;
-        actor.rotation.y = baseRotY + Math.sin(clock.t * 2.2 + phase) * 0.08;
+        actor.rotation.y = baseRotY + faceTurn + Math.sin(clock.t * 2.2 + phase) * 0.08;
         actor.rotation.z = Math.sin(clock.t * 1.25 + phase) * 0.025 + talkPulse * 0.06;
         actor.rotation.x = -talkPulse * 0.12;
-        const head = findPart(actor, "head");
-        if (head) head.scale.setScalar(1 + talkPulse * 0.09);
+        if (head) {
+          head.scale.setScalar(1 + talkPulse * 0.09);
+          head.rotation.y += Math.sin(clock.t * 1.7 + phase) * 0.08;
+          head.rotation.z += talkPulse * 0.05;
+        }
+        findParts(actor, "arm").forEach((arm) => {
+          const side = arm.userData.arm;
+          arm.rotation.z += side * (0.22 + talkPulse * 0.35) + Math.sin(clock.t * 2.6 + phase + side) * 0.1;
+          arm.rotation.x -= talkPulse * 0.3 + Math.max(0, Math.sin(clock.t * 1.9 + phase - side)) * 0.12;
+        });
       } else if (listening) {
-        // Los demás se giran hacia quien habla y se mecen despacio.
+        // Los demás se giran hacia quien habla (la cabeza va primero) y se mecen despacio.
         const speaker = pageActorById.get(speakingId);
         const toward = speaker ? Math.atan2(speaker.position.x - actor.position.x, 0.3) * 0.6 : 0;
-        actor.rotation.y += (toward - actor.rotation.y) * Math.min(1, dt * 3);
+        actor.rotation.y += (toward + faceTurn - actor.rotation.y) * Math.min(1, dt * 3);
         actor.rotation.z = Math.sin(clock.t * 1.6 + phase) * 0.04;
+        if (head) head.rotation.y += toward * 0.45;
       } else {
-        actor.rotation.y = baseRotY + Math.sin(clock.t * 0.85 + phase) * 0.16;
+        actor.rotation.y = baseRotY + faceTurn + Math.sin(clock.t * 0.85 + phase) * 0.16;
         actor.rotation.z = Math.sin(clock.t * 1.25 + phase) * 0.025;
       }
       applyAct(actor, clock.t);
@@ -1654,11 +1890,17 @@ export function createStage(canvas, options) {
     ambientDust.rotation.y = Math.sin(clock.t * 0.12) * 0.05;
     ambientDust.position.y = Math.sin(clock.t * 0.28) * 0.025;
 
-    const panX = mode === "shelf" ? shelfPan.x : 0;
-    camera.position.set(camPos.x + panX, camPos.y, camPos.z);
-    camera.lookAt(camLook.x + panX, camLook.y, camLook.z);
     zoom.value += (zoomTarget - zoom.value) * (reduceMotion ? 1 : 1 - Math.exp(-dt * 12));
-    camera.zoom = zoom.value; camera.updateProjectionMatrix();
+    if (cinema && mode === "reading" && updateCinemaCamera(dt)) {
+      // En cine la rueda y el pellizco acercan la cámara, no la lente.
+      camera.zoom = 1;
+    } else {
+      const panX = mode === "shelf" ? shelfPan.x : 0;
+      camera.position.set(camPos.x + panX, camPos.y, camPos.z);
+      camera.lookAt(camLook.x + panX, camLook.y, camLook.z);
+      camera.zoom = zoom.value;
+    }
+    camera.updateProjectionMatrix();
 
     feedback.update(dt);
     renderer.render(scene, camera);
@@ -1707,6 +1949,8 @@ export function createStage(canvas, options) {
     setPopupTextureNow,
     setStoryPage,
     playAct,
+    travelTo,
+    setCinema,
     setSpeaking,
     wordTick,
     nameActor,

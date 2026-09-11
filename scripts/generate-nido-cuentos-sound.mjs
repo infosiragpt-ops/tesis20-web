@@ -153,6 +153,11 @@ const SFX = {
   olas: { text: "Gentle sea waves rolling onto a sandy beach, calm, close", seconds: 4 },
   "canto-nina": { text: "A little girl singing a soft sweet wordless melody, gentle, close", seconds: 3 },
   "ballena-emerge": { text: "A huge whale slowly surfacing with deep water swell and a soft blow of air, gentle", seconds: 3.5 },
+  // Pasos y chapoteos suaves para cuando una figura entra o se desplaza en escena.
+  "pasos-suaves": { text: "Soft slow footsteps of a small character on a wooden floor, gentle, close, no room echo", seconds: 3 },
+  "pasos-pasto": { text: "Soft slow footsteps of a small animal walking on grass, gentle, close", seconds: 3 },
+  "pasos-arena": { text: "Soft slow footsteps on dry sand, gentle, close", seconds: 3 },
+  "chapoteo-suave": { text: "Gentle swimming in calm water, soft swishes and small splashes, close", seconds: 3 },
 };
 
 function getApiKey() {
