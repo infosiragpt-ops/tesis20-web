@@ -8,6 +8,19 @@ import { wordIndexAt, wordKey } from "./cuentos-voice-plan.js";
 
 let ctx = null;
 let master = null;
+// Música y efectos grabados (ElevenLabs), ver scripts/generate-nido-cuentos-sound.mjs.
+const SOUND_MANIFEST_URL = "/assets/nido/audio/cuentos-sound.json";
+let soundManifest = null;
+let soundPending = null;
+const musicPlayers = new Map();
+let musicMood = "biblioteca";
+let musicLevel = 0.5;
+let musicWanted = false;
+let recordedMusicActive = false;
+let musicFadeTimer = 0;
+const sfxPool = [];
+let sfxCursor = 0;
+let soundUnlocked = false;
 let musicGain = null;
 let sfxGain = null;
 let musicTimer = null;
@@ -66,6 +79,7 @@ function ensureContext() {
 /** Se llama en el primer gesto real del usuario (política de autoplay). */
 export function unlockAudio() {
   unlockNarrator();
+  unlockSoundPlayers();
   const context = ensureContext();
   if (!context) return;
   if (context.state === "suspended") context.resume();
@@ -79,6 +93,13 @@ export function setMuted(next) {
     master.gain.setTargetAtTime(muted ? 0 : 1, ctx.currentTime, 0.12);
   }
   if (muted) stopSpeech();
+  else if (musicWanted) startRecordedMusic();
+  musicPlayers.forEach((player) => {
+    player.muted = muted;
+  });
+  sfxPool.forEach((player) => {
+    player.muted = muted;
+  });
   notify();
 }
 
@@ -148,6 +169,8 @@ function scheduleMusic() {
 }
 
 export function startMusic() {
+  musicWanted = true;
+  startRecordedMusic();
   const context = ensureContext();
   if (!context || musicTimer) return;
   if (context.state === "suspended") context.resume();
@@ -161,17 +184,178 @@ export function startMusic() {
 }
 
 export function setMusicIntensity(level) {
+  musicLevel = level;
+  const current = musicPlayers.get(musicMood);
+  if (recordedMusicActive && current) current.volume = musicVolume(level);
   if (!ctx || !musicGain) return;
-  musicGain.gain.setTargetAtTime(Math.max(0.0001, level), ctx.currentTime, 0.8);
+  musicGain.gain.setTargetAtTime(recordedMusicActive ? 0.0001 : Math.max(0.0001, level), ctx.currentTime, 0.8);
+}
+
+/** Cambia de pista (repisa ↔ lectura) con un fundido corto. */
+export function setMusicMood(mood) {
+  if (mood === musicMood) return;
+  const previous = musicPlayers.get(musicMood);
+  musicMood = mood;
+  if (!recordedMusicActive) return;
+  if (previous) fadePlayer(previous, 0, 500, () => previous.pause());
+  startRecordedMusic();
 }
 
 export function stopMusic() {
+  musicWanted = false;
+  musicPlayers.forEach((player) => fadePlayer(player, 0, 400, () => player.pause()));
   if (musicTimer) {
     window.clearInterval(musicTimer);
     musicTimer = null;
   }
   if (musicGain && ctx) {
     musicGain.gain.setTargetAtTime(0.0001, ctx.currentTime, 0.4);
+  }
+}
+
+/* ----------------------- música y efectos grabados ------------------------ */
+
+/** Descarga el manifiesto de música/efectos una sola vez. Nunca rechaza. */
+export function loadCuentosSound() {
+  if (soundManifest) return Promise.resolve(soundManifest);
+  if (soundPending) return soundPending;
+  if (typeof fetch !== "function") return Promise.resolve(null);
+  soundPending = fetch(SOUND_MANIFEST_URL, { cache: "no-cache" })
+    .then((response) => (response.ok ? response.json() : null))
+    .then((data) => {
+      soundManifest = data && typeof data === "object" && data.music ? data : null;
+      if (soundManifest && musicWanted) startRecordedMusic();
+      return soundManifest;
+    })
+    .catch(() => {
+      soundPending = null;
+      return null;
+    });
+  return soundPending;
+}
+
+function soundUrl(entry) {
+  return entry?.src ? `${soundManifest?.base || ""}${entry.src}` : null;
+}
+
+function musicVolume(level) {
+  return Math.min(0.75, Math.max(0, level * 1.1));
+}
+
+function fadePlayer(player, target, ms, done) {
+  const from = player.volume;
+  const start = performance.now();
+  const step = () => {
+    const k = Math.min(1, (performance.now() - start) / ms);
+    player.volume = from + (target - from) * k;
+    if (k < 1) window.requestAnimationFrame(step);
+    else done?.();
+  };
+  window.requestAnimationFrame(step);
+}
+
+function makePlayer() {
+  const player = new window.Audio();
+  player.preload = "auto";
+  player.setAttribute("playsinline", "");
+  player.muted = muted;
+  return player;
+}
+
+// Igual que el narrador: reproducir un WAV mudo dentro del primer gesto deja
+// autorizados los reproductores de música y efectos en iOS.
+function unlockSoundPlayers() {
+  if (soundUnlocked || typeof window === "undefined" || typeof window.Audio !== "function") return;
+  soundUnlocked = true;
+  const players = [];
+  ["biblioteca", "lectura"].forEach((mood) => {
+    if (!musicPlayers.has(mood)) {
+      const player = makePlayer();
+      player.loop = true;
+      musicPlayers.set(mood, player);
+    }
+    players.push(musicPlayers.get(mood));
+  });
+  while (sfxPool.length < 3) sfxPool.push(makePlayer());
+  players.push(...sfxPool);
+  players.forEach((player) => {
+    if (player.dataset.ready) return;
+    try {
+      player.src = getSilentClipUrl();
+      const playing = player.play();
+      if (playing?.then) playing.then(() => player.pause()).catch(() => {});
+    } catch {
+      // El primer uso real lo pedirá dentro de su gesto.
+    }
+  });
+}
+
+function startRecordedMusic() {
+  if (!musicWanted || muted || typeof window === "undefined") return;
+  const entry = soundManifest?.music?.[musicMood];
+  const src = soundUrl(entry);
+  if (!src) {
+    loadCuentosSound();
+    return;
+  }
+  unlockSoundPlayers();
+  const player = musicPlayers.get(musicMood);
+  if (!player) return;
+  if (player.dataset.src === src && !player.paused) {
+    fadePlayer(player, musicVolume(musicLevel), 400);
+    return;
+  }
+  const mood = musicMood;
+  const begin = (url) => {
+    // Si el estado cambió mientras se descargaba, quien lo cambió ya arrancó la otra pista.
+    if (mood !== musicMood || !musicWanted || muted) return;
+    if (player.dataset.src !== src) {
+      player.src = url;
+      player.dataset.src = src;
+      player.dataset.ready = "1";
+      player.dataset.mood = mood;
+    }
+    player.volume = 0.0001;
+    const playing = player.play();
+    Promise.resolve(playing)
+      .then(() => {
+        recordedMusicActive = true;
+        // La música sintetizada se apaga en cuanto suena la grabada.
+        if (ctx && musicGain) musicGain.gain.setTargetAtTime(0.0001, ctx.currentTime, 0.6);
+        fadePlayer(player, musicVolume(musicLevel), 900);
+      })
+      .catch(() => {
+        // Sin permiso o sin archivo: sigue la música sintetizada.
+      });
+  };
+  fetchClip(src).then(begin).catch(() => {});
+}
+
+/** Efecto grabado por clave del manifiesto (lobo-aullido, toc-toc…). */
+export function playCue(key, { volume = 0.9 } = {}) {
+  if (muted || typeof window === "undefined") return;
+  const src = soundUrl(soundManifest?.sfx?.[key]);
+  if (!src) return;
+  unlockSoundPlayers();
+  fetchClip(src)
+    .then((url) => {
+      const player = sfxPool[sfxCursor % sfxPool.length];
+      sfxCursor += 1;
+      player.src = url;
+      player.dataset.ready = "1";
+      player.dataset.cue = key;
+      player.volume = volume;
+      const playing = player.play();
+      if (playing?.catch) playing.catch(() => {});
+    })
+    .catch(() => {});
+}
+
+/** Adelanta la descarga de los efectos de una página. */
+export function prefetchCues(keys) {
+  for (const key of keys || []) {
+    const src = soundUrl(soundManifest?.sfx?.[key]);
+    if (src) fetchClip(src).catch(() => {});
   }
 }
 
@@ -734,6 +918,7 @@ export function isSpeaking() {
 
 export function warmUpVoices() {
   loadCuentosVoices();
+  loadCuentosSound();
   if (!browserSpeechAvailable()) return;
   window.speechSynthesis.getVoices();
   window.speechSynthesis.addEventListener?.("voiceschanged", () => {

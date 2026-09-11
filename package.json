@@ -14,6 +14,8 @@
     "audio:nido:feedback": "node scripts/generate-nido-elevenlabs-audio.mjs",
     "audio:cuentos": "node scripts/generate-nido-cuentos-voice.mjs && node --test tests/nido-game/cuentos-voice.test.mjs",
     "audio:cuentos:plan": "NIDO_TTS_PLAN_ONLY=1 node scripts/generate-nido-cuentos-voice.mjs",
+    "audio:sonido": "node scripts/generate-nido-cuentos-sound.mjs && node --test tests/nido-game/cuentos-sound.test.mjs",
+    "audio:sonido:plan": "NIDO_SOUND_PLAN_ONLY=1 node scripts/generate-nido-cuentos-sound.mjs",
     "audio:premios": "node scripts/generate-nido-reward-sfx.mjs",
     "quality": "node scripts/quality-check.mjs",
     "check:nido": "node scripts/check-nido-curriculum.mjs",

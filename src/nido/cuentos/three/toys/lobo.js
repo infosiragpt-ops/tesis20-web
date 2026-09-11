@@ -33,9 +33,13 @@ export function build({ bonnet = false } = {}) {
     g.add(paw);
   });
   // Cabeza y hocico largo
-  const head = blob(0.07, fur, { y: 0.275 });
+  const headGroup = new THREE.Group();
+  headGroup.position.set(0, 0.275, 0);
+  headGroup.userData.head = 1;
+  const head = blob(0.07, fur, { y: 0 });
   head.scale.set(1.05, 0.95, 0.95);
-  g.add(head);
+  headGroup.add(head);
+  g.add(headGroup);
   const muzzle = blob(0.036, cream, { y: 0.25, z: 0.07 });
   muzzle.scale.set(1.05, 0.8, 1.5);
   g.add(muzzle);

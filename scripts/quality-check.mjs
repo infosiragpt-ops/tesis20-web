@@ -883,7 +883,10 @@ check(
 // (13 KiB) y las entradas del manifiesto de voz. Los mp3 siguen excluidos.
 // 2026-09-10 (ter): 10.2 → 10.3 MiB por «Caperucita Roja»: cuatro personajes,
 // dos escenografías, cinco figuras 3D, su portada AVIF (64 KiB) y el manifiesto.
-check(deployBytesWithoutAudioAndPdf <= 10.3 * 1024 * 1024, `El build sin audios/PDF supera 10.3 MiB (${(deployBytesWithoutAudioAndPdf / 1024 / 1024).toFixed(2)} MiB).`);
+// 2026-09-10 (quater): 10.3 → 10.5 MiB por la portada ilustrada de «Los tres
+// cerditos» (136 KiB), el manifiesto de música/efectos y las acciones del
+// escenario. Música y efectos son mp3 y siguen fuera del presupuesto.
+check(deployBytesWithoutAudioAndPdf <= 10.5 * 1024 * 1024, `El build sin audios/PDF supera 10.5 MiB (${(deployBytesWithoutAudioAndPdf / 1024 / 1024).toFixed(2)} MiB).`);
 
 for (const htmlFile of distFiles.filter((file) => file.endsWith(".html"))) {
   check((await fileSize(htmlFile)) <= 300 * 1024, `${htmlFile} supera 300 KiB.`);
