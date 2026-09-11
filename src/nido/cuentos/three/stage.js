@@ -749,19 +749,21 @@ export function createStage(canvas, options) {
     cineRight.crossVectors(cineUp, cineFront).normalize();
     const t = clock.t;
     const since = t - cine.started;
-    // Plano general que se acerca despacio durante los primeros segundos.
-    const push = 1.28 - 0.28 * Math.min(1, since / 8) * (1 - Math.cos(Math.min(1, since / 8) * Math.PI)) * 0.5 * 2;
+    // Plano abierto (se ve el libro entero) que se acerca apenas durante los
+    // primeros segundos; nunca se pega a la página.
+    const k = Math.min(1, since / 8);
+    const push = 1.12 - 0.12 * (1 - Math.cos(k * Math.PI)) * 0.5;
     // Reencuadre hacia quien habla (o hacia quien fue nombrado).
     const speaker = speakingId ? pageActorById.get(speakingId) : null;
     cineFocusTarget.copy(cine.center).addScaledVector(cineUp, cine.radius * 0.1);
     if (speaker && speaker.visible) {
       speaker.getWorldPosition(cineActorPos);
       cineActorPos.addScaledVector(cineUp, cine.radius * 0.45);
-      cineFocusTarget.lerp(cineActorPos, 0.55);
+      cineFocusTarget.lerp(cineActorPos, 0.3);
       if (cine.lastSpeaker !== speakingId) {
         cine.lastSpeaker = speakingId;
         const side = cineActorPos.clone().sub(cine.center).dot(cineRight);
-        cine.cutYaw = Math.sign(side) * 0.16;
+        cine.cutYaw = Math.sign(side) * 0.1;
       }
     } else if (!speakingId) cine.lastSpeaker = null;
     const userActive = performance.now() < cine.userUntil;
@@ -770,11 +772,11 @@ export function createStage(canvas, options) {
       cine.yaw += (0 - cine.yaw) * k;
       cine.pitch += (0 - cine.pitch) * k;
     }
-    const autoYaw = Math.sin(t * 0.13 + cine.seed) * 0.2 + cine.cutYaw;
-    const autoPitch = 0.12 + Math.sin(t * 0.09 + cine.seed) * 0.04;
+    const autoYaw = Math.sin(t * 0.13 + cine.seed) * 0.14 + cine.cutYaw;
+    const autoPitch = 0.2 + Math.sin(t * 0.09 + cine.seed) * 0.03;
     const yaw = Math.max(-0.85, Math.min(0.85, autoYaw + cine.yaw));
     const pitch = Math.max(-0.08, Math.min(0.55, autoPitch + cine.pitch));
-    const dist = (cine.radius * 2.35 * push) / Math.max(0.5, zoom.value);
+    const dist = (cine.radius * 4.1 * push) / Math.max(0.5, zoom.value);
     cineTarget.copy(cineFocusTarget)
       .addScaledVector(cineRight, Math.sin(yaw) * Math.cos(pitch) * dist)
       .addScaledVector(cineUp, Math.sin(pitch) * dist)
@@ -844,7 +846,7 @@ export function createStage(canvas, options) {
         const pageAct = actor.userData.pageAct;
         if (pageAct !== "sleep") {
           const act = pageAct === "fly" || pageAct === "swim" ? pageAct : "walk";
-          actor.userData.travel = { to: actor.userData.slotX + (Math.random() - 0.5) * 0.16, act, speed: 0.07, then: pageAct, hide: false };
+          actor.userData.travel = { to: actor.userData.slotX + (Math.random() - 0.5) * 0.07, act, speed: 0.06, then: pageAct, hide: false, gentle: true };
         }
       }
     }
@@ -861,7 +863,7 @@ export function createStage(canvas, options) {
       } else {
         actor.userData.baseX += Math.sign(dx) * step;
         actor.userData.act = travel.act;
-        turn = Math.sign(dx) * 0.85;
+        turn = Math.sign(dx) * (travel.gentle ? 0.3 : 0.85);
       }
     }
     const current = actor.userData.faceTurn || 0;
