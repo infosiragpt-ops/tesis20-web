@@ -1,5 +1,13 @@
 // Biblioteca de cuentos de Tesis20 Nido: ocho historias originales y dos
 // adaptaciones propias de clásicos («Los tres cerditos», «Caperucita Roja»).
+//
+// Campos opcionales de cada página para que el escenario 3D y el sonido sigan
+// la narración (ver stage.playAct y cuentos-audio.playCue):
+//   sfx:  efectos que suenan al abrir la página (claves de cuentos-sound.json).
+//   acts: acción sostenida por actor mientras dura la página
+//         (blow, howl, shiver, run, build, cheer, sleep).
+//   cues: por palabra narrada (clave = palabra en minúsculas sin puntuación):
+//         { sfx, act: { actor: acción } } se dispara cuando la voz la pronuncia.
 // Cada libro tiene 10 páginas narradas, 5 souvenirs escondidos y 5 preguntas
 // finales. Los textos están escritos para niñas y niños de 3 a 6 años: frases
 // cortas, vocabulario concreto y una idea por página.
@@ -12,7 +20,8 @@ export const BOOKS = [
     tagline: "Tres hermanos, tres casas y un lobo que sopla",
     set: "meadow-day",
     accent: "#f4a6c1",
-    cover: { ink: "#fff1f6", sub: "#d9a3b8", image: "/assets/nido/cuentos/covers/cerditos-premium-v1.avif" },
+    // Ilustración de portada de Luis, con el título impreso: no se repinta.
+    cover: { ink: "#fff1f6", sub: "#d9a3b8", image: "/assets/nido/cuentos/covers/cerditos-premium-v1.avif", titled: true },
     pages: [
       {
         t: "Tres hermanos cerditos",
@@ -20,6 +29,8 @@ export const BOOKS = [
         light: "day",
         cast: ["pipo", "lolo", "tito"],
         props: ["sol", "nubes", "casa", "arboles", "flores"],
+        sfx: ["cerditos-alegres"],
+        acts: { pipo: "cheer" },
       },
       {
         t: "La casa de paja",
@@ -27,6 +38,8 @@ export const BOOKS = [
         light: "day",
         cast: ["pipo"],
         props: ["sol", "nubes", "paja", "pasto", "flores"],
+        acts: { pipo: "build" },
+        cues: { jugar: { act: { pipo: "cheer" } } },
       },
       {
         t: "La casa de madera",
@@ -35,6 +48,7 @@ export const BOOKS = [
         cast: ["lolo"],
         props: ["sol", "madera", "arboles", "pasto"],
         pin: "manzana",
+        acts: { lolo: "build" },
       },
       {
         t: "La casa de ladrillos",
@@ -43,6 +57,7 @@ export const BOOKS = [
         cast: ["tito"],
         props: ["sol", "ladrillos", "pasto", "flores"],
         pin: "casita",
+        acts: { tito: "build" },
       },
       {
         t: "Un aullido en el bosque",
@@ -51,6 +66,7 @@ export const BOOKS = [
         cast: ["lobo"],
         props: ["luna", "estrellas", "arboles", "paja"],
         pin: "lobo",
+        cues: { auuu: { sfx: "lobo-aullido", act: { lobo: "howl" } }, derechito: { act: { lobo: "run" } } },
       },
       {
         t: "¡Soplaré y soplaré!",
@@ -58,6 +74,12 @@ export const BOOKS = [
         light: "night",
         cast: ["pipo", "lobo"],
         props: ["luna", "estrellas", "viento", "paja"],
+        acts: { pipo: "shiver" },
+        cues: {
+          sopló: { sfx: "lobo-soplido", act: { lobo: "blow" } },
+          voló: { sfx: "casa-paja" },
+          corrió: { act: { pipo: "run" } },
+        },
       },
       {
         t: "La casa de madera cruje",
@@ -65,6 +87,12 @@ export const BOOKS = [
         light: "night",
         cast: ["lolo", "pipo", "lobo"],
         props: ["luna", "estrellas", "viento", "madera"],
+        acts: { lolo: "shiver", pipo: "shiver" },
+        cues: {
+          sopló: { sfx: "lobo-soplido", act: { lobo: "blow" } },
+          cayó: { sfx: "casa-madera" },
+          corrieron: { act: { lolo: "run", pipo: "run" } },
+        },
       },
       {
         t: "La casa que no se mueve",
@@ -73,6 +101,8 @@ export const BOOKS = [
         cast: ["lobo"],
         props: ["luna", "estrellas", "ladrillos", "viento"],
         pin: "escalera",
+        acts: { lobo: "blow" },
+        cues: { sopló: { sfx: "lobo-soplido", act: { lobo: "blow" } }, aire: { act: { lobo: "shiver" } } },
       },
       {
         t: "¡Plaf! en la olla",
@@ -81,6 +111,11 @@ export const BOOKS = [
         cast: ["tito", "lobo"],
         props: ["luna", "estrellas", "ladrillos", "olla"],
         pin: "olla",
+        cues: {
+          plaf: { sfx: "olla-plaf", act: { lobo: "shiver" } },
+          gritó: { sfx: "lobo-ay", act: { lobo: "run" } },
+          corriendo: { act: { lobo: "run", tito: "cheer" } },
+        },
       },
       {
         t: "Tres casas de ladrillos",
@@ -88,6 +123,9 @@ export const BOOKS = [
         light: "day",
         cast: ["pipo", "lolo", "tito"],
         props: ["sol", "nubes", "ladrillos", "flores", "pasto"],
+        sfx: ["cerditos-alegres"],
+        acts: { pipo: "cheer", lolo: "cheer", tito: "cheer" },
+        cues: { felices: { sfx: "cerditos-alegres" } },
       },
     ],
     quiz: [
@@ -124,6 +162,7 @@ export const BOOKS = [
         cast: ["caperucita"],
         props: ["sol", "casa", "sendero", "flores", "arboles"],
         pin: "canasta",
+        cues: { contenta: { sfx: "pasos-bosque", act: { caperucita: "run" } } },
       },
       {
         t: "El lobo del bosque",
@@ -132,6 +171,7 @@ export const BOOKS = [
         cast: ["caperucita", "lobo"],
         props: ["arboles", "sendero", "hojas", "pasto"],
         pin: "pajarito",
+        sfx: ["pajaros"],
       },
       {
         t: "Las flores del bosque",
@@ -147,6 +187,7 @@ export const BOOKS = [
         light: "dusk",
         cast: ["lobo"],
         props: ["casa", "arboles", "sendero", "flores"],
+        cues: { tocó: { sfx: "toc-toc" }, bocado: { act: { lobo: "blow" } } },
       },
       {
         t: "Disfrazado de abuelita",
@@ -154,6 +195,7 @@ export const BOOKS = [
         light: "day",
         cast: ["lobo-cama"],
         props: ["cuarto"],
+        acts: { "lobo-cama": "sleep" },
       },
       {
         t: "¡Qué orejas tan grandes!",
@@ -169,6 +211,8 @@ export const BOOKS = [
         light: "day",
         cast: ["cazador", "lobo-cama"],
         props: ["cuarto"],
+        acts: { "lobo-cama": "sleep" },
+        cues: { roncó: { sfx: "lobo-ronquido" } },
       },
       {
         t: "¡Sanas y salvas!",
@@ -176,6 +220,8 @@ export const BOOKS = [
         light: "dusk",
         cast: ["caperucita", "abuelita", "cazador"],
         props: ["casa", "arboles", "piedras", "pasto"],
+        acts: { caperucita: "cheer" },
+        cues: { salvas: { sfx: "cerditos-alegres" } },
       },
       {
         t: "Por el sendero",
@@ -183,6 +229,7 @@ export const BOOKS = [
         light: "day",
         cast: ["caperucita", "abuelita"],
         props: ["casa", "sol", "flores", "sendero", "pasto"],
+        cues: { abrazó: { sfx: "abuelita-abrazo", act: { caperucita: "cheer", abuelita: "cheer" } } },
       },
     ],
     quiz: [

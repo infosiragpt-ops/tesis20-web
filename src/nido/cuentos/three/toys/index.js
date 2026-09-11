@@ -45,9 +45,9 @@ import * as pelicano from "./pelicano.js";
 import * as carpintero from "./carpintero.js";
 import { nina, nino, nina2, maquinista } from "./personajes.js";
 
-const pipo = { id: "pipo", label: "Pipo", build: () => cerdito.build({ hat: true }) };
-const lolo = { id: "lolo", label: "Lolo", build: () => cerdito.build({ outfit: "#5cb56a" }) };
-const tito = { id: "tito", label: "Tito", build: () => cerdito.build({ outfit: "#d9483f" }) };
+const pipo = { id: "pipo", label: "Pipo", build: () => cerdito.build({ hat: true, item: "paja" }) };
+const lolo = { id: "lolo", label: "Lolo", build: () => cerdito.build({ shirt: "#4fa85f", item: "madera" }) };
+const tito = { id: "tito", label: "Tito", build: () => cerdito.build({ plaid: true, item: "badilejo" }) };
 // El lobo metido en la cama de la abuelita lleva su gorro de dormir.
 const loboCama = { id: "lobo-cama", label: "Lobo disfrazado", build: () => lobo.build({ bonnet: true }) };
 const REGISTRY = { abuelita, arbol, ballena, barco, bufeo, buho, cactus, campana, canasta, caperucita, caracola, casa, cazador, cerdito, cohete, cometa, escalera, estrella, farol, frasco, gorro, lobo, luna, manzana, olla, oso, oveja, pajarito, pez, picaflor, quena, ramo, rana, tambor, tren, vicuna, zorro, mariposa, pelicano, carpintero, nina, nino, nina2, maquinista, pipo, lolo, tito, "lobo-cama": loboCama };

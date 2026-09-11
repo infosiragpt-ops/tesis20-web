@@ -107,6 +107,26 @@ juegos, en `public/assets/nido/audio/cuentos/` con el manifiesto
   `ffmpeg`/`ffprobe` en el PATH y la clave en `ELEVENLABS_API_KEY` o en la
   entrada `tesis20-elevenlabs-api-key` del llavero de macOS.
 
+## Música y efectos de los cuentos (ElevenLabs Music y Sound Effects)
+
+La biblioteca de cuentos suena con dos pistas de música y una docena de efectos
+generados con ElevenLabs (`scripts/generate-nido-cuentos-sound.mjs`), en
+`public/assets/nido/audio/sonido/` con el manifiesto `cuentos-sound.json`:
+
+- Música: `biblioteca` (repisa; nana instrumental con caja de música, cuerdas
+  tipo charango y un toque de flauta andina) y `lectura` (lectura; pad suave con
+  notas de caja de música). 60 s cada una, en bucle con fundidos de 1,5 s en los
+  extremos, estéreo 96 kbps a −20/−22 LUFS. La música sintetizada por Web Audio
+  queda de respaldo y se apaga en cuanto arranca la grabada.
+- Efectos: aullido, soplido y quejido del lobo, ronquido, paja que vuela, madera
+  que se cae, toc-toc, plaf en la olla, cerditos alegres, pájaros, pasos y
+  abrazo. Mono 64 kbps a −16 LUFS.
+- Disparo: por página (`sfx` al abrirla) y por palabra narrada (`cues`, ver
+  cuentos-data.js): cuando la voz dice «sopló» suena el soplido y el lobo del
+  diorama se inclina e hincha la cabeza (`stage.playAct`).
+- Comandos: `npm run audio:sonido:plan` y `npm run audio:sonido`. Misma clave y
+  mismos requisitos (ffmpeg/ffprobe) que la voz.
+
 Para regenerar:
 
 ```bash

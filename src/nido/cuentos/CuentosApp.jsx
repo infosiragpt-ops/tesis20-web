@@ -7,12 +7,16 @@ import { CAST } from "./cuentos-art-cast.jsx";
 import { MEDALS, bookStatus, totals, useProgress } from "./cuentos-progress.js";
 import {
   isMuted,
+  loadCuentosSound,
   loadCuentosVoices,
   onMuteChange,
   pageTrack,
+  playCue,
+  prefetchCues,
   prefetchTracks,
   quizTracks,
   setMusicIntensity,
+  setMusicMood,
   sfx,
   speak,
   speakSequence,
@@ -24,6 +28,7 @@ import {
   warmUpVoices,
   wordTrack,
 } from "./cuentos-audio.js";
+import { wordKey } from "./cuentos-voice-plan.js";
 import { createStage } from "./three/stage.js";
 import { MagicCursor } from "./MagicCursor.jsx";
 import { coverArtTexture, storyPageTexture, svgElementToTexture } from "./three/textures.js";
@@ -75,6 +80,7 @@ export default function CuentosApp() {
 
   useEffect(() => {
     setMusicIntensity(reading ? 0.16 : selectedId ? 0.32 : 0.5);
+    setMusicMood(reading ? "lectura" : "biblioteca");
   }, [reading, selectedId]);
 
   const showToast = useCallback((message, icon) => {
@@ -296,6 +302,7 @@ export default function CuentosApp() {
             }
           }}
           onQuiz={answerQuiz}
+          onAct={(actor, act) => stageRef.current?.playAct(actor, act)}
         />
       ) : null}
 
@@ -523,7 +530,7 @@ function DeskPanel({ book, status, ready, onOpen, onBack }) {
 
 const WORD_SPLIT = /(\s+)/;
 
-function Reader({ book, page, state, pinRef, onPage, onClose, onStar, onPin, onQuiz }) {
+function Reader({ book, page, state, pinRef, onPage, onClose, onStar, onPin, onQuiz, onAct }) {
   const pageData = book.pages[page];
   const entry = state.books[book.id] || { pages: [], pins: [], quiz: [], quizOk: 0 };
   const [activeWord, setActiveWord] = useState(-1);
@@ -566,6 +573,42 @@ function Reader({ book, page, state, pinRef, onPage, onClose, onStar, onPin, onQ
     };
   }, [book.id, page]);
 
+  // Efectos de la página: los de apertura suenan al mostrarla; los de las
+  // palabras se descargan ya para dispararse en el instante justo.
+  const firedCues = useRef(new Set());
+  useEffect(() => {
+    firedCues.current = new Set();
+    let cancelled = false;
+    const timer = window.setTimeout(() => {
+      loadCuentosSound().then(() => {
+        if (cancelled) return;
+        prefetchCues(Object.values(pageData.cues || {}).map((cue) => cue.sfx).filter(Boolean));
+        (pageData.sfx || []).forEach((key) => playCue(key, { volume: 0.7 }));
+      });
+    }, 500);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [book.id, page, pageData]);
+
+  // Una palabra narrada puede disparar un efecto y una acción del escenario
+  // («sopló» → soplido del lobo). Cada palabra dispara una sola vez por lectura.
+  const bodyWords = useMemo(() => pageData.x.split(/\s+/).filter(Boolean), [pageData.x]);
+  const fireCue = useCallback(
+    (bodyIndex) => {
+      const cues = pageData.cues;
+      if (!cues || bodyIndex < 0) return;
+      const key = wordKey(bodyWords[bodyIndex]);
+      const cue = key ? cues[key] : null;
+      if (!cue || firedCues.current.has(bodyIndex)) return;
+      firedCues.current.add(bodyIndex);
+      if (cue.sfx) playCue(cue.sfx);
+      if (cue.act) Object.entries(cue.act).forEach(([actor, act]) => onAct?.(actor, act));
+    },
+    [pageData.cues, bodyWords, onAct],
+  );
+
   useEffect(() => () => stopSpeech(), []);
 
   const turnTo = useCallback(
@@ -592,6 +635,7 @@ function Reader({ book, page, state, pinRef, onPage, onClose, onStar, onPin, onQ
         onWord: (index) => {
           const titleWords = pageData.t.split(/\s+/).filter(Boolean).length;
           setActiveWord(index < 0 ? -1 : index - titleWords);
+          if (index >= titleWords) fireCue(index - titleWords);
         },
         onEnd: () => {
           setSpeaking(false);
@@ -606,10 +650,11 @@ function Reader({ book, page, state, pinRef, onPage, onClose, onStar, onPin, onQ
         },
       });
     });
-  }, [pageData, page, book.id, book.pages.length, turnTo]);
+  }, [pageData, page, book.id, book.pages.length, turnTo, fireCue]);
 
   useEffect(() => {
     autoRef.current = autoRead;
+    if (autoRead) firedCues.current = new Set();
     if (autoRead) readAloud();
     else {
       stopSpeech();

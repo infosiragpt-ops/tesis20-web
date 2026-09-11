@@ -323,6 +323,8 @@ export function createStage(canvas, options) {
 
   const deskToys = [];
   let pageActors = [];
+  // Actores de la página por id (pipo, lobo…) para las acciones narradas.
+  const pageActorById = new Map();
 
   function spawnDeskToys(book, ownedPins) {
     clearDeskToys(true);
@@ -381,6 +383,7 @@ export function createStage(canvas, options) {
     if (!selected?.dioramaRoot || !page) return;
     clearPageDiorama();
 
+    pageActorById.clear();
     const candidates = [...(page.cast || []), ...(page.props || [])]
       .map((id) => (hasToy(id) ? id : STORY_PROP_TO_TOY[id]))
       .filter((id, index, list) => id && hasToy(id) && list.indexOf(id) === index)
@@ -414,6 +417,10 @@ export function createStage(canvas, options) {
       holder.userData.storyActor = id;
       holder.userData.toyId = id;
       holder.userData.pinId = id;
+      holder.userData.baseX = holder.position.x;
+      // Acción sostenida durante la página (ver `acts` en cuentos-data.js).
+      holder.userData.act = page.acts?.[id] || null;
+      pageActorById.set(id, holder);
       holder.add(actor);
       addHitArea(holder);
       selected.dioramaRoot.add(holder);
@@ -439,6 +446,87 @@ export function createStage(canvas, options) {
       pageActors.push(spark);
     }
   }
+
+  /**
+   * Acción breve de un actor (soplar, temblar, correr…) disparada desde la
+   * narración; cuando termina vuelve a la acción sostenida de la página.
+   */
+  function playAct(actorId, act, ms = 1500) {
+    const holder = pageActorById.get(actorId);
+    if (!holder) return false;
+    holder.userData.burst = { act, until: performance.now() + ms };
+    return true;
+  }
+
+  const ACT_TWO_PI = Math.PI * 2;
+  function findPart(holder, key) {
+    const cache = (holder.userData.parts ??= {});
+    if (key in cache) return cache[key];
+    let found = null;
+    holder.traverse((obj) => {
+      if (!found && obj.userData[key]) found = obj;
+    });
+    cache[key] = found;
+    return found;
+  }
+
+  // Aplica la acción vigente de un actor: movimientos procedurales sencillos
+  // sobre el grupo entero, la cabeza (userData.head) y los brazos (userData.arm).
+  function applyAct(actor, t) {
+    const burst = actor.userData.burst;
+    if (burst && performance.now() > burst.until) actor.userData.burst = null;
+    const act = actor.userData.burst?.act || actor.userData.act;
+    const head = findPart(actor, "head");
+    const baseX = actor.userData.baseX ?? actor.position.x;
+    actor.position.x = baseX;
+    actor.rotation.x = 0;
+    if (head) head.scale.setScalar(1);
+    if (!act) return false;
+    switch (act) {
+      case "blow": {
+        // Toma aire y sopla: se inclina hacia adelante e hincha la cabeza.
+        const k = Math.max(0, Math.sin(t * 5));
+        actor.rotation.x = -0.22 - k * 0.12;
+        if (head) head.scale.setScalar(1 + k * 0.22);
+        return true;
+      }
+      case "howl": {
+        actor.rotation.x = 0.28;
+        if (head) head.scale.setScalar(1 + Math.max(0, Math.sin(t * 3)) * 0.1);
+        return true;
+      }
+      case "shiver": {
+        actor.position.x = baseX + Math.sin(t * 38) * 0.005;
+        actor.rotation.z = Math.sin(t * 38) * 0.03;
+        return true;
+      }
+      case "run": {
+        actor.position.y = (actor.userData.baseY ?? 0) + Math.abs(Math.sin(t * 9)) * 0.022;
+        actor.rotation.z = Math.sin(t * 9) * 0.09;
+        actor.rotation.x = -0.12;
+        return true;
+      }
+      case "build": {
+        const arm = findPart(actor, "arm");
+        if (arm) arm.rotation.x = -0.6 + Math.sin(t * 7) * 0.55;
+        actor.position.y = (actor.userData.baseY ?? 0) + Math.max(0, Math.sin(t * 7)) * 0.006;
+        return true;
+      }
+      case "cheer": {
+        actor.position.y = (actor.userData.baseY ?? 0) + Math.abs(Math.sin(t * 6 + (actor.userData.phase || 0))) * 0.03;
+        actor.rotation.y = Math.sin(t * 4 + (actor.userData.phase || 0)) * 0.35;
+        return true;
+      }
+      case "sleep": {
+        actor.rotation.z = 0.12;
+        if (head) head.scale.setScalar(1 + Math.sin(t * 1.6) * 0.03);
+        return true;
+      }
+      default:
+        return false;
+    }
+  }
+  void ACT_TWO_PI;
 
   /* --------------------------- interacción --------------------------- */
   const raycaster = new THREE.Raycaster();
@@ -904,6 +992,7 @@ export function createStage(canvas, options) {
       actor.position.y = baseY + Math.sin(clock.t * 1.8 + phase) * 0.009;
       actor.rotation.y = Math.sin(clock.t * 0.85 + phase) * 0.16;
       actor.rotation.z = Math.sin(clock.t * 1.25 + phase) * 0.025;
+      applyAct(actor, clock.t);
     });
 
     // Los libros respiran apenas en la repisa; el seleccionado conserva la
@@ -972,6 +1061,7 @@ export function createStage(canvas, options) {
     showPage,
     setPopupTextureNow,
     setStoryPage,
+    playAct,
     projectPopup,
     focusBook,
     panShelf,
