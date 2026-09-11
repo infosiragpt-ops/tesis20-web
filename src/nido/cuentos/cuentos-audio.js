@@ -21,6 +21,11 @@ let soundFailed = false;
 const sfxPool = [];
 let sfxCursor = 0;
 let soundUnlocked = false;
+// Ambiente del escenario del cuento (bucle muy bajo bajo la narración).
+let ambientPlayer = null;
+let ambientKey = null;
+let ambientWanted = null;
+const AMBIENT_VOLUME = 0.2;
 let musicGain = null;
 let sfxGain = null;
 let musicTimer = null;
@@ -100,6 +105,7 @@ export function setMuted(next) {
   sfxPool.forEach((player) => {
     player.muted = muted;
   });
+  if (ambientPlayer) ambientPlayer.muted = muted;
   notify();
 }
 
@@ -316,7 +322,11 @@ function unlockSoundPlayers() {
     players.push(musicPlayers.get(mood));
   });
   while (sfxPool.length < 3) sfxPool.push(makePlayer());
-  players.push(...sfxPool);
+  if (!ambientPlayer) {
+    ambientPlayer = makePlayer();
+    ambientPlayer.loop = true;
+  }
+  players.push(...sfxPool, ambientPlayer);
   players.forEach((player) => {
     if (player.dataset.ready) return;
     try {
@@ -399,6 +409,86 @@ export function playCue(key, { volume = 0.6 } = {}) {
     .catch(() => {});
 }
 
+/**
+ * Ambiente del escenario (`ambient-<set>`): arranca en bucle con un fundido al
+ * abrir el libro y cambia de pista si cambia el escenario; null lo apaga.
+ */
+export function setAmbient(setKey) {
+  ambientWanted = setKey || null;
+  if (!canPlayRecordedSound()) return;
+  if (!soundManifest) {
+    loadCuentosSound().then(() => {
+      if (ambientWanted) setAmbient(ambientWanted);
+    });
+    return;
+  }
+  // El manifiesto guarda los ambientes por nombre de escenario (`meadow-day`…).
+  const src = ambientWanted ? soundUrl(soundManifest.ambient?.[ambientWanted]) : null;
+  if (!src) {
+    if (ambientPlayer && !ambientPlayer.paused) fadePlayer(ambientPlayer, 0, 500, () => ambientPlayer.pause());
+    ambientKey = null;
+    return;
+  }
+  if (ambientKey === ambientWanted && ambientPlayer && !ambientPlayer.paused) return;
+  unlockSoundPlayers();
+  const wanted = ambientWanted;
+  ambientKey = wanted;
+  fetchClip(src)
+    .then((url) => {
+      if (ambientWanted !== wanted || muted) return;
+      const swap = () => {
+        ambientPlayer.src = url;
+        ambientPlayer.dataset.ready = "1";
+        ambientPlayer.dataset.ambient = wanted;
+        ambientPlayer.volume = 0.0001;
+        Promise.resolve(ambientPlayer.play())
+          .then(() => fadePlayer(ambientPlayer, AMBIENT_VOLUME, 900))
+          .catch(() => {});
+      };
+      if (!ambientPlayer.paused) fadePlayer(ambientPlayer, 0, 400, swap);
+      else swap();
+    })
+    .catch(() => {});
+}
+
+// Qué sonido tiene cada figura del reparto o souvenir al tocarla o al
+// aparecer en la página. Varios comparten clip (los tres cerditos, los niños).
+export const TOY_SOUND_ALIAS = {
+  pipo: "toy-cerdito",
+  lolo: "toy-cerdito",
+  tito: "toy-cerdito",
+  cerdito: "toy-cerdito",
+  lobo: "lobo-aullido",
+  "lobo-cama": "lobo-ronquido",
+  caperucita: "toy-nino",
+  nina: "toy-nino",
+  nina2: "toy-nino",
+  nino: "toy-nino",
+  caperuza: "toy-nino",
+  casita: "toy-casa",
+};
+export function toySoundKey(toyId) {
+  if (!toyId) return null;
+  const key = TOY_SOUND_ALIAS[toyId] || `toy-${toyId}`;
+  return soundManifest?.sfx?.[key] ? key : null;
+}
+/** Voz de una figura (búho, tren, cerdito…). Devuelve false si no tiene. */
+export function playToySound(toyId, { volume = 0.7 } = {}) {
+  const key = toySoundKey(toyId);
+  if (!key) return false;
+  playCue(key, { volume });
+  return true;
+}
+
+/** Efecto de interfaz grabado (`ui-<nombre>`); false si no está en el manifiesto. */
+function playUi(name, volume = 0.55) {
+  if (muted || !canPlayRecordedSound()) return false;
+  const key = `ui-${name}`;
+  if (!soundManifest?.sfx?.[key]) return false;
+  playCue(key, { volume });
+  return true;
+}
+
 /** Adelanta la descarga de los efectos de una página. */
 export function prefetchCues(keys) {
   for (const key of keys || []) {
@@ -456,7 +546,7 @@ function noiseSweep({ dur = 0.5, from = 900, to = 2600, gain = 0.16 }) {
   src.stop(t + dur);
 }
 
-export const sfx = {
+const synth = {
   // "ten" corto al pasar por cada libro de la repisa.
   hover(key = "") {
     const color = [...String(key)].reduce((sum, char) => sum + char.charCodeAt(0), 0) % 7;
@@ -514,6 +604,20 @@ export const sfx = {
     );
   },
 };
+
+// Interfaz: si el manifiesto trae el efecto grabado (`ui-page`, `ui-open`…)
+// suena ese; si no, la síntesis de Web Audio de siempre. `hover` y `toy` se
+// disparan decenas de veces por minuto y siguen sintetizados.
+const RECORDED_UI = new Set(["page", "open", "close", "land", "select", "pin", "star", "right", "wrong", "cheer"]);
+export const sfx = Object.fromEntries(
+  Object.entries(synth).map(([name, fn]) => [
+    name,
+    (...args) => {
+      if (RECORDED_UI.has(name) && playUi(name)) return;
+      fn(...args);
+    },
+  ]),
+);
 
 /* ----------------------------- narración -------------------------- */
 //
@@ -989,9 +1093,11 @@ function onVisibilityChange() {
     const music = musicPlayers.get(musicMood);
     hiddenPause = {
       music: Boolean(music && !music.paused),
+      ambient: Boolean(ambientPlayer && !ambientPlayer.paused),
       speech: isSpeaking(),
     };
     if (hiddenPause.music) music.pause();
+    if (hiddenPause.ambient) ambientPlayer.pause();
     if (hiddenPause.speech) pauseSpeech();
     if (ctx && ctx.state === "running") ctx.suspend().catch(() => {});
     return;
@@ -1003,6 +1109,10 @@ function onVisibilityChange() {
   if (resume.music && musicWanted && !muted) {
     const music = musicPlayers.get(musicMood);
     const playing = music?.play();
+    if (playing?.catch) playing.catch(() => {});
+  }
+  if (resume.ambient && ambientWanted && !muted && ambientPlayer) {
+    const playing = ambientPlayer.play();
     if (playing?.catch) playing.catch(() => {});
   }
   if (resume.speech) resumeSpeech();
