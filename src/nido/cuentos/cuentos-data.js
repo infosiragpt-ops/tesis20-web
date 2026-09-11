@@ -9,6 +9,8 @@
 //         (blow, howl, shiver, run, build, cheer, sleep).
 //   cues: por palabra narrada (clave = palabra en minúsculas sin puntuación):
 //         { sfx, act: { actor: acción } } se dispara cuando la voz la pronuncia.
+// Cada libro trae `names`: { actor: [palabras] }; cuando la voz dice una de
+// esas palabras, la figura se ilumina y los demás la miran.
 // Cada libro tiene 10 páginas narradas, 5 souvenirs escondidos y 5 preguntas
 // finales. Los textos están escritos para niñas y niños de 3 a 6 años: frases
 // cortas, vocabulario concreto y una idea por página.
@@ -18,6 +20,8 @@ export const BOOKS = [
     id: "cerditos",
     title: "Los tres cerditos",
     hero: "Pipo, Lolo y Tito",
+    // Palabras de la narración que nombran a cada figura del diorama.
+    names: { pipo: ["pipo"], lolo: ["lolo"], tito: ["tito"], lobo: ["lobo"] },
     tagline: "Tres hermanos, tres casas y un lobo que sopla",
     set: "meadow-day",
     accent: "#f4a6c1",
@@ -140,6 +144,8 @@ export const BOOKS = [
     id: "caperucita",
     title: "Caperucita Roja",
     hero: "Caperucita",
+    // Palabras de la narración que nombran a cada figura del diorama.
+    names: { caperucita: ["caperucita", "caperuza", "niña"], lobo: ["lobo"], "lobo-cama": ["lobo"], abuelita: ["abuelita", "abuela"], cazador: ["cazador"] },
     tagline: "Una niña, un bosque y un lobo con voz finita",
     set: "forest-day",
     accent: "#d63b3b",
@@ -244,6 +250,8 @@ export const BOOKS = [
     id: "kusi",
     title: "Kusi y la luna dormilona",
     hero: "Kusi",
+    // Palabras de la narración que nombran a cada figura del diorama.
+    names: { oso: ["kusi", "osito", "oso"], buho: ["búho"] },
     tagline: "Un osito de anteojos quiere despertar a la luna",
     set: "andes-night",
     accent: "#f5c451",
@@ -337,6 +345,8 @@ export const BOOKS = [
     id: "amaru",
     title: "Amaru y el río de estrellas",
     hero: "Amaru",
+    // Palabras de la narración que nombran a cada figura del diorama.
+    names: { bufeo: ["amaru", "bufeo"], rana: ["rana", "ranita"], pez: ["pez", "pececito"] },
     tagline: "Un bufeo rosado busca las luces que se apagaron",
     set: "amazon-river",
     accent: "#7fd7c4",
@@ -430,6 +440,8 @@ export const BOOKS = [
     id: "sami",
     title: "Sami y la cometa viajera",
     hero: "Sami",
+    // Palabras de la narración que nombran a cada figura del diorama.
+    names: { nina: ["sami"], oveja: ["oveja", "ovejita", "ovejas"] },
     tagline: "Una cometa se escapa y cruza todo el valle",
     set: "highland-day",
     accent: "#ff9d6c",
@@ -523,6 +535,8 @@ export const BOOKS = [
     id: "killa",
     title: "Killa y el zorro del desierto",
     hero: "Killa",
+    // Palabras de la narración que nombran a cada figura del diorama.
+    names: { zorro: ["zorro", "zorrito", "zorra", "killa"] },
     tagline: "Una noche de arena, estrellas y huellas",
     set: "desert-night",
     accent: "#c9a3ff",
@@ -616,6 +630,8 @@ export const BOOKS = [
     id: "chaska",
     title: "Chaska y la flor de cristal",
     hero: "Chaska",
+    // Palabras de la narración que nombran a cada figura del diorama.
+    names: { picaflor: ["chaska", "picaflor"], mariposa: ["mariposa"] },
     tagline: "Un picaflor cruza la niebla para llegar a tiempo",
     set: "cloud-forest",
     accent: "#8ed2a0",
@@ -709,6 +725,8 @@ export const BOOKS = [
     id: "tico",
     title: "Tico y el tren de las nubes",
     hero: "Tico",
+    // Palabras de la narración que nombran a cada figura del diorama.
+    names: { nino: ["tico"], maquinista: ["maquinista"], vicuna: ["vicuñas", "vicuña"] },
     tagline: "Un tren pequeño sube hasta donde vive la neblina",
     set: "mountain-day",
     accent: "#7fb6ff",
@@ -802,6 +820,8 @@ export const BOOKS = [
     id: "ana",
     title: "Ana y la ballena",
     hero: "Ana",
+    // Palabras de la narración que nombran a cada figura del diorama.
+    names: { nina2: ["ana"], pelicano: ["pelícano"], ballena: ["ballena"] },
     tagline: "En la orilla del mar se puede escuchar muy lejos",
     set: "ocean-day",
     accent: "#5fc8e8",
@@ -895,6 +915,8 @@ export const BOOKS = [
     id: "wayra",
     title: "Wayra y el bosque que canta",
     hero: "Wayra",
+    // Palabras de la narración que nombran a cada figura del diorama.
+    names: { vicuna: ["wayra", "vicuña", "vicuñita"], carpintero: ["carpintero", "pájaro", "pajarito"] },
     tagline: "Una vicuñita descubre de dónde viene la música",
     set: "forest-dusk",
     accent: "#f2a0b5",

@@ -386,6 +386,7 @@ export default function CuentosApp() {
           onAct={(actor, act) => stageRef.current?.playAct(actor, act)}
           onSpeaking={(actor) => stageRef.current?.setSpeaking(actor)}
           onWordTick={() => stageRef.current?.wordTick()}
+          onName={(actor) => stageRef.current?.nameActor(actor)}
         />
       ) : null}
 
@@ -616,7 +617,7 @@ function DeskPanel({ book, status, ready, onOpen, onBack }) {
 
 const WORD_SPLIT = /(\s+)/;
 
-function Reader({ book, page, state, pinRef, onPage, onClose, onStar, onPin, onQuiz, onAct, onSpeaking, onWordTick }) {
+function Reader({ book, page, state, pinRef, onPage, onClose, onStar, onPin, onQuiz, onAct, onSpeaking, onWordTick, onName }) {
   const pageData = book.pages[page];
   const entry = state.books[book.id] || { pages: [], pins: [], quiz: [], quizOk: 0 };
   const [activeWord, setActiveWord] = useState(-1);
@@ -685,18 +686,32 @@ function Reader({ book, page, state, pinRef, onPage, onClose, onStar, onPin, onQ
   // Una palabra narrada puede disparar un efecto y una acción del escenario
   // («sopló» → soplido del lobo). Cada palabra dispara una sola vez por lectura.
   const bodyWords = useMemo(() => pageData.x.split(/\s+/).filter(Boolean), [pageData.x]);
+  // Palabra → figura: si la voz nombra a un personaje presente en la página,
+  // su figura se ilumina y toma la palabra (los demás la miran).
+  const nameIndex = useMemo(() => {
+    const index = new Map();
+    const cast = new Set(pageData.cast || []);
+    Object.entries(book.names || {}).forEach(([actor, words]) => {
+      if (!cast.has(actor)) return;
+      words.forEach((word) => index.set(wordKey(word), actor));
+    });
+    return index;
+  }, [book.names, pageData.cast]);
+
   const fireCue = useCallback(
     (bodyIndex) => {
-      const cues = pageData.cues;
-      if (!cues || bodyIndex < 0) return;
+      if (bodyIndex < 0) return;
       const key = wordKey(bodyWords[bodyIndex]);
-      const cue = key ? cues[key] : null;
+      const named = key ? nameIndex.get(key) : null;
+      if (named) onName?.(named);
+      const cues = pageData.cues;
+      const cue = cues && key ? cues[key] : null;
       if (!cue || firedCues.current.has(bodyIndex)) return;
       firedCues.current.add(bodyIndex);
       if (cue.sfx) playCue(cue.sfx);
       if (cue.act) Object.entries(cue.act).forEach(([actor, act]) => onAct?.(actor, act));
     },
-    [pageData.cues, bodyWords, onAct],
+    [pageData.cues, bodyWords, onAct, onName, nameIndex],
   );
 
   useEffect(() => () => stopSpeech(), []);

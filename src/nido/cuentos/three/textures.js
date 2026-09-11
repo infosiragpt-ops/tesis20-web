@@ -68,6 +68,28 @@ export function woodTexture({ base = "#c48a52", dark = "#8f5a2b", light = "#e0b0
 
 // Motivos del papel tapiz. Cada cuento tiene su patrón y sus colores.
 const MOTIFS = {
+  // Casita con techo a dos aguas y puerta (pared de «Los tres cerditos»).
+  house(ctx, x, y, s, ink) {
+    ctx.strokeStyle = ink;
+    ctx.lineWidth = s * 0.08;
+    ctx.lineJoin = "round";
+    ctx.beginPath();
+    ctx.moveTo(x - s * 0.36, y - s * 0.02);
+    ctx.lineTo(x, y - s * 0.4);
+    ctx.lineTo(x + s * 0.36, y - s * 0.02);
+    ctx.stroke();
+    ctx.strokeRect(x - s * 0.28, y - s * 0.02, s * 0.56, s * 0.42);
+    ctx.strokeRect(x - s * 0.08, y + s * 0.14, s * 0.16, s * 0.26);
+  },
+  // Corazón (pared de «Caperucita Roja»).
+  heart(ctx, x, y, s, ink) {
+    ctx.fillStyle = ink;
+    ctx.beginPath();
+    ctx.moveTo(x, y + s * 0.34);
+    ctx.bezierCurveTo(x - s * 0.5, y, x - s * 0.34, y - s * 0.38, x, y - s * 0.12);
+    ctx.bezierCurveTo(x + s * 0.34, y - s * 0.38, x + s * 0.5, y, x, y + s * 0.34);
+    ctx.fill();
+  },
   kite(ctx, x, y, s, ink) {
     ctx.strokeStyle = ink;
     ctx.lineWidth = s * 0.07;
@@ -191,6 +213,10 @@ export const WALL_THEMES = {
   tico: { bg: "#c6d8e8", ink: "#93aec6", accent: "#e05a4f", motifs: ["mountain", "train", "star"] },
   ana: { bg: "#bfe0ec", ink: "#7fb9cf", accent: "#f0a35a", motifs: ["wave", "fish", "bird"] },
   wayra: { bg: "#d8c6d6", ink: "#b39ab3", accent: "#e0a54f", motifs: ["leaf", "star", "bird"] },
+  // Pradera de los cerditos: verde claro con casitas y flores.
+  cerditos: { bg: "#dbe8c4", ink: "#a9c58a", accent: "#e8837a", motifs: ["house", "flower", "leaf"] },
+  // Bosque de Caperucita: verde profundo con hojas, corazones y pájaros.
+  caperucita: { bg: "#4f7a4a", ink: "#7aa672", accent: "#e0574a", motifs: ["leaf", "heart", "bird"] },
 };
 
 export function wallpaperTexture(theme = WALL_THEMES.default, size = 512) {
