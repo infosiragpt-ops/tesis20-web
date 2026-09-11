@@ -60,3 +60,18 @@ test("el progreso se acota al recorrido y se completa por distancia o por tirón
   assert.equal(shouldCompleteDrag(0.2, 1.4), true, "un tirón rápido completa");
   assert.equal(shouldCompleteDrag(0.05, 3), false, "un tirón sin recorrido no");
 });
+
+import { splitWords, wordKey } from "../../src/nido/cuentos/cuentos-voice-plan.js";
+
+test("los nombres que iluminan figuras apuntan a personajes reales y aparecen en la narración", () => {
+  for (const book of BOOKS) {
+    const cast = new Set(book.pages.flatMap((page) => page.cast || []));
+    const spoken = new Set(book.pages.flatMap((page) => splitWords(`${page.t}. ${page.x}`).words.map(wordKey)));
+    assert.ok(book.names && Object.keys(book.names).length > 0, `${book.id} no tiene nombres de personajes.`);
+    for (const [actor, words] of Object.entries(book.names)) {
+      assert.ok(cast.has(actor) && hasToy(actor), `${book.id}: «${actor}» no es un personaje con figura.`);
+      assert.ok(words.some((word) => spoken.has(wordKey(word))), `${book.id}: ninguna palabra de «${actor}» (${words.join(", ")}) se narra.`);
+      for (const word of words) assert.equal(word, wordKey(word), `${book.id}: «${word}» debe ir en minúsculas sin puntuación.`);
+    }
+  }
+});

@@ -16,6 +16,9 @@
 - Iluminación de entorno precalculada (RoomEnvironment) y sombras suaves: reflejos reales en tapas, vidrio y figuras sin coste por fotograma.
 - Sonido: ambiente del escenario en bucle bajo la narración, efectos de interfaz grabados (pasar página, abrir, cerrar, acierto…) y la voz de cada figura al tocarla o al entrar en escena.
 
+- Repisa: un protagonista de pie encima de cada libro (el del libro enfocado recibe la luz cálida y se anima) con las figuras decorativas intercaladas; ya no hay óvalo. El desplazamiento se acota al ancho visible para que la fila de libros llene la pantalla sin paredes vacías a los lados. La pared cambia de tema con cada cuento, también con «Los tres cerditos» (casitas y flores) y «Caperucita Roja» (hojas y corazones).
+- Cuando la narradora nombra a un personaje presente en la página («Pipo», «Lolo», «Tito», «búho»…), su figura se ilumina con un aro de luz y un brillo cálido, da un saltito y toma la palabra: los demás se giran a mirarla. Las palabras que nombran a cada figura están en `names` de cada libro y se verifican en CI. Todas las figuras parpadean cada pocos segundos.
+
 ## Implementación y límites
 
 Escena y figuras originales en Three.js. Hyper3D MCP no estuvo disponible y no se utilizó Blender. Los fondos ilustrados siguen siendo texturas, mientras que todos los personajes del reparto tienen geometría volumétrica e interacción. No se duplican los personajes como recortes en las ilustraciones del lector.

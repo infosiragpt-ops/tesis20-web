@@ -56,8 +56,12 @@ export function eyes(group, { x = 0.03, y = 0.2, z = 0.08, r = 0.014, spread = 1
   const white = mat("#ffffff", { rough: 0.2 });
   [-1, 1].forEach((side) => {
     const eye = blob(r, black, { x: side * x * spread, y, z });
+    // Marca para el parpadeo del escenario (escala en y durante un instante).
+    eye.userData.eye = 1;
     group.add(eye);
-    group.add(blob(r * 0.38, white, { x: side * x * spread + r * 0.35, y: y + r * 0.35, z: z + r * 0.75 }));
+    const shine = blob(r * 0.38, white, { x: side * x * spread + r * 0.35, y: y + r * 0.35, z: z + r * 0.75 });
+    shine.userData.eye = 1;
+    group.add(shine);
   });
 }
 

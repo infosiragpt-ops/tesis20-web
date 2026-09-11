@@ -242,10 +242,9 @@ export function createStage(canvas, options) {
   const shelfToys = new Map();
   const toyState = new Map();
   const collectedPins = new Set();
-  const storyCameo = new THREE.Group();
-  storyCameo.position.y = -0.13;
-  const cameoActors = [];
-  scene.add(storyCameo);
+  // Protagonista de cada cuento de pie sobre la repisa alta, justo encima de
+  // su libro; el del libro enfocado recibe la luz cálida y se anima.
+  const heroHolders = new Map();
   const storyLight = new THREE.PointLight("#ffe3a6", 1.6, 2.8, 1.2);
   scene.add(storyLight);
 
@@ -261,40 +260,52 @@ export function createStage(canvas, options) {
     });
   }
 
-  function updateCameo(book) {
-    feedback.clear();
-    cameoActors.splice(0).forEach(releaseToy);
-    [...storyCameo.children].forEach(releaseToy);
-    const color = new THREE.Color(book.accent);
-    const backing = new THREE.Mesh(new THREE.SphereGeometry(0.52, 40, 24),
-      new THREE.MeshStandardMaterial({ color: color.clone().lerp(new THREE.Color("#fff3d4"), 0.64), roughness: 0.62,
-        emissive: color, emissiveIntensity: 0.22 }));
-    backing.scale.set(1.5, 0.59, 0.055);
-    backing.position.set(0, 2.18, -0.405); storyCameo.add(backing);
-    const rim = new THREE.Mesh(new THREE.TorusGeometry(0.52, 0.013, 8, 64), mat("#e9c780", { rough: 0.36, metal: 0.35 }));
-    rim.scale.set(1.5, 0.59, 1); rim.position.copy(backing.position); rim.position.z += 0.018; storyCameo.add(rim);
-    const cast = [...new Set(book.pages.flatMap(page => page.cast || []))].filter(hasToy);
-    const themeProps = { kusi: "luna", sami: "cometa", killa: "cactus", tico: "tren", ana: "barco", wayra: "arbol" };
-    const ids = [...new Set([...cast, themeProps[book.id]])].filter(hasToy).slice(0, 3);
-    ids.forEach((id, i) => {
-      const holder = new THREE.Group();
-      holder.position.set((i - (ids.length - 1) / 2) * 0.39, 1.985, -0.27);
-      holder.scale.setScalar(1.4); holder.userData.toyId = id; holder.userData.pinId = id;
-      holder.add(buildToy(id)); addHitArea(holder); storyCameo.add(holder); cameoActors.push(holder); toyGroups.push(holder);
-      toyState.set(holder, { phase: i * 1.8, hop: 0, wiggle: 0, spin: 0 });
-      if (!reduceMotion) {
-        holder.scale.setScalar(0.05);
-        tween(holder.scale, { x: 1.4, y: 1.4, z: 1.4 }, { duration: 0.5, delay: i * 0.06, easing: ease.outBack });
-      }
-    });
-    storyLight.color.copy(color).lerp(new THREE.Color("#fff4cf"), 0.6);
+  function heroToyFor(book) {
+    const cast = [...new Set(book.pages.flatMap((page) => page.cast || []))];
+    return cast.find((id) => hasToy(id)) || null;
   }
 
+  function updateCameo(book) {
+    feedback.clear();
+    const color = new THREE.Color(book.accent);
+    storyLight.color.copy(color).lerp(new THREE.Color("#fff4cf"), 0.6);
+    const entry = bookEntries.find((e) => e.book.id === book.id);
+    if (entry) storyLight.position.set(entry.home.x, 2.45, 0.1);
+    heroHolders.forEach((holder, id) => {
+      const focused = id === book.id;
+      const state = toyState.get(holder);
+      if (focused && state && !reduceMotion) tween(state, { hop: 0.05 }, { duration: 0.22, easing: ease.out, onComplete: () => tween(state, { hop: 0 }, { duration: 0.45, easing: ease.outBack }) });
+      holder.userData.focused = focused;
+    });
+  }
+
+  // Un protagonista por libro, encima de su lomo.
+  bookEntries.forEach((entry, i) => {
+    const toyId = heroToyFor(entry.book);
+    if (!toyId) return;
+    const holder = new THREE.Group();
+    holder.position.set(entry.home.x, 1.84, -0.24);
+    holder.scale.setScalar(1.28);
+    holder.userData.toyId = toyId;
+    holder.userData.pinId = toyId;
+    holder.userData.heroOf = entry.book.id;
+    holder.rotation.y = 0.06 * ((i % 2) * 2 - 1);
+    holder.add(buildToy(toyId));
+    addHitArea(holder);
+    scene.add(holder);
+    heroHolders.set(entry.book.id, holder);
+    toyGroups.push(holder);
+    toyState.set(holder, { phase: i * 1.3, hop: 0, wiggle: 0, spin: 0 });
+  });
+
+  // Figuras decorativas entre los protagonistas, más pequeñas.
   SHELF_TOYS.forEach((id, i) => {
     const holder = new THREE.Group();
-    const x = (i - (SHELF_TOYS.length - 1) / 2) * 0.5;
-    holder.position.set(x, 1.84, -0.27);
-    holder.scale.setScalar(1.16);
+    // A medio camino entre dos libros consecutivos (el último, al final de la repisa).
+    const x = (i - (SHELF_TOYS.length - 1) / 2 + 0.5) * bookSpacing;
+    const edge = ((books.length - 1) * bookSpacing) / 2 + bookSpacing / 2;
+    holder.position.set(Math.min(Math.max(x, -edge), edge), 1.84, -0.3);
+    holder.scale.setScalar(0.78);
     holder.userData.toyId = id;
     holder.userData.pinId = id;
     scene.add(holder);
@@ -430,6 +441,76 @@ export function createStage(canvas, options) {
   }
   function wordTick() {
     if (speakingId) talkPulse = 1;
+  }
+
+  // «Pipo» en la voz → la figura de Pipo se ilumina (aro de luz bajo los pies
+  // y brillo en su color), da un saltito y toma la palabra: los demás la miran.
+  const glowRingGeometry = new THREE.RingGeometry(0.075, 0.13, 40);
+  function nameActor(actorId) {
+    const holder = pageActorById.get(actorId);
+    if (!holder) return false;
+    if (!holder.userData.glowRing) {
+      const ring = new THREE.Mesh(glowRingGeometry, new THREE.MeshBasicMaterial({ color: "#ffd873", transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
+      ring.rotation.x = -Math.PI / 2;
+      ring.position.y = 0.006;
+      holder.add(ring);
+      holder.userData.glowRing = ring;
+      const emissives = [];
+      holder.traverse((obj) => {
+        const list = Array.isArray(obj.material) ? obj.material : obj.material ? [obj.material] : [];
+        list.forEach((m) => {
+          if (m.emissive && !m.map) emissives.push({ material: m, base: m.emissive.clone(), intensity: m.emissiveIntensity });
+        });
+      });
+      holder.userData.emissives = emissives;
+    }
+    holder.userData.glow = 1;
+    speakingId = actorId;
+    talkPulse = 1;
+    const state = toyState.get(holder);
+    if (state && !reduceMotion) tween(state, { hop: 0.045 }, { duration: 0.18, easing: ease.out, onComplete: () => tween(state, { hop: 0 }, { duration: 0.4, easing: ease.outBack }) });
+    return true;
+  }
+
+  const glowColor = new THREE.Color("#ffb347");
+  function applyGlow(holder, dt) {
+    const glow = holder.userData.glow;
+    if (glow === undefined) return;
+    const next = Math.max(0, glow - dt * 0.9);
+    holder.userData.glow = next;
+    const ring = holder.userData.glowRing;
+    if (ring) {
+      ring.material.opacity = next * 0.85;
+      const s = 1 + (1 - next) * 0.35;
+      ring.scale.set(s, s, s);
+    }
+    // Brillo cálido y contenido: realza a la figura sin blanquear sus colores.
+    (holder.userData.emissives || []).forEach(({ material, base, intensity }) => {
+      material.emissive.copy(base).lerp(glowColor, next * 0.3);
+      material.emissiveIntensity = intensity + next * 0.22;
+    });
+    if (next === 0) {
+      holder.userData.glow = undefined;
+      (holder.userData.emissives || []).forEach(({ material, base, intensity }) => {
+        material.emissive.copy(base);
+        material.emissiveIntensity = intensity;
+      });
+    }
+  }
+
+  // Parpadeo: cada figura cierra los ojos un instante cada pocos segundos.
+  function applyBlink(holder, t) {
+    if (!holder.userData.eyeParts) {
+      const parts = [];
+      holder.traverse((obj) => { if (obj.userData.eye) parts.push(obj); });
+      holder.userData.eyeParts = parts;
+      holder.userData.blinkPhase = (toyState.get(holder)?.phase || 0) * 1.7;
+    }
+    if (!holder.userData.eyeParts.length) return;
+    const cycle = 3.6 + ((holder.userData.blinkPhase * 13) % 2.4);
+    const phase = (t + holder.userData.blinkPhase) % cycle;
+    const closed = phase < 0.13 ? 0.12 : 1;
+    holder.userData.eyeParts.forEach((part) => { part.scale.y = closed; });
   }
 
   function updatePageDiorama(page) {
@@ -1062,9 +1143,16 @@ export function createStage(canvas, options) {
   };
   window.addEventListener("keydown", onKeyDown);
 
+  // El desplazamiento se acota para que la fila de libros siempre llene el
+  // ancho visible: sin paredes vacías a los lados en pantallas anchas. Cuando
+  // caben todos, la repisa se queda centrada.
   function clampPan(x) {
-    const half = ((books.length - 1) * bookSpacing) / 2;
-    return Math.max(-half, Math.min(half, x));
+    const half = ((books.length - 1) * bookSpacing) / 2 + bookSpacing / 2;
+    const view = viewFor("shelf");
+    const distance = Math.abs(view.pos[2] - (-0.17));
+    const visibleHalf = Math.tan((camera.fov * Math.PI) / 360) * distance * camera.aspect / Math.max(0.8, zoomTarget);
+    const limit = Math.max(0, half - visibleHalf);
+    return Math.max(-limit, Math.min(limit, x));
   }
 
   /* ---------------------------- estados ----------------------------- */
@@ -1335,6 +1423,14 @@ export function createStage(canvas, options) {
         if (part.userData.flutter) part.rotation.y += Math.sin(clock.t * 9 + state.phase) * 0.6 * part.userData.flutter;
         if (part.userData.sway) part.rotation.z += Math.sin(clock.t * 3 + state.phase) * 0.13 * part.userData.sway;
       });
+      if (!reduceMotion) applyBlink(holder, clock.t);
+      applyGlow(holder, dt);
+      // El protagonista del libro enfocado en la repisa se mece un poco más.
+      if (holder.userData.heroOf && !reduceMotion) {
+        const focused = holder.userData.focused;
+        toy.rotation.y += focused ? Math.sin(clock.t * 2.4 + state.phase) * 0.22 : 0;
+        toy.position.y += focused ? Math.abs(Math.sin(clock.t * 3.1 + state.phase)) * 0.012 : 0;
+      }
     });
 
     pageActors.forEach((actor) => {
@@ -1391,16 +1487,12 @@ export function createStage(canvas, options) {
     camera.lookAt(camLook.x + panX, camLook.y, camLook.z);
     zoom.value += (zoomTarget - zoom.value) * (reduceMotion ? 1 : 1 - Math.exp(-dt * 12));
     camera.zoom = zoom.value; camera.updateProjectionMatrix();
-    const cameoX = mode === "shelf" ? shelfPan.x : 0;
-    storyCameo.position.x += (cameoX - storyCameo.position.x) * (reduceMotion ? 1 : 1 - Math.exp(-dt * 10));
-    storyLight.position.set(storyCameo.position.x, 2.3, 0.6);
-    shelfToys.forEach(holder => { holder.visible = Math.abs(holder.position.x - storyCameo.position.x) > 0.86; });
+
     feedback.update(dt);
     renderer.render(scene, camera);
     onFrame();
   }
   activateBook(bookEntries.find(entry => entry.book.id === initialBookId) || bookEntries[0]);
-  storyCameo.position.x = shelfPan.x;
   loop();
 
   function dispose() {
@@ -1445,6 +1537,7 @@ export function createStage(canvas, options) {
     playAct,
     setSpeaking,
     wordTick,
+    nameActor,
     projectPopup,
     projectCorner,
     /** La app no pudo abrir el cuento: la tapa vuelve a cerrarse. */
