@@ -38,10 +38,10 @@ function plate(shape, d, material, opts = {}) {
 
 export function build() {
   const g = new THREE.Group();
-  const emerald = mat("#1fa36d");
-  const emeraldDark = mat("#147a52");
-  const turquoise = mat("#2fc6c4");
-  const cream = mat("#f9eaa6");
+  const emerald = mat("#1fa36d", { surface: "feathers" });
+  const emeraldDark = mat("#147a52", { surface: "feathers" });
+  const turquoise = mat("#2fc6c4", { surface: "feathers" });
+  const cream = mat("#f9eaa6", { surface: "feathers" });
   const black = mat("#1c1a22", { rough: 0.35 });
   const pink = mat("#f48cb6");
   const yellow = mat("#ffd24a");

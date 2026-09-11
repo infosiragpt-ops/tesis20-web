@@ -52,10 +52,10 @@ const PIN_SPOTS = [
   [396, 214],
 ];
 
-function SceneBody({ book, pageIndex, foundPin, onPin, interactive, showPin = true, showCast = true }) {
+function SceneBody({ book, pageIndex, foundPin, onPin, interactive, showPin = true, showCast = true, sky = true, omit = null }) {
   const page = book.pages[pageIndex];
   const seed = `${book.id}-${pageIndex}`;
-  const props = [...(page.props || [])].sort((a, b) => propLayer(a) - propLayer(b));
+  const props = [...(page.props || [])].filter((id) => !omit || !omit.has(id)).sort((a, b) => propLayer(a) - propLayer(b));
   const cast = page.cast || [];
   const castRand = seeded(`${seed}-cast`);
   // Un solo personaje: se mueve un poco y a veces mira al otro lado, para
@@ -70,7 +70,7 @@ function SceneBody({ book, pageIndex, foundPin, onPin, interactive, showPin = tr
 
   return (
     <>
-      <Backdrop set={book.set} light={page.light} seed={seed} />
+      <Backdrop set={book.set} light={page.light} seed={seed} sky={sky} />
       {props
         .filter((id) => propLayer(id) <= 5)
         .map((id) => (
@@ -109,7 +109,7 @@ function SceneBody({ book, pageIndex, foundPin, onPin, interactive, showPin = tr
   );
 }
 
-export function Scene({ book, pageIndex, foundPin, onPin, interactive = true, showPin = true, showCast = true }) {
+export function Scene({ book, pageIndex, foundPin, onPin, interactive = true, showPin = true, showCast = true, sky = true, omit = null }) {
   const page = book.pages[pageIndex];
   return (
     <svg
@@ -120,7 +120,7 @@ export function Scene({ book, pageIndex, foundPin, onPin, interactive = true, sh
       role="img"
       aria-label={`Ilustración: ${page.t}`}
     >
-      <SceneBody book={book} pageIndex={pageIndex} foundPin={foundPin} onPin={onPin} interactive={interactive} showPin={showPin} showCast={showCast} />
+      <SceneBody book={book} pageIndex={pageIndex} foundPin={foundPin} onPin={onPin} interactive={interactive} showPin={showPin} showCast={showCast} sky={sky} omit={omit} />
     </svg>
   );
 }

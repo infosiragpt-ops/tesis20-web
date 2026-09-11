@@ -37,12 +37,12 @@ function plaidTexture() {
 
 export function build({ outfit = "#5aa0d8", hat = false, shirt = null, plaid = false, item = null } = {}) {
   const g = new THREE.Group();
-  const pink = mat("#f7b7c6", { rough: 0.55 });
-  const pinkDark = mat("#ec93aa", { rough: 0.55 });
+  const pink = mat("#f7b7c6", { rough: 0.55 , surface: "skin" });
+  const pinkDark = mat("#ec93aa", { rough: 0.55 , surface: "skin" });
   const nostril = mat("#b5637e", { rough: 0.4 });
   const mouth = mat("#8e2f3f", { rough: 0.5 });
   const tongue = mat("#e97a92", { rough: 0.5 });
-  const denim = mat(outfit, { rough: 0.8 });
+  const denim = mat(outfit, { rough: 0.8, surface: "cloth" });
   const denimDark = mat("#3f7bb0", { rough: 0.8 });
   const gold = mat("#f2c14e", { rough: 0.45 });
   const brow = mat("#8e5a3c", { rough: 0.6 });
@@ -52,7 +52,7 @@ export function build({ outfit = "#5aa0d8", hat = false, shirt = null, plaid = f
   body.scale.set(1, 1.08, 0.9);
   g.add(body);
   let torsoMat = denim;
-  if (shirt) torsoMat = mat(shirt, { rough: 0.85 });
+  if (shirt) torsoMat = mat(shirt, { rough: 0.85, surface: "cloth" });
   if (plaid) {
     const map = plaidTexture();
     torsoMat = map ? new THREE.MeshStandardMaterial({ map, roughness: 0.85 }) : mat("#d9483f", { rough: 0.85 });

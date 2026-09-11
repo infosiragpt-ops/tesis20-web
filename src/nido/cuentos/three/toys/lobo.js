@@ -7,9 +7,9 @@ export const label = "Lobo";
 
 export function build({ bonnet = false } = {}) {
   const g = new THREE.Group();
-  const fur = mat("#7d8494");
-  const furDark = mat("#5d6373");
-  const cream = mat("#e6e6ea");
+  const fur = mat("#7d8494", { surface: "fur" });
+  const furDark = mat("#5d6373", { surface: "fur" });
+  const cream = mat("#e6e6ea", { surface: "fur" });
   const black = mat("#1c1a22", { rough: 0.35 });
 
   // Cuerpo sentado

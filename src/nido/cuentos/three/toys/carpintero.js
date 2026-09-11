@@ -9,8 +9,8 @@ export const label = "Pájaro carpintero";
 
 export function build() {
   const g = new THREE.Group();
-  const dark = mat("#293342", { rough: 0.55 });
-  const cream = mat("#fff1ce", { rough: 0.72 });
+  const dark = mat("#293342", { rough: 0.55 , surface: "feathers" });
+  const cream = mat("#fff1ce", { rough: 0.72 , surface: "feathers" });
   const red = mat("#dc4749", { rough: 0.45 });
   const tan = mat("#bc9c66");
   const bark = mat("#88603b", { rough: 0.9 });

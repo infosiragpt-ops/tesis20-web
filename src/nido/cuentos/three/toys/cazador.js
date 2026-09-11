@@ -9,11 +9,11 @@ export const label = "Cazador";
 
 export function build() {
   const g = new THREE.Group();
-  const green = mat("#4f7a3a", { rough: 0.8 });
-  const greenDark = mat("#3c5f2c", { rough: 0.8 });
-  const brown = mat("#5b4a3a", { rough: 0.85 });
-  const skin = mat("#d8a172");
-  const beard = mat("#6b3f26", { rough: 0.9 });
+  const green = mat("#4f7a3a", { rough: 0.8 , surface: "cloth" });
+  const greenDark = mat("#3c5f2c", { rough: 0.8 , surface: "cloth" });
+  const brown = mat("#5b4a3a", { rough: 0.85 , surface: "cloth" });
+  const skin = mat("#d8a172", { surface: "skin" });
+  const beard = mat("#6b3f26", { rough: 0.9 , surface: "fur" });
   const boots = mat("#3a2a20", { rough: 0.7 });
   const gold = mat("#f2c14e", { rough: 0.5 });
   const feather = mat("#d9483f", { rough: 0.7 });

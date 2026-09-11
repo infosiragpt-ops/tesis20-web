@@ -14,8 +14,8 @@ function bodyGeometry() {
 
 export function build() {
   const g = new THREE.Group();
-  const blue = mat("#3b82d4");
-  const belly = mat("#e3f2fb");
+  const blue = mat("#3b82d4", { surface: "skin" });
+  const belly = mat("#e3f2fb", { surface: "skin" });
   const navy = mat("#1f3a63", { rough: 0.4 });
   const pink = mat("#f2a3b0");
   const spray = mat("#9fdff8", { rough: 0.35 });

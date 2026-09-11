@@ -1767,3 +1767,25 @@
   .cuentos-captions__text { font-size: 17px; line-height: 1.45; }
   .cuentos-read-notice { bottom: max(116px, calc(env(safe-area-inset-bottom) + 108px)); }
 }
+
+/* Seguimiento de lectura marcado: lo leído en dorado, la palabra en curso salta. */
+.cuentos-word.is-read {
+  color: #8c6a3a;
+  border-bottom-color: rgba(200, 160, 90, 0.7);
+}
+
+.cuentos-captions__word.is-read {
+  color: #e2cf9c;
+}
+
+.cuentos-word.is-active,
+.cuentos-captions__word.is-active {
+  display: inline-block;
+  animation: cuentos-word-pop 0.28s ease;
+}
+
+@keyframes cuentos-word-pop {
+  0% { transform: scale(1); }
+  45% { transform: scale(1.12); }
+  100% { transform: scale(1); }
+}

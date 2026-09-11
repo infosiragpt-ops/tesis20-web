@@ -9,8 +9,8 @@ export const label = "Oveja";
 
 export function build() {
   const g = new THREE.Group();
-  const wool = mat("#faf6ee", { rough: 0.85 });
-  const dark = mat("#3b3a42", { rough: 0.7 });
+  const wool = mat("#faf6ee", { rough: 0.85 , surface: "wool" });
+  const dark = mat("#3b3a42", { rough: 0.7 , surface: "fur" });
   const pink = mat("#e98da3", { rough: 0.6 });
   const red = mat("#d9363f", { rough: 0.5 });
 

@@ -576,9 +576,20 @@ export function storyPageTexture(book, page, pageIndex, totalPages) {
   const bodyLines = wrapWords(ctx, page.x, 790);
   const bodyStart = ruleY + (compact ? 102 : 115);
   const lineHeight = compact ? (bodyLines.length > 8 ? 82 : 96) : bodyLines.length > 7 ? 69 : 76;
+  const fontSize = compact ? 88 : 53;
+  // Caja de cada palabra, en el orden de la narración, para el seguimiento
+  // de lectura sobre la propia página (ver highlightStoryWord).
+  const wordBoxes = [];
+  const spaceWidth = ctx.measureText(" ").width;
   bodyLines.slice(0, 10).forEach((line, index) => {
     const y = bodyStart + index * lineHeight;
     ctx.fillText(line, 116, y);
+    let x = 116;
+    line.split(" ").forEach((word) => {
+      const w = ctx.measureText(word).width;
+      wordBoxes.push({ x, y: y - fontSize * 0.82, w, h: fontSize * 1.12 });
+      x += w + spaceWidth;
+    });
     ctx.strokeStyle = "rgba(174,124,59,.26)";
     ctx.lineWidth = 2;
     ctx.beginPath();
@@ -596,8 +607,44 @@ export function storyPageTexture(book, page, pageIndex, totalPages) {
   tex.colorSpace = THREE.SRGBColorSpace;
   tex.anisotropy = 8;
   tex.needsUpdate = true;
+  // Copia limpia de la página: el resaltado se repinta encima en cada palabra.
+  const base = canvas(c.width, c.height);
+  base.getContext("2d").drawImage(c, 0, 0);
+  tex.userData.page = { canvas: c, base, words: wordBoxes, active: -1 };
   storyTextureCache.set(key, tex);
   return tex;
+}
+
+/**
+ * Seguimiento de lectura sobre la página del libro 3D: la palabra que suena
+ * lleva un resaltado ámbar y las ya leídas un tono dorado suave. `index` es
+ * el índice de la palabra en el texto de la página (−1 = ninguna).
+ */
+export function highlightStoryWord(texture, index) {
+  const info = texture?.userData?.page;
+  if (!info || info.active === index) return false;
+  const ctx = info.canvas.getContext("2d");
+  ctx.drawImage(info.base, 0, 0);
+  if (index >= 0) {
+    ctx.save();
+    ctx.globalCompositeOperation = "multiply";
+    ctx.fillStyle = "rgba(226,196,128,0.55)";
+    for (let i = 0; i < Math.min(index, info.words.length); i += 1) {
+      const box = info.words[i];
+      ctx.fillRect(box.x - 3, box.y + box.h * 0.2, box.w + 6, box.h * 0.72);
+    }
+    const box = info.words[index];
+    if (box) {
+      ctx.fillStyle = "#f4c95d";
+      ctx.beginPath();
+      ctx.roundRect(box.x - 10, box.y, box.w + 20, box.h, 14);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+  info.active = index;
+  texture.needsUpdate = true;
+  return true;
 }
 
 function shade(hex, amount) {

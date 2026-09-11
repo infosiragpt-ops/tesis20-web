@@ -7,8 +7,8 @@ export const label = "Pez linterna";
 
 export function build() {
   const g = new THREE.Group();
-  const skin = mat("#7ccdf5");
-  const belly = mat("#e8f7ff");
+  const skin = mat("#7ccdf5", { surface: "skin" });
+  const belly = mat("#e8f7ff", { surface: "skin" });
   const fin = mat("#2f86d2");
   const deep = mat("#1d4b8c");
   const wave = mat("#2a62b0");

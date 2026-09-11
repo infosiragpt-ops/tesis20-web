@@ -6,10 +6,13 @@ import { BOOKS } from "../../src/nido/cuentos/cuentos-data.js";
 import { splitWords, wordKey } from "../../src/nido/cuentos/cuentos-voice-plan.js";
 import { TOY_SOUND_ALIAS } from "../../src/nido/cuentos/cuentos-audio.js";
 import { ACT_NAMES as ACTS } from "../../src/nido/cuentos/cuentos-acts.js";
+import { WORK_TASKS } from "../../src/nido/cuentos/three/work-pieces.js";
+
+const SCENES = new Set(["scatter", "collapse"]);
 
 // Destinos de `move` y lados de `enter` que conoce el escenario (stage.travelTo).
 const MOVES = new Set(["left", "right", "center", "away-left", "away-right"]);
-const SIDES = new Set(["left", "right"]);
+const SIDES = new Set(["left", "right", "none"]);
 
 // Las páginas pueden pedir efectos (`sfx`, `cues`) y acciones del escenario
 // (`acts`). Estos tests impiden referenciar un efecto que no está grabado, una
@@ -50,6 +53,10 @@ test("cada sfx, cue y act de las páginas es válido", async () => {
           assert.ok(cast.has(actor), `${where}: cue «${word}» apunta a «${actor}», que no está en la página.`);
           assert.ok(ACTS.has(act), `${where}: acción desconocida «${act}».`);
         }
+        if (cue.scene) {
+          assert.ok(SCENES.has(cue.scene), `${where}: evento de escena desconocido «${cue.scene}».`);
+          assert.ok(page.work, `${where}: cue «${word}» pide un evento de escena pero la página no tiene obra.`);
+        }
         for (const [actor, destination] of Object.entries(cue.move || {})) {
           assert.ok(cast.has(actor), `${where}: cue «${word}» mueve a «${actor}», que no está en la página.`);
           assert.ok(MOVES.has(destination), `${where}: destino desconocido «${destination}».`);
@@ -60,6 +67,13 @@ test("cada sfx, cue y act de las páginas es válido", async () => {
         assert.ok(SIDES.has(side), `${where}: lado de entrada desconocido «${side}».`);
       }
       if (page.steps) assert.ok(manifest.sfx[page.steps], `${where}: pasos «${page.steps}» no grabados.`);
+      if (page.work) {
+        const task = WORK_TASKS[page.work.task];
+        assert.ok(task, `${where}: obra desconocida «${page.work.task}».`);
+        assert.ok(page.work.actor || page.work.built, `${where}: la obra necesita quien trabaje o estar ya construida.`);
+        if (page.work.actor) assert.ok(cast.has(page.work.actor), `${where}: trabaja «${page.work.actor}», que no está en la página.`);
+        assert.ok(manifest.sfx[task.sound], `${where}: sonido de obra «${task.sound}» no grabado.`);
+      }
     });
   }
 });

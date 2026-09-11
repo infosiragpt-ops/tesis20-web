@@ -34,6 +34,8 @@ import { wordKey } from "./cuentos-voice-plan.js";
 import { createStage } from "./three/stage.js";
 import { MagicCursor } from "./MagicCursor.jsx";
 import { coverArtTexture, storyPageTexture, svgElementToTexture } from "./three/textures.js";
+import { paintedBackdropTexture } from "./three/backdrop.js";
+import { WORK_PROPS } from "./three/work-pieces.js";
 import "./cuentos.css";
 
 const prefersReducedMotion = () =>
@@ -157,6 +159,7 @@ export default function CuentosApp() {
         if (!playToySound(pinId)) sfx.toy(pinId);
       },
       onTravel: (actor, act) => latest.current.travelSound?.(actor, act),
+      onWorkSound: (key) => playCue(key, { volume: 0.45 }),
       onFrame: () => {
         const hint = dragHintRef.current;
         if (hint) {
@@ -235,11 +238,30 @@ export default function CuentosApp() {
     setPanelReady(false);
   }, []);
 
-  const pageTexture = useCallback(
-    (book, pageIndex) =>
-      svgElementToTexture(`page-${book.id}-${pageIndex}`, <Scene book={book} pageIndex={pageIndex} interactive={false} showPin={false} showCast={false} />, 1000, 640),
-    [],
-  );
+  // Fondo de cada página: la pintura de la portada encuadrada y graduada
+  // según la luz de la escena (backdrop.js); si la imagen no carga, queda la
+  // escenografía dibujada en SVG.
+  const pageTexture = useCallback(async (book, pageIndex) => {
+    // Escenografía dibujada sin cielo (colinas, suelo, árboles, casas…) con
+    // fondo transparente; la obra en 3D sustituye a la paja, madera y ladrillos.
+    let layer = null;
+    try {
+      const layerTexture = await svgElementToTexture(
+        `layer-${book.id}-${pageIndex}`,
+        <Scene book={book} pageIndex={pageIndex} interactive={false} showPin={false} showCast={false} sky={false} omit={WORK_PROPS} />,
+        1000,
+        640,
+      );
+      layer = layerTexture.image;
+    } catch {
+      layer = null;
+    }
+    try {
+      return await paintedBackdropTexture(book, pageIndex, layer);
+    } catch {
+      return svgElementToTexture(`page-${book.id}-${pageIndex}`, <Scene book={book} pageIndex={pageIndex} interactive={false} showPin={false} showCast={false} omit={WORK_PROPS} />, 1000, 640);
+    }
+  }, []);
 
   const openReading = useCallback(async () => {
     const book = BOOKS.find((b) => b.id === latest.current.selectedId);
@@ -397,6 +419,9 @@ export default function CuentosApp() {
           onSpeaking={(actor) => stageRef.current?.setSpeaking(actor)}
           onWordTick={() => stageRef.current?.wordTick()}
           onName={(actor) => stageRef.current?.nameActor(actor)}
+          onStoryWord={(index) => stageRef.current?.setStoryWord(index)}
+          onScene={(kind) => stageRef.current?.sceneEvent(kind)}
+          isWorking={() => Boolean(stageRef.current?.isWorking?.())}
           onMove={(actor, where, act, hold) => stageRef.current?.travelTo(actor, where, act, hold)}
           onCinema={(on) => {
             setCinemaOn(on);
@@ -652,7 +677,7 @@ export function stepsKeyFor(book, page, act) {
   return page?.steps || STEPS_BY_SET[book.set] || "pasos-suaves";
 }
 
-function Reader({ book, page, state, pinRef, onPage, onClose, onStar, onPin, onQuiz, onAct, onSpeaking, onWordTick, onName, onMove, onCinema }) {
+function Reader({ book, page, state, pinRef, onPage, onClose, onStar, onPin, onQuiz, onAct, onSpeaking, onWordTick, onName, onMove, onCinema, onStoryWord, onScene, isWorking }) {
   const pageData = book.pages[page];
   const entry = state.books[book.id] || { pages: [], pins: [], quiz: [], quizOk: 0 };
   const [activeWord, setActiveWord] = useState(-1);
@@ -780,8 +805,10 @@ function Reader({ book, page, state, pinRef, onPage, onClose, onStar, onPin, onQ
       if (cue.act) Object.entries(cue.act).forEach(([actor, act]) => onAct?.(actor, act, cue.hold));
       // «corrió» → la figura se desplaza de verdad hasta el punto indicado.
       if (cue.move) Object.entries(cue.move).forEach(([actor, where]) => onMove?.(actor, where, cue.act?.[actor] || "walk", cue.hold));
+      // «voló» → la casa de paja sale volando; «cayó» → la de madera se derrumba.
+      if (cue.scene) onScene?.(cue.scene);
     },
-    [pageData.cues, bodyWords, onAct, onName, onMove, nameIndex],
+    [pageData.cues, bodyWords, onAct, onName, onMove, onScene, nameIndex],
   );
 
   useEffect(() => () => stopSpeech(), []);
@@ -792,6 +819,7 @@ function Reader({ book, page, state, pinRef, onPage, onClose, onStar, onPin, onQ
       stopSpeech();
       setSpeaking(false);
       setActiveWord(-1);
+      onStoryWord?.(-1);
       sfx.page();
       onPage(next);
     },
@@ -811,12 +839,14 @@ function Reader({ book, page, state, pinRef, onPage, onClose, onStar, onPin, onQ
         onWord: (index) => {
           const titleWords = pageData.t.split(/\s+/).filter(Boolean).length;
           setActiveWord(index < 0 ? -1 : index - titleWords);
+          onStoryWord?.(index < 0 ? -1 : index - titleWords);
           if (index >= titleWords) fireCue(index - titleWords);
           if (index >= 0) onWordTick?.();
         },
         onEnd: (result) => {
           setSpeaking(false);
           setActiveWord(-1);
+          onStoryWord?.(-1);
           onSpeaking?.(null);
           // Si la página no llegó a escucharse (sonido silenciado, clip que
           // falla, voz del sistema que corta) no se pasa sola: se avisa y se
@@ -833,16 +863,24 @@ function Reader({ book, page, state, pinRef, onPage, onClose, onStar, onPin, onQ
           // Festejos y remates suenan cuando la narradora termina, no encima.
           (pageData.sfxEnd || []).forEach((key) => playCue(key, { volume: 0.6 }));
           if (autoRef.current) {
-            window.setTimeout(() => {
+            // Si una figura sigue construyendo o recogiendo, la página espera
+            // (hasta 10 s) a que termine su trabajo antes de pasar.
+            const startedAt = Date.now();
+            const advance = () => {
               if (!autoRef.current || pageRef.current !== page) return;
+              if (isWorking?.() && Date.now() - startedAt < 10000) {
+                window.setTimeout(advance, 400);
+                return;
+              }
               if (page < book.pages.length - 1) turnTo(page + 1);
               else setAutoRead(false);
-            }, 900);
+            };
+            window.setTimeout(advance, 900);
           }
         },
       });
     });
-  }, [pageData, page, book.id, book.pages.length, turnTo, fireCue]);
+  }, [pageData, page, book.id, book.pages.length, turnTo, fireCue, isWorking]);
 
   useEffect(() => {
     autoRef.current = autoRead;
@@ -914,7 +952,7 @@ function Reader({ book, page, state, pinRef, onPage, onClose, onStar, onPin, onQ
             if (/^\s+$/.test(token) || token === "") return <span key={i}>{token}</span>;
             const index = wordIndexes[i];
             return (
-              <button key={i} type="button" className={`cuentos-word ${index === activeWord ? "is-active" : ""}`} onClick={() => sayWord(token)}>
+              <button key={i} type="button" className={`cuentos-word ${index === activeWord ? "is-active" : index >= 0 && index < activeWord ? "is-read" : ""}`} onClick={() => sayWord(token)}>
                 {token}
               </button>
             );
@@ -947,7 +985,7 @@ function Reader({ book, page, state, pinRef, onPage, onClose, onStar, onPin, onQ
             {words.map((token, i) => {
               if (/^\s+$/.test(token) || token === "") return <span key={i}>{token}</span>;
               return (
-                <span key={i} className={`cuentos-captions__word ${wordIndexes[i] === activeWord ? "is-active" : ""}`}>
+                <span key={i} className={`cuentos-captions__word ${wordIndexes[i] === activeWord ? "is-active" : wordIndexes[i] >= 0 && wordIndexes[i] < activeWord ? "is-read" : ""}`}>
                   {token}
                 </span>
               );

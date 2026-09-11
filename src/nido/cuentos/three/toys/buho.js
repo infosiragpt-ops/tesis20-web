@@ -9,10 +9,10 @@ export const label = "Búho";
 
 export function build() {
   const g = new THREE.Group();
-  const brown = mat("#7a563a");
-  const brownDark = mat("#5e3f2a");
-  const light = mat("#e3c7a0");
-  const dark = mat("#4e3524");
+  const brown = mat("#7a563a", { surface: "feathers" });
+  const brownDark = mat("#5e3f2a", { surface: "feathers" });
+  const light = mat("#e3c7a0", { surface: "feathers" });
+  const dark = mat("#4e3524", { surface: "feathers" });
   const orange = mat("#e0a24a");
 
   /* ------------------------------ tronco ------------------------------ */

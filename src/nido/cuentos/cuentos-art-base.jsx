@@ -156,7 +156,7 @@ function canopy(rand, baseY) {
 }
 
 /** Fondo completo: cielo, capas de terreno y neblina, según set + luz. */
-export function Backdrop({ set, light, seed }) {
+export function Backdrop({ set, light, seed, sky = true }) {
   const palette = SETS[set] || SETS["highland-day"];
   const lit = LIGHTS[light] || LIGHTS.day;
   const rand = seeded(`${seed}-backdrop`);
@@ -191,10 +191,10 @@ export function Backdrop({ set, light, seed }) {
         </linearGradient>
       </defs>
 
-      <rect x="-20" y="-20" width={VIEW_W + 40} height={VIEW_H + 40} fill={`url(#${id}-sky)`} />
-      <rect x="-20" y="-20" width={VIEW_W + 40} height={VIEW_H + 40} fill={`url(#${id}-glow)`} />
+      {sky ? <rect x="-20" y="-20" width={VIEW_W + 40} height={VIEW_H + 40} fill={`url(#${id}-sky)`} /> : null}
+      {sky ? <rect x="-20" y="-20" width={VIEW_W + 40} height={VIEW_H + 40} fill={`url(#${id}-glow)`} /> : null}
 
-      {lit.stars > 0 ? <Stars seed={`${seed}-stars`} opacity={lit.stars} /> : null}
+      {sky && lit.stars > 0 ? <Stars seed={`${seed}-stars`} opacity={lit.stars} /> : null}
 
       {set === "ocean-day" ? (
         <>
