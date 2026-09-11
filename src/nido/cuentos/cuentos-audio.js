@@ -17,7 +17,7 @@ let musicMood = "biblioteca";
 let musicLevel = 0.5;
 let musicWanted = false;
 let recordedMusicActive = false;
-let musicFadeTimer = 0;
+let soundFailed = false;
 const sfxPool = [];
 let sfxCursor = 0;
 let soundUnlocked = false;
@@ -93,7 +93,7 @@ export function setMuted(next) {
     master.gain.setTargetAtTime(muted ? 0 : 1, ctx.currentTime, 0.12);
   }
   if (muted) stopSpeech();
-  else if (musicWanted) startRecordedMusic();
+  else if (musicWanted) startMusic();
   musicPlayers.forEach((player) => {
     player.muted = muted;
   });
@@ -168,9 +168,11 @@ function scheduleMusic() {
   }
 }
 
-export function startMusic() {
-  musicWanted = true;
-  startRecordedMusic();
+// La música sintetizada solo suena si la grabada no está disponible: si el
+// manifiesto de sonido falla, si no hay reproductor <audio> o si play() es
+// rechazado. Nunca suenan las dos a la vez.
+function startSynthMusic() {
+  if (recordedMusicActive) return;
   const context = ensureContext();
   if (!context || musicTimer) return;
   if (context.state === "suspended") context.resume();
@@ -178,57 +180,87 @@ export function startMusic() {
   step = 0;
   musicGain.gain.cancelScheduledValues(context.currentTime);
   musicGain.gain.setValueAtTime(0.0001, context.currentTime);
-  musicGain.gain.exponentialRampToValueAtTime(0.5, context.currentTime + 3);
+  musicGain.gain.exponentialRampToValueAtTime(Math.max(0.0001, musicLevel), context.currentTime + 3);
   scheduleMusic();
   musicTimer = window.setInterval(scheduleMusic, 350);
+}
+
+function stopSynthMusic(fadeSeconds = 0.25) {
+  if (musicTimer) {
+    window.clearInterval(musicTimer);
+    musicTimer = null;
+  }
+  if (!ctx || !musicGain) return;
+  const now = ctx.currentTime;
+  // Se cancela cualquier rampa pendiente: si no, la subida de 3 s programada
+  // al arrancar seguía sonando por encima de la música grabada.
+  musicGain.gain.cancelScheduledValues(now);
+  musicGain.gain.setValueAtTime(Math.max(0.0001, musicGain.gain.value), now);
+  musicGain.gain.exponentialRampToValueAtTime(0.0001, now + fadeSeconds);
+}
+
+export function startMusic() {
+  musicWanted = true;
+  if (canPlayRecordedSound() && !soundFailed) {
+    startRecordedMusic();
+    return;
+  }
+  startSynthMusic();
 }
 
 export function setMusicIntensity(level) {
   musicLevel = level;
   const current = musicPlayers.get(musicMood);
-  if (recordedMusicActive && current) current.volume = musicVolume(level);
-  if (!ctx || !musicGain) return;
-  musicGain.gain.setTargetAtTime(recordedMusicActive ? 0.0001 : Math.max(0.0001, level), ctx.currentTime, 0.8);
+  if (recordedMusicActive && current && !current.paused) fadePlayer(current, musicVolume(level), 600);
+  if (!ctx || !musicGain || !musicTimer) return;
+  musicGain.gain.setTargetAtTime(Math.max(0.0001, level), ctx.currentTime, 0.8);
 }
 
-/** Cambia de pista (repisa ↔ lectura) con un fundido corto. */
+/** Cambia de pista (repisa ↔ lectura) con un fundido cruzado corto. */
 export function setMusicMood(mood) {
   if (mood === musicMood) return;
   const previous = musicPlayers.get(musicMood);
   musicMood = mood;
-  if (!recordedMusicActive) return;
-  if (previous) fadePlayer(previous, 0, 500, () => previous.pause());
-  startRecordedMusic();
+  if (previous && !previous.paused) fadePlayer(previous, 0, 600, () => previous.pause());
+  if (musicWanted) startMusic();
 }
 
 export function stopMusic() {
   musicWanted = false;
-  musicPlayers.forEach((player) => fadePlayer(player, 0, 400, () => player.pause()));
-  if (musicTimer) {
-    window.clearInterval(musicTimer);
-    musicTimer = null;
-  }
-  if (musicGain && ctx) {
-    musicGain.gain.setTargetAtTime(0.0001, ctx.currentTime, 0.4);
-  }
+  musicPlayers.forEach((player) => {
+    if (!player.paused) fadePlayer(player, 0, 400, () => player.pause());
+  });
+  recordedMusicActive = false;
+  stopSynthMusic(0.4);
 }
 
 /* ----------------------- música y efectos grabados ------------------------ */
+
+function canPlayRecordedSound() {
+  return typeof window !== "undefined" && typeof window.Audio === "function" && typeof fetch === "function";
+}
 
 /** Descarga el manifiesto de música/efectos una sola vez. Nunca rechaza. */
 export function loadCuentosSound() {
   if (soundManifest) return Promise.resolve(soundManifest);
   if (soundPending) return soundPending;
-  if (typeof fetch !== "function") return Promise.resolve(null);
+  if (!canPlayRecordedSound()) {
+    soundFailed = true;
+    return Promise.resolve(null);
+  }
   soundPending = fetch(SOUND_MANIFEST_URL, { cache: "no-cache" })
     .then((response) => (response.ok ? response.json() : null))
     .then((data) => {
       soundManifest = data && typeof data === "object" && data.music ? data : null;
-      if (soundManifest && musicWanted) startRecordedMusic();
+      soundFailed = !soundManifest;
+      if (musicWanted) startMusic();
       return soundManifest;
     })
     .catch(() => {
+      // Sin red: entra la música sintetizada y se reintentará en la próxima carga.
       soundPending = null;
+      soundFailed = true;
+      if (musicWanted) startSynthMusic();
       return null;
     });
   return soundPending;
@@ -242,10 +274,17 @@ function musicVolume(level) {
   return Math.min(0.75, Math.max(0, level * 1.1));
 }
 
+// Un fundido por reproductor: pedir otro cancela el anterior (y su pausa
+// final), así un cambio rápido de repisa a lectura y vuelta no deja la
+// música apagada ni dos pistas sonando.
+const fadeGeneration = new WeakMap();
 function fadePlayer(player, target, ms, done) {
+  const generation = (fadeGeneration.get(player) || 0) + 1;
+  fadeGeneration.set(player, generation);
   const from = player.volume;
   const start = performance.now();
   const step = () => {
+    if (fadeGeneration.get(player) !== generation) return;
     const k = Math.min(1, (performance.now() - start) / ms);
     player.volume = from + (target - from) * k;
     if (k < 1) window.requestAnimationFrame(step);
@@ -265,7 +304,7 @@ function makePlayer() {
 // Igual que el narrador: reproducir un WAV mudo dentro del primer gesto deja
 // autorizados los reproductores de música y efectos en iOS.
 function unlockSoundPlayers() {
-  if (soundUnlocked || typeof window === "undefined" || typeof window.Audio !== "function") return;
+  if (soundUnlocked || !canPlayRecordedSound()) return;
   soundUnlocked = true;
   const players = [];
   ["biblioteca", "lectura"].forEach((mood) => {
@@ -291,10 +330,12 @@ function unlockSoundPlayers() {
 }
 
 function startRecordedMusic() {
-  if (!musicWanted || muted || typeof window === "undefined") return;
+  if (!musicWanted || muted || !canPlayRecordedSound()) return;
   const entry = soundManifest?.music?.[musicMood];
   const src = soundUrl(entry);
   if (!src) {
+    // Todavía sin manifiesto: loadCuentosSound() vuelve a llamar a startMusic()
+    // al terminar, con la grabada o con la sintetizada según el resultado.
     loadCuentosSound();
     return;
   }
@@ -307,8 +348,12 @@ function startRecordedMusic() {
   }
   const mood = musicMood;
   const begin = (url) => {
-    // Si el estado cambió mientras se descargaba, quien lo cambió ya arrancó la otra pista.
-    if (mood !== musicMood || !musicWanted || muted) return;
+    if (!musicWanted || muted) return;
+    // Si el estado cambió mientras se descargaba, se arranca la pista vigente.
+    if (mood !== musicMood) {
+      startRecordedMusic();
+      return;
+    }
     if (player.dataset.src !== src) {
       player.src = url;
       player.dataset.src = src;
@@ -316,24 +361,27 @@ function startRecordedMusic() {
       player.dataset.mood = mood;
     }
     player.volume = 0.0001;
-    const playing = player.play();
-    Promise.resolve(playing)
+    Promise.resolve(player.play())
       .then(() => {
         recordedMusicActive = true;
-        // La música sintetizada se apaga en cuanto suena la grabada.
-        if (ctx && musicGain) musicGain.gain.setTargetAtTime(0.0001, ctx.currentTime, 0.6);
+        stopSynthMusic();
         fadePlayer(player, musicVolume(musicLevel), 900);
       })
       .catch(() => {
-        // Sin permiso o sin archivo: sigue la música sintetizada.
+        // Sin permiso o sin archivo: sigue (o entra) la música sintetizada.
+        if (!recordedMusicActive && musicWanted) startSynthMusic();
       });
   };
-  fetchClip(src).then(begin).catch(() => {});
+  fetchClip(src)
+    .then(begin)
+    .catch(() => {
+      if (!recordedMusicActive && musicWanted) startSynthMusic();
+    });
 }
 
 /** Efecto grabado por clave del manifiesto (lobo-aullido, toc-toc…). */
-export function playCue(key, { volume = 0.9 } = {}) {
-  if (muted || typeof window === "undefined") return;
+export function playCue(key, { volume = 0.6 } = {}) {
+  if (muted || !canPlayRecordedSound()) return;
   const src = soundUrl(soundManifest?.sfx?.[key]);
   if (!src) return;
   unlockSoundPlayers();

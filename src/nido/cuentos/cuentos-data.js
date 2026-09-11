@@ -3,7 +3,8 @@
 //
 // Campos opcionales de cada página para que el escenario 3D y el sonido sigan
 // la narración (ver stage.playAct y cuentos-audio.playCue):
-//   sfx:  efectos que suenan al abrir la página (claves de cuentos-sound.json).
+//   sfx:  ambientes suaves que suenan al abrir la página (claves de
+//         cuentos-sound.json); sfxEnd: efectos que suenan al terminar de narrarla.
 //   acts: acción sostenida por actor mientras dura la página
 //         (blow, howl, shiver, run, build, cheer, sleep).
 //   cues: por palabra narrada (clave = palabra en minúsculas sin puntuación):
@@ -29,7 +30,7 @@ export const BOOKS = [
         light: "day",
         cast: ["pipo", "lolo", "tito"],
         props: ["sol", "nubes", "casa", "arboles", "flores"],
-        sfx: ["cerditos-alegres"],
+        sfxEnd: ["cerditos-alegres"],
         acts: { pipo: "cheer" },
       },
       {
@@ -123,9 +124,8 @@ export const BOOKS = [
         light: "day",
         cast: ["pipo", "lolo", "tito"],
         props: ["sol", "nubes", "ladrillos", "flores", "pasto"],
-        sfx: ["cerditos-alegres"],
+        sfxEnd: ["cerditos-alegres"],
         acts: { pipo: "cheer", lolo: "cheer", tito: "cheer" },
-        cues: { felices: { sfx: "cerditos-alegres" } },
       },
     ],
     quiz: [
@@ -221,7 +221,7 @@ export const BOOKS = [
         cast: ["caperucita", "abuelita", "cazador"],
         props: ["casa", "arboles", "piedras", "pasto"],
         acts: { caperucita: "cheer" },
-        cues: { salvas: { sfx: "cerditos-alegres" } },
+        sfxEnd: ["cerditos-alegres"],
       },
       {
         t: "Por el sendero",

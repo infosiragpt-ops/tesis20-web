@@ -582,8 +582,9 @@ function Reader({ book, page, state, pinRef, onPage, onClose, onStar, onPin, onQ
     const timer = window.setTimeout(() => {
       loadCuentosSound().then(() => {
         if (cancelled) return;
-        prefetchCues(Object.values(pageData.cues || {}).map((cue) => cue.sfx).filter(Boolean));
-        (pageData.sfx || []).forEach((key) => playCue(key, { volume: 0.7 }));
+        prefetchCues([...Object.values(pageData.cues || {}).map((cue) => cue.sfx), ...(pageData.sfxEnd || [])].filter(Boolean));
+        // Ambiente de fondo (pájaros…): bajo, para no tapar la voz.
+        (pageData.sfx || []).forEach((key) => playCue(key, { volume: 0.35 }));
       });
     }, 500);
     return () => {
@@ -640,6 +641,8 @@ function Reader({ book, page, state, pinRef, onPage, onClose, onStar, onPin, onQ
         onEnd: () => {
           setSpeaking(false);
           setActiveWord(-1);
+          // Festejos y remates suenan cuando la narradora termina, no encima.
+          (pageData.sfxEnd || []).forEach((key) => playCue(key, { volume: 0.6 }));
           if (autoRef.current) {
             window.setTimeout(() => {
               if (!autoRef.current) return;
