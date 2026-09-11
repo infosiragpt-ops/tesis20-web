@@ -113,11 +113,18 @@ La biblioteca de cuentos suena con dos pistas de música y una docena de efectos
 generados con ElevenLabs (`scripts/generate-nido-cuentos-sound.mjs`), en
 `public/assets/nido/audio/sonido/` con el manifiesto `cuentos-sound.json`:
 
-- Música: `biblioteca` (repisa; nana instrumental con caja de música, cuerdas
-  tipo charango y un toque de flauta andina) y `lectura` (lectura; pad suave con
-  notas de caja de música). 60 s cada una, en bucle con fundidos de 1,5 s en los
-  extremos, estéreo 96 kbps a −20/−22 LUFS. La música sintetizada por Web Audio
-  queda de respaldo y se apaga en cuanto arranca la grabada.
+- Música, con la receta que funciona en apps de cuentos para 3 a 6 años
+  (acústica y juguetona, tonalidad mayor, frases cortas que hacen bucle, sin
+  efectos estridentes; fuentes en el PR #15): `biblioteca` (repisa; ukelele,
+  xilófono y glockenspiel, piano de juguete, pizzicato, palmas y shaker suaves,
+  104 BPM) y `lectura` (lectura; caja de música y xilófono escasos, ukelele
+  suave, ~76 BPM, deja aire a la narradora). ~62 s cada una, estéreo 96 kbps a
+  −19/−22 LUFS. Bucle sin costura: se descarta la cola de silencio con la que
+  la API cierra el tema y los últimos 2 s se funden con los primeros 2 s.
+  Cada pista se eligió entre tres candidatos medidos (silencios, rango de
+  sonoridad, actividad rítmica y espectrograma); `NIDO_SOUND_FROM_DIR` permite
+  fijar un candidato elegido a mano. La música sintetizada por Web Audio queda
+  de respaldo y nunca suena a la vez que la grabada.
 - Efectos: aullido, soplido y quejido del lobo, ronquido, paja que vuela, madera
   que se cae, toc-toc, plaf en la olla, cerditos alegres, pájaros, pasos y
   abrazo. Mono 64 kbps a −16 LUFS.
