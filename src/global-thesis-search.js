@@ -82,10 +82,22 @@ export async function searchGlobalTheses(
       headers: { Accept: "application/json" },
     });
     if (!response.ok) {
+      // El servidor ya explica el motivo (límite del proveedor, tiempo agotado…)
+      // y cuándo reintentar; se muestra tal cual en vez de un código.
+      let message = `HTTP ${response.status}`;
+      try {
+        const payload = await response.json();
+        if (payload?.error) message = payload.error;
+      } catch {
+        // Sin cuerpo JSON: queda el código.
+      }
+      const retryAfter = Number(response.headers.get("retry-after")) || null;
       return {
         records: [],
         meta: null,
-        error: `HTTP ${response.status}`,
+        error: message,
+        retryAfter,
+        status: response.status,
       };
     }
     const payload = await response.json();

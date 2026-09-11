@@ -152,6 +152,7 @@ function ThesisSearch() {
   const [globalRecords, setGlobalRecords] = useState([]);
   const [globalMeta, setGlobalMeta] = useState(null);
   const [globalStatus, setGlobalStatus] = useState("idle");
+  const [globalError, setGlobalError] = useState("");
 
   useEffect(() => {
     const controller = new AbortController();
@@ -224,9 +225,13 @@ function ThesisSearch() {
       if (result.error) {
         setGlobalRecords([]);
         setGlobalMeta(null);
+        // Mensaje del servidor (límite del proveedor, tiempo agotado) si lo hay;
+        // los códigos crudos no se muestran al tesista.
+        setGlobalError(/^HTTP \d+$/.test(result.error) ? "" : result.error);
         setGlobalStatus("error");
         return;
       }
+      setGlobalError("");
       setGlobalRecords(result.records);
       setGlobalMeta(result.meta);
       setGlobalStatus("ready");
@@ -483,7 +488,7 @@ function ThesisSearch() {
             ) : null}
             {globalStatus === "error" && (
               <p className="thesis-search__global-note" role="status">
-                El corpus global no respondió; se muestran solo repositorios PE verificados.
+                {globalError || "El corpus global no respondió"}; se muestran solo repositorios PE verificados.
               </p>
             )}
           </div>
