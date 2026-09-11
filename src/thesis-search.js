@@ -45,13 +45,50 @@ function getQueryTokens(query) {
 }
 
 /**
- * Cantidad mínima de tokens de la consulta que deben aparecer en el registro.
- * - 1–2 términos: todos (AND estricto).
- * - 3+ términos: al menos 2 o ceil(2/3), para no devolver vacío en frases largas.
+ * Cantidad mínima de tokens de la consulta que deben quedar cubiertos por los
+ * campos que anclan una coincidencia (título, materias, autores).
+ * - Hasta 4 términos: todos (AND estricto): «inteligencia artificial
+ *   educación» no debe traer tesis de IA en empresas.
+ * - 5 o más: se tolera un término ausente, para no devolver vacío en frases
+ *   largas copiadas de un título.
  */
 function requiredTokenMatches(tokenCount) {
-  if (tokenCount <= 2) return tokenCount;
-  return Math.max(2, Math.ceil(tokenCount * (2 / 3)));
+  return tokenCount >= 5 ? tokenCount - 1 : tokenCount;
+}
+
+function contentTokens(text) {
+  return normalizeThesisSearchText(text)
+    .split(" ")
+    .filter((token) => token.length > 1 && !SEARCH_STOP_WORDS.has(token));
+}
+
+/**
+ * Tokens de la consulta que el registro cubre en sus campos de anclaje.
+ * - Título: palabras completas.
+ * - Materias: una materia solo cuenta si la consulta la nombra entera (todas
+ *   sus palabras de contenido están en la consulta) o contiene la frase
+ *   buscada. Así «gestión pública» no se arma con «Gestión de salud» +
+ *   «Política pública», que son materias distintas.
+ * - Autores: solo si todos los términos están en los nombres (búsqueda por autor).
+ * El resumen nunca ancla: puede mencionar cualquier cosa de pasada.
+ */
+function anchoredTokens(record, phrase, tokens) {
+  const covered = new Set();
+  const titleWords = new Set(normalizeThesisSearchText(record.title).split(" "));
+  for (const token of tokens) if (titleWords.has(token)) covered.add(token);
+
+  for (const subject of record.subjects) {
+    const normalized = normalizeThesisSearchText(subject);
+    const words = contentTokens(subject);
+    const consumed = words.length > 0 && words.every((word) => tokens.includes(word));
+    if (!consumed && !(phrase && normalized.includes(phrase))) continue;
+    for (const word of words) if (tokens.includes(word)) covered.add(word);
+  }
+
+  const authors = normalizeThesisSearchText(record.authors.join(" "));
+  if (tokens.every((token) => authors.includes(token))) tokens.forEach((token) => covered.add(token));
+
+  return covered;
 }
 
 function scoreThesis(record, phrase, tokens) {
@@ -61,8 +98,8 @@ function scoreThesis(record, phrase, tokens) {
   const abstract = normalizeThesisSearchText(record.abstract);
   const searchable = `${title} ${subjects} ${authors} ${abstract}`;
 
+  if (anchoredTokens(record, phrase, tokens).size < requiredTokenMatches(tokens.length)) return 0;
   const matchedTokens = tokens.filter((token) => searchable.includes(token));
-  if (matchedTokens.length < requiredTokenMatches(tokens.length)) return 0;
 
   let score = 0;
 

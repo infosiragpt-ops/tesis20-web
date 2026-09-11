@@ -40,3 +40,17 @@ npm run preview -- --port 3000
 ## Aviso
 
 Las evidencias públicas se muestran anonimizadas. El contrato incluido es un modelo general informativo y debe completarse y revisarse según el servicio concreto antes de firmarse.
+
+## Verificación
+
+```bash
+npm run test:game   # pruebas unitarias: Nido, buscador de tesis y API (node --test)
+npm run build       # compila y genera el HTML estático por ruta
+npm run quality     # HTML, SEO, enlaces, CSP, PWA y presupuestos de peso
+npm run check:nido  # currículo, retos y audios de Nido
+```
+
+CI (`.github/workflows/ci.yml`) ejecuta esa misma secuencia en cada PR y en main.
+La API `api/thesis-search.js` (Vercel) corta la consulta al proveedor a los 8,5 s,
+cachea 5 min por instancia además del CDN y responde 429/503 con `Retry-After`
+cuando OpenAlex limita o falla.

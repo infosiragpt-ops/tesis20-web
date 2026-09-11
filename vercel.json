@@ -2,6 +2,11 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "cleanUrls": true,
   "trailingSlash": false,
+  "functions": {
+    "api/thesis-search.js": {
+      "maxDuration": 10
+    }
+  },
   "redirects": [
     {
       "source": "/testimonials/:path*",

@@ -977,3 +977,34 @@ export function warmUpVoices() {
 export function audioUnlocked() {
   return unlocked;
 }
+
+/* ------------------------- pestaña oculta --------------------------- */
+// Si el niño cambia de app o de pestaña, la música y la narración se pausan y
+// vuelven solas al regresar: no sigue sonando de fondo ni gasta batería.
+let hiddenPause = null;
+function onVisibilityChange() {
+  if (typeof document === "undefined") return;
+  if (document.hidden) {
+    if (hiddenPause) return;
+    const music = musicPlayers.get(musicMood);
+    hiddenPause = {
+      music: Boolean(music && !music.paused),
+      speech: isSpeaking(),
+    };
+    if (hiddenPause.music) music.pause();
+    if (hiddenPause.speech) pauseSpeech();
+    if (ctx && ctx.state === "running") ctx.suspend().catch(() => {});
+    return;
+  }
+  const resume = hiddenPause;
+  hiddenPause = null;
+  if (!resume) return;
+  if (ctx && ctx.state === "suspended" && unlocked) ctx.resume().catch(() => {});
+  if (resume.music && musicWanted && !muted) {
+    const music = musicPlayers.get(musicMood);
+    const playing = music?.play();
+    if (playing?.catch) playing.catch(() => {});
+  }
+  if (resume.speech) resumeSpeech();
+}
+if (typeof document !== "undefined") document.addEventListener("visibilitychange", onVisibilityChange);

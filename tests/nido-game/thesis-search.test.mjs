@@ -89,3 +89,31 @@ test("el resumen aislado no basta para presentar una coincidencia como precisa",
   const results = searchTheses(records, { query: "gestión pública" });
   assert.equal(results.some((record) => record.id === "abstract-only"), false);
 });
+
+test("el título y una materia nombrada entera se combinan para cubrir la consulta", () => {
+  const mixed = [
+    ...records,
+    {
+      id: "mixed",
+      s: "upn",
+      t: "Inteligencia artificial en la enseñanza",
+      a: ["Pedro Gil"],
+      y: 2025,
+      l: "master",
+      u: "https://hdl.handle.net/1/mixed",
+      k: ["Educación"],
+      d: "",
+    },
+  ];
+  const results = searchTheses(mixed, { query: "inteligencia artificial educación" });
+  assert.ok(results.some((record) => record.id === "mixed"));
+  assert.equal(results.some((record) => record.id === "partial"), false);
+});
+
+test("en frases largas se tolera un término ausente, pero no dos", () => {
+  // Cinco términos de contenido («en» es vacía): «peruana» no está en ningún campo y se tolera.
+  const results = searchTheses(records, { query: "inteligencia artificial en educación universitaria peruana" });
+  assert.deepEqual(results.map((record) => record.id), ["exact"]);
+  // Seis términos con dos ausentes («peruana», «moderna»): ya no es una coincidencia precisa.
+  assert.deepEqual(searchTheses(records, { query: "inteligencia artificial educación universitaria peruana moderna" }).map((record) => record.id), []);
+});
