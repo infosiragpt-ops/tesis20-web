@@ -484,6 +484,48 @@
   margin: 4px 6px;
 }
 
+.cuentos-desk__hint {
+  margin: -8px 0 14px;
+  font-size: 12px;
+  line-height: 1.35;
+  color: var(--ink-soft);
+}
+
+/* Pista junto a la esquina de la tapa: se mueve con el libro y no captura
+   el puntero, para que el arrastre llegue al lienzo. */
+.cuentos-drag-hint {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 11;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 2px solid #d7b47c;
+  background: rgba(255, 248, 230, 0.96);
+  box-shadow: 0 8px 20px rgba(20, 10, 5, 0.35);
+  font-size: 14px;
+  font-weight: 800;
+  color: #4a3218;
+  white-space: nowrap;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+  will-change: transform;
+}
+
+.cuentos-drag-hint__hand {
+  display: inline-block;
+  transform: scaleX(-1);
+  animation: cuentos-drag-nudge 1.4s ease-in-out infinite;
+}
+
+@keyframes cuentos-drag-nudge {
+  0%, 100% { transform: scaleX(-1) translateX(0); }
+  50% { transform: scaleX(-1) translateX(-7px); }
+}
+
 /* --------------------------- lectura ---------------------------- */
 
 .cuentos-reading {
@@ -1435,21 +1477,38 @@
     display: none;
   }
 
+  /* En móvil la tarjeta se pega abajo y va sin subtítulos: así la esquina del
+     libro queda libre para arrastrarla. */
   .cuentos-desk {
     align-items: flex-end;
     justify-content: center;
-    padding: 120px 10px max(72px, env(safe-area-inset-bottom));
+    padding: 120px 8px max(10px, env(safe-area-inset-bottom));
+  }
+
+  .cuentos-desk__hint,
+  .cuentos-desk__tagline,
+  .cuentos-desk__meta {
+    display: none;
+  }
+
+  .cuentos.has-desk .cuentos-zoom {
+    display: none;
+  }
+
+  .cuentos-drag-hint {
+    font-size: 12px;
+    padding: 6px 10px;
   }
 
   .cuentos-desk__panel {
     width: min(100%, 440px);
-    padding: 16px 14px 14px;
+    padding: 10px 12px 10px;
     border-radius: 14px;
   }
 
   .cuentos-desk__panel h2 {
-    margin-block: 2px 5px;
-    font-size: clamp(21px, 7vw, 29px);
+    margin-block: 0 6px;
+    font-size: clamp(19px, 6vw, 26px);
   }
 
   .cuentos-desk__tagline {
@@ -1538,5 +1597,9 @@
   .cuentos-picker__row button,
   .cuentos-desk__panel {
     transition: none;
+  }
+
+  .cuentos-drag-hint__hand {
+    animation: none;
   }
 }

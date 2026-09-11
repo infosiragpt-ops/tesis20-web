@@ -34,3 +34,23 @@ test("cada personaje del reparto tiene una figura volumétrica y nombre", () => 
     assert.ok(meshes >= 4, `${id} debe tener volumen compuesto`);
   }
 });
+
+import { deskDragIntent, dragProgress, shouldCompleteDrag } from "../../src/nido/cuentos/three/library-gestures.js";
+
+test("el arrastre en la mesa distingue abrir, devolver y toque", () => {
+  assert.equal(deskDragIntent(-3, 2), null, "por debajo del umbral sigue siendo un toque");
+  assert.equal(deskDragIntent(-60, 10), "open");
+  assert.equal(deskDragIntent(-40, -30), "open", "diagonal hacia la izquierda abre");
+  assert.equal(deskDragIntent(5, -70), "return");
+  assert.equal(deskDragIntent(60, 0), "none", "hacia la derecha no hace nada");
+  assert.equal(deskDragIntent(0, 60), "none", "hacia abajo no hace nada");
+});
+test("el progreso se acota al recorrido y se completa por distancia o por tirón", () => {
+  assert.equal(dragProgress(-50, 200), 0);
+  assert.equal(dragProgress(100, 200), 0.5);
+  assert.equal(dragProgress(400, 200), 1);
+  assert.equal(shouldCompleteDrag(0.3, 0.1), false, "un arrastre corto y lento se cancela");
+  assert.equal(shouldCompleteDrag(0.5, 0), true);
+  assert.equal(shouldCompleteDrag(0.2, 1.4), true, "un tirón rápido completa");
+  assert.equal(shouldCompleteDrag(0.05, 3), false, "un tirón sin recorrido no");
+});

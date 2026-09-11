@@ -22,7 +22,7 @@ export const BOOKS = [
     set: "meadow-day",
     accent: "#f4a6c1",
     // Ilustración de portada de Luis, con el título impreso: no se repinta.
-    cover: { ink: "#fff1f6", sub: "#d9a3b8", image: "/assets/nido/cuentos/covers/cerditos-premium-v1.avif", titled: true },
+    cover: { ink: "#fff1f6", sub: "#d9a3b8", image: "/assets/nido/cuentos/covers/cerditos-premium-v2.avif", titled: true },
     pages: [
       {
         t: "Tres hermanos cerditos",

@@ -56,6 +56,7 @@ export default function CuentosApp() {
   const canvasRef = useRef(null);
   const stageRef = useRef(null);
   const pinRef = useRef(null);
+  const dragHintRef = useRef(null);
   const latest = useRef({});
 
   const stats = useMemo(() => totals(state), [state]);
@@ -129,6 +130,10 @@ export default function CuentosApp() {
       onFocusBook: setFocusedId,
       onZoom: setZoom,
       onClickBook: (id) => openDesk(id),
+      // Arrastrar la tapa hacia la izquierda abre el libro; arrastrarlo hacia
+      // arriba lo devuelve a la repisa (mismos caminos que los botones).
+      onOpenBook: () => openReading(),
+      onReturnBook: () => backToShelf(),
       onHoverToy: (id) => {
         if (id) sfx.toy(id);
       },
@@ -136,6 +141,16 @@ export default function CuentosApp() {
         sfx.toy(pinId);
       },
       onFrame: () => {
+        const hint = dragHintRef.current;
+        if (hint) {
+          const corner = stage.projectCorner();
+          if (corner && corner.visible) {
+            hint.style.opacity = "1";
+            hint.style.transform = `translate(${corner.x}px, ${corner.y}px) translate(-88%, -50%)`;
+          } else {
+            hint.style.opacity = "0";
+          }
+        }
         const btn = pinRef.current;
         if (!btn) return;
         const { selectedId: sel, page: p } = latest.current;
@@ -241,7 +256,7 @@ export default function CuentosApp() {
   );
 
   return (
-    <div className={`cuentos cuentos--3d${reading ? " cuentos--reading" : ""}`}>
+    <div className={`cuentos cuentos--3d${reading ? " cuentos--reading" : ""} ${selectedBook && !reading ? "has-desk" : ""}`}>
       <canvas ref={canvasRef} className="cuentos-canvas" aria-hidden="true" />
       <div className="cuentos-zoom" role="group" aria-label="Zoom de la escena 3D">
         <button type="button" aria-label="Alejar escena" disabled={zoom <= 80} onClick={() => stageRef.current?.setZoom((zoom - 10) / 100)}>−</button>
@@ -280,7 +295,14 @@ export default function CuentosApp() {
       ) : null}
 
       {selectedBook && !reading ? (
-        <DeskPanel book={selectedBook} status={bookStatus(state, selectedBook)} ready={panelReady} onOpen={openReading} onBack={backToShelf} />
+        <>
+          <DeskPanel book={selectedBook} status={bookStatus(state, selectedBook)} ready={panelReady} onOpen={openReading} onBack={backToShelf} />
+          {panelReady ? (
+            <div ref={dragHintRef} className="cuentos-drag-hint" aria-hidden="true" style={{ opacity: 0 }}>
+              <span className="cuentos-drag-hint__hand">👉</span> Arrastra la esquina
+            </div>
+          ) : null}
+        </>
       ) : null}
 
       {selectedBook && reading ? (
@@ -514,6 +536,7 @@ function DeskPanel({ book, status, ready, onOpen, onBack }) {
         <p className="cuentos-desk__meta">
           {book.pages.length} páginas · {status.finished ? "terminado" : `${status.pct}% leído`} · {status.pins.length} de 5 souvenirs
         </p>
+        <p className="cuentos-desk__hint">Arrastra la tapa hacia la izquierda para abrirlo, o el libro hacia arriba para devolverlo.</p>
         <button type="button" className="cuentos-btn cuentos-btn--read" onClick={onOpen} autoFocus>
           📖 Abrir el libro
         </button>
