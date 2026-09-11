@@ -42,8 +42,14 @@ test("el arrastre en la mesa distingue abrir, devolver y toque", () => {
   assert.equal(deskDragIntent(-60, 10), "open");
   assert.equal(deskDragIntent(-40, -30), "open", "diagonal hacia la izquierda abre");
   assert.equal(deskDragIntent(5, -70), "return");
-  assert.equal(deskDragIntent(60, 0), "none", "hacia la derecha no hace nada");
+  assert.equal(deskDragIntent(60, 0), "none", "hacia la derecha no hace nada en la mesa");
   assert.equal(deskDragIntent(0, 60), "none", "hacia abajo no hace nada");
+});
+test("en lectura, la tapa se cierra hacia la derecha y el libro vuelve hacia arriba", () => {
+  assert.equal(deskDragIntent(60, 6, 8, "reading"), "close");
+  assert.equal(deskDragIntent(-60, 6, 8, "reading"), "none", "hacia la izquierda no reabre");
+  assert.equal(deskDragIntent(4, -70, 8, "reading"), "return");
+  assert.equal(deskDragIntent(-4, 0, 8, "reading"), null, "un toque sigue siendo toque");
 });
 test("el progreso se acota al recorrido y se completa por distancia o por tirón", () => {
   assert.equal(dragProgress(-50, 200), 0);

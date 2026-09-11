@@ -138,6 +138,10 @@ export function createBook3D(book, { coverTexture, spineTexture, edgeTexture, pa
     popupW,
     popupH,
     coverMat,
+    // Superficies para el gesto de arrastre: la tapa (abrir/cerrar) y el bloque
+    // de páginas (devolver a la repisa desde la lectura).
+    coverSurface: front,
+    pageSurface: pages,
     /** 0 = cerrado, 1 = abierto del todo (tapa a la izquierda, plana). */
     setOpen(t) {
       pivot.rotation.y = -Math.PI * Math.max(0, Math.min(1, t));

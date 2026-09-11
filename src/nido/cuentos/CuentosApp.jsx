@@ -57,6 +57,13 @@ export default function CuentosApp() {
   const stageRef = useRef(null);
   const pinRef = useRef(null);
   const dragHintRef = useRef(null);
+  // Gesto en curso sobre el libro (abrir, cerrar, devolver) para el aviso en
+  // pantalla, y un contador de solicitudes para que una página que termina de
+  // cargar tarde no reabra un libro ya devuelto ni pise otro cuento.
+  const [bookGesture, setBookGesture] = useState(null);
+  const flowRequest = useRef(0);
+  const openingRef = useRef(false);
+  const readyTimer = useRef(null);
   const latest = useRef({});
 
   const stats = useMemo(() => totals(state), [state]);
@@ -132,8 +139,10 @@ export default function CuentosApp() {
       onClickBook: (id) => openDesk(id),
       // Arrastrar la tapa hacia la izquierda abre el libro; arrastrarlo hacia
       // arriba lo devuelve a la repisa (mismos caminos que los botones).
-      onOpenBook: () => openReading(),
-      onReturnBook: () => backToShelf(),
+      onOpenBook: () => latest.current.openReading?.(),
+      onCloseBook: () => latest.current.closeReading?.(),
+      onReturnBook: () => latest.current.backToShelf?.(),
+      onBookGesture: (kind, ready) => setBookGesture(kind && kind !== "none" ? { kind, ready } : null),
       onHoverToy: (id) => {
         if (id) sfx.toy(id);
       },
@@ -173,6 +182,8 @@ export default function CuentosApp() {
     stage.setCollected(latest.current.allPins);
     setStageReady(true);
     return () => {
+      flowRequest.current += 1;
+      window.clearTimeout(readyTimer.current);
       stage.dispose();
       stageRef.current = null;
     };
@@ -192,16 +203,22 @@ export default function CuentosApp() {
     if (!stage || latest.current.selectedId) return;
     sfx.select();
     const owned = latest.current.state.books[bookId]?.pins || [];
-    stage.selectBook(bookId, owned);
+    if (!stage.selectBook(bookId, owned)) return;
+    flowRequest.current += 1;
+    openingRef.current = false;
     setSelectedId(bookId);
     setPanelReady(false);
-    window.setTimeout(() => {
+    window.clearTimeout(readyTimer.current);
+    readyTimer.current = window.setTimeout(() => {
       sfx.land();
       setPanelReady(true);
     }, prefersReducedMotion() ? 50 : 1150);
   }, []);
 
   const backToShelf = useCallback(() => {
+    flowRequest.current += 1;
+    openingRef.current = false;
+    window.clearTimeout(readyTimer.current);
     stopSpeech();
     sfx.close();
     stageRef.current?.deselect();
@@ -219,12 +236,26 @@ export default function CuentosApp() {
   const openReading = useCallback(async () => {
     const book = BOOKS.find((b) => b.id === latest.current.selectedId);
     const stage = stageRef.current;
-    if (!book || !stage) return;
+    if (!book || !stage || latest.current.reading || openingRef.current) return;
+    const request = ++flowRequest.current;
+    openingRef.current = true;
     sfx.open();
     const entry = latest.current.state.books[book.id];
     const last = entry && entry.pages.length ? Math.max(...entry.pages) : -1;
     const start = entry?.pages.length && last + 1 < book.pages.length ? last + 1 : 0;
-    const tex = await pageTexture(book, start);
+    let tex;
+    try {
+      tex = await pageTexture(book, start);
+    } catch {
+      if (request === flowRequest.current) {
+        openingRef.current = false;
+        stage.cancelOpenRequest();
+        showToast("No se pudo abrir el cuento. Inténtalo otra vez.");
+      }
+      return;
+    }
+    if (request !== flowRequest.current || latest.current.selectedId !== book.id) return;
+    openingRef.current = false;
     stage.setPopupTextureNow(tex);
     stage.setStoryPage(storyPageTexture(book, book.pages[start], start, book.pages.length), book.pages[start]);
     setPage(start);
@@ -234,9 +265,11 @@ export default function CuentosApp() {
     window.setTimeout(() => {
       for (let i = 0; i < book.pages.length; i += 1) pageTexture(book, i);
     }, 800);
-  }, [pageTexture]);
+  }, [pageTexture, showToast]);
 
   const closeReading = useCallback(() => {
+    flowRequest.current += 1;
+    openingRef.current = false;
     stopSpeech();
     sfx.close();
     stageRef.current?.closeBook();
@@ -247,7 +280,9 @@ export default function CuentosApp() {
     async (next) => {
       const book = BOOKS.find((b) => b.id === latest.current.selectedId);
       if (!book || next < 0 || next >= book.pages.length) return;
+      const request = ++flowRequest.current;
       const tex = await pageTexture(book, next);
+      if (request !== flowRequest.current || latest.current.selectedId !== book.id) return;
       stageRef.current?.setStoryPage(storyPageTexture(book, book.pages[next], next, book.pages.length), book.pages[next]);
       stageRef.current?.showPage(tex);
       setPage(next);
@@ -255,8 +290,10 @@ export default function CuentosApp() {
     [pageTexture],
   );
 
+  Object.assign(latest.current, { openReading, closeReading, backToShelf });
+
   return (
-    <div className={`cuentos cuentos--3d${reading ? " cuentos--reading" : ""} ${selectedBook && !reading ? "has-desk" : ""}`}>
+    <div className={`cuentos cuentos--3d${reading ? " cuentos--reading" : ""} ${selectedBook && !reading ? "has-desk" : ""}`} data-book-gesture={bookGesture?.kind}>
       <canvas ref={canvasRef} className="cuentos-canvas" aria-hidden="true" />
       <div className="cuentos-zoom" role="group" aria-label="Zoom de la escena 3D">
         <button type="button" aria-label="Alejar escena" disabled={zoom <= 80} onClick={() => stageRef.current?.setZoom((zoom - 10) / 100)}>−</button>
@@ -264,6 +301,23 @@ export default function CuentosApp() {
         <button type="button" aria-label="Acercar escena" disabled={zoom >= 155} onClick={() => stageRef.current?.setZoom((zoom + 10) / 100)}>+</button>
       </div>
       {!stageReady ? <div className="cuentos-loading">Abriendo la biblioteca…</div> : null}
+      {bookGesture ? (
+        <div className={`cuentos-book-drop ${bookGesture.ready ? "is-ready" : ""}`} role="status">
+          {bookGesture.kind === "opening"
+            ? "Abriendo el cuento…"
+            : bookGesture.kind === "return"
+              ? bookGesture.ready
+                ? "Suelta para guardarlo en la repisa"
+                : "Lleva el libro hacia la repisa ↑"
+              : bookGesture.kind === "close"
+                ? bookGesture.ready
+                  ? "Suelta para cerrarlo"
+                  : "Cierra la tapa hacia la derecha →"
+                : bookGesture.ready
+                  ? "Suelta para abrirlo"
+                  : "Desliza la tapa hacia la izquierda ←"}
+        </div>
+      ) : null}
 
       <TopBar
         stats={stats}
@@ -537,12 +591,14 @@ function DeskPanel({ book, status, ready, onOpen, onBack }) {
           {book.pages.length} páginas · {status.finished ? "terminado" : `${status.pct}% leído`} · {status.pins.length} de 5 souvenirs
         </p>
         <p className="cuentos-desk__hint">Arrastra la tapa hacia la izquierda para abrirlo, o el libro hacia arriba para devolverlo.</p>
-        <button type="button" className="cuentos-btn cuentos-btn--read" onClick={onOpen} autoFocus>
-          📖 Abrir el libro
-        </button>
-        <button type="button" className="cuentos-btn cuentos-btn--ghost" onClick={onBack}>
-          Volver a la estantería
-        </button>
+        <div className="cuentos-desk__actions">
+          <button type="button" className="cuentos-btn cuentos-btn--read" onClick={onOpen} autoFocus>
+            📖 Abrir el libro
+          </button>
+          <button type="button" className="cuentos-btn cuentos-btn--ghost" onClick={onBack}>
+            Volver a la estantería
+          </button>
+        </div>
         <span className="cuentos-card__corner" aria-hidden="true" />
       </div>
     </div>
@@ -1019,7 +1075,7 @@ function Album({ state, stats, onClose, onReset }) {
 /* ============================ ayuda =========================== */
 
 const STEPS = [
-  { icon: "📚", title: "Elige un cuento", text: "Toca un libro de la repisa: baja a la mesa y puedes abrirlo. Cada uno tiene 10 páginas ilustradas." },
+  { icon: "📚", title: "Elige un cuento", text: "Toca un libro de la repisa: baja a la mesa. Ábrelo tocándolo o arrastrando su tapa hacia la izquierda; para guardarlo, arrástralo hacia arriba. Cada uno tiene 10 páginas ilustradas." },
   { icon: "🔊", title: "Léemelo", text: "La voz lee en voz alta y va marcando cada palabra. También puedes tocar una palabra suelta." },
   { icon: "🔍", title: "Busca el souvenir", text: "En cinco páginas hay un objeto escondido que brilla sobre la ilustración. Tócalo y aparecerá como figura en la repisa." },
   { icon: "⭐", title: "Responde el quiz", text: "Al terminar el libro aparecen cinco preguntas sobre lo que pasó." },

@@ -79,7 +79,9 @@ export function createStage(canvas, options) {
     onZoom = () => {},
     onClickBook = () => {},
     onOpenBook = () => {},
+    onCloseBook = () => {},
     onReturnBook = () => {},
+    onBookGesture = () => {},
     onHoverToy = () => {},
     onClickToy = () => {},
     onFrame = () => {},
@@ -545,6 +547,11 @@ export function createStage(canvas, options) {
   let openT = 0;
   let hintTimer = 0;
   let hintTween = null;
+  // Mientras el libro vuela, se abre o se cierra no se aceptan gestos: un
+  // arrastre a medio vuelo dejaba la pose a medias.
+  let busyUntil = 0;
+  let openingPending = false;
+  let gestureNotice = "";
   const DESK_POSE = { x: DESK_BOOK.x, y: 0, z: DESK_BOOK.z, rx: -Math.PI / 2, ry: 0, rz: 0.02 };
   let focusedId = null;
   let panTween = null;
@@ -624,7 +631,11 @@ export function createStage(canvas, options) {
     } else {
       setHoveredToy(null);
     }
-    const overDeskBook = mode === "desk" && selected && !hoveredToy && raycaster.intersectObject(selected.hit, false).length > 0;
+    let overDeskBook = false;
+    if (selected && !hoveredToy && !isBusy()) {
+      if (mode === "desk") overDeskBook = raycaster.intersectObject(selected.hit, false).length > 0;
+      else if (mode === "reading") overDeskBook = raycaster.intersectObjects([selected.coverSurface, selected.pageSurface], false).length > 0;
+    }
     if (overDeskBook !== hoveringDeskBook) {
       hoveringDeskBook = overDeskBook;
       if (!hoveredToy && !hoveredBook) canvas.style.cursor = overDeskBook ? "grab" : "";
@@ -632,6 +643,20 @@ export function createStage(canvas, options) {
   }
 
   /* ------------------------- gestos en la mesa ------------------------- */
+
+  function lockFor(seconds) {
+    busyUntil = Math.max(busyUntil, performance.now() + seconds * 1000);
+  }
+  function isBusy() {
+    return openingPending || performance.now() < busyUntil;
+  }
+  // Avisa a la interfaz qué gesto va y si ya se puede soltar; solo cuando cambia.
+  function notifyGesture(kind = null, ready = false) {
+    const key = `${kind}:${ready}`;
+    if (gestureNotice === key) return;
+    gestureNotice = key;
+    onBookGesture(kind, ready);
+  }
 
   function setOpenT(t) {
     openT = clamp(t, 0, 1);
@@ -665,7 +690,8 @@ export function createStage(canvas, options) {
       const point = {
         x: rect.left + ((cornerVec.x + 1) / 2) * rect.width,
         y: rect.top + ((1 - cornerVec.y) / 2) * rect.height,
-        visible: cornerVec.z < 1 && !deskDrag,
+        // La pista aparece solo cuando el gesto ya se acepta (libro quieto).
+        visible: cornerVec.z < 1 && !deskDrag && !isBusy(),
       };
       best = point;
       const inside = point.x > rect.left + rect.width * 0.04 && point.x < rect.right - rect.width * 0.04 && point.y > rect.top + rect.height * 0.12 && point.y < rect.bottom - rect.height * 0.09;
@@ -702,7 +728,17 @@ export function createStage(canvas, options) {
 
   function startDeskDrag(event) {
     stopHint();
+    const g = selected.group;
     deskDrag = {
+      mode,
+      // Pose de partida (mesa o lectura): a ella vuelve un gesto cancelado.
+      snapshot: {
+        x: g.position.x, y: g.position.y, z: g.position.z,
+        rx: g.rotation.x, ry: g.rotation.y, rz: g.rotation.z,
+        scale: g.scale.x,
+        open: openT,
+        popup: selected.popupPivot.scale.y,
+      },
       pointerId: event.pointerId,
       startX: event.clientX,
       startY: event.clientY,
@@ -723,33 +759,42 @@ export function createStage(canvas, options) {
     const entry = selected;
     if (!entry) return;
     const g = entry.group;
+    const snap = deskDrag.snapshot;
     if (deskDrag.intent === "open") {
       setOpenT(progress);
-      g.position.x = DESK_POSE.x + 0.12 * progress;
+      g.position.x = snap.x + 0.12 * progress;
+    } else if (deskDrag.intent === "close") {
+      // En lectura: la tapa vuelve sobre las páginas y el pop-up se pliega.
+      setOpenT(snap.open * (1 - progress));
+      g.position.x = snap.x - 0.12 * progress;
+      entry.popupPivot.scale.y = Math.max(0.0001, snap.popup * (1 - progress * 2));
     } else if (deskDrag.intent === "return") {
       // El libro se levanta y gira hacia su pose de pie mientras sube.
       const k = ease.out(progress);
-      g.position.set(DESK_POSE.x, DESK_POSE.y + 0.55 * k, DESK_POSE.z - 0.35 * k);
-      g.rotation.x = DESK_POSE.rx + (entry.home.rx - DESK_POSE.rx) * k;
-      g.rotation.y = DESK_POSE.ry + entry.home.ry * k;
-      g.rotation.z = DESK_POSE.rz * (1 - k);
-      const sc = DESK_BOOK.scale + (1 - DESK_BOOK.scale) * k;
-      g.scale.setScalar(sc);
+      g.position.set(snap.x, snap.y + 0.55 * k, snap.z - 0.35 * k);
+      g.rotation.x = snap.rx + (entry.home.rx - snap.rx) * k;
+      g.rotation.y = snap.ry + (entry.home.ry - snap.ry) * k;
+      g.rotation.z = snap.rz * (1 - k);
+      g.scale.setScalar(snap.scale + (1 - snap.scale) * k);
+      if (snap.open > 0) setOpenT(snap.open * (1 - 0.15 * k));
     } else {
       // Sin intención clara: el libro apenas acompaña al dedo y vuelve.
-      g.rotation.z = DESK_POSE.rz + progress * 0.04;
+      g.rotation.z = snap.rz + progress * 0.04;
     }
   }
 
-  function settleDeskBook(duration = 0.42) {
+  function settleDeskBook(snap = null, duration = 0.42) {
     const entry = selected;
     if (!entry) return;
     const g = entry.group;
+    const target = snap || { x: DESK_POSE.x, y: DESK_POSE.y, z: DESK_POSE.z, rx: DESK_POSE.rx, ry: DESK_POSE.ry, rz: DESK_POSE.rz, scale: DESK_BOOK.scale, open: 0, popup: entry.popupPivot.scale.y };
+    lockFor(duration);
     const open = { t: openT };
-    tween(open, { t: 0 }, { duration, easing: ease.outBack, onUpdate: () => setOpenT(open.t) });
-    tween(g.position, { x: DESK_POSE.x, y: DESK_POSE.y, z: DESK_POSE.z }, { duration, easing: ease.outBack });
-    tween(g.rotation, { x: DESK_POSE.rx, y: DESK_POSE.ry, z: DESK_POSE.rz }, { duration, easing: ease.out });
-    tween(g.scale, { x: DESK_BOOK.scale, y: DESK_BOOK.scale, z: DESK_BOOK.scale }, { duration, easing: ease.out });
+    tween(open, { t: target.open }, { duration, easing: ease.outBack, onUpdate: () => setOpenT(open.t) });
+    tween(g.position, { x: target.x, y: target.y, z: target.z }, { duration, easing: ease.outBack });
+    tween(g.rotation, { x: target.rx, y: target.ry, z: target.rz }, { duration, easing: ease.out });
+    tween(g.scale, { x: target.scale, y: target.scale, z: target.scale }, { duration, easing: ease.out });
+    tween(entry.popupPivot.scale, { y: target.popup }, { duration, easing: ease.out });
   }
 
   function moveDeskDrag(event) {
@@ -757,19 +802,25 @@ export function createStage(canvas, options) {
     const dx = event.clientX - drag.startX;
     const dy = event.clientY - drag.startY;
     if (!drag.intent) {
-      drag.intent = deskDragIntent(dx, dy);
+      drag.intent = deskDragIntent(dx, dy, 8, drag.mode);
       if (!drag.intent) return;
+      if (drag.intent !== "none") {
+        setHoveredToy(null);
+        feedback.clear();
+      }
     }
     const now = performance.now();
-    const step = drag.intent === "open" ? drag.lastX - event.clientX : drag.lastY - event.clientY;
+    const step = drag.intent === "open" ? drag.lastX - event.clientX : drag.intent === "close" ? event.clientX - drag.lastX : drag.lastY - event.clientY;
     drag.velocity = step / Math.max(8, now - drag.lastTime);
     drag.lastTime = now;
     drag.lastX = event.clientX;
     drag.lastY = event.clientY;
     if (drag.intent === "open") drag.progress = dragProgress(-dx, drag.openDistance);
+    else if (drag.intent === "close") drag.progress = dragProgress(dx, drag.openDistance);
     else if (drag.intent === "return") drag.progress = dragProgress(-dy, drag.returnDistance);
     else drag.progress = dragProgress(Math.hypot(dx, dy), 400);
     applyDeskDrag(drag.progress);
+    if (drag.intent !== "none") notifyGesture(drag.intent, shouldCompleteDrag(drag.progress, 0));
   }
 
   function endDeskDrag(cancelled = false) {
@@ -777,23 +828,40 @@ export function createStage(canvas, options) {
     deskDrag = null;
     delete canvas.dataset.dragging;
     canvas.style.cursor = hoveringDeskBook ? "grab" : "";
-    if (!drag || !selected) return;
+    if (!drag || !selected) {
+      notifyGesture();
+      return;
+    }
     const recent = performance.now() - drag.lastTime < 120 ? drag.velocity : 0;
-    if (!cancelled && drag.intent === "open" && shouldCompleteDrag(drag.progress, recent)) {
+    const commit = !cancelled && drag.intent && drag.intent !== "none" && shouldCompleteDrag(drag.progress, recent);
+    if (commit && drag.intent === "open") {
+      // La apertura real la decide la app (carga la página); mientras tanto no
+      // se aceptan más gestos y la tapa se queda donde la dejó el dedo.
+      openingPending = true;
+      notifyGesture("opening");
       onOpenBook(selected.book.id);
       return;
     }
-    if (!cancelled && drag.intent === "return" && shouldCompleteDrag(drag.progress, recent)) {
+    if (commit && drag.intent === "close") {
+      notifyGesture();
+      onCloseBook(selected.book.id);
+      return;
+    }
+    if (commit && drag.intent === "return") {
+      notifyGesture();
       onReturnBook(selected.book.id);
       return;
     }
-    if (!cancelled && !drag.intent) {
+    if (!cancelled && !drag.intent && drag.mode === "desk") {
       // Un toque sobre el libro cerrado también lo abre.
+      openingPending = true;
+      notifyGesture("opening");
       onOpenBook(selected.book.id);
       return;
     }
-    settleDeskBook();
-    scheduleHint(2.4);
+    notifyGesture();
+    if (drag.intent) settleDeskBook(drag.snapshot);
+    if (drag.mode === "desk") scheduleHint(2.4);
   }
 
   function updatePointer(event) {
@@ -832,11 +900,13 @@ export function createStage(canvas, options) {
   };
   const onPointerDown = (event) => {
     if (event.button !== 0 && event.pointerType === "mouse") return;
+    if (isBusy()) return;
     pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
     canvas.setPointerCapture(event.pointerId);
     panTween?.cancel();
     clearTimeout(wheelTimer);
     if (pointers.size === 2) {
+      if (deskDrag) endDeskDrag(true);
       const [a, b] = [...pointers.values()];
       pinch = { distance: Math.max(1, Math.hypot(a.x - b.x, a.y - b.y)), zoom: zoomTarget };
       if (dragging) dragging.moved = true;
@@ -847,7 +917,7 @@ export function createStage(canvas, options) {
     pick();
     dragging.toy = hoveredToy;
     dragging.book = hoveredBook;
-    if (mode === "desk" && selected && !hoveredToy && hoveringDeskBook) startDeskDrag(event);
+    if ((mode === "desk" || mode === "reading") && selected && !hoveredToy && hoveringDeskBook) startDeskDrag(event);
   };
   const onPointerUp = (event) => {
     if (!pointers.has(event.pointerId)) return;
@@ -893,6 +963,7 @@ export function createStage(canvas, options) {
   };
   const onPointerCancel = () => {
     if (deskDrag) endDeskDrag(true);
+    for (const id of pointers.keys()) if (canvas.hasPointerCapture(id)) canvas.releasePointerCapture(id);
     pointers.clear(); pinch = null; dragging = null; pointerDirty = false;
     delete canvas.dataset.dragging;
     setHoveredToy(null); setHoveredBook(null);
@@ -900,6 +971,7 @@ export function createStage(canvas, options) {
   };
   const onWheel = (event) => {
     event.preventDefault();
+    if (deskDrag || isBusy()) return;
     if (mode === "shelf" && !event.ctrlKey && (event.shiftKey || Math.abs(event.deltaX) > Math.abs(event.deltaY))) {
       panTween?.cancel();
       const delta = (event.deltaX || event.deltaY) * (event.deltaMode === 1 ? 16 : 1);
@@ -916,6 +988,14 @@ export function createStage(canvas, options) {
   canvas.addEventListener("pointercancel", onPointerCancel);
   canvas.addEventListener("wheel", onWheel, { passive: false });
   window.addEventListener("blur", onPointerCancel);
+  // Escape cancela el gesto en curso y devuelve el libro a su pose.
+  const onKeyDown = (event) => {
+    if (event.key === "Escape" && deskDrag) {
+      event.preventDefault();
+      endDeskDrag(true);
+    }
+  };
+  window.addEventListener("keydown", onKeyDown);
 
   function clampPan(x) {
     const half = ((books.length - 1) * bookSpacing) / 2;
@@ -956,7 +1036,7 @@ export function createStage(canvas, options) {
 
   function selectBook(bookId, ownedPins = []) {
     const entry = bookEntries.find((e) => e.book.id === bookId);
-    if (!entry || selected) return;
+    if (!entry || selected || isBusy()) return false;
     activateBook(entry);
     panTween?.cancel();
     feedback.clear();
@@ -968,6 +1048,7 @@ export function createStage(canvas, options) {
     // Otros libros se quedan; el elegido vuela a la mesa.
     const g = entry.group;
     const d = reduceMotion ? 0.01 : 1.15;
+    lockFor(d);
     tween(g.position, { x: entry.home.x, y: entry.home.y + 0.5, z: entry.home.z + 0.4 }, { duration: d * 0.3, easing: ease.out,
       onComplete: () => tween(g.position, { x: DESK_BOOK.x, y: 0.0, z: DESK_BOOK.z }, { duration: d * 0.7, easing: ease.inOut }) });
     tween(g.rotation, { x: -Math.PI / 2, y: 0, z: 0.02 }, { duration: d, easing: ease.inOut });
@@ -979,6 +1060,7 @@ export function createStage(canvas, options) {
     spot.target.position.set(DESK_BOOK.x, 0, DESK_BOOK.z - BOOK_H);
     tween(spot, { intensity: 5 }, { duration: 0.6, delay: d * 0.6 });
     scheduleHint(d + 0.9);
+    return true;
   }
 
   function deselect() {
@@ -986,6 +1068,8 @@ export function createStage(canvas, options) {
     const entry = selected;
     stopHint();
     if (deskDrag) endDeskDrag(true);
+    openingPending = false;
+    notifyGesture();
     closeBook(true);
     clearPageDiorama();
     selected = null;
@@ -994,6 +1078,7 @@ export function createStage(canvas, options) {
     clearDeskToys();
     const g = entry.group;
     const d = reduceMotion ? 0.01 : 1.05;
+    lockFor(d);
     tween(g.position, { x: entry.home.x, y: entry.home.y + 0.4, z: entry.home.z + 0.5 }, { duration: d * 0.6, easing: ease.inOut });
     tween(g.position, { x: entry.home.x, y: entry.home.y, z: entry.home.z }, { duration: d * 0.4, delay: d * 0.6, easing: ease.outBack });
     tween(g.rotation, { x: entry.home.rx, y: entry.home.ry, z: 0 }, { duration: d, easing: ease.inOut });
@@ -1008,11 +1093,15 @@ export function createStage(canvas, options) {
     if (!selected || mode === "reading") return;
     mode = "reading";
     stopHint();
+    if (deskDrag) endDeskDrag(true);
+    openingPending = false;
+    notifyGesture();
     feedback.clear();
     setZoom(1);
     const entry = selected;
     // Si venía de un arrastre, la tapa sigue desde donde quedó.
     const d = (reduceMotion ? 0.01 : 1.0) * (1 - openT * 0.6);
+    lockFor(d);
     const open = { t: openT };
     tween(open, { t: 1 }, { duration: d, easing: ease.inOut, onUpdate: () => setOpenT(open.t) });
     tween(entry.group.position, { x: DESK_BOOK.x + 0.12, y: 0, z: DESK_BOOK.z }, { duration: d, easing: ease.inOut });
@@ -1031,15 +1120,17 @@ export function createStage(canvas, options) {
 
   function closeBook(instant = false) {
     if (!selected) return;
+    if (deskDrag && !instant) endDeskDrag(true);
     const entry = selected;
     const wasReading = mode === "reading";
     if (mode === "reading") mode = "desk";
     const d = instant || reduceMotion ? 0.01 : 0.8;
+    if (!instant) lockFor(d);
     if (instant) setOpenT(0);
     if (wasReading) {
       tween(entry.popupPivot.scale, { y: 0.0001 }, { duration: d * 0.4, easing: ease.in, onComplete: () => { entry.popupPivot.visible = false; } });
       const open = { t: openT };
-      tween(open, { t: 0 }, { duration: d, delay: d * 0.25, easing: ease.inOut, onUpdate: () => setOpenT(open.t) });
+      tween(open, { t: 0 }, { duration: d * Math.max(0.35, openT), delay: d * 0.25, easing: ease.inOut, onUpdate: () => setOpenT(open.t) });
       tween(entry.group.position, { x: DESK_BOOK.x }, { duration: d, easing: ease.inOut });
       if (!instant) moveCamera(viewFor("desk"), d);
       if (!instant) scheduleHint(d + 1.2);
@@ -1112,6 +1203,7 @@ export function createStage(canvas, options) {
   }
 
   function setZoom(value) {
+    if (deskDrag) endDeskDrag(true);
     zoomTarget = clampZoom(value);
     onZoom(Math.round(zoomTarget * 100));
   }
@@ -1124,6 +1216,7 @@ export function createStage(canvas, options) {
   const clock = { t: 0 };
 
   function resize() {
+    if (deskDrag) endDeskDrag(true);
     const w = canvas.clientWidth || window.innerWidth;
     const h = canvas.clientHeight || window.innerHeight;
     renderer.setSize(w, h, false);
@@ -1243,6 +1336,7 @@ export function createStage(canvas, options) {
     canvas.removeEventListener("pointercancel", onPointerCancel);
     canvas.removeEventListener("wheel", onWheel);
     window.removeEventListener("blur", onPointerCancel);
+    window.removeEventListener("keydown", onKeyDown);
     scene.traverse((obj) => {
       if (obj.geometry) obj.geometry.dispose?.();
       const materials = Array.isArray(obj.material) ? obj.material : obj.material ? [obj.material] : [];
@@ -1265,6 +1359,15 @@ export function createStage(canvas, options) {
     playAct,
     projectPopup,
     projectCorner,
+    /** La app no pudo abrir el cuento: la tapa vuelve a cerrarse. */
+    cancelOpenRequest() {
+      openingPending = false;
+      notifyGesture();
+      if (selected && mode === "desk") {
+        settleDeskBook();
+        scheduleHint(2);
+      }
+    },
     focusBook,
     panShelf,
     setZoom,
@@ -1290,6 +1393,9 @@ export function createStage(canvas, options) {
         }),
         selected: selected?.book.id || null,
         book: selected ? { p: selected.group.position.toArray(), r: selected.group.rotation.toArray().slice(0, 3), s: selected.group.scale.x } : null,
+        open: openT,
+        drag: deskDrag ? { intent: deskDrag.intent, progress: deskDrag.progress } : null,
+        busy: isBusy(),
         cam: [camPos.toArray(), camLook.toArray(), shelfPan.x],
       };
     },
