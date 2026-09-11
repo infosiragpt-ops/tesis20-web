@@ -23,9 +23,9 @@ function wavyDisc(radius, amp, waves, phase, depth, bevel, material, y) {
 
 export function build() {
   const g = new THREE.Group();
-  const pink = mat("#f3a3b5");
-  const pinkLight = mat("#f9cbd6");
-  const pinkDark = mat("#e88ea6");
+  const pink = mat("#f3a3b5", { surface: "skin" });
+  const pinkLight = mat("#f9cbd6", { surface: "skin" });
+  const pinkDark = mat("#e88ea6", { surface: "skin" });
   const teal = mat("#5fb8b4");
   const tealLight = mat("#93d8d2");
   const foam = mat("#f4fbfa", { rough: 0.5 });

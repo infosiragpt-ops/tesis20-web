@@ -9,10 +9,10 @@ export const label = "Abuelita";
 
 export function build() {
   const g = new THREE.Group();
-  const dress = mat("#7a5aa8", { rough: 0.8 });
-  const shawl = mat("#f1e2cf", { rough: 0.85 });
-  const skin = mat("#efc3a3");
-  const hair = mat("#e9e4e0", { rough: 0.9 });
+  const dress = mat("#7a5aa8", { rough: 0.8 , surface: "cloth" });
+  const shawl = mat("#f1e2cf", { rough: 0.85 , surface: "wool" });
+  const skin = mat("#efc3a3", { surface: "skin" });
+  const hair = mat("#e9e4e0", { rough: 0.9 , surface: "wool" });
   const frame = mat("#5a4a3a", { rough: 0.4, metal: 0.2 });
   const wood = mat("#8a5a33", { rough: 0.8 });
   const shoe = mat("#4a2f22", { rough: 0.8 });

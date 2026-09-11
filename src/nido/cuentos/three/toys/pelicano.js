@@ -9,8 +9,8 @@ export const label = "Pelícano";
 
 export function build() {
   const g = new THREE.Group();
-  const feather = mat("#eee4d2", { rough: 0.74 });
-  const wingMat = mat("#817b78", { rough: 0.72 });
+  const feather = mat("#eee4d2", { rough: 0.74 , surface: "feathers" });
+  const wingMat = mat("#817b78", { rough: 0.72 , surface: "feathers" });
   const gold = mat("#e9b44e", { rough: 0.4 });
   const goldDark = mat("#d09a36", { rough: 0.45 });
   const rock = mat("#8c8a86", { rough: 0.9 });

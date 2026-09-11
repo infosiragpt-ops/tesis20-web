@@ -7,8 +7,8 @@ export const label = "Rana";
 
 export function build() {
   const g = new THREE.Group();
-  const green = mat("#6cc04a");
-  const light = mat("#d8ec9f");
+  const green = mat("#6cc04a", { surface: "skin" });
+  const light = mat("#d8ec9f", { surface: "skin" });
   const padGreen = mat("#2e7d4f", { rough: 0.7 });
   const dark = mat("#2b4d2e", { rough: 0.5 });
   const black = mat("#1c1a22", { rough: 0.3 });

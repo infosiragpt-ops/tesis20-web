@@ -772,7 +772,9 @@ for (const buildAsset of buildAssets) {
     // (cabeza, ojos, brazos, alas, cola, patas) con ojos de cuento, y el
     // escenario suma 21 acciones sincronizadas con la narración; el chunk
     // queda en ~300 KiB y se le deja margen sin tocar el presupuesto inicial.
-    const chunkLimit = /vendor-three-/.test(buildAsset) ? 760 * 1024 : /CuentosApp-/.test(buildAsset) ? 320 * 1024 : 250 * 1024;
+    // 2026-09-11 (bis): 340 KiB. Los fondos pictóricos por página (backdrop.js)
+    // y el seguimiento de lectura sobre la página 3D viven en este chunk.
+    const chunkLimit = /vendor-three-/.test(buildAsset) ? 760 * 1024 : /CuentosApp-/.test(buildAsset) ? 340 * 1024 : 250 * 1024;
     check(
       bytes <= chunkLimit,
       `${buildAsset} supera el máximo de ${Math.round(chunkLimit / 1024)} KiB por chunk.`,

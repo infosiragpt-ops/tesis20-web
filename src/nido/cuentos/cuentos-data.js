@@ -15,6 +15,11 @@
 //   enter: { actor: "left" | "right" }: la figura entra caminando (volando,
 //         nadando…) desde ese lado al abrir la página. steps: clave de pasos
 //         para esa página (si no, se elige por el escenario del libro).
+//   work: { actor, task } → se ve a la figura trabajando: va a la pila de
+//         material, carga piezas y las coloca una a una hasta terminar la
+//         obra (paja, madera, ladrillos) o recoge del suelo (flores,
+//         caracolas). { task, built: true } muestra la obra ya terminada; en
+//         un cue, scene: "scatter" | "collapse" la hace volar o derrumbarse.
 // Cada libro trae `names`: { actor: [palabras] }; cuando la voz dice una de
 // esas palabras, la figura se ilumina y los demás la miran.
 // Cada libro tiene 10 páginas narradas, 5 souvenirs escondidos y 5 preguntas
@@ -49,6 +54,7 @@ export const BOOKS = [
         light: "day",
         cast: ["pipo"],
         props: ["sol", "nubes", "paja", "pasto", "flores"],
+        work: { actor: "pipo", task: "paja" },
         acts: { pipo: "build" },
         cues: { jugar: { act: { pipo: "cheer" } } },
       },
@@ -58,6 +64,7 @@ export const BOOKS = [
         light: "day",
         cast: ["lolo"],
         props: ["sol", "madera", "arboles", "pasto"],
+        work: { actor: "lolo", task: "madera" },
         pin: "manzana",
         acts: { lolo: "build" },
       },
@@ -67,6 +74,7 @@ export const BOOKS = [
         light: "dusk",
         cast: ["tito"],
         props: ["sol", "ladrillos", "pasto", "flores"],
+        work: { actor: "tito", task: "ladrillos" },
         pin: "casita",
         acts: { tito: "build" },
       },
@@ -76,6 +84,7 @@ export const BOOKS = [
         light: "night",
         cast: ["lobo"],
         props: ["luna", "estrellas", "arboles", "paja"],
+        work: { task: "paja", built: true },
         enter: { lobo: "right" },
         pin: "lobo",
         cues: { auuu: { sfx: "lobo-aullido", act: { lobo: "howl" } }, derechito: { act: { lobo: "run" } , move: { lobo: "left" }} },
@@ -86,10 +95,11 @@ export const BOOKS = [
         light: "night",
         cast: ["pipo", "lobo"],
         props: ["luna", "estrellas", "viento", "paja"],
+        work: { task: "paja", built: true },
         acts: { pipo: "shiver" },
         cues: {
           sopló: { sfx: "lobo-soplido", act: { lobo: "blow" } },
-          voló: { sfx: "casa-paja" },
+          voló: { sfx: "casa-paja" , scene: "scatter"},
           corrió: { act: { pipo: "run" } , move: { pipo: "away-right" }},
         },
       },
@@ -99,10 +109,11 @@ export const BOOKS = [
         light: "night",
         cast: ["lolo", "pipo", "lobo"],
         props: ["luna", "estrellas", "viento", "madera"],
+        work: { task: "madera", built: true },
         acts: { lolo: "shiver", pipo: "shiver" },
         cues: {
           sopló: { sfx: "lobo-soplido", act: { lobo: "blow" } },
-          cayó: { sfx: "casa-madera" },
+          cayó: { sfx: "casa-madera" , scene: "collapse"},
           corrieron: { act: { lolo: "run", pipo: "run" } , move: { lolo: "away-right", pipo: "away-right" }},
         },
       },
@@ -112,6 +123,7 @@ export const BOOKS = [
         light: "night",
         cast: ["lobo"],
         props: ["luna", "estrellas", "ladrillos", "viento"],
+        work: { task: "ladrillos", built: true },
         pin: "escalera",
         acts: { lobo: "blow" },
         cues: { sopló: { sfx: "lobo-soplido", act: { lobo: "blow" } }, aire: { act: { lobo: "shiver" } } },
@@ -122,6 +134,7 @@ export const BOOKS = [
         light: "moonrise",
         cast: ["tito", "lobo"],
         props: ["luna", "estrellas", "ladrillos", "olla"],
+        work: { task: "ladrillos", built: true },
         pin: "olla",
         cues: {
           plaf: { sfx: "olla-plaf", act: { lobo: "shiver" } },
@@ -135,6 +148,7 @@ export const BOOKS = [
         light: "day",
         cast: ["pipo", "lolo", "tito"],
         props: ["sol", "nubes", "ladrillos", "flores", "pasto"],
+        work: { actor: "pipo", task: "ladrillos" },
         sfxEnd: ["cerditos-alegres"],
         acts: { pipo: "cheer", lolo: "cheer", tito: "cheer" },
       },
@@ -201,6 +215,7 @@ export const BOOKS = [
         light: "day",
         cast: ["caperucita", "mariposa"],
         props: ["arboles", "flores", "sol", "pasto"],
+        work: { actor: "caperucita", task: "flores" },
         acts: { mariposa: "fly", caperucita: "walk" },
         cues: {
           flores: { act: { caperucita: "look" } },
@@ -1165,6 +1180,7 @@ export const BOOKS = [
         light: "day",
         cast: ["nina2"],
         props: ["mar", "caracola", "sol"],
+        work: { actor: "nina2", task: "caracolas" },
         enter: { nina2: "left" },
         sfx: ["olas"],
         acts: { nina2: "walk" },

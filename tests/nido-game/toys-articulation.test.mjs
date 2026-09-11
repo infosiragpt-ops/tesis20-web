@@ -5,6 +5,7 @@ import * as THREE from "three";
 import { BOOKS } from "../../src/nido/cuentos/cuentos-data.js";
 import { ACT_NAMES } from "../../src/nido/cuentos/cuentos-acts.js";
 import { buildToy, hasToy } from "../../src/nido/cuentos/three/toys/index.js";
+import { WORK_TASKS, buildWorkPieces, buildWorkPile } from "../../src/nido/cuentos/three/work-pieces.js";
 
 // Las figuras del reparto se animan con la narración (stage.applyAct): cada
 // una declara en userData qué partes tiene (cabeza, ojos, brazos, alas, cola,
@@ -70,4 +71,18 @@ test("los personajes entran y se desplazan por la escena cuando el texto lo dice
   }
   assert.ok(entrances >= 20, `sólo ${entrances} entradas en escena en toda la biblioteca.`);
   assert.ok(moves >= 12, `sólo ${moves} desplazamientos por palabra en toda la biblioteca.`);
+});
+
+test("cada obra tiene piezas con destino y los cerditos construyen sus tres casas", () => {
+  for (const [task, spec] of Object.entries(WORK_TASKS)) {
+    const pieces = buildWorkPieces(task);
+    assert.ok(pieces.length >= 6 && pieces.length <= 16, `${task}: ${pieces.length} piezas, fuera de lo animable en una página.`);
+    pieces.forEach((piece) => assert.ok(piece.object && piece.pos.length === 3 && piece.rot.length === 3, `${task}: pieza sin destino.`));
+    if (!spec.gather) assert.ok(buildWorkPile(task), `${task}: sin pila de material.`);
+  }
+  const cerditos = BOOKS.find((book) => book.id === "cerditos");
+  const built = cerditos.pages.filter((page) => page.work?.actor).map((page) => page.work.task);
+  assert.deepEqual(built.slice(0, 3), ["paja", "madera", "ladrillos"], "los cerditos deben construir paja, madera y ladrillos, en ese orden.");
+  const events = cerditos.pages.flatMap((page) => Object.values(page.cues || {}).map((cue) => cue.scene).filter(Boolean));
+  assert.deepEqual(events, ["scatter", "collapse"], "la casa de paja vuela y la de madera se derrumba.");
 });

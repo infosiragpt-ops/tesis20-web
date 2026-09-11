@@ -4,11 +4,16 @@
 // planos, superficies mate: estética de juguete de madera pintada.
 
 import * as THREE from "three";
+import { SURFACES, surfaceNormalMap } from "../surfaces.js";
 
-export function mat(color, { rough = 0.62, metal = 0, emissive = null, emissiveIntensity = 0.6, flat = false, opacity = 1, clearcoat = 0 } = {}) {
+export function mat(color, { rough = 0.62, metal = 0, emissive = null, emissiveIntensity = 0.6, flat = false, opacity = 1, clearcoat = 0, surface = null } = {}) {
   // Con `clearcoat` el material es físico: una capa de barniz brillante
-  // (ojos húmedos, nariz, lacas) sobre el color mate.
-  const material = clearcoat
+  // (ojos húmedos, nariz, lacas) sobre el color mate. Con `surface` (fur,
+  // wool, cloth, skin, feathers) lleva microdetalle: mapa de normales
+  // procedural y, en pelaje y tela, un brillo de fibra (sheen).
+  const spec = surface ? SURFACES[surface] : null;
+  const physical = clearcoat || (spec && spec.sheen);
+  const material = physical
     ? new THREE.MeshPhysicalMaterial({ color, roughness: rough, metalness: metal, clearcoat, clearcoatRoughness: 0.12, transparent: opacity < 1, opacity })
     : new THREE.MeshStandardMaterial({
         color,
@@ -18,6 +23,18 @@ export function mat(color, { rough = 0.62, metal = 0, emissive = null, emissiveI
         transparent: opacity < 1,
         opacity,
       });
+  if (spec) {
+    const map = surfaceNormalMap(surface);
+    if (map) {
+      material.normalMap = map;
+      material.normalScale = new THREE.Vector2(spec.scale, spec.scale);
+    }
+    if (spec.sheen && material.isMeshPhysicalMaterial) {
+      material.sheen = spec.sheen;
+      material.sheenRoughness = 0.85;
+      material.sheenColor = new THREE.Color(color).lerp(new THREE.Color("#ffffff"), 0.45);
+    }
+  }
   if (emissive) {
     material.emissive = new THREE.Color(emissive);
     material.emissiveIntensity = emissiveIntensity;

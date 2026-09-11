@@ -52,6 +52,10 @@ const tito = { id: "tito", label: "Tito", build: () => cerdito.build({ plaid: tr
 const loboCama = { id: "lobo-cama", label: "Lobo disfrazado", build: () => lobo.build({ bonnet: true }) };
 const REGISTRY = { abuelita, arbol, ballena, barco, bufeo, buho, cactus, campana, canasta, caperucita, caracola, casa, cazador, cerdito, cohete, cometa, escalera, estrella, farol, frasco, gorro, lobo, luna, manzana, olla, oso, oveja, pajarito, pez, picaflor, quena, ramo, rana, tambor, tren, vicuna, zorro, mariposa, pelicano, carpintero, nina, nino, nina2, maquinista, pipo, lolo, tito, "lobo-cama": loboCama };
 
+// Tamaño relativo en el diorama: las criaturas pequeñas se ven pequeñas
+// junto a los personajes grandes (1 = altura estándar de figura).
+export const TOY_SCALE = { mariposa: 0.5, picaflor: 0.75, carpintero: 0.75, pajarito: 0.55, rana: 0.85, pez: 0.85 };
+
 export function registerToys(modules) {
   modules.forEach((module) => {
     if (module?.id && typeof module.build === "function") REGISTRY[module.id] = module;

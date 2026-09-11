@@ -3,6 +3,13 @@
 // cuando se elige un cuento. Toda la interfaz de texto vive en HTML encima.
 
 import * as THREE from "three";
+import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
+import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
+import { BokehPass } from "three/examples/jsm/postprocessing/BokehPass.js";
+import { OutputPass } from "three/examples/jsm/postprocessing/OutputPass.js";
+import { highlightStoryWord } from "./textures.js";
+import { WORK_TASKS, buildWorkPieces, buildWorkPile } from "./work-pieces.js";
+import { TOY_SCALE } from "./toys/index.js";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 import { tween, ease, after, updateTweens, cancelAllTweens } from "./tween.js";
 import {
@@ -87,6 +94,8 @@ export function createStage(canvas, options) {
     onClickToy = () => {},
     // Una figura empieza a desplazarse (entra a escena o se mueve por ella).
     onTravel = () => {},
+    // Una pieza de la obra se coloca o se recoge (clave de sonido).
+    onWorkSound = () => {},
     onFrame = () => {},
     coverTexture, // (book) => Promise<Texture>
     emblemTexture, // (pinId) => Promise<Texture>
@@ -119,6 +128,27 @@ export function createStage(canvas, options) {
   const zoom = { value: 1 };
   let zoomTarget = 1;
   const feedback = createToyFeedback(scene, camera, reduceMotion);
+
+  /* ------------------------ postprocesado de cine ------------------------ */
+  // Sólo en modo película: profundidad de campo (enfoque en quien habla) y un
+  // resplandor suave en luces y brillos. En móviles sólo el resplandor, y
+  // nada con movimiento reducido o pocos núcleos.
+  // Sólo profundidad de campo: el resplandor (bloom) lavaba la página clara.
+  let composer = null;
+  let bokehPass = null;
+  let composerW = 0;
+  let composerH = 0;
+  const postEnabled = !reduceMotion && !isMobile;
+  function ensureComposer() {
+    if (composer || !postEnabled) return composer;
+    composer = new EffectComposer(renderer);
+    composer.setPixelRatio(renderer.getPixelRatio());
+    composer.addPass(new RenderPass(scene, camera));
+    bokehPass = new BokehPass(scene, camera, { focus: 1, aperture: 0.014, maxblur: 0.0035 });
+    composer.addPass(bokehPass);
+    composer.addPass(new OutputPass());
+    return composer;
+  }
 
   /* ------------------------------ luces ------------------------------ */
   scene.add(new THREE.HemisphereLight("#fff4e0", "#5d5148", 0.62));
@@ -402,6 +432,7 @@ export function createStage(canvas, options) {
   }
 
   function clearPageDiorama() {
+    clearWork();
     feedback.clear();
     pageActors.forEach((holder) => {
       releaseToy(holder);
@@ -563,11 +594,13 @@ export function createStage(canvas, options) {
     pageActors.push(platform);
 
     const layout = dioramaLayout(castIds.length, propIds.length);
+    let enteredSound = false;
     candidates.forEach((id, index) => {
       const holder = new THREE.Group();
       const actor = buildToy(id);
       const slot = layout[index];
-      const target = slot.scale;
+      // Las criaturas pequeñas (mariposa, picaflor…) no miden lo que un cerdito.
+      const target = slot.scale * (TOY_SCALE[id] || 1);
       holder.position.set(slot.x, 0.018, slot.z);
       holder.rotation.y = slot.face;
       holder.scale.setScalar(target);
@@ -586,14 +619,19 @@ export function createStage(canvas, options) {
       holder.userData.faceTurn = 0;
       holder.userData.travel = null;
       // `enter`: la figura entra caminando (o volando, nadando…) desde un lado.
-      const enter = page.enter?.[id];
+      // Sin indicación, cada personaje entra a escena alternando lados, salvo
+      // si duerme; `enter: "none"` lo deja quieto desde el principio.
+      const enter = page.enter?.[id] ?? (holder.userData.isCast && holder.userData.pageAct !== "sleep" && !reduceMotion ? (index % 2 ? "right" : "left") : null);
       if (enter === "left" || enter === "right") {
         const act = ["fly", "swim", "run", "jump"].includes(holder.userData.act) ? holder.userData.act : "walk";
         holder.userData.baseX = slot.x + (enter === "right" ? 0.3 : -0.3);
         holder.position.x = holder.userData.baseX;
         holder.userData.travel = { to: slot.x, act, speed: travelSpeed(act), then: holder.userData.pageAct, hide: false };
         holder.userData.act = act;
-        onTravel(id, act);
+        if (!enteredSound) {
+          enteredSound = true;
+          onTravel(id, act);
+        }
       }
       pageActorById.set(id, holder);
       holder.add(actor);
@@ -620,6 +658,7 @@ export function createStage(canvas, options) {
       selected.dioramaRoot.add(spark);
       pageActors.push(spark);
     }
+    setupWork(page);
     after(0.75, () => {
       if (cinema) measureDiorama();
     });
@@ -752,7 +791,21 @@ export function createStage(canvas, options) {
     cineKey.target.position.copy(cine.focus);
     cineRim.position.copy(cine.focus).addScaledVector(cineRight, 0.5 * reach).addScaledVector(cineUp, 0.8 * reach).addScaledVector(cineFront, -0.6 * reach);
     cineRim.target.position.copy(cine.focus);
+    // El fondo pintado deriva muy despacio, como una cámara sobre el decorado.
+    const map = selected.popup?.material?.map;
+    if (map) {
+      map.repeat.set(0.92, 0.92);
+      map.offset.set(0.04 + Math.sin(t * 0.06 + cine.seed) * 0.035, 0.04 + Math.cos(t * 0.045 + cine.seed) * 0.03);
+    }
     return true;
+  }
+
+  function resetBackdropDrift() {
+    const map = selected?.popup?.material?.map;
+    if (map && map.repeat.x !== 1) {
+      map.repeat.set(1, 1);
+      map.offset.set(0, 0);
+    }
   }
 
   /* --------------------------- desplazamientos ---------------------- */
@@ -781,6 +834,20 @@ export function createStage(canvas, options) {
   }
 
   function updateTravel(actor, dt) {
+    // Cada personaje que no habla ni actúa da, de vez en cuando, unos pasos
+    // cortos por su zona: la escena nunca está congelada.
+    if (!actor.userData.travel && !actor.userData.burst && !actor.userData.working && actor.userData.isCast && actor.userData.storyActor !== speakingId && !reduceMotion) {
+      const now = clock.t;
+      if (!actor.userData.nextStroll) actor.userData.nextStroll = now + 4 + Math.random() * 6;
+      else if (now > actor.userData.nextStroll) {
+        actor.userData.nextStroll = now + 7 + Math.random() * 8;
+        const pageAct = actor.userData.pageAct;
+        if (pageAct !== "sleep") {
+          const act = pageAct === "fly" || pageAct === "swim" ? pageAct : "walk";
+          actor.userData.travel = { to: actor.userData.slotX + (Math.random() - 0.5) * 0.16, act, speed: 0.07, then: pageAct, hide: false };
+        }
+      }
+    }
     const travel = actor.userData.travel;
     let turn = 0;
     if (travel) {
@@ -799,6 +866,209 @@ export function createStage(canvas, options) {
     }
     const current = actor.userData.faceTurn || 0;
     actor.userData.faceTurn = current + (turn - current) * Math.min(1, dt * 6);
+  }
+
+  /* -------------------------------- obra ------------------------------ */
+  // «Se les ve trabajando»: junto a la figura hay una pila de material y, al
+  // otro lado, la construcción. La figura va a la pila, carga unas piezas,
+  // vuelve y las coloca una a una (la casa crece) hasta terminar. Con
+  // `built` la obra aparece terminada; los cues `scene` la hacen volar
+  // («voló») o derrumbarse («cayó»). Las tareas de recoger (flores,
+  // caracolas) reparten las piezas por el suelo y la figura las va juntando.
+  let work = null;
+  const WORK_PILE_X = -0.17;
+  const WORK_SITE_X = 0.16;
+  const WORK_SCALE = 1.4;
+
+  function clearWork() {
+    if (!work) return;
+    work.root.parent?.remove(work.root);
+    work.root.traverse((obj) => {
+      if (obj.isMesh) obj.geometry?.dispose();
+    });
+    work.pieces.forEach((piece) => piece.object.parent?.remove(piece.object));
+    if (work.holder) work.holder.userData.working = false;
+    work = null;
+  }
+
+  function setupWork(page) {
+    clearWork();
+    const spec = page?.work;
+    if (!spec || !WORK_TASKS[spec.task] || !selected?.dioramaRoot) return;
+    const task = WORK_TASKS[spec.task];
+    // Delante de la lámina del pop-up (z > 0.02) y detrás de la fila de personajes.
+    const root = new THREE.Group();
+    root.position.set(0, 0.018, 0.07);
+    selected.dioramaRoot.add(root);
+    const site = new THREE.Group();
+    site.position.set(task.gather ? 0 : WORK_SITE_X, 0, task.gather ? 0.01 : 0);
+    site.scale.setScalar(task.gather ? 1.1 : WORK_SCALE);
+    root.add(site);
+    const pieces = buildWorkPieces(spec.task);
+    pieces.forEach((piece) => {
+      piece.object.visible = Boolean(task.gather || spec.built);
+      piece.object.traverse((obj) => {
+        if (obj.isMesh) {
+          obj.castShadow = true;
+          obj.receiveShadow = true;
+        }
+      });
+      site.add(piece.object);
+    });
+    const pile = spec.built ? null : buildWorkPile(spec.task);
+    if (pile) {
+      pile.position.set(WORK_PILE_X, 0, 0);
+      pile.scale.setScalar(WORK_SCALE);
+      pile.traverse((obj) => {
+        if (obj.isMesh) obj.castShadow = true;
+      });
+      root.add(pile);
+    }
+    const holder = spec.actor && !spec.built ? pageActorById.get(spec.actor) || null : null;
+    work = { spec, task, root, site, pile, pieces, holder, placed: spec.built ? pieces.length : 0, phase: holder ? "start" : "done", timer: 0, carried: [] };
+    if (holder) holder.userData.working = true;
+  }
+
+  function workTravel(x, act = "walk") {
+    const holder = work.holder;
+    holder.userData.travel = { to: x, act, speed: 0.27, then: holder.userData.pageAct, hide: false };
+    holder.userData.act = act;
+  }
+
+  /** Hay una figura a medio trabajo (para que la página espere a que termine). */
+  function isWorking() {
+    return Boolean(work && work.holder && work.phase !== "done");
+  }
+
+  function carry(piece, index) {
+    const holder = work.holder;
+    holder.attach(piece.object);
+    piece.object.visible = true;
+    const d = reduceMotion ? 0.01 : 0.3;
+    tween(piece.object.position, { x: 0, y: 0.09 + index * 0.02, z: 0.11 }, { duration: d, easing: ease.out });
+    const rot = work.task.carryRot || [0, 0, 0];
+    tween(piece.object.rotation, { x: rot[0], y: rot[1], z: rot[2] }, { duration: d });
+  }
+
+  function placeCarried(piece) {
+    work.site.attach(piece.object);
+    const d = reduceMotion ? 0.01 : 0.28;
+    tween(piece.object.position, { x: piece.pos[0], y: piece.pos[1] + 0.03, z: piece.pos[2] }, {
+      duration: d,
+      easing: ease.out,
+      onComplete: () => tween(piece.object.position, { y: piece.pos[1] }, { duration: reduceMotion ? 0.01 : 0.16, easing: ease.in }),
+    });
+    tween(piece.object.rotation, { x: piece.rot[0], y: piece.rot[1], z: piece.rot[2] }, { duration: d * 1.4 });
+    tween(piece.object.scale, { x: 1, y: 1, z: 1 }, { duration: d * 1.4 });
+  }
+
+  function updateWork(dt) {
+    if (!work || !work.holder || work.phase === "done") return;
+    const holder = work.holder;
+    const traveling = Boolean(holder.userData.travel);
+    work.timer -= dt;
+    const finish = () => {
+      work.phase = "done";
+      holder.userData.working = false;
+      holder.userData.burst = { act: "cheer", until: performance.now() + 3000 };
+    };
+    switch (work.phase) {
+      case "start":
+        if (!traveling) {
+          work.phase = "toPile";
+          workTravel(work.task.gather ? work.pieces[work.placed].pos[0] : WORK_PILE_X + 0.07);
+        }
+        break;
+      case "toPile":
+        if (!traveling) {
+          work.phase = "pick";
+          work.timer = 0.45;
+          holder.userData.burst = { act: "build", until: performance.now() + 450 };
+          if (work.task.gather) {
+            work.carried = [work.pieces[work.placed]];
+            carry(work.carried[0], 0);
+          } else {
+            const count = Math.min(work.task.batch, work.pieces.length - work.placed);
+            work.carried = work.pieces.slice(work.placed, work.placed + count);
+            work.carried.forEach((piece, index) => {
+              piece.object.position.set(WORK_PILE_X - work.site.position.x, 0.02, 0);
+              carry(piece, index);
+            });
+          }
+        }
+        break;
+      case "pick":
+        if (work.timer <= 0) {
+          if (work.task.gather) {
+            const piece = work.carried[0];
+            tween(piece.object.scale, { x: 0.001, y: 0.001, z: 0.001 }, { duration: 0.35, easing: ease.in, onComplete: () => { piece.object.visible = false; } });
+            work.carried = [];
+            work.placed += 1;
+            onWorkSound(work.task.sound);
+            if (work.placed >= work.pieces.length) finish();
+            else {
+              work.phase = "toPile";
+              workTravel(work.pieces[work.placed].pos[0]);
+            }
+          } else {
+            work.phase = "toSite";
+            workTravel(WORK_SITE_X - 0.1);
+          }
+        }
+        break;
+      case "toSite":
+        if (!traveling) {
+          work.phase = "place";
+          work.timer = 0.2;
+        }
+        break;
+      case "place":
+        if (work.timer <= 0) {
+          const piece = work.carried.shift();
+          if (piece) {
+            placeCarried(piece);
+            work.placed += 1;
+            onWorkSound(work.task.sound);
+            holder.userData.burst = { act: "build", until: performance.now() + 500 };
+            work.timer = 0.5;
+          } else if (work.placed >= work.pieces.length) finish();
+          else {
+            work.phase = "toPile";
+            workTravel(WORK_PILE_X + 0.07);
+          }
+        }
+        break;
+      default:
+        break;
+    }
+  }
+
+  /** Evento de escena sobre la obra: «scatter» (vuela por los aires) o «collapse» (se derrumba). */
+  function sceneEvent(kind) {
+    if (!work) return false;
+    const placed = work.pieces.filter((piece) => piece.object.visible && piece.object.parent === work.site);
+    placed.forEach((piece, i) => {
+      const o = piece.object;
+      const d = reduceMotion ? 0.01 : 1;
+      if (kind === "scatter") {
+        const dir = i % 2 ? 1 : -1;
+        tween(o.position, { x: o.position.x + dir * (0.25 + Math.random() * 0.3), y: o.position.y + 0.2 + Math.random() * 0.25, z: o.position.z + (Math.random() - 0.5) * 0.2 }, {
+          duration: d * (0.9 + Math.random() * 0.5),
+          delay: d * i * 0.04,
+          easing: ease.out,
+          onComplete: () => { o.visible = false; },
+        });
+        tween(o.rotation, { x: o.rotation.x + Math.random() * 6, y: o.rotation.y + Math.random() * 6, z: o.rotation.z + Math.random() * 6 }, { duration: d * 1.2, delay: d * i * 0.04 });
+      } else if (kind === "collapse") {
+        tween(o.position, { x: o.position.x + (Math.random() - 0.5) * 0.08, y: 0.008 + Math.random() * 0.02, z: o.position.z + (Math.random() - 0.5) * 0.06 }, { duration: d * (0.45 + i * 0.05), delay: d * i * 0.03, easing: ease.in });
+        tween(o.rotation, { x: (Math.random() - 0.5) * 1.2, y: Math.random() * 3, z: (Math.random() > 0.5 ? Math.PI / 2 : 0) + (Math.random() - 0.5) * 0.5 }, { duration: d * (0.5 + i * 0.05), delay: d * i * 0.03 });
+      }
+    });
+    if (work.holder) {
+      work.phase = "done";
+      work.holder.userData.working = false;
+    }
+    return true;
   }
 
   function findPart(holder, key) {
@@ -1704,7 +1974,13 @@ export function createStage(canvas, options) {
 
   function setStoryPage(texture, page) {
     selected?.setStoryTexture(texture);
+    if (selected) selected.storyTexture = texture;
     updatePageDiorama(page);
+  }
+
+  /** Resalta en la página del libro la palabra que está sonando (−1 = ninguna). */
+  function setStoryWord(index) {
+    if (selected?.storyTexture) highlightStoryWord(selected.storyTexture, index);
   }
 
   const tmpVec = new THREE.Vector3();
@@ -1825,6 +2101,7 @@ export function createStage(canvas, options) {
       }
     });
 
+    updateWork(dt);
     pageActors.forEach((actor) => {
       if (reduceMotion) return;
       const phase = actor.userData.phase || 0;
@@ -1895,6 +2172,7 @@ export function createStage(canvas, options) {
       // En cine la rueda y el pellizco acercan la cámara, no la lente.
       camera.zoom = 1;
     } else {
+      if (mode === "reading") resetBackdropDrift();
       const panX = mode === "shelf" ? shelfPan.x : 0;
       camera.position.set(camPos.x + panX, camPos.y, camPos.z);
       camera.lookAt(camLook.x + panX, camLook.y, camLook.z);
@@ -1903,7 +2181,17 @@ export function createStage(canvas, options) {
     camera.updateProjectionMatrix();
 
     feedback.update(dt);
-    renderer.render(scene, camera);
+    if (cinema && mode === "reading" && ensureComposer()) {
+      if (composerW !== canvas.clientWidth || composerH !== canvas.clientHeight) {
+        composerW = canvas.clientWidth;
+        composerH = canvas.clientHeight;
+        composer.setSize(composerW, composerH);
+      }
+      if (bokehPass) bokehPass.uniforms.focus.value = camera.position.distanceTo(cine.focus);
+      composer.render();
+    } else {
+      renderer.render(scene, camera);
+    }
     onFrame();
   }
   activateBook(bookEntries.find(entry => entry.book.id === initialBookId) || bookEntries[0]);
@@ -1950,7 +2238,10 @@ export function createStage(canvas, options) {
     setStoryPage,
     playAct,
     travelTo,
+    sceneEvent,
+    isWorking,
     setCinema,
+    setStoryWord,
     setSpeaking,
     wordTick,
     nameActor,
@@ -1992,6 +2283,17 @@ export function createStage(canvas, options) {
         book: selected ? { p: selected.group.position.toArray(), r: selected.group.rotation.toArray().slice(0, 3), s: selected.group.scale.x } : null,
         open: openT,
         drag: deskDrag ? { intent: deskDrag.intent, progress: deskDrag.progress } : null,
+        work: work
+          ? {
+              phase: work.phase,
+              placed: work.placed,
+              carried: work.carried.length,
+              traveling: Boolean(work.holder?.userData.travel),
+              x: work.holder ? Number(work.holder.userData.baseX.toFixed(3)) : null,
+              visible: work.pieces.filter((piece) => piece.object.visible).length,
+              atSite: work.pieces.filter((piece) => piece.object.parent === work.site && piece.object.visible).length,
+            }
+          : null,
         busy: isBusy(),
         cam: [camPos.toArray(), camLook.toArray(), shelfPan.x],
       };

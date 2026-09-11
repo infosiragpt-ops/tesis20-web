@@ -30,9 +30,9 @@ function limb(from, to, r, material) {
 
 export function build() {
   const g = new THREE.Group();
-  const fur = mat("#3a251c", { rough: 0.72 });
-  const cream = mat("#f3e2b8");
-  const tan = mat("#dcbf92");
+  const fur = mat("#3a251c", { rough: 0.72 , surface: "fur" });
+  const cream = mat("#f3e2b8", { surface: "fur" });
+  const tan = mat("#dcbf92", { surface: "fur" });
   const inner = mat("#8a5f4a");
   const black = mat("#1c1a22", { rough: 0.3 });
   const bag = mat("#c4553f", { rough: 0.8 });

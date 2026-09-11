@@ -158,6 +158,10 @@ const SFX = {
   "pasos-pasto": { text: "Soft slow footsteps of a small animal walking on grass, gentle, close", seconds: 3 },
   "pasos-arena": { text: "Soft slow footsteps on dry sand, gentle, close", seconds: 3 },
   "chapoteo-suave": { text: "Gentle swimming in calm water, soft swishes and small splashes, close", seconds: 3 },
+  // Obra: colocar paja, martillar madera y asentar ladrillos (una pieza cada vez).
+  "paja-colocar": { text: "A bundle of dry straw dropped and patted into place, soft rustle, short, close", seconds: 1.4 },
+  martillo: { text: "Three quick hammer taps on wood, small hammer, cartoon, short", seconds: 1.4 },
+  ladrillo: { text: "A brick set down on mortar with a soft scrape and clink, short, close", seconds: 1.2 },
 };
 
 function getApiKey() {

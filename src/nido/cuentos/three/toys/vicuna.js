@@ -10,8 +10,8 @@ export const label = "Vicuña";
 
 export function build() {
   const g = new THREE.Group();
-  const tan = mat("#dea35a");
-  const cream = mat("#fff6e6");
+  const tan = mat("#dea35a", { surface: "fur" });
+  const cream = mat("#fff6e6", { surface: "fur" });
   const hoof = mat("#5a3f2e", { rough: 0.7 });
   const grass = mat("#6dbb57", { rough: 0.85 });
   const blade = mat("#8ed86a", { rough: 0.85 });

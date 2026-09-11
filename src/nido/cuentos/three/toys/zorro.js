@@ -9,8 +9,8 @@ export const label = "Zorro";
 
 export function build() {
   const g = new THREE.Group();
-  const sand = mat("#f1c27f");
-  const cream = mat("#fff4e2");
+  const sand = mat("#f1c27f", { surface: "fur" });
+  const cream = mat("#fff4e2", { surface: "fur" });
   const pink = mat("#f2bfae");
   const black = mat("#1c1a22", { rough: 0.35 });
 

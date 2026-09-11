@@ -8,10 +8,10 @@ import { mat, blob, cyl, cone, box, fit, eyeball, brow, smile, cheek } from "./_
 
 function child({ coat, trousers, girl = false, chullo = false, sailor = false, skinTone = "#bc8257" }) {
   const g = new THREE.Group();
-  const skin = mat(skinTone, { rough: 0.62 });
-  const hair = mat("#352522", { rough: 0.66 });
-  const fabric = mat(coat, { rough: 0.84 });
-  const pants = mat(trousers, { rough: 0.8 });
+  const skin = mat(skinTone, { rough: 0.62, surface: "skin" });
+  const hair = mat("#352522", { rough: 0.66 , surface: "fur" });
+  const fabric = mat(coat, { rough: 0.84, surface: "cloth" });
+  const pants = mat(trousers, { rough: 0.8, surface: "cloth" });
   const gold = mat("#f1cc70", { rough: 0.5 });
   const boots = mat("#413435", { rough: 0.55 });
 
