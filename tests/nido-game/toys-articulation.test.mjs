@@ -58,3 +58,16 @@ test("cada cuento mueve a sus personajes y suena con la narración", () => {
     }
   }
 });
+
+test("los personajes entran y se desplazan por la escena cuando el texto lo dice", () => {
+  let entrances = 0;
+  let moves = 0;
+  for (const book of BOOKS) {
+    for (const page of book.pages) {
+      entrances += Object.keys(page.enter || {}).length;
+      moves += Object.values(page.cues || {}).reduce((sum, cue) => sum + Object.keys(cue.move || {}).length, 0);
+    }
+  }
+  assert.ok(entrances >= 20, `sólo ${entrances} entradas en escena en toda la biblioteca.`);
+  assert.ok(moves >= 12, `sólo ${moves} desplazamientos por palabra en toda la biblioteca.`);
+});

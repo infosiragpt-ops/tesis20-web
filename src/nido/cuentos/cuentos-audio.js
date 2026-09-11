@@ -819,6 +819,13 @@ function stopFrameLoop() {
   resumeTick = null;
 }
 
+// Resultado que recibe `onEnd`: `ok` sólo cuando de verdad se escuchó la
+// lectura. Un clip que falla, una voz silenciada o un final casi inmediato
+// llegan con `ok: false` para que el lector no pase la página sin leerla.
+function readResult(elapsedMs, expectedMs) {
+  return elapsedMs >= Math.min(1200, Math.max(300, expectedMs * 0.5)) ? { ok: true, elapsedMs } : { ok: false, reason: "short", elapsedMs };
+}
+
 function playRecorded(track, { onWord, onEnd }, mySession) {
   const element = ensureNarrator();
   if (!element) return Promise.reject(new Error("sin reproductor"));
@@ -830,6 +837,7 @@ function playRecorded(track, { onWord, onEnd }, mySession) {
     element.src = url;
     element.playbackRate = 1;
     element.currentTime = 0;
+    const startedAt = performance.now();
 
     let index = -1;
     const tick = () => {
@@ -843,24 +851,26 @@ function playRecorded(track, { onWord, onEnd }, mySession) {
       }
       frameTimer = window.requestAnimationFrame(tick);
     };
-    const finish = () => {
+    const finish = (result) => {
       if (mySession !== session) return;
       stopFrameLoop();
       element.onended = null;
       element.onerror = null;
       onWord?.(-1);
-      onEnd?.();
+      onEnd?.(result);
     };
+    const finished = () => finish(readResult(performance.now() - startedAt, (track.duration || 0) * 1000));
+    const failed = () => finish({ ok: false, reason: "error" });
 
     // Hasta que play() resuelva, un fallo (clip ilegible, autoplay bloqueado)
     // llega como rechazo y quien llama decide el respaldo; los manejadores se
     // enganchan después para no acabar la lectura dos veces.
     return Promise.resolve(element.play()).then(() => {
       if (mySession !== session) return;
-      element.onended = finish;
-      element.onerror = finish;
+      element.onended = finished;
+      element.onerror = failed;
       if (element.ended) {
-        finish();
+        finished();
         return;
       }
       if (starts && onWord) {
@@ -924,9 +934,10 @@ export function stopSpeech() {
  */
 function speakWithBrowser(text, { onWord, onEnd, rate = 0.86 }, mySession) {
   if (!browserSpeechAvailable()) {
-    onEnd?.();
+    onEnd?.({ ok: false, reason: "unavailable" });
     return;
   }
+  const startedAt = performance.now();
 
   const words = text.split(/\s+/).filter(Boolean);
   const offsets = [];
@@ -970,7 +981,7 @@ function speakWithBrowser(text, { onWord, onEnd, rate = 0.86 }, mySession) {
     advance(found);
   };
 
-  utterance.onend = () => {
+  const settle = (result) => {
     if (mySession !== session) return;
     if (wordTimer) {
       window.clearInterval(wordTimer);
@@ -978,9 +989,10 @@ function speakWithBrowser(text, { onWord, onEnd, rate = 0.86 }, mySession) {
     }
     onWord?.(-1);
     currentUtterance = null;
-    onEnd?.();
+    onEnd?.(result);
   };
-  utterance.onerror = utterance.onend;
+  utterance.onend = () => settle(readResult(performance.now() - startedAt, words.length * 320));
+  utterance.onerror = (event) => settle({ ok: false, reason: event?.error || "error" });
 
   // Reserva por si el navegador no emite `boundary` (pasa en varios Safari).
   const perWord = Math.max(230, (1000 / (rate * 3.1)) * 1.05);
@@ -1005,7 +1017,7 @@ function speakWithBrowser(text, { onWord, onEnd, rate = 0.86 }, mySession) {
  */
 export function speak(text, { track = null, onWord, onEnd, rate = 0.86 } = {}) {
   if (typeof window === "undefined" || muted) {
-    onEnd?.();
+    onEnd?.({ ok: false, reason: muted ? "muted" : "unavailable" });
     return () => {};
   }
   stopSpeech();

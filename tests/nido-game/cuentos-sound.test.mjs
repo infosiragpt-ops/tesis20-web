@@ -7,6 +7,10 @@ import { splitWords, wordKey } from "../../src/nido/cuentos/cuentos-voice-plan.j
 import { TOY_SOUND_ALIAS } from "../../src/nido/cuentos/cuentos-audio.js";
 import { ACT_NAMES as ACTS } from "../../src/nido/cuentos/cuentos-acts.js";
 
+// Destinos de `move` y lados de `enter` que conoce el escenario (stage.travelTo).
+const MOVES = new Set(["left", "right", "center", "away-left", "away-right"]);
+const SIDES = new Set(["left", "right"]);
+
 // Las páginas pueden pedir efectos (`sfx`, `cues`) y acciones del escenario
 // (`acts`). Estos tests impiden referenciar un efecto que no está grabado, una
 // acción que el escenario no conoce, un actor que no está en la página o una
@@ -46,7 +50,16 @@ test("cada sfx, cue y act de las páginas es válido", async () => {
           assert.ok(cast.has(actor), `${where}: cue «${word}» apunta a «${actor}», que no está en la página.`);
           assert.ok(ACTS.has(act), `${where}: acción desconocida «${act}».`);
         }
+        for (const [actor, destination] of Object.entries(cue.move || {})) {
+          assert.ok(cast.has(actor), `${where}: cue «${word}» mueve a «${actor}», que no está en la página.`);
+          assert.ok(MOVES.has(destination), `${where}: destino desconocido «${destination}».`);
+        }
       }
+      for (const [actor, side] of Object.entries(page.enter || {})) {
+        assert.ok(cast.has(actor), `${where}: entra «${actor}», que no está en la página.`);
+        assert.ok(SIDES.has(side), `${where}: lado de entrada desconocido «${side}».`);
+      }
+      if (page.steps) assert.ok(manifest.sfx[page.steps], `${where}: pasos «${page.steps}» no grabados.`);
     });
   }
 });
@@ -66,5 +79,8 @@ test("cada escenario tiene su ambiente en bucle y cada figura del reparto tiene 
   }
   for (const name of ["page", "open", "close", "land", "select", "pin", "star", "right", "wrong", "cheer"]) {
     assert.ok(manifest.sfx?.[`ui-${name}`], `Falta el efecto de interfaz ui-${name}.`);
+  }
+  for (const key of ["pasos-suaves", "pasos-pasto", "pasos-arena", "pasos-bosque", "chapoteo-suave"]) {
+    assert.ok(manifest.sfx?.[key], `Faltan los pasos «${key}» que suenan al desplazarse una figura.`);
   }
 });

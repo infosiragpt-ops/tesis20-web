@@ -5,15 +5,19 @@
 
 import * as THREE from "three";
 
-export function mat(color, { rough = 0.62, metal = 0, emissive = null, emissiveIntensity = 0.6, flat = false, opacity = 1 } = {}) {
-  const material = new THREE.MeshStandardMaterial({
-    color,
-    roughness: rough,
-    metalness: metal,
-    flatShading: flat,
-    transparent: opacity < 1,
-    opacity,
-  });
+export function mat(color, { rough = 0.62, metal = 0, emissive = null, emissiveIntensity = 0.6, flat = false, opacity = 1, clearcoat = 0 } = {}) {
+  // Con `clearcoat` el material es físico: una capa de barniz brillante
+  // (ojos húmedos, nariz, lacas) sobre el color mate.
+  const material = clearcoat
+    ? new THREE.MeshPhysicalMaterial({ color, roughness: rough, metalness: metal, clearcoat, clearcoatRoughness: 0.12, transparent: opacity < 1, opacity })
+    : new THREE.MeshStandardMaterial({
+        color,
+        roughness: rough,
+        metalness: metal,
+        flatShading: flat,
+        transparent: opacity < 1,
+        opacity,
+      });
   if (emissive) {
     material.emissive = new THREE.Color(emissive);
     material.emissiveIntensity = emissiveIntensity;
@@ -71,9 +75,10 @@ export function eyes(group, { x = 0.03, y = 0.2, z = 0.08, r = 0.014, spread = 1
  * `look` desplaza el iris en x (−1 izquierda … 1 derecha) para dar intención.
  */
 export function eyeball(group, { x, y, z, r, iris = "#3a2418", sclera = "#ffffff", look = 0, squash = 0.75, tall = 1.15 }) {
-  const white = mat(sclera, { rough: 0.25 });
-  const irisMat = mat(iris, { rough: 0.3 });
-  const shine = mat("#ffffff", { rough: 0.1 });
+  // Ojo húmedo: barniz brillante sobre el globo y el iris, brillo que emite luz.
+  const white = mat(sclera, { rough: 0.2, clearcoat: 1 });
+  const irisMat = mat(iris, { rough: 0.22, clearcoat: 1 });
+  const shine = mat("#ffffff", { rough: 0.05, emissive: "#ffffff", emissiveIntensity: 0.35 });
   const ball = blob(r, white, { x, y, z });
   ball.scale.set(1, tall, squash);
   ball.userData.eye = 1;
