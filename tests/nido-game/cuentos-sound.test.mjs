@@ -5,6 +5,7 @@ import test from "node:test";
 import { BOOKS } from "../../src/nido/cuentos/cuentos-data.js";
 import { splitWords, wordKey } from "../../src/nido/cuentos/cuentos-voice-plan.js";
 import { TOY_SOUND_ALIAS } from "../../src/nido/cuentos/cuentos-audio.js";
+import { ACT_NAMES as ACTS } from "../../src/nido/cuentos/cuentos-acts.js";
 
 // Las páginas pueden pedir efectos (`sfx`, `cues`) y acciones del escenario
 // (`acts`). Estos tests impiden referenciar un efecto que no está grabado, una
@@ -13,7 +14,6 @@ import { TOY_SOUND_ALIAS } from "../../src/nido/cuentos/cuentos-audio.js";
 
 const MANIFEST_URL = new URL("../../public/assets/nido/audio/cuentos-sound.json", import.meta.url);
 const AUDIO_DIR = new URL("../../public/assets/nido/audio/sonido/", import.meta.url);
-const ACTS = new Set(["blow", "howl", "shiver", "run", "build", "cheer", "sleep"]);
 
 test("música y efectos del manifiesto existen en disco", async () => {
   const manifest = JSON.parse(await readFile(MANIFEST_URL, "utf8"));

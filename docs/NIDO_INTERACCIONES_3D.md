@@ -17,6 +17,8 @@
 - Sonido: ambiente del escenario en bucle bajo la narración, efectos de interfaz grabados (pasar página, abrir, cerrar, acierto…) y la voz de cada figura al tocarla o al entrar en escena.
 
 - Repisa: un protagonista de pie encima de cada libro (el del libro enfocado recibe la luz cálida y se anima) con las figuras decorativas intercaladas; ya no hay óvalo. El desplazamiento se acota al ancho visible para que la fila de libros llene la pantalla sin paredes vacías a los lados. La pared cambia de tema con cada cuento, también con «Los tres cerditos» (casitas y flores) y «Caperucita Roja» (hojas y corazones).
+- Figuras articuladas: cada personaje declara en `userData` su cabeza, ojos, brazos, alas, cola, orejas y patas (`toys/*.js`). El escenario restaura su pose de reposo cada fotograma y las acciones sólo suman movimiento sobre ella. Catálogo de 21 acciones en `cuentos-acts.js` (mirar al cielo, escuchar, pensar, asentir, cantar, levantar los brazos, saludar, volar, saltar, nadar, olfatear, picotear, bailar, además de soplar, aullar, temblar, correr, caminar, construir, festejar y dormir). Cada página fija una acción sostenida por personaje (`acts`) y dispara ráfagas por palabra narrada (`cues`, con `hold` en ms para alargarlas); los diez cuentos las usan. Ojos de cuento (globo, iris y brillo) y parpadeo en todas las figuras, incluidas Caperucita, la abuelita y el cazador.
+- Efectos por cuento: además de las voces de las figuras, 28 efectos grabados con ElevenLabs para los ocho relatos originales (canto del osito, luna que despierta, abejas, salto del bufeo, trueno lejano, estrella que cae, viento de arena, gota, tren que arranca, eco del silbato, olas, canto de la niña, ballena que emerge…) enlazados por palabra en `cues` o al abrir (`sfx`) y cerrar (`sfxEnd`) la página.
 - Cuando la narradora nombra a un personaje presente en la página («Pipo», «Lolo», «Tito», «búho»…), su figura se ilumina con un aro de luz y un brillo cálido, da un saltito y toma la palabra: los demás se giran a mirarla. Las palabras que nombran a cada figura están en `names` de cada libro y se verifican en CI. Todas las figuras parpadean cada pocos segundos.
 
 ## Implementación y límites
@@ -31,7 +33,7 @@ La distribución compacta los manifiestos sin cambiar sus datos y omite los side
 
 ## Verificación
 
-CI ejecuta las pruebas de límites/inercia/escala/cobertura del reparto y de los gestos del libro (intención, progreso y umbral de confirmación), además de compilación, currículo y presupuesto. La batería general mantiene tres fallos previos ajenos a Nido en `thesis-search.test.mjs`; no forman parte de esta modificación.
+CI ejecuta las pruebas de límites/inercia/escala/cobertura del reparto y de los gestos del libro (intención, progreso y umbral de confirmación), la articulación de cada figura del reparto (cabeza, ojos, alas/cola/patas/brazos, altura y apoyo) y la cobertura de acciones y efectos por cuento (`toys-articulation.test.mjs`), además de compilación, currículo y presupuesto. La batería general mantiene tres fallos previos ajenos a Nido en `thesis-search.test.mjs`; no forman parte de esta modificación.
 
 Prueba de interfaz antes de publicar: escritorio 1440×900 y móvil 390×844, arrastre en ambos sentidos, carrusel inferior, no apertura accidental al arrastrar, pellizco, zoom, nombres, giro 360°, apertura, cambio de página y regreso. Verificar también movimiento reducido, ausencia de desbordamiento y consola de la compilación de producción.
 

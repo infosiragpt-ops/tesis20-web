@@ -1,6 +1,8 @@
-// Caperucita: figurita con capa roja con capucha, vestido crema y canasta en la mano.
+// Caperucita: figurita con capa roja con capucha, vestido crema y canasta en
+// la mano. Cabeza (userData.head) con ojos grandes, cejas, mejillas y sonrisa;
+// los dos brazos (arm) en grupos con pivote en el hombro.
 import * as THREE from "three";
-import { mat, mesh, blob, cyl, eyes, fit } from "./_shared.js";
+import { mat, mesh, blob, cyl, fit, eyeball, brow, smile, cheek } from "./_shared.js";
 
 export const id = "caperucita";
 export const label = "Caperucita";
@@ -15,39 +17,54 @@ export function build() {
   const wicker = mat("#c9955c", { rough: 0.85 });
   const shoe = mat("#5b3a2a", { rough: 0.8 });
 
-  // Capa: cono truncado que llega casi al suelo, con dobladillo oscuro
+  /* ------------------------------- capa ------------------------------- */
   g.add(cyl(0.045, 0.1, 0.2, red, { y: 0.12 }, 32));
   g.add(cyl(0.101, 0.104, 0.014, redDark, { y: 0.027 }, 32));
-  // Vestido asomando y zapatitos
   g.add(cyl(0.06, 0.07, 0.03, cream, { y: 0.03 }, 24));
   [-1, 1].forEach((side) => {
     const foot = blob(0.02, shoe, { x: side * 0.03, y: 0.014, z: 0.045 });
     foot.scale.set(1, 0.6, 1.4);
     g.add(foot);
   });
-  // Cabeza, pelo y capucha
-  const head = blob(0.05, skin, { y: 0.245, z: 0.012 });
-  g.add(head);
-  const hairCap = blob(0.052, hair, { y: 0.252, z: 0.004 });
+  g.add(blob(0.008, mat("#f2c14e", { rough: 0.5 }), { y: 0.205, z: 0.052 }));
+
+  /* ------------------------- cabeza articulada ------------------------ */
+  const headG = new THREE.Group();
+  headG.position.set(0, 0.245, 0.012);
+  headG.userData.head = 1;
+  headG.add(blob(0.05, skin, {}));
+  const hairCap = blob(0.052, hair, { y: 0.015, z: -0.008 });
   hairCap.scale.set(1, 0.9, 1);
-  hairCap.position.y = 0.26;
-  g.add(hairCap);
-  [-1, 1].forEach((side) => g.add(cyl(0.012, 0.014, 0.06, hair, { x: side * 0.045, y: 0.22, z: 0.02 }, 12)));
-  const hood = blob(0.064, red, { y: 0.262, z: -0.018 });
+  headG.add(hairCap);
+  [-1, 1].forEach((side) => headG.add(cyl(0.012, 0.014, 0.06, hair, { x: side * 0.045, y: -0.025, z: 0.008 }, 12)));
+  const hood = blob(0.064, red, { y: 0.017, z: -0.03 });
   hood.scale.set(1, 1.05, 0.95);
-  g.add(hood);
-  // Cara: la capucha se abre al frente con un hueco (esfera de piel más adelante)
-  g.add(blob(0.044, skin, { y: 0.242, z: 0.03 }));
-  eyes(g, { x: 0.016, y: 0.25, z: 0.068, r: 0.007 });
-  g.add(blob(0.006, mat("#f39a9a"), { x: -0.03, y: 0.235, z: 0.058 }));
-  g.add(blob(0.006, mat("#f39a9a"), { x: 0.03, y: 0.235, z: 0.058 }));
-  // Bracito con la canasta
-  g.add(cyl(0.011, 0.011, 0.07, red, { x: 0.075, y: 0.135, z: 0.02, rz: 0.55 }, 12));
-  g.add(blob(0.012, skin, { x: 0.095, y: 0.104, z: 0.028 }));
-  const basket = cyl(0.03, 0.022, 0.04, wicker, { x: 0.105, y: 0.07, z: 0.03 }, 20);
-  g.add(basket);
-  g.add(mesh(new THREE.TorusGeometry(0.03, 0.004, 8, 24, Math.PI), wicker, { x: 0.105, y: 0.09, z: 0.03 }));
-  g.add(cyl(0.02, 0.02, 0.012, cream, { x: 0.105, y: 0.095, z: 0.03 }, 16));
+  headG.add(hood);
+  headG.add(blob(0.044, skin, { y: -0.003, z: 0.018 }));
+  headG.add(blob(0.006, skin, { y: -0.003, z: 0.061 }));
+  smile(headG, { y: -0.015, z: 0.058, r: 0.009, thick: 0.0016, color: "#a3413f" });
+  [-1, 1].forEach((side) => {
+    eyeball(headG, { x: side * 0.017, y: 0.008, z: 0.056, r: 0.011, iris: "#3a2418", squash: 0.6 });
+    brow(headG, { x: side * 0.017, y: 0.025, z: 0.058, r: 0.008, thick: 0.0016, color: "#6b3f26", tilt: 0.15, side });
+    cheek(headG, { x: side * 0.03, y: -0.01, z: 0.05, r: 0.008, color: "#f39a9a" });
+  });
+  g.add(headG);
+
+  /* ------------------------ brazos articulados ------------------------ */
+  [-1, 1].forEach((side) => {
+    const arm = new THREE.Group();
+    arm.position.set(side * 0.06, 0.16, 0.02);
+    arm.userData.arm = side;
+    arm.add(cyl(0.011, 0.011, 0.07, red, { x: side * 0.015, y: -0.025, rz: side * 0.55 }, 12));
+    arm.add(blob(0.012, skin, { x: side * 0.035, y: -0.056, z: 0.008 }));
+    if (side > 0) {
+      arm.add(cyl(0.03, 0.022, 0.04, wicker, { x: 0.045, y: -0.09, z: 0.01 }, 20));
+      arm.add(mesh(new THREE.TorusGeometry(0.03, 0.004, 8, 24, Math.PI), wicker, { x: 0.045, y: -0.07, z: 0.01 }));
+      arm.add(cyl(0.02, 0.02, 0.012, cream, { x: 0.045, y: -0.065, z: 0.01 }, 16));
+      arm.add(blob(0.008, mat("#d9483f", { rough: 0.6 }), { x: 0.05, y: -0.06, z: 0.02 }));
+    }
+    g.add(arm);
+  });
 
   return fit(g, 0.3);
 }

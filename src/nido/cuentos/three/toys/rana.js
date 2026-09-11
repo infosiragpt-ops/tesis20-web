@@ -31,6 +31,8 @@ export function build() {
 
   const frog = new THREE.Group();
   frog.position.y = 0.02;
+  frog.userData.body = 1;
+  frog.userData.head = 1;
   g.add(frog);
 
   // Cuerpo rechoncho (cabeza y cuerpo en un solo bulto)
@@ -45,10 +47,16 @@ export function build() {
   // Ojos saltones: bola blanca, párpado verde, pupila y brillo
   [-1, 1].forEach((side) => {
     const x = side * 0.048;
-    frog.add(blob(0.03, white, { x, y: 0.215, z: 0.035 }));
+    const ball = blob(0.03, white, { x, y: 0.215, z: 0.035 });
+    ball.userData.eye = 1;
+    frog.add(ball);
     frog.add(mesh(new THREE.SphereGeometry(0.0325, 24, 14, 0, Math.PI * 2, 0, Math.PI * 0.5), green, { x, y: 0.215, z: 0.035, rx: -0.75 }));
-    frog.add(blob(0.012, black, { x, y: 0.214, z: 0.062 }));
-    frog.add(blob(0.0045, white, { x: x + 0.0045, y: 0.219, z: 0.0705 }));
+    const pupil = blob(0.012, black, { x, y: 0.214, z: 0.062 });
+    pupil.userData.eye = 1;
+    frog.add(pupil);
+    const shine = blob(0.0045, white, { x: x + 0.0045, y: 0.219, z: 0.0705 });
+    shine.userData.eye = 1;
+    frog.add(shine);
   });
 
   // Sonrisa ancha, nariz y mejillas
@@ -111,5 +119,6 @@ export function build() {
   center.scale.set(1, 0.6, 1);
   head.add(center);
 
-  return fit(g, 0.3);
+  // Es una figura ancha y baja: un poco más chica para no tapar al protagonista.
+  return fit(g, 0.27);
 }

@@ -629,7 +629,9 @@ export const sfx = Object.fromEntries(
 // avisan qué palabra suena con onWord(índice) y terminan con onEnd().
 
 const MANIFEST_URL = "/assets/nido/audio/cuentos-manifest.json";
-const CLIP_CACHE_LIMIT = 16;
+// 24 clips: música (2), ambiente, página actual y siguiente, palabras sueltas y
+// los efectos por palabra de una página caben sin expulsar lo que está sonando.
+const CLIP_CACHE_LIMIT = 24;
 // Pequeño adelanto para que el subrayado no llegue tarde a la palabra.
 const HIGHLIGHT_LEAD = 0.06;
 
@@ -754,13 +756,26 @@ function unlockNarrator() {
   }
 }
 
+function urlInUse(url) {
+  if (narrator && narrator.src === url) return true;
+  if (ambientPlayer && ambientPlayer.src === url) return true;
+  for (const player of musicPlayers.values()) if (player.src === url) return true;
+  return sfxPool.some((player) => player.src === url);
+}
+
 function rememberClip(src, url) {
   clipCache.delete(src);
   clipCache.set(src, url);
-  while (clipCache.size > CLIP_CACHE_LIMIT) {
-    const [oldestSrc, oldestUrl] = clipCache.entries().next().value;
+  if (clipCache.size <= CLIP_CACHE_LIMIT) return;
+  // Se retiran los clips más antiguos que ningún <audio> tenga cargado. Los
+  // que siguen en un reproductor (música en bucle, ambiente, narradora, un
+  // efecto sonando) se conservan: revocar su blob hacía que al reanudarlos el
+  // navegador fallara con «file not found» y la música cayera a la sintetizada.
+  for (const [oldestSrc, oldestUrl] of [...clipCache.entries()]) {
+    if (clipCache.size <= CLIP_CACHE_LIMIT) break;
+    if (urlInUse(oldestUrl)) continue;
     clipCache.delete(oldestSrc);
-    if (!narrator || narrator.src !== oldestUrl) URL.revokeObjectURL(oldestUrl);
+    URL.revokeObjectURL(oldestUrl);
   }
 }
 

@@ -383,7 +383,7 @@ export default function CuentosApp() {
             }
           }}
           onQuiz={answerQuiz}
-          onAct={(actor, act) => stageRef.current?.playAct(actor, act)}
+          onAct={(actor, act, hold) => stageRef.current?.playAct(actor, act, hold)}
           onSpeaking={(actor) => stageRef.current?.setSpeaking(actor)}
           onWordTick={() => stageRef.current?.wordTick()}
           onName={(actor) => stageRef.current?.nameActor(actor)}
@@ -709,7 +709,7 @@ function Reader({ book, page, state, pinRef, onPage, onClose, onStar, onPin, onQ
       if (!cue || firedCues.current.has(bodyIndex)) return;
       firedCues.current.add(bodyIndex);
       if (cue.sfx) playCue(cue.sfx);
-      if (cue.act) Object.entries(cue.act).forEach(([actor, act]) => onAct?.(actor, act));
+      if (cue.act) Object.entries(cue.act).forEach(([actor, act]) => onAct?.(actor, act, cue.hold));
     },
     [pageData.cues, bodyWords, onAct, onName, nameIndex],
   );
