@@ -1676,7 +1676,7 @@
   inset: 0;
   z-index: 9;
   pointer-events: none;
-  background: radial-gradient(ellipse at center, transparent 58%, rgba(10, 6, 14, 0.42) 100%);
+  background: radial-gradient(ellipse at center, transparent 62%, rgba(10, 6, 14, 0.28) 100%);
 }
 
 .cuentos--cinema .cuentos-zoom {
@@ -1762,7 +1762,6 @@
 @media (max-width: 760px) and (orientation: portrait) {
   .cuentos--reading.cuentos--cinema .cuentos-canvas { top: 0; height: 100%; }
   .cuentos--reading.cuentos--cinema .cuentos-zoom { top: auto; bottom: 150px; }
-  .cuentos--cinema .cuentos-card--page-copy { display: none; }
   .cuentos-captions { bottom: max(120px, calc(env(safe-area-inset-bottom) + 112px)); padding: 10px 14px 12px; }
   .cuentos-captions__text { font-size: 17px; line-height: 1.45; }
   .cuentos-read-notice { bottom: max(116px, calc(env(safe-area-inset-bottom) + 108px)); }

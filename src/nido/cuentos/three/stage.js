@@ -144,7 +144,7 @@ export function createStage(canvas, options) {
     composer = new EffectComposer(renderer);
     composer.setPixelRatio(renderer.getPixelRatio());
     composer.addPass(new RenderPass(scene, camera));
-    bokehPass = new BokehPass(scene, camera, { focus: 1, aperture: 0.014, maxblur: 0.0035 });
+    bokehPass = new BokehPass(scene, camera, { focus: 1, aperture: 0.01, maxblur: 0.002 });
     composer.addPass(bokehPass);
     composer.addPass(new OutputPass());
     return composer;
@@ -686,6 +686,7 @@ export function createStage(canvas, options) {
   const cine = {
     yaw: 0, pitch: 0, userUntil: 0, started: 0, seed: 0,
     radius: 0.16, center: new THREE.Vector3(), focus: new THREE.Vector3(),
+    bookCenter: new THREE.Vector3(), bookRadius: 0.5,
     pos: new THREE.Vector3(), look: new THREE.Vector3(), lastSpeaker: null, cutYaw: 0,
   };
   const tmpQuat = new THREE.Quaternion();
@@ -693,6 +694,9 @@ export function createStage(canvas, options) {
   const cineFront = new THREE.Vector3();
   const cineUp = new THREE.Vector3();
   const cineRight = new THREE.Vector3();
+  const cineDir = new THREE.Vector3();
+  const cineSide = new THREE.Vector3();
+  const WORLD_UP = new THREE.Vector3(0, 1, 0);
   const cineTarget = new THREE.Vector3();
   const cineFocusTarget = new THREE.Vector3();
   const cineActorPos = new THREE.Vector3();
@@ -700,10 +704,19 @@ export function createStage(canvas, options) {
   function measureDiorama() {
     if (!selected?.dioramaRoot) return;
     tmpBox.setFromObject(selected.dioramaRoot);
-    if (tmpBox.isEmpty()) return;
-    tmpBox.getCenter(cine.center);
-    const size = tmpBox.getSize(new THREE.Vector3());
-    cine.radius = Math.max(0.1, Math.max(size.x, size.y, size.z) * 0.5);
+    if (!tmpBox.isEmpty()) {
+      tmpBox.getCenter(cine.center);
+      const size = tmpBox.getSize(new THREE.Vector3());
+      cine.radius = Math.max(0.1, Math.max(size.x, size.y, size.z) * 0.5);
+    }
+    // El libro abierto entero (las dos hojas y la lámina): la cámara de cine
+    // lo encuadra completo, nunca se pega a la lámina.
+    tmpBox.setFromObject(selected.group);
+    if (!tmpBox.isEmpty()) {
+      tmpBox.getCenter(cine.bookCenter);
+      const size = tmpBox.getSize(new THREE.Vector3());
+      cine.bookRadius = Math.max(0.2, Math.hypot(size.x, size.y, size.z) * 0.5);
+    }
   }
 
   function setCinema(on) {
@@ -749,50 +762,56 @@ export function createStage(canvas, options) {
     cineRight.crossVectors(cineUp, cineFront).normalize();
     const t = clock.t;
     const since = t - cine.started;
-    // Plano abierto (se ve el libro entero) que se acerca apenas durante los
-    // primeros segundos; nunca se pega a la página.
+    // Entra con un acercamiento muy leve y se queda viendo el libro entero.
     const k = Math.min(1, since / 8);
-    const push = 1.12 - 0.12 * (1 - Math.cos(k * Math.PI)) * 0.5;
-    // Reencuadre hacia quien habla (o hacia quien fue nombrado).
+    const push = 1.08 - 0.08 * (1 - Math.cos(k * Math.PI)) * 0.5;
+    // Foco: el centro del libro abierto, apenas inclinado hacia quien habla.
     const speaker = speakingId ? pageActorById.get(speakingId) : null;
-    cineFocusTarget.copy(cine.center).addScaledVector(cineUp, cine.radius * 0.1);
+    cineFocusTarget.copy(cine.bookCenter);
     if (speaker && speaker.visible) {
       speaker.getWorldPosition(cineActorPos);
-      cineActorPos.addScaledVector(cineUp, cine.radius * 0.45);
-      cineFocusTarget.lerp(cineActorPos, 0.3);
+      cineFocusTarget.lerp(cineActorPos, 0.12);
       if (cine.lastSpeaker !== speakingId) {
         cine.lastSpeaker = speakingId;
-        const side = cineActorPos.clone().sub(cine.center).dot(cineRight);
-        cine.cutYaw = Math.sign(side) * 0.1;
+        const side = cineActorPos.clone().sub(cine.bookCenter).dot(cineRight);
+        cine.cutYaw = Math.sign(side) * 0.05;
       }
     } else if (!speakingId) cine.lastSpeaker = null;
     const userActive = performance.now() < cine.userUntil;
     if (!userActive) {
-      const k = 1 - Math.exp(-dt * 0.8);
-      cine.yaw += (0 - cine.yaw) * k;
-      cine.pitch += (0 - cine.pitch) * k;
+      const ease = 1 - Math.exp(-dt * 0.8);
+      cine.yaw += (0 - cine.yaw) * ease;
+      cine.pitch += (0 - cine.pitch) * ease;
     }
-    const autoYaw = Math.sin(t * 0.13 + cine.seed) * 0.14 + cine.cutYaw;
-    const autoPitch = 0.2 + Math.sin(t * 0.09 + cine.seed) * 0.03;
-    const yaw = Math.max(-0.85, Math.min(0.85, autoYaw + cine.yaw));
-    const pitch = Math.max(-0.08, Math.min(0.55, autoPitch + cine.pitch));
-    const dist = (cine.radius * 4.1 * push) / Math.max(0.5, zoom.value);
-    cineTarget.copy(cineFocusTarget)
-      .addScaledVector(cineRight, Math.sin(yaw) * Math.cos(pitch) * dist)
-      .addScaledVector(cineUp, Math.sin(pitch) * dist)
-      .addScaledVector(cineFront, Math.cos(yaw) * Math.cos(pitch) * dist);
+    const yaw = Math.max(-0.7, Math.min(0.7, Math.sin(t * 0.11 + cine.seed) * 0.07 + cine.cutYaw + cine.yaw));
+    const pitch = Math.max(-0.2, Math.min(0.45, Math.sin(t * 0.08 + cine.seed) * 0.03 + cine.pitch));
+    // Distancia para que quepa el libro completo con el campo de visión actual.
+    const fovV = (camera.fov * Math.PI) / 180;
+    const fovH = 2 * Math.atan(Math.tan(fovV / 2) * camera.aspect);
+    const fit = cine.bookRadius / Math.sin(Math.min(fovV, fovH) / 2);
+    // La esfera sobreestima (el libro es plano y ancho): 0,6 lo deja entero
+    // en cuadro y grande.
+    const dist = (fit * 0.6 * push) / Math.max(0.5, zoom.value);
+    // Dirección base: la de la vista de lectura (el libro visto desde el
+    // frente y un poco desde arriba), girada por la deriva y el arrastre.
+    const view = viewFor("reading");
+    cineDir.set(view.pos[0] - view.look[0], view.pos[1] - view.look[1], view.pos[2] - view.look[2]).normalize();
+    cineDir.applyAxisAngle(WORLD_UP, yaw);
+    cineSide.crossVectors(WORLD_UP, cineDir).normalize();
+    cineDir.applyAxisAngle(cineSide, -pitch).normalize();
+    cineTarget.copy(cineFocusTarget).addScaledVector(cineDir, dist);
     const smooth = reduceMotion ? 1 : 1 - Math.exp(-dt * 2.4);
     cine.pos.lerp(cineTarget, smooth);
     cine.focus.lerp(cineFocusTarget, reduceMotion ? 1 : 1 - Math.exp(-dt * 3));
     cine.look.copy(cine.focus);
     camera.position.copy(cine.pos);
     camera.lookAt(cine.look);
-    // Luces de cine alrededor del foco.
+    // Luces de cine alrededor de la lámina.
     const reach = cine.radius * 3.2;
-    cineKey.position.copy(cine.focus).addScaledVector(cineRight, -0.6 * reach).addScaledVector(cineUp, 0.9 * reach).addScaledVector(cineFront, 0.8 * reach);
-    cineKey.target.position.copy(cine.focus);
-    cineRim.position.copy(cine.focus).addScaledVector(cineRight, 0.5 * reach).addScaledVector(cineUp, 0.8 * reach).addScaledVector(cineFront, -0.6 * reach);
-    cineRim.target.position.copy(cine.focus);
+    cineKey.position.copy(cine.center).addScaledVector(cineRight, -0.6 * reach).addScaledVector(cineUp, 0.9 * reach).addScaledVector(cineFront, 0.8 * reach);
+    cineKey.target.position.copy(cine.center);
+    cineRim.position.copy(cine.center).addScaledVector(cineRight, 0.5 * reach).addScaledVector(cineUp, 0.8 * reach).addScaledVector(cineFront, -0.6 * reach);
+    cineRim.target.position.copy(cine.center);
     // El fondo pintado deriva muy despacio, como una cámara sobre el decorado.
     const map = selected.popup?.material?.map;
     if (map) {

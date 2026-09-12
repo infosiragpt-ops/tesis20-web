@@ -978,21 +978,6 @@ function Reader({ book, page, state, pinRef, onPage, onClose, onStar, onPin, onQ
         </button>
       ) : null}
 
-      {autoRead && cinema ? (
-        <div className="cuentos-captions" aria-hidden="true">
-          <p className="cuentos-captions__title">{pageData.t}</p>
-          <p className="cuentos-captions__text">
-            {words.map((token, i) => {
-              if (/^\s+$/.test(token) || token === "") return <span key={i}>{token}</span>;
-              return (
-                <span key={i} className={`cuentos-captions__word ${wordIndexes[i] === activeWord ? "is-active" : wordIndexes[i] >= 0 && wordIndexes[i] < activeWord ? "is-read" : ""}`}>
-                  {token}
-                </span>
-              );
-            })}
-          </p>
-        </div>
-      ) : null}
       {readNotice ? (
         <div className="cuentos-read-notice" role="status">
           {readNotice}
