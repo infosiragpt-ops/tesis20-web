@@ -23,8 +23,24 @@ export function pageWindow(page, count, size = 7) {
   return Array.from({ length: Math.min(size, count) }, (_, i) => start + i);
 }
 
-export function searchBooks(books, query) {
+export function resumePage(book, entry) {
+  const valid = value => Number.isInteger(value) && value >= 0 && value < book.pages.length;
+  const pages = [...new Set((entry?.pages || []).filter(valid))];
+  if (pages.length === book.pages.length) return 0;
+  return valid(entry?.lastPage) ? entry.lastPage : (pages.at(-1) ?? 0);
+}
+
+export function searchBooks(books, query, filter = 'all', entries = {}) {
   const key = value => value.normalize('NFD').replace(/\p{M}/gu, '').toLocaleLowerCase('es');
   const terms = key(query).trim().split(/\s+/).filter(Boolean);
-  return books.filter(book => terms.every(term => key(book.title).includes(term)));
+  return books.filter(book => {
+    if (!terms.every(term => key(book.title).includes(term))) return false;
+    if (filter === 'narrated') return book.narration !== 'reading-only';
+    if (filter === 'reading') return book.narration === 'reading-only';
+    if (filter === 'started') {
+      const pages = new Set((entries[book.id]?.pages || []).filter(i => Number.isInteger(i) && i >= 0 && i < book.pages.length));
+      return pages.size > 0 && pages.size < book.pages.length;
+    }
+    return true;
+  });
 }
