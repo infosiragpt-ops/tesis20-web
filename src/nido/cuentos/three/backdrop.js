@@ -6,6 +6,7 @@
 // Sustituye a la escenografía plana en SVG dentro del libro: las figuras 3D y
 // los objetos de la página quedan delante, como en un decorado de película.
 import * as THREE from "three";
+import { TextureCache } from "./texture-cache.js";
 
 export const BACKDROP_W = 1000;
 export const BACKDROP_H = 640;
@@ -39,6 +40,7 @@ const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 export const SCENERY = {
   cerditos: null,
   caperucita: null,
+  pulgarcito: null,
   kusi: [[0, 0, 1, 0.42], [0.6, 0.15, 1, 0.75]],
   amaru: [[0, 0, 1, 0.4], [0.66, 0.35, 1, 0.95]],
   sami: [[0, 0.02, 0.7, 0.4], [0.78, 0.45, 1, 0.9]],
@@ -50,6 +52,12 @@ export const SCENERY = {
 };
 const DEFAULT_SCENERY = [[0, 0, 1, 0.45]];
 
+// Las portadas históricas contienen rótulos y personajes: no se recortan
+// como paisaje. Estas ediciones mantienen el decorado del escenario.
+export function sceneryFor(book) {
+  return book.narration === 'reading-only' ? null : SCENERY[book.id];
+}
+
 /**
  * Encuadre de la pintura en una página: recorte `{ x, y, w, h }` (fracciones
  * de la imagen) con la relación del fondo, dentro de una zona de paisaje de
@@ -58,7 +66,7 @@ const DEFAULT_SCENERY = [[0, 0, 1, 0.45]];
  * siguientes alternan zonas, lados y un poco de zoom para no repetirse.
  */
 export function framingFor(book, pageIndex, ratio = 1.5) {
-  const windows = SCENERY[book.id] || DEFAULT_SCENERY;
+  const windows = sceneryFor(book) || DEFAULT_SCENERY;
   const [u0, v0, u1, v1] = windows[pageIndex % windows.length];
   const rand = seededRandom(`${book.id}-${pageIndex}-frame`);
   const winW = u1 - u0;
@@ -235,7 +243,7 @@ function paintGrain(ctx, W, H, rand) {
   ctx.restore();
 }
 
-const textureCache = new Map();
+const textureCache = new TextureCache(8);
 
 /**
  * Textura del fondo de una página: portada encuadrada + luz de la escena +
@@ -246,7 +254,7 @@ const textureCache = new Map();
 export function paintedBackdropTexture(book, pageIndex, layer = null) {
   const key = `${book.id}:${pageIndex}`;
   if (textureCache.has(key)) return textureCache.get(key);
-  if (SCENERY[book.id] === null) return Promise.reject(new Error("sin paisaje en la portada"));
+  if (sceneryFor(book) === null) return Promise.reject(new Error("sin paisaje en la portada"));
   const promise = loadCover(book).then((img) => {
     const page = book.pages[pageIndex];
     const W = BACKDROP_W;

@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { access, readFile } from "node:fs/promises";
 import test from "node:test";
 
-import { BOOKS } from "../../src/nido/cuentos/cuentos-data.js";
+import { NARRATED_BOOKS as BOOKS } from "../../src/nido/cuentos/cuentos-data.js";
 import {
   enumerateCuentosVoicePlan,
   estimateWordStarts,

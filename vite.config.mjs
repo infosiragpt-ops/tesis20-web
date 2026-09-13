@@ -111,6 +111,9 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks(id) {
+          const collectionPart = id.match(/\/src\/nido\/cuentos\/collection\/texts-(\d+)\.json$/);
+          if (collectionPart) return `nido-classics-${collectionPart[1]}`;
+          if (/\/src\/nido\/cuentos\/(cuentos-data|pulgarcito-data|classic-collection|collection-layout)\.js$/.test(id)) return 'nido-story-data';
           if (id.includes("node_modules/react/") || id.includes("node_modules/react-dom/") || id.includes("node_modules/scheduler/")) {
             return "vendor-react";
           }

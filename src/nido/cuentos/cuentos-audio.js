@@ -454,6 +454,13 @@ export function setAmbient(setKey) {
 // Qué sonido tiene cada figura del reparto o souvenir al tocarla o al
 // aparecer en la página. Varios comparten clip (los tres cerditos, los niños).
 export const TOY_SOUND_ALIAS = {
+  pulgarcito: "toy-nino",
+  "papa-pulgarcito": "toy-cazador",
+  "mama-pulgarcito": "toy-abuelita",
+  caballo: "pasos-pasto",
+  vaca: "toy-campana",
+  caracol: "toy-caracola",
+  "concha-caracol": "toy-caracola",
   pipo: "toy-cerdito",
   lolo: "toy-cerdito",
   tito: "toy-cerdito",
