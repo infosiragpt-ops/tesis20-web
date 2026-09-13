@@ -199,18 +199,19 @@ export function createStage(canvas, options) {
   scene.add(cineKey, cineKey.target, cineRim, cineRim.target);
 
   /* ------------------------------ sala ------------------------------- */
+  const roomWidth = Math.max(10, books.length * 0.82 + 6);
   const wood = woodTexture({ repeat: [4, 1.6] });
   const woodShelf = woodTexture({ base: "#a96a36", dark: "#5b321d", light: "#dc9f5a", seed: 3, repeat: [3, 0.4] });
 
   let wallTheme = "default";
-  const wallGeo = new THREE.PlaneGeometry(10, 3.6);
+  const wallGeo = new THREE.PlaneGeometry(roomWidth, 3.6);
   const wallA = new THREE.Mesh(wallGeo, new THREE.MeshStandardMaterial({ map: wallpaperTexture(WALL_THEMES.default), roughness: 1 }));
-  wallA.material.map.repeat.set(7, 2.5);
+  wallA.material.map.repeat.set(roomWidth * 0.7, 2.5);
   wallA.position.set(0, 1.8, -0.44);
   wallA.receiveShadow = true;
   scene.add(wallA);
   const wallB = new THREE.Mesh(wallGeo, new THREE.MeshStandardMaterial({ map: wallpaperTexture(WALL_THEMES.default), roughness: 1, transparent: true, opacity: 0 }));
-  wallB.material.map.repeat.set(7, 2.5);
+  wallB.material.map.repeat.set(roomWidth * 0.7, 2.5);
   wallB.position.set(0, 1.8, -0.435);
   scene.add(wallB);
 
@@ -218,21 +219,23 @@ export function createStage(canvas, options) {
   moonLight.position.set(0.8, 2.4, -0.1);
   scene.add(moonLight);
 
-  const baseboard = box(10, 0.14, 0.05, mat("#f2e8d6", { rough: 0.8 }), { y: 0.07, z: -0.42 });
+  const baseboard = box(roomWidth, 0.14, 0.05, mat("#f2e8d6", { rough: 0.8 }), { y: 0.07, z: -0.42 });
   scene.add(baseboard);
 
-  const desk = new THREE.Mesh(new THREE.BoxGeometry(10, 0.1, 3.2), new THREE.MeshStandardMaterial({ map: wood, roughness: 0.62 }));
+  wood.repeat.x *= roomWidth / 10;
+  woodShelf.repeat.x *= roomWidth / 10;
+  const desk = new THREE.Mesh(new THREE.BoxGeometry(roomWidth, 0.1, 3.2), new THREE.MeshStandardMaterial({ map: wood, roughness: 0.62 }));
   desk.position.set(0, -0.05, 1.15);
   desk.receiveShadow = true;
   scene.add(desk);
 
   function shelfBoard(y, depth, z) {
-    const board = new THREE.Mesh(new THREE.BoxGeometry(9.6, 0.075, depth), new THREE.MeshStandardMaterial({ map: woodShelf, roughness: 0.58 }));
+    const board = new THREE.Mesh(new THREE.BoxGeometry(roomWidth - 0.4, 0.075, depth), new THREE.MeshStandardMaterial({ map: woodShelf, roughness: 0.58 }));
     board.position.set(0, y, z);
     board.castShadow = true;
     board.receiveShadow = true;
     scene.add(board);
-    const lip = box(9.6, 0.04, 0.025, mat("#6b3b20", { rough: 0.68 }), { y: y - 0.052, z: z + depth / 2 });
+    const lip = box(roomWidth - 0.4, 0.04, 0.025, mat("#6b3b20", { rough: 0.68 }), { y: y - 0.052, z: z + depth / 2 });
     scene.add(lip);
     [-4.2, 4.2].forEach((x) => {
       const bracket = box(0.05, 0.22, depth * 0.7, mat("#8a5a2c", { rough: 0.8 }), { x, y: y - 0.14, z: z - depth * 0.1 });
@@ -242,8 +245,10 @@ export function createStage(canvas, options) {
   shelfBoard(1.8, 0.34, -0.27);
   shelfBoard(0.86, 0.42, -0.22);
 
-  buildLamp(scene);
-  buildDeskProps(scene);
+  const deskDressing = new THREE.Group();
+  scene.add(deskDressing);
+  buildLamp(deskDressing);
+  buildDeskProps(deskDressing);
 
   /* ----------------------------- libros ------------------------------ */
   const edgeTex = pagesEdgeTexture();
@@ -267,11 +272,16 @@ export function createStage(canvas, options) {
     scene.add(entry.group);
     bookEntries.push(entry);
     bookHits.push(entry.hit);
-    coverTexture?.(book).then((tex) => {
+  });
+  function loadCover(entry) {
+    if (entry.coverRequested || !coverTexture) return;
+    entry.coverRequested = true;
+    coverTexture(entry.book).then((tex) => {
+      if (!running) return;
       entry.coverMat.map = tex;
       entry.coverMat.needsUpdate = true;
-    });
-  });
+    }).catch(() => { entry.coverRequested = false; });
+  }
   shelfPan.x = bookEntries.find((entry) => entry.book.id === initialBookId)?.home.x || 0;
 
   /* ----------------------------- figuras ----------------------------- */
@@ -298,7 +308,7 @@ export function createStage(canvas, options) {
   }
 
   function heroToyFor(book) {
-    const cast = [...new Set(book.pages.flatMap((page) => page.cast || []))];
+    const cast = [...new Set([...(book.cameo || []), ...book.pages.flatMap((page) => page.cast || [])])];
     return cast.find((id) => hasToy(id)) || null;
   }
 
@@ -1349,7 +1359,7 @@ export function createStage(canvas, options) {
     if (!entry || entry.book.id === focusedId) return;
     focusedId = entry.book.id;
     canvas.dataset.focusedBook = focusedId;
-    setWall(focusedId);
+    setWall(entry.book.wallTheme || focusedId);
     updateCameo(entry.book);
     onFocusBook(focusedId);
   }
@@ -1827,6 +1837,10 @@ export function createStage(canvas, options) {
 
   /* ---------------------------- estados ----------------------------- */
   function viewFor(name) {
+    if (name === 'reading' && selected?.book.narration === 'reading-only' && window.innerWidth / window.innerHeight >= 0.85) {
+      // Deja visible el final de las páginas largas por encima de los controles.
+      return { pos: [-0.14, 1.7, 2.65], look: [-0.14, 0.26, 0.6] };
+    }
     return window.innerWidth / window.innerHeight < 0.85 ? CAM_PORTRAIT[name] : CAM[name];
   }
 
@@ -1840,7 +1854,7 @@ export function createStage(canvas, options) {
     wallTheme = themeKey;
     const theme = WALL_THEMES[themeKey] || WALL_THEMES.default;
     const nextTex = wallpaperTexture(theme);
-    nextTex.repeat.set(7, 2.5);
+    nextTex.repeat.set(roomWidth * 0.7, 2.5);
     if (wallB.material.map !== wallA.material.map) wallB.material.map?.dispose();
     wallB.material.map = nextTex;
     wallB.material.needsUpdate = true;
@@ -1877,7 +1891,7 @@ export function createStage(canvas, options) {
     tween(g.rotation, { x: -Math.PI / 2, y: 0, z: 0.02 }, { duration: d, easing: ease.inOut });
     tween(g.scale, { x: DESK_BOOK.scale, y: DESK_BOOK.scale, z: DESK_BOOK.scale }, { duration: d, easing: ease.inOut });
     moveCamera(viewFor("desk"), d);
-    setWall(bookId);
+    setWall(entry.book.wallTheme || bookId);
     spawnDeskToys(entry.book, ownedPins);
     spot.position.set(DESK_BOOK.x, 2.8, 1.4);
     spot.target.position.set(DESK_BOOK.x, 0, DESK_BOOK.z - BOOK_H);
@@ -1895,6 +1909,9 @@ export function createStage(canvas, options) {
     notifyGesture();
     closeBook(true);
     clearPageDiorama();
+    entry.setStoryTexture(null);
+    entry.setPopupTexture(null);
+    entry.storyTexture = null;
     selected = null;
     mode = "shelf";
     setZoom(1);
@@ -1907,7 +1924,7 @@ export function createStage(canvas, options) {
     tween(g.rotation, { x: entry.home.rx, y: entry.home.ry, z: 0 }, { duration: d, easing: ease.inOut });
     tween(g.scale, { x: 1, y: 1, z: 1 }, { duration: d, easing: ease.inOut });
     moveCamera(viewFor("shelf"), d);
-    setWall(entry.book.id);
+    setWall(entry.book.wallTheme || entry.book.id);
     focusBook(entry.book.id);
     tween(spot, { intensity: 0 }, { duration: 0.4 });
   }
@@ -2188,6 +2205,19 @@ export function createStage(canvas, options) {
     ambientDust.rotation.y = Math.sin(clock.t * 0.12) * 0.05;
     ambientDust.position.y = Math.sin(clock.t * 0.28) * 0.025;
 
+    const panX = mode === "shelf" ? shelfPan.x : 0;
+    deskDressing.position.x = panX;
+    lampLight.position.x = -1.72 + panX;
+    sun.position.x = 2.4 + panX;
+    sun.target.position.x = panX;
+    sun.target.updateMatrixWorld();
+    bookEntries.forEach(entry => {
+      const nearby = Math.abs(entry.home.x - panX) < 4.5;
+      entry.group.visible = entry === selected || nearby;
+      const hero = heroHolders.get(entry.book.id);
+      if (hero) hero.visible = nearby;
+      if (nearby || entry === selected) loadCover(entry);
+    });
     zoom.value += (zoomTarget - zoom.value) * (reduceMotion ? 1 : 1 - Math.exp(-dt * 12));
     if (cinema && mode === "reading" && updateCinemaCamera(dt)) {
       // En cine la rueda y el pellizco acercan la cámara, no la lente.
@@ -2286,6 +2316,9 @@ export function createStage(canvas, options) {
     dispose,
     get mode() {
       return mode;
+    },
+    get busy() {
+      return isBusy();
     },
     debug() {
       return {

@@ -4,6 +4,7 @@
 import * as THREE from "three";
 import { flushSync } from "react-dom";
 import { createRoot } from "react-dom/client";
+import { TextureCache } from "./texture-cache.js";
 
 function canvas(w, h) {
   const c = document.createElement("canvas");
@@ -204,6 +205,7 @@ const MOTIFS = {
 };
 
 export const WALL_THEMES = {
+  pulgarcito: { bg: "#bac696", ink: "#82905d", accent: "#e4be63", motifs: ["leaf", "flower", "bird"] },
   default: { bg: "#75624f", ink: "#9b846a", accent: "#c9aa6d", motifs: ["kite", "bird", "star"] },
   kusi: { bg: "#3a4466", ink: "#5c6a95", accent: "#e0c46a", motifs: ["moon", "star", "star"] },
   amaru: { bg: "#2f5c52", ink: "#4d8a7c", accent: "#9fe0b0", motifs: ["leaf", "fish", "wave"] },
@@ -396,7 +398,7 @@ const coverArtCache = new Map();
  * conservar español perfecto y la misma jerarquía en los ocho libros.
  */
 export function coverArtTexture(book, width = 560, height = 840) {
-  const key = `${book.id}:${book.cover.image}:${width}x${height}`;
+  const key = `${book.id}:${book.cover.image}:${Boolean(book.cover.preserve)}:${width}x${height}`;
   if (coverArtCache.has(key)) return coverArtCache.get(key);
 
   const promise = new Promise((resolve) => {
@@ -410,11 +412,38 @@ export function coverArtTexture(book, width = 560, height = 840) {
       ctx.fillStyle = book.accent;
       ctx.fillRect(0, 0, width, height);
 
+      if (book.cover.layout === 'heritage') {
+        ctx.strokeStyle = '#dbc78d'; ctx.lineWidth = 2;
+        ctx.strokeRect(width * .032, height * .022, width * .936, height * .956);
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillStyle = '#e9d8ac'; ctx.font = `500 ${width * .027}px Georgia,serif`;
+        ctx.fillText('BIBLIOTECA · NIDO', width / 2, height * .066);
+        let font = width * .12, lines;
+        do { ctx.font = `700 ${font}px Georgia,serif`; lines = wrapWords(ctx, book.title, width * .83); if (lines.length * font * 1.15 <= height * .2) break; font -= 1; } while (font > 16);
+        ctx.fillStyle = '#fff2d2';
+        const titleTop = height * .175 - (lines.length - 1) * font * .575;
+        lines.forEach((line, i) => ctx.fillText(line, width / 2, titleTop + i * font * 1.15));
+        ctx.fillStyle = '#f5edda'; ctx.fillRect(width * .068, height * .309, width * .864, height * .564);
+        if (img) {
+          const scale = Math.min(width * .83 / img.naturalWidth, height * .542 / img.naturalHeight);
+          const w = img.naturalWidth * scale, h = img.naturalHeight * scale;
+          ctx.drawImage(img, (width - w) / 2, height * .59 - h / 2, w, h);
+        }
+        ctx.fillStyle = '#fff2d2'; ctx.font = `500 ${width * .031}px Georgia,serif`;
+        ctx.fillText('LECTURA EN FAMILIA', width / 2, height * .947);
+        tex.needsUpdate = true; resolve(tex); return;
+      }
+
       if (img) {
-        const scale = Math.max(width / img.naturalWidth, height / img.naturalHeight);
+        const scale = book.cover.preserve ? Math.min(width / img.naturalWidth, height / img.naturalHeight) : Math.max(width / img.naturalWidth, height / img.naturalHeight);
         const drawW = img.naturalWidth * scale;
         const drawH = img.naturalHeight * scale;
         ctx.drawImage(img, (width - drawW) / 2, (height - drawH) / 2, drawW, drawH);
+        if (book.cover.preserve) {
+          tex.needsUpdate = true;
+          resolve(tex);
+          return;
+        }
       }
 
       // Una ilustración que ya trae el título impreso (cover.titled) se deja
@@ -492,7 +521,7 @@ export function coverArtTexture(book, width = 560, height = 840) {
   return promise;
 }
 
-const storyTextureCache = new Map();
+const storyTextureCache = new TextureCache(8);
 
 function wrapWords(ctx, text, maxWidth) {
   const words = text.split(/\s+/).filter(Boolean);
@@ -572,16 +601,22 @@ export function storyPageTexture(book, page, pageIndex, totalPages) {
 
   ctx.textAlign = "left";
   ctx.fillStyle = "#3a2a21";
-  ctx.font = `500 ${compact ? 88 : 53}px "Iowan Old Style", "Palatino Linotype", Georgia, serif`;
-  const bodyLines = wrapWords(ctx, page.x, 790);
+  // El espaciado del rótulo no debe heredarse en los párrafos. Ajustar el
+  // tamaño para incluir todas las palabras; nunca cortar después de 10 líneas.
+  ctx.letterSpacing = "0px";
   const bodyStart = ruleY + (compact ? 102 : 115);
-  const lineHeight = compact ? (bodyLines.length > 8 ? 82 : 96) : bodyLines.length > 7 ? 69 : 76;
-  const fontSize = compact ? 88 : 53;
-  // Caja de cada palabra, en el orden de la narración, para el seguimiento
-  // de lectura sobre la propia página (ver highlightStoryWord).
+  let fontSize = compact ? 88 : 53, bodyLines, lineHeight;
+  do {
+    ctx.font = `500 ${fontSize}px "Iowan Old Style", "Palatino Linotype", Georgia, serif`;
+    bodyLines = wrapWords(ctx, page.x, 790);
+    lineHeight = fontSize * 1.3;
+    if (bodyStart + (bodyLines.length - 1) * lineHeight <= 1248 || fontSize <= 24) break;
+    fontSize -= 2;
+  } while (true);
+  // Cada palabra conserva su caja para seguir la narración sobre la hoja.
   const wordBoxes = [];
   const spaceWidth = ctx.measureText(" ").width;
-  bodyLines.slice(0, 10).forEach((line, index) => {
+  bodyLines.forEach((line, index) => {
     const y = bodyStart + index * lineHeight;
     ctx.fillText(line, 116, y);
     let x = 116;
@@ -601,7 +636,7 @@ export function storyPageTexture(book, page, pageIndex, totalPages) {
   ctx.textAlign = "center";
   ctx.fillStyle = "rgba(92,63,34,.58)";
   ctx.font = `600 ${compact ? 29 : 25}px ui-rounded, "Trebuchet MS", sans-serif`;
-  ctx.fillText("Toca Léemelo para escuchar el cuento", 512, 1325);
+  ctx.fillText(book.narration === 'reading-only' ? "Comparte este cuento en familia" : "Toca Léemelo para escuchar el cuento", 512, 1325);
 
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
@@ -692,7 +727,7 @@ export async function svgElementToTexture(key, element, width, height) {
   return svgToTexture(key, markup, width, height);
 }
 
-const textureCache = new Map();
+const textureCache = new TextureCache(32);
 
 /**
  * Rasteriza markup SVG en una textura. Devuelve una promesa con la textura;
@@ -729,10 +764,8 @@ export function svgToTexture(key, markup, width, height) {
 }
 
 export function disposeTextureCache() {
-  textureCache.forEach((promise) => promise.then((tex) => tex.dispose()));
   textureCache.clear();
   coverArtCache.forEach((promise) => promise.then((tex) => tex.dispose()));
   coverArtCache.clear();
-  storyTextureCache.forEach((tex) => tex.dispose());
   storyTextureCache.clear();
 }

@@ -1,5 +1,8 @@
-// Biblioteca de cuentos de Tesis20 Nido: ocho historias originales y dos
-// adaptaciones propias de clásicos («Los tres cerditos», «Caperucita Roja»).
+import { PULGARCITO } from "./pulgarcito-data.js";
+import { CLASSIC_COLLECTION } from "./classic-collection.js";
+
+// Biblioteca de cuentos de Tesis20 Nido: ocho historias originales y tres
+// adaptaciones de clásicos («Los tres cerditos», «Caperucita Roja», «Pulgarcito»).
 //
 // Campos opcionales de cada página para que el escenario 3D y el sonido sigan
 // la narración (ver stage.playAct y cuentos-audio.playCue):
@@ -26,7 +29,7 @@
 // finales. Los textos están escritos para niñas y niños de 3 a 6 años: frases
 // cortas, vocabulario concreto y una idea por página.
 
-export const BOOKS = [
+export const NARRATED_BOOKS = [
   {
     id: "cerditos",
     title: "Los tres cerditos",
@@ -293,6 +296,7 @@ export const BOOKS = [
       { q: "¿Quién ayudó a Caperucita y a la abuelita?", a: ["El cazador", "El lobo", "La mamá"] },
     ],
   },
+  PULGARCITO,
   {
     id: "kusi",
     title: "Kusi y la luna dormilona",
@@ -1458,6 +1462,11 @@ export const BOOKS = [
 ];
 
 export const PIN_LABELS = {
+  "hojita-pulgarcito": "Hoja de Pulgarcito",
+  "sombrero-pulgarcito": "Sombrero de viajero",
+  herradura: "Herradura del caballo",
+  caracol: "Concha de caracol",
+  "pan-pulgarcito": "Pan de la despensa",
   caperuza: "Caperuza roja",
   canasta: "Canasta con pastel",
   pajarito: "Pajarito del bosque",
@@ -1507,6 +1516,7 @@ export const PIN_LABELS = {
   quena: "Quena de caña",
 };
 
+export const BOOKS = [...NARRATED_BOOKS, ...CLASSIC_COLLECTION];
 export const TOTAL_STARS = BOOKS.reduce((sum, book) => sum + book.pages.length, 0);
 export const TOTAL_PINS = BOOKS.reduce(
   (sum, book) => sum + book.pages.filter((page) => page.pin).length,

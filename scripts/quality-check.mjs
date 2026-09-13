@@ -747,8 +747,17 @@ let stylesheetBytes = 0;
 let initialJavascriptBytes = 0;
 let initialStylesheetBytes = 0;
 let deployBytesWithoutAudioAndPdf = 0;
+let classicTextBytes = 0;
+let classicCoverBytes = 0;
+const isClassicText = file => /dist\/build-assets\/nido-classics-[1-5]-[^/]+\.js$/.test(file);
+const classicCovers = distFiles.filter(file => /^dist\/assets\/nido\/cuentos\/collection\/[^/]+\.avif$/.test(file));
 for (const distFile of distFiles) {
   const bytes = await fileSize(distFile);
+  if (isClassicText(distFile)) classicTextBytes += bytes;
+  if (classicCovers.includes(distFile)) {
+    classicCoverBytes += bytes;
+    check(bytes <= 160 * 1024, `${distFile} supera 160 KiB para una portada diferida.`);
+  }
   // El directorio se controla por separado con un presupuesto comprimido,
   // que representa mejor su transferencia real que el JSON minificado en disco.
   if (!/\.(?:mp3|pdf|docx)$/i.test(distFile) && distFile !== "dist/data/academic-directory.json") {
@@ -761,6 +770,7 @@ for (const buildAsset of buildAssets) {
   if (buildAsset.endsWith(".js")) {
     javascriptBytes += bytes;
     if (isEagerAsset) initialJavascriptBytes += bytes;
+    if (isClassicText(buildAsset)) check(!isEagerAsset, 'Los textos de la biblioteca no deben entrar en la carga inicial del sitio.');
     // 2026-09-10: /nido pasa a un escenario WebGL (Three.js). El motor va en
     // su propio chunk diferido `vendor-three`, que solo se descarga al entrar
     // a /nido; el resto de chunks conserva su tope de 250 KiB.
@@ -853,9 +863,15 @@ check(
 // carga, filtrado y ranking local de tesis. Su chunk es diferido y el JS
 // inicial conserva el límite de 450 KiB.
 check(
-  javascriptBytes <= 1400 * 1024,
-  `El JavaScript total con rutas diferidas no debe superar 1400 KiB (${Math.ceil(javascriptBytes / 1024)} KiB).`,
+  javascriptBytes - classicTextBytes <= 1400 * 1024,
+  `El JavaScript de aplicación sin los textos de la colección no debe superar 1400 KiB (${Math.ceil((javascriptBytes - classicTextBytes) / 1024)} KiB).`,
 );
+// 2026-09-12: 35 textos autorizados y 33 ilustraciones históricas. Se acotan
+// aparte los datos editoriales, sin aumentar el presupuesto del motor ni de
+// la carga inicial. Las portadas se solicitan según proximidad en la estantería.
+check(classicTextBytes > 0 && classicTextBytes <= 350 * 1024, 'Los 35 textos de la colección superan 350 KiB o faltan en el build.');
+check(classicCovers.length === 33, 'La colección necesita exactamente 33 portadas nuevas y reutiliza dos portadas existentes.');
+check(classicCoverBytes <= 2.5 * 1024 * 1024, 'Las 33 portadas de la colección superan 2.5 MiB.');
 check(
   initialStylesheetBytes > 0 && initialStylesheetBytes <= 85 * 1024,
   `El CSS inicial debe estar entre 1 y 85 KiB (${Math.ceil(initialStylesheetBytes / 1024)} KiB).`,
@@ -892,7 +908,12 @@ check(
 // 2026-09-10 (quater): 10.3 → 10.5 MiB por la portada ilustrada de «Los tres
 // cerditos» (136 KiB), el manifiesto de música/efectos y las acciones del
 // escenario. Música y efectos son mp3 y siguen fuera del presupuesto.
-check(deployBytesWithoutAudioAndPdf <= 10.5 * 1024 * 1024, `El build sin audios/PDF supera 10.5 MiB (${(deployBytesWithoutAudioAndPdf / 1024 / 1024).toFixed(2)} MiB).`);
+// Portada exacta aportada por el usuario: presupuesto independiente y acotado,
+// igual que los textos y las ilustraciones históricas de la colección.
+const pulgarcitoCoverBytes = await fileSize('dist/assets/nido/cuentos/covers/pulgarcito-v1.avif');
+check(pulgarcitoCoverBytes <= 70 * 1024, 'La portada aprobada de Pulgarcito supera 70 KiB.');
+const baseDeployBytes = deployBytesWithoutAudioAndPdf - classicTextBytes - classicCoverBytes - pulgarcitoCoverBytes;
+check(baseDeployBytes <= 10.5 * 1024 * 1024, `El build sin audios/PDF ni la colección editorial acotada supera 10.5 MiB (${(baseDeployBytes / 1024 / 1024).toFixed(2)} MiB).`);
 
 for (const htmlFile of distFiles.filter((file) => file.endsWith(".html"))) {
   check((await fileSize(htmlFile)) <= 300 * 1024, `${htmlFile} supera 300 KiB.`);

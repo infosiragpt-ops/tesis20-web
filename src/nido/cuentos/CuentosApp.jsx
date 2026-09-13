@@ -31,6 +31,7 @@ import {
   wordTrack,
 } from "./cuentos-audio.js";
 import { wordKey } from "./cuentos-voice-plan.js";
+import { pageWindow, searchBooks } from "./collection-layout.js";
 import { createStage } from "./three/stage.js";
 import { MagicCursor } from "./MagicCursor.jsx";
 import { coverArtTexture, storyPageTexture, svgElementToTexture } from "./three/textures.js";
@@ -56,6 +57,7 @@ export default function CuentosApp() {
   const [stageReady, setStageReady] = useState(false);
   const [focusedId, setFocusedId] = useState(() => state.lastBook || BOOKS[0].id);
   const [zoom, setZoom] = useState(100);
+  const selectionTimer = useRef(null);
   const toastTimer = useRef(null);
   const canvasRef = useRef(null);
   const stageRef = useRef(null);
@@ -105,7 +107,10 @@ export default function CuentosApp() {
     window.clearTimeout(toastTimer.current);
     toastTimer.current = window.setTimeout(() => setToast(null), 2600);
   }, []);
-  useEffect(() => () => window.clearTimeout(toastTimer.current), []);
+  useEffect(() => () => {
+    window.clearTimeout(toastTimer.current);
+    window.clearTimeout(selectionTimer.current);
+  }, []);
 
   /* ------------------------- escena 3D ------------------------- */
 
@@ -196,6 +201,7 @@ export default function CuentosApp() {
       flowRequest.current += 1;
       window.clearTimeout(readyTimer.current);
       stage.dispose();
+      window.clearTimeout(selectionTimer.current);
       stageRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -212,24 +218,38 @@ export default function CuentosApp() {
     startMusic();
     const stage = stageRef.current;
     if (!stage || latest.current.selectedId) return;
-    sfx.select();
-    const owned = latest.current.state.books[bookId]?.pins || [];
-    if (!stage.selectBook(bookId, owned)) return;
-    flowRequest.current += 1;
-    openingRef.current = false;
-    setSelectedId(bookId);
-    setPanelReady(false);
-    window.clearTimeout(readyTimer.current);
-    readyTimer.current = window.setTimeout(() => {
-      sfx.land();
-      setPanelReady(true);
-    }, prefersReducedMotion() ? 50 : 1150);
+    window.clearTimeout(selectionTimer.current);
+    const request = ++flowRequest.current;
+    const deadline = performance.now() + 2000;
+    // El buscador puede usarse mientras vuelve otro libro: conservar la
+    // última elección y abrirla al terminar, sin perder ese clic.
+    const selectWhenReady = () => {
+      if (request !== flowRequest.current || stageRef.current !== stage || latest.current.selectedId) return;
+      if (stage.busy) {
+        if (performance.now() < deadline) selectionTimer.current = window.setTimeout(selectWhenReady, 50);
+        else latest.current.showToast('La estantería sigue en movimiento. Selecciona el cuento otra vez.');
+        return;
+      }
+      const owned = latest.current.state.books[bookId]?.pins || [];
+      if (!stage.selectBook(bookId, owned)) return;
+      sfx.select();
+      openingRef.current = false;
+      setSelectedId(bookId);
+      setPanelReady(false);
+      window.clearTimeout(readyTimer.current);
+      readyTimer.current = window.setTimeout(() => {
+        sfx.land();
+        setPanelReady(true);
+      }, prefersReducedMotion() ? 50 : 1150);
+    };
+    selectWhenReady();
   }, []);
 
   const backToShelf = useCallback(() => {
     flowRequest.current += 1;
     openingRef.current = false;
     window.clearTimeout(readyTimer.current);
+    window.clearTimeout(selectionTimer.current);
     stopSpeech();
     sfx.close();
     stageRef.current?.deselect();
@@ -293,7 +313,8 @@ export default function CuentosApp() {
     stage.openBook();
     // Precalienta las páginas siguientes.
     window.setTimeout(() => {
-      for (let i = 0; i < book.pages.length; i += 1) pageTexture(book, i);
+      if (request !== flowRequest.current) return;
+      for (let i = start + 1; i < Math.min(start + 3, book.pages.length); i += 1) pageTexture(book, i);
     }, 800);
   }, [pageTexture, showToast]);
 
@@ -525,6 +546,9 @@ function ShelfOverlay({ state, focusedId, onFocus, onOpen }) {
   const rowRef = useRef(null);
   const dragRef = useRef(null);
   const suppressClick = useRef(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const matches = useMemo(() => searchBooks(BOOKS, query), [query]);
 
   useEffect(() => {
     const end = () => { dragRef.current = null; };
@@ -573,6 +597,18 @@ function ShelfOverlay({ state, focusedId, onFocus, onOpen }) {
 
   return (
     <div className="cuentos-shelf-ui">
+      <div className="cuentos-library-search">
+        <button type="button" className="cuentos-btn" aria-expanded={searchOpen} onClick={() => setSearchOpen(value => !value)}>⌕ Buscar entre {BOOKS.length} libros</button>
+        {searchOpen ? <section className="cuentos-search-panel" aria-label="Buscar un cuento">
+          <label htmlFor="story-search">¿Qué cuento quieres leer?</label>
+          <input id="story-search" value={query} onChange={event => setQuery(event.target.value)} placeholder="Título del cuento" autoFocus type="search" />
+          <p role="status">{matches.length} {matches.length === 1 ? 'libro encontrado' : 'libros encontrados'}</p>
+          <ul>{matches.map(book => <li key={book.id}><button type="button" onClick={() => { setSearchOpen(false); onOpen(book.id); }}>
+            <strong>{book.title}</strong><small>{book.edition || 'Versión narrada'} · {book.pages.length} páginas</small>
+          </button></li>)}</ul>
+          {!matches.length ? <p>Prueba con otra palabra, por ejemplo «princesa».</p> : null}
+        </section> : null}
+      </div>
       <button type="button" className="cuentos-arrow cuentos-arrow--left" onClick={() => move(-1)} aria-label="Ver cuentos anteriores">
         ‹
       </button>
@@ -597,10 +633,10 @@ function ShelfOverlay({ state, focusedId, onFocus, onOpen }) {
                   onClick={() => onOpen(book.id)}
                   onPointerMove={event => { if (event.pointerType === "mouse" && !event.buttons) hover(index, book.id); }}
                   onFocus={() => hover(index, book.id)}
-                  aria-label={`Abrir ${book.title}. ${status.pct}% leído.`}
+                  aria-label={`Abrir ${book.title}${book.edition ? ` (${book.edition})` : ''}. ${status.pct}% leído.`}
                 >
                   <span className="cuentos-picker__cover" aria-hidden="true">
-                    <BookCover book={book} />
+                    {Math.abs(index - focus) < 5 ? <BookCover book={book} /> : null}
                   </span>
                   <span className="cuentos-picker__copy">
                     <strong style={{ color: book.accent }}>{book.title}</strong>
@@ -608,7 +644,7 @@ function ShelfOverlay({ state, focusedId, onFocus, onOpen }) {
                       <i style={{ width: `${status.pct}%`, background: book.accent }} />
                     </span>
                     <span className="cuentos-picker__meta">
-                      <em>{status.finished ? "Terminado ★ Léelo otra vez" : `${book.pages.length} páginas`}</em>
+                      <em>{status.finished ? "Terminado ★ Léelo otra vez" : `${book.pages.length} páginas${book.edition ? ' · texto íntegro' : ''}`}</em>
                       <span className="cuentos-picker__pins">
                         {pins.map((pin) => (
                           <i key={pin.id} className={status.pins.includes(pin.id) ? "is-owned" : ""} />
@@ -632,12 +668,16 @@ function DeskPanel({ book, status, ready, onOpen, onBack }) {
   return (
     <div className={`cuentos-desk ${ready ? "is-ready" : ""}`}>
       <div className="cuentos-desk__panel" style={{ "--accent": book.accent }}>
-        <p className="cuentos-modal__eyebrow">Tesis20 Nido · cuento</p>
+        <p className="cuentos-modal__eyebrow">Tesis20 Nido · {book.edition || 'cuento narrado'}</p>
         <h2>{book.title}</h2>
         <p className="cuentos-desk__tagline">{book.tagline}</p>
         <p className="cuentos-desk__meta">
-          {book.pages.length} páginas · {status.finished ? "terminado" : `${status.pct}% leído`} · {status.pins.length} de 5 souvenirs
+          {book.pages.length} páginas · {status.finished ? "terminado" : `${status.pct}% leído`}{book.narration === 'reading-only' ? ' · lectura sin audio narrado' : ` · ${status.pins.length} de ${bookPins(book).length} souvenirs`}
         </p>
+        {book.source ? <details className="cuentos-source"><summary>Sobre esta edición y su portada</summary>
+          <p>{book.warning}</p><a href={book.source.url} target="_blank" rel="noreferrer">Texto: {book.source.publisher}</a>
+          {book.cover.credit ? <p>Portada: {book.cover.credit.artist}. <a href={book.cover.credit.url} target="_blank" rel="noreferrer">{book.cover.credit.license}</a>. Ilustración histórica; no es la portada de esta web.</p> : null}
+        </details> : null}
         <p className="cuentos-desk__hint">Arrastra la tapa hacia la izquierda para abrirlo, o el libro hacia arriba para devolverlo.</p>
         <div className="cuentos-desk__actions">
           <button type="button" className="cuentos-btn cuentos-btn--read" onClick={onOpen} autoFocus>
@@ -678,6 +718,7 @@ export function stepsKeyFor(book, page, act) {
 }
 
 function Reader({ book, page, state, pinRef, onPage, onClose, onStar, onPin, onQuiz, onAct, onSpeaking, onWordTick, onName, onMove, onCinema, onStoryWord, onScene, isWorking }) {
+  const hasNarration = book.narration !== 'reading-only';
   const pageData = book.pages[page];
   const entry = state.books[book.id] || { pages: [], pins: [], quiz: [], quizOk: 0 };
   const [activeWord, setActiveWord] = useState(-1);
@@ -718,6 +759,13 @@ function Reader({ book, page, state, pinRef, onPage, onClose, onStar, onPin, onQ
       return next;
     });
   }, []);
+  const textCardRef = useRef(null);
+
+  useEffect(() => {
+    // Un párrafo largo puede desplazarse en móvil; la siguiente página
+    // siempre debe empezar por su título, no conservar el final de la anterior.
+    if (textCardRef.current) textCardRef.current.scrollTop = 0;
+  }, [page]);
 
   const words = useMemo(() => pageData.x.split(WORD_SPLIT), [pageData.x]);
   const wordIndexes = useMemo(() => {
@@ -744,6 +792,7 @@ function Reader({ book, page, state, pinRef, onPage, onClose, onStar, onPin, onQ
   // que se pidan, para que «Léemelo» y el pase de hoja no esperen a la red.
   useEffect(() => {
     let cancelled = false;
+    if (!hasNarration) return undefined;
     loadCuentosVoices().then(() => {
       if (cancelled) return;
       prefetchTracks([pageTrack(book.id, page), pageTrack(book.id, page + 1)]);
@@ -751,7 +800,7 @@ function Reader({ book, page, state, pinRef, onPage, onClose, onStar, onPin, onQ
     return () => {
       cancelled = true;
     };
-  }, [book.id, page]);
+  }, [book.id, page, hasNarration]);
 
   // Efectos de la página: los de apertura suenan al mostrarla; los de las
   // palabras se descargan ya para dispararse en el instante justo.
@@ -903,6 +952,7 @@ function Reader({ book, page, state, pinRef, onPage, onClose, onStar, onPin, onQ
 
   useEffect(() => {
     const onKey = (event) => {
+      if (/^(INPUT|SELECT|TEXTAREA)$/.test(event.target?.tagName)) return;
       if (quizOpen) {
         if (event.key === "Escape") setQuizOpen(false);
         return;
@@ -935,14 +985,17 @@ function Reader({ book, page, state, pinRef, onPage, onClose, onStar, onPin, onQ
   return (
     <div className="cuentos-reading">
       <div className="cuentos-stars-row" aria-label="Páginas leídas">
-        {book.pages.map((unused, i) => (
+        {(book.pages.length > 12 ? pageWindow(page, book.pages.length) : book.pages.map((_, i) => i)).map(i => (
           <button key={i} type="button" className={entry.pages.includes(i) ? "is-read" : ""} onClick={() => turnTo(i)} aria-label={`Ir a la página ${i + 1}`} aria-current={i === page}>
-            ★
+            {book.pages.length > 12 ? i + 1 : '★'}
           </button>
         ))}
+        {book.pages.length > 12 ? <select aria-label="Elegir página" value={page} onChange={event => turnTo(Number(event.target.value))}>
+          {book.pages.map((_, i) => <option key={i} value={i}>Página {i + 1} de {book.pages.length}</option>)}
+        </select> : null}
       </div>
 
-      <article className="cuentos-card cuentos-card--page-copy" aria-live="polite">
+      <article ref={textCardRef} className="cuentos-card cuentos-card--page-copy" aria-live="polite" tabIndex={0} aria-label="Texto del cuento; desliza para seguir leyendo">
         <p className="cuentos-card__eyebrow">
           Página {page + 1} de {book.pages.length}
         </p>
@@ -951,6 +1004,7 @@ function Reader({ book, page, state, pinRef, onPage, onClose, onStar, onPin, onQ
           {words.map((token, i) => {
             if (/^\s+$/.test(token) || token === "") return <span key={i}>{token}</span>;
             const index = wordIndexes[i];
+            if (!hasNarration) return <span key={i}>{token}</span>;
             return (
               <button key={i} type="button" className={`cuentos-word ${index === activeWord ? "is-active" : index >= 0 && index < activeWord ? "is-read" : ""}`} onClick={() => sayWord(token)}>
                 {token}
@@ -958,7 +1012,7 @@ function Reader({ book, page, state, pinRef, onPage, onClose, onStar, onPin, onQ
             );
           })}
         </p>
-        <p className="cuentos-card__hint">toca las palabras para escucharlas</p>
+        <p className="cuentos-card__hint">{hasNarration ? 'toca las palabras para escucharlas' : 'Texto íntegro · lectura acompañada'}</p>
         <span className="cuentos-card__corner" aria-hidden="true" />
       </article>
 
@@ -989,18 +1043,18 @@ function Reader({ book, page, state, pinRef, onPage, onClose, onStar, onPin, onQ
           ←
         </button>
         <div className="cuentos-controls__center">
-          {speechAvailable() ? (
+          {hasNarration && speechAvailable() ? (
             <button type="button" className={`cuentos-btn cuentos-btn--read ${autoRead ? "is-on" : ""}`} onClick={() => setAutoRead((prev) => !prev)}>
               {autoRead ? (speaking ? "⏸ Pausa" : "⏸ Leyendo…") : "▶ Léemelo"}
             </button>
           ) : null}
-          <button type="button" className={`cuentos-btn cuentos-btn--ghost cuentos-btn--cine ${cinema ? "is-on" : ""}`} onClick={toggleCinema} aria-pressed={cinema} title="Con «Léemelo», la cámara entra en la escena y sigue el cuento">
+          {hasNarration ? <button type="button" className={`cuentos-btn cuentos-btn--ghost cuentos-btn--cine ${cinema ? "is-on" : ""}`} onClick={toggleCinema} aria-pressed={cinema} title="Con «Léemelo», se encuadra el libro completo y se sigue la lectura sobre la hoja">
             {cinema ? "🎬 Película" : "📖 Libro"}
-          </button>
+          </button> : null}
           <button type="button" className="cuentos-btn cuentos-btn--ghost" onClick={onClose}>
             🏠 Cerrar el libro
           </button>
-          {isLast ? (
+          {isLast && book.quiz.length > 0 ? (
             <button
               type="button"
               className="cuentos-btn cuentos-btn--quiz"
@@ -1197,7 +1251,7 @@ function Album({ state, stats, onClose, onReset }) {
                     <i style={{ width: `${status.pct}%`, background: book.accent }} />
                   </span>
                   <small>
-                    {status.finished ? "Terminado" : `${status.pct}% leído`} · {status.pins.length} de 5 souvenirs · quiz {status.quizOk}/{book.quiz.length}
+                    {status.finished ? "Terminado" : `${status.pct}% leído`}{book.narration === 'reading-only' ? ' · Texto íntegro, lectura' : ` · ${status.pins.length} de ${bookPins(book).length} souvenirs · quiz ${status.quizOk}/${book.quiz.length}`}
                   </small>
                 </div>
                 <div className="cuentos-album__pins">

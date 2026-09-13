@@ -43,6 +43,9 @@ import * as zorro from "./zorro.js";
 import * as mariposa from "./mariposa.js";
 import * as pelicano from "./pelicano.js";
 import * as carpintero from "./carpintero.js";
+import * as pulgarcito from "./pulgarcito.js";
+import { father, mother } from "./pulgarcito.js";
+import { caballo, vaca, caracol, concha } from "./pulgarcito-animals.js";
 import { nina, nino, nina2, maquinista } from "./personajes.js";
 
 const pipo = { id: "pipo", label: "Pipo", build: () => cerdito.build({ hat: true, item: "paja" }) };
@@ -54,7 +57,8 @@ const REGISTRY = { abuelita, arbol, ballena, barco, bufeo, buho, cactus, campana
 
 // Tamaño relativo en el diorama: las criaturas pequeñas se ven pequeñas
 // junto a los personajes grandes (1 = altura estándar de figura).
-export const TOY_SCALE = { mariposa: 0.5, picaflor: 0.75, carpintero: 0.75, pajarito: 0.55, rana: 0.85, pez: 0.85 };
+export const TOY_SCALE = { mariposa: 0.5, picaflor: 0.75, carpintero: 0.75, pajarito: 0.55, rana: 0.85, pez: 0.85, pulgarcito: 0.72, caracol: 0.7, 'concha-caracol': 0.58 };
+Object.assign(REGISTRY, { pulgarcito, caballo, vaca, caracol, "concha-caracol": concha, "papa-pulgarcito": father, "mama-pulgarcito": mother });
 
 export function registerToys(modules) {
   modules.forEach((module) => {
@@ -72,6 +76,10 @@ export function toyLabel(id) {
 
 // Qué figura representa cada souvenir de los cuentos.
 export const PIN_TOY = {
+  "hojita-pulgarcito": "arbol",
+  "sombrero-pulgarcito": "pulgarcito",
+  herradura: "caballo",
+  caracol: "concha-caracol",
   caperuza: "caperucita",
   canasta: "canasta",
   pajarito: "pajarito",

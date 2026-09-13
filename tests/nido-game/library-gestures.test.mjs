@@ -65,6 +65,7 @@ import { splitWords, wordKey } from "../../src/nido/cuentos/cuentos-voice-plan.j
 
 test("los nombres que iluminan figuras apuntan a personajes reales y aparecen en la narración", () => {
   for (const book of BOOKS) {
+    if (book.narration === 'reading-only') continue;
     const cast = new Set(book.pages.flatMap((page) => page.cast || []));
     const spoken = new Set(book.pages.flatMap((page) => splitWords(`${page.t}. ${page.x}`).words.map(wordKey)));
     assert.ok(book.names && Object.keys(book.names).length > 0, `${book.id} no tiene nombres de personajes.`);

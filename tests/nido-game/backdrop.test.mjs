@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import { BOOKS } from "../../src/nido/cuentos/cuentos-data.js";
-import { SCENERY, framingFor } from "../../src/nido/cuentos/three/backdrop.js";
+import { sceneryFor, framingFor } from "../../src/nido/cuentos/three/backdrop.js";
 
 // Los fondos pintados recortan zonas de paisaje de la portada (sin el
 // protagonista, que ya está en 3D). El encuadre es determinista, cambia entre
@@ -10,7 +10,7 @@ import { SCENERY, framingFor } from "../../src/nido/cuentos/three/backdrop.js";
 
 test("cada libro tiene zonas de paisaje válidas en su portada", () => {
   for (const book of BOOKS) {
-    const windows = SCENERY[book.id];
+    const windows = sceneryFor(book);
     assert.ok(windows === null || (windows && windows.length), `${book.id}: sin decisión sobre el fondo pintado.`);
     if (windows === null) continue;
     for (const [u0, v0, u1, v1] of windows) {
@@ -21,7 +21,7 @@ test("cada libro tiene zonas de paisaje válidas en su portada", () => {
 
 test("el encuadre del fondo es determinista, varía entre páginas y queda dentro del paisaje", () => {
   for (const book of BOOKS) {
-    const windows = SCENERY[book.id];
+    const windows = sceneryFor(book);
     if (windows === null) continue;
     const frames = book.pages.map((unused, index) => framingFor(book, index, 1.5));
     frames.forEach((frame, index) => {

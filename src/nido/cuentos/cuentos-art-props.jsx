@@ -1450,6 +1450,14 @@ const EMBLEMS = {
   ),
 };
 
+const PULGARCITO_EMBLEMS = {
+  "hojita-pulgarcito": EMBLEMS.hoja,
+  "sombrero-pulgarcito": EMBLEMS.sombrero,
+  herradura: <g fill="none" stroke="#c4aa78" strokeWidth="12" strokeLinecap="round"><path d="M -22 -26 V 4 A 22 26 0 0 0 22 4 V -26" /><path d="M -22 -16 v 1 m 0 15 v 1 M 22 -16 v 1 m 0 15 v 1" stroke="#665a49" strokeWidth="4" /></g>,
+  caracol: <g><circle cx="0" cy="0" r="30" fill="#b9804e" /><path d="M 1 -2 C -12 -14 -24 7 -9 18 C 14 33 36 -1 13 -18 C -8 -34 -36 -12 -25 12" fill="none" stroke="#edd2a0" strokeWidth="5" strokeLinecap="round" /><ellipse cx="0" cy="28" rx="17" ry="8" fill="#584030" /></g>,
+  "pan-pulgarcito": <g><ellipse cy="6" rx="34" ry="23" fill="#bc733a" /><ellipse cy="0" rx="34" ry="23" fill="#e9b767" /><path d="m -18 -8 10 16 M -2 -12 10 16 M 14 -10 l 10 13" stroke="#fff0bf" strokeWidth="5" strokeLinecap="round" /></g>,
+};
+
 export function emblemFor(id) {
-  return EMBLEMS[id] || null;
+  return PULGARCITO_EMBLEMS[id] || EMBLEMS[id] || null;
 }

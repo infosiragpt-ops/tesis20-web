@@ -1,0 +1,457 @@
+[
+  {
+    "id": "tres-deseos",
+    "title": "Los tres deseos",
+    "accent": "#496d59",
+    "cover": {
+      "image": "/assets/nido/cuentos/collection/tres-deseos.avif",
+      "layout": "heritage",
+      "credit": {
+        "title": "File:Page facing 130 illustration from Fairy tales of Charles Perrault (Clarke, 1922).jpg",
+        "artist": "Harry Clarke",
+        "license": "Public domain",
+        "url": "https://commons.wikimedia.org/wiki/File:Page_facing_130_illustration_from_Fairy_tales_of_Charles_Perrault_(Clarke,_1922).jpg",
+        "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/50/Page_facing_130_illustration_from_Fairy_tales_of_Charles_Perrault_%28Clarke%2C_1922%29.jpg/960px-Page_facing_130_illustration_from_Fairy_tales_of_Charles_Perrault_%28Clarke%2C_1922%29.jpg",
+        "changes": "Redimensionado y convertido a AVIF; imagen completa, sin recortar."
+      },
+      "ink": "#fff3cf",
+      "sub": "#e0c895"
+    },
+    "source": {
+      "url": "https://www.cuentosinfantiles.net/cuentos-los-tres-deseos/",
+      "publisher": "Cuentos infantiles",
+      "importedAt": "2026-09-12",
+      "permission": "Reproducción del texto autorizada por el usuario el 12 de septiembre de 2026.",
+      "sha256": "fe16d6c6e7c2a87c3a4bace9f87c64695f6e63992be3be5805dd0ef13afad1cd"
+    },
+    "note": null,
+    "warning": "Versión tradicional sin adaptar. Se recomienda lectura acompañada; puede incluir situaciones intensas.",
+    "set": "forest-day",
+    "wallTheme": "wayra",
+    "light": "day",
+    "cameo": [
+      "arbol",
+      "mariposa"
+    ],
+    "props": [
+      "arboles",
+      "flores",
+      "pasto"
+    ],
+    "paragraphs": [
+      "Cuando Federico llegó a su casa una noche, malhumorado y refunfuñando como de costumbre, encontró a su mujer sentada en la silla de la cocina con una expresión muy rara. En el regazo tenía una carta arrugada.",
+      "-¿Qué te pasa? -preguntó él de malos modos.",
+      "-Entra y cierra la puerta, Federico. No vas a creértelo, pero he recibido una carta de las hadas. ¡Nos han concedido que expresemos tres deseos!",
+      "El cogió la carta bruscamente y la leyó despacio.",
+      "-Hemos de sacarle a esto el máximo provecho, Magda. No debemos precipitarnos. Tres deseos que pueden hacernos ricos, importantes, famosos. Pero debemos pedir lo que más nos convenga.",
+      "Magda se levantó de un salto y dijo:",
+      "-Ya tengo hecha una lista.",
+      "Mira: un palacio para mí y una corona de rey para ti. Para mí he pedido belleza, para ti larga vida. Pediremos una reina que nos haga de criada y oro y joyas… ¡He estado tan ocupada haciendo la lista que no me ha dado tiempo de preparar la cena!",
+      "Federico exclamó irritado: -¿Cómo? ¿Que no está la cena? ¿Cómo voy a tomar decisiones importantes con el estómago vacío? No creo que sea pedir mucho. ¡Qué gandula eres, Magda! ¡Ojalá hubiera algo preparado…, aunque fueran unas pocas salchichas!",
+      "Se oyó un curioso zumbido, como el batir de alas de hadas y, ¡plop!, sobre el plato de la mesa de la cocina apareció una sarta de salchichas. Federico las observó humeando en el plato y relamió sus labios.",
+      "Magda le dio con una hogaza de pan en la cabeza, gritando:",
+      "-¡Has desperdiciado un deseo! ¡Qué estúpido eres! Si hay que hacer algo, lo haré yo, qué torpe eres, Federico, me pones mala…",
+      "¡Ojalá que esas salchichas te colgaran de la punta de la nariz!",
+      "Se oyó un ruidito mágico, como de hadas cantando, y, ¡clac!, las salchichas saltaron del plato y fueron a engancharse a la punta de la nariz de Federico.",
+      "El se quedó mirando y rompió a llorar. Ambos tiraron, tiraron y tiraron de las salchichas, pero fue inútil.",
+      "-¡Hay, qué calientes están! -exclamó -¡No te muevas! Las cortaré con un -¡Deja ese cuchillo, mujer! ¡Cómo has podido hacerme esto!",
+      "Pero las salchichas estaban firmemente sujetas.",
+      "En esto, llamaron a la puerta. Federico y Magda se miraron.",
+      "-¡No vayas! ¿Quieres que todos los vecinos sepan que llevas unas salchichas pegadas en la nariz?",
+      "-¡Cómo! ¡No voy a pasarme el resto de la vida escondiéndome! ¡Ay!, ahora me doy cuenta de lo afortunado que era antes cuando tenía una nariz normal y corriente. ¡Ojalá no estuviéramos siempre peleando!",
+      "-Sí, es verdad, no sabes cuánto lo siento -dijo Magda. -No, no, la culpa no es tuya, querida. Ojalá que las hadas se hubieran guardado sus deseos y todo siguiera como antes.",
+      "-Tienes razón -sollozó Magda. Entonces se oyó un ruidito, como de hadas riéndose, y, ¡blip!, las salchichas se desprendieron de la nariz de Federico.",
+      "Federico y Magda se abrazaron, rieron y se pusieron a bailar por la cocina. Y las hadas que estaban en la puerta salieron apresuradamente a echar otra carta al correo."
+    ]
+  },
+  {
+    "id": "navidad-papa-noel",
+    "title": "La navidad de Papá Noel",
+    "accent": "#715682",
+    "cover": {
+      "image": "/assets/nido/cuentos/collection/navidad-papa-noel.avif",
+      "layout": "heritage",
+      "credit": {
+        "title": "File:Christmas postcard - DPLA - be24e4167ca21fc7628db185cb698639 (page 1).jpg",
+        "artist": "Published by Heininger, Unger, &amp; Co. (New York)",
+        "license": "Public domain",
+        "url": "https://commons.wikimedia.org/wiki/File:Christmas_postcard_-_DPLA_-_be24e4167ca21fc7628db185cb698639_(page_1).jpg",
+        "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/c2/Christmas_postcard_-_DPLA_-_be24e4167ca21fc7628db185cb698639_%28page_1%29.jpg/960px-Christmas_postcard_-_DPLA_-_be24e4167ca21fc7628db185cb698639_%28page_1%29.jpg",
+        "changes": "Redimensionado y convertido a AVIF; imagen completa, sin recortar."
+      },
+      "ink": "#fff3cf",
+      "sub": "#e0c895"
+    },
+    "source": {
+      "url": "https://www.cuentosinfantiles.net/cuentos-la-navidad-de-papa-noel/",
+      "publisher": "Cuentos infantiles",
+      "importedAt": "2026-09-12",
+      "permission": "Reproducción del texto autorizada por el usuario el 12 de septiembre de 2026.",
+      "sha256": "d3986d3dcaa35004f9bab0d58a558e30da50196ef27da38818c77d54f6e18f02"
+    },
+    "note": null,
+    "warning": "Versión tradicional sin adaptar. Se recomienda lectura acompañada; puede incluir situaciones intensas.",
+    "set": "mountain-day",
+    "wallTheme": "kusi",
+    "light": "day",
+    "cameo": [
+      "arbol",
+      "estrella"
+    ],
+    "props": [
+      "arboles",
+      "nubes"
+    ],
+    "paragraphs": [
+      "La Navidad de Papá Noel",
+      "Papá Noel terminó de abotonarse su camiseta más gruesa, se puso su pullóver y su jersey de punto, se enfundó su grueso chaquetón rojo y se enrolló la bufanda.",
+      "“¡Qué noche para salir!”, pensó, mientras el granizo golpeaba las ventanas y los copos de nieve se escurrían por debajo de la puerta. “Es una noche para sentarse junto al fuego y comer tostadas calientes con mantequilla.”",
+      "Se puso sus calcetines de lana más gruesos, sacudió el lodo de sus botas y hurgó por aquí y por allá hasta encontrar unos guantes. Una vez vestido, se miró al espejo y exclamó: -No es raro que todos crean que soy gordo. ¡Con toda la ropa que llevo encima!",
+      "Afuera, Rodolfo, el reno, esperaba impaciente la orden de ponerse en camino. Hacía tanto frío que los patines del trineo se congelaban por momentos. Papá Noel comprobó que llevaba todos sus regalos y arrancó a galope por el aire a través de una cortina de nieve.",
+      "-Jo, jo, jo, jo -soltó una carcajada, aunque no del todo exultante- El caso es que no puedo alegrarme con la Navidad de este año, Rodolfo. ¿Por qué hay que celebrarla siempre a mitad del invierno, con un tiempo tan horrible?",
+      "Rodolfo removió las campanillas del trineo, que tiritaban de frío, y dijo:",
+      "-Estoy de acuerdo, éste no es tiempo para andar viajando. Un reno se puede romper una pata.",
+      "Se detuvieron sobre un tejado, resbaladizo por el hielo. Rodolfo miró de reojo a Papá Noel, con toda su ropa, i -Oye, ¿no podrías prescindir de las chimeneas este año?",
+      "Papá Noel se encogió de hombros.",
+      "-¿Y de qué otra manera voy a entrar en las casas? No querrás que llame a la puerta…",
+      "Metió primero un pie, luego el otro, se tapó la nariz y se lanzó hacia la oscuridad. Pero llevaba demasiada ropa. Resultaba demasiado grueso con tanta lana para poder deslizarse hasta la parrilla de la chimenea y entrar en la primera casa. Atascado a mitad del -¡Nunca más! El año que viene vendré antes.",
+      "-¿Mucho antes? -le preguntó Rodolfo, desapareciendo bajo una nube de nieve*",
+      "-En julio -contestó Papá Noel, que se sintió mejor sólo de pensar en ello-. ¡Jo, jo, jo!",
+      "Julio llegó muy pronto. Papá Noel estaba tan ocupado en su intento por conseguir tener todos los regalos a tiempo que ni siquiera pudo ir de vacaciones.",
+      "-Bueno…, dicen que un cambio es tan bueno como un descanso -le comentó a Rodolfo-. Realmente, este verano me hacen mucha ilusión las Navidades. Saca el carro de seis ruedas, no necesitamos ir de casa en casa con el viejo trineo.",
+      "Papá Noel se afeitó, pues sólo se dejaba crecer la barba en invierno por causa del frío, y se vistió con sus téjanos favoritos, una camiseta y las sandalias. Se miró en el espejo.",
+      "“Me siento en plena forma”, pensó, y se lanzó a la calle.",
+      "Debido a la ola de calor, en ese mes de julio los tejados estaban todos secos y era fácil trepar a ellos. El carro de seis ruedas era liviano y, cuando aterrizaron en el primer tejado, Rodolfo se sentía aún descansado.",
+      "La chimenea estrecha no era un problema esta vez. Papá Noel bajó por su interior tan fácilmente como una carta cae en un buzón. Una vez dentro de la casa se paró en la alfombra de la sala a limpiarse el hollín de la nariz.",
+      "Tras mirar a su alrededor, pronto se dio cuenta de que algo no andaba bien. No había ningún vasito de jerez, ni siquiera un trozo de pastel, esperándole; tampoco había el árbol de Navidad, ni guirnaldas, ni los regalos que compran las mamás y los papás. La casa tenía un aspecto solitario y vacío.",
+      "Poco a poco comprendió lo que pasaba. ¡La familia se había ido de vacaciones! ¡Qué faena! Se habían ido de vacaciones y no pensaron en él.",
+      "Pero lo peor de todo es que no había zapatos donde dejar los paquetes. O sea, que tuvo que arreglárselas para volver a subir la chimenea con todos los regalos a cuestas.",
+      "-¡No me esperaban! -dijo, tratando de salir de la chimenea, sudoroso y molesto-. ¡Se fueron de vacaciones! ¿Puedes creerlo? -comentó a Rodolfo.",
+      "Este no le prestaba atención. Estaba ocupado sacudiéndose el enjambre de moscas y mosquitos que le acosaban.",
+      "-Estas moscas no las hay en invierno -refunfuñó sacudiendo su cola de reno.",
+      "Lo mismo sucedió en todas las casas. O la familia se había ido de vacaciones o, lo que es peor, los niños estaban despiertos por culpa del calor. Más de una vez tuvo que volverse sigilosamente chimenea arriba por miedo a ser visto. Una familia incluso llamó a la policía porque escucharon ruidos extraños en su chimenea.",
+      "-Un ladrón -dijeron por teléfono-. Y creemos que hay otro en el tejado.",
+      "-¡Nunca más! -dijo Papá Noel saltando en el carro de seis ruedas y galopando sin parar hasta el amanecer. Los regalos, que no habían podido ser repartidos, se caían del carro por las sacudidas-, ¡Confundirnos con ladrones! ¡Lo que faltaba! ¡Nunca más!",
+      "Para repartir debidamente todos los regalos, tuvo que salir como de repartidos, se caían del carro por las sacudidas-, ¡Confundirnos con ladrones! ¡Lo que faltaba! ¡Nunca más!",
+      "Para repartir debidamente todos los regalos, tuvo que salir como de",
+      "costumbre en la Nochebuena. Se abotonó su camiseta más gruesa, su jersey, su chaqueta de punto y su chaquetón rojo; se envolvió en su bufanda y se calzó los guantes. Rodolfo sacó el pesado trineo y galoparon a través de la nieve sin mediar palabra.",
+      "Papá Noel no tenía ninguna gana de gritar ni jo, jo, jo ni ja, ja, ja. Se había olvidado su segundo par de calcetines y comenzaron a castañetearle los dientes.",
+      "Cuando llegaron al tejado de la chimenea estrecha, Papá Noel se ajustó bien el cinturón, se puso la bolsa sobre el hombro y se sentó en la punta de la chimenea.",
+      "-No sé para qué me mm-m-molesto -murmuraba mientras forcejeaba por entrar.",
+      "Abajo, en la sala, diez guirnaldas cruzaban el techo de punta a punta. En un cubo rojo había un pino alto de ramas estiradas, que sujetaban un centenar de luces de colores, y tiras y tiras de papel de plata. Una luz blanca entró por la ventana, reflejada en la",
+      "nieve, e iluminó la estancia, llena de felicitaciones navideñas.",
+      "“Para Papá “Noel”, decía una nota en la mesa junto a un vasito de jerez y un trozo de pastel. Papá Noel bebió y comió. Se sentía muy emocionado.",
+      "En habitaciones cercanas los niños dormían bien abrigados. A los pies de cada cama había un zapato con una tarjeta especialmente dirigida a él.",
+      "-Ah, qué hermosa es la Navidad, -suspiró, y un nudo en la garganta le impidió soltar su “Jo, jo, jo”.",
+      "Volvió a subir al tejado. Esta vez le resultó más fácil trepar y sus crecidos bigotes de invierno evitaban que el hollín se le metiera en la nariz.",
+      "-Lo siento, Rodolfo -le dijo al salir de la chimenea-. En el futuro pienso hacer los regalos en Nochebuena.",
+      "Rodolfo no parecía escucharle. Contemplaba las estrellas, más allá de los tejados cubiertos de nieve. Una luna de oropel se columpió al sonido de las campanas de la iglesia.",
+      "-Jo, jo, jo -dijo el reno para sí-. ¡Qué hermosa es la Navidad!"
+    ]
+  },
+  {
+    "id": "duendes-zapatero",
+    "title": "Los duendes y el zapatero",
+    "accent": "#927047",
+    "cover": {
+      "image": "/assets/nido/cuentos/collection/duendes-zapatero.avif",
+      "layout": "heritage",
+      "credit": {
+        "title": "File:Otto Ubbelohde - Die Wichtelmänner.jpg",
+        "artist": "Otto Ubbelohde",
+        "license": "Public domain",
+        "url": "https://commons.wikimedia.org/wiki/File:Otto_Ubbelohde_-_Die_Wichtelm%C3%A4nner.jpg",
+        "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/5/57/Otto_Ubbelohde_-_Die_Wichtelm%C3%A4nner.jpg",
+        "changes": "Redimensionado y convertido a AVIF; imagen completa, sin recortar."
+      },
+      "ink": "#fff3cf",
+      "sub": "#e0c895"
+    },
+    "source": {
+      "url": "https://www.cuentosinfantiles.net/cuentos-los-duendes-y-el-zapatero/",
+      "publisher": "Cuentos infantiles",
+      "importedAt": "2026-09-12",
+      "permission": "Reproducción del texto autorizada por el usuario el 12 de septiembre de 2026.",
+      "sha256": "022fd2632008fb2387ff400402ce2c86ac8bd11de65be7f93d99e6b0303a16cc"
+    },
+    "note": null,
+    "warning": "Versión tradicional sin adaptar. Se recomienda lectura acompañada; puede incluir situaciones intensas.",
+    "set": "forest-day",
+    "wallTheme": "wayra",
+    "light": "day",
+    "cameo": [
+      "arbol",
+      "mariposa"
+    ],
+    "props": [
+      "arboles",
+      "flores",
+      "pasto"
+    ],
+    "paragraphs": [
+      "La mujer del zapatero dijo inquieta a su marido: -¿No puedes trabajar más rápido, querido?",
+      "El zapatero sonrió: -Claro que podría. Podría cortar el cuero con menos cuidado y dar puntadas más grandes. Pero quiero ofrecer a mis clientes lo mejor de lo mejor. Y eso lleva tiempo.",
+      "-Lo sé, querido, pero no queda dinero para comprar más cuero. Vas tan despacito que un par de zapatos te lleva dos días.",
+      "-Hago lo que puedo -respondió con tristeza el zapatero-. Mi vista no es tan buena como antes, y mis dedos ya no son tan ágiles.",
+      "El zapatero siguió con su lento y meticuloso trabajo. Y así, pronto se acabó el dinero y se terminaron el ante y las pieles para hacer zapatos. En la mesa sólo quedaba una tira de cuero. Su esposa le preguntó:",
+      "-¿Qué vamos a hacer mañana, cuando ya no quede cuero ni zapatos que vender?",
+      "El zapatero sonrió. -Mañana nos preocuparemos.",
+      "Pasó el día entero cortando un calzado con aquella última tira de cuero. Pensaba… “seguramente éste será el último par de zapatos que haré en mi vida, así que me gustaría que fuera el mejor’.",
+      "Se fue a la cama dejando las plantillas ya cortadas en su mesa de trabajo.",
+      "-Qué pena que seamos pobres -le dijo a su mujer antes de dormirse.",
+      "-Tú ya haces lo que puedes -le consoló ella- No se puede pedir más.",
+      "A la mañana siguiente, el zapatero se limpió las gafas, enhebró la aguja y buscó los pedazos de cuero. Pero algo increíble había ocurrido. En el centro de la mesa había unos zapatos terminados, perfectos y brillantes hasta la última hebilla. Alguien los había acabado mientras él dormía.",
+      "-¡Fíjate qué maravilla! -exclamó, y se los mostró a su esposa-. ¡Mira qué hermosas puntadas! ¿Quién habrá hecho el trabajo?",
+      "Era un par de zapatos tan perfecto que lo vendieron por el doble de dinero. Aquel día el viejo zapatero pudo comprar otra tira de cuero y cortó dos pares de zapatos. De noche los dejó en la mesa y se fue a dormir mucho más contento. A la mañana siguiente encontró los dos pares acabados hasta los mismos cordones con sus remates.",
+      "-¡Es una obra de arte! -dijo el zapatero a su mujer. Los zapatos se vendieron a un precio tan estupendo que esta vez pudo comprar cuero para cuatro pares. Por la noche unas manos misteriosas cosieron los cuatro pares.",
+      "-¡Qué magnífica hechura! -exclamaban los clientes. Y vinieron de muy lejos a comprarle zapatos. El zapatero vendió a las damas zapatillas de baile, en bonito terciopelo, y botas de montar, largas y relucientes, a los caballeros.",
+      "-¡Tenemos cuero para toda la vida! -dijo, feliz, la mujer del zapatero- ¡Y viene tanta gente a comprar esos zapatos que casi somos ricos!",
+      "Pero el zapatero estaba pensativo.",
+      "-¿No te gustaría saber quién nos ayuda por las noches? Ya es hora de que lo averigüemos.",
+      "Así que una noche fría, la víspera de Navidad, el zapatero dejó sobre la mesa el cuero cortado y se escondió con su mujer en un rincón.",
+      "Al dar la medianoche, seis duendecillos desnudos salieron uno tras otro de detrás del reloj. Subieron a la mesa y al momento se pusieron a coser y a martillar, a hacer nudos y a dar lustre. De cuando en cuando paraban para soplarse las manos heladas, para calentarse los pies brincando en el suelo, o para acurrucarse unos contra otros y así combatir el frío del invierno. Tiritaban de la cabeza a los pies.",
+      "-Pobres criaturas -dijo la mujer-Tanto trabajar para nosotros y… no tienen ni siquiera una camisa y unas botas.",
+      "-Deberíamos hacerles un regalo para agradecerles sus servicios -respondió el zapatero.",
+      "Al día siguiente, muy temprano, su esposa empezó a coser camisas y pant",
+      "alones de una tela abrigada y alegre. El zapatero sacó su aguja más fina y su cuero más blando e hizo un par de lindas botas para cada uno.",
+      "La noche de Navidad, pusieron sobre la mesa estos regalos y se escondieron en el rincón. Hacía un frío tremendo. Los duendecillos salieron tiritando y dando diente con diente; de sus bocas salían humaredas de aliento que se helaba en contacto con el aire. Al principio se quedaron asombrados al no encontrar cuero para coser. Pero luego vieron la ropa y comprendieron que era para ellos. Se la pusieron y empezaron a bailotear, riendo y dando palmadas con las manos ya calientes gracias a sus nuevos guantes de lana.",
+      "-¡Se acabó el hacer zapatos! ¡Ahora somos gente elegante!",
+      "Y cantando y bailando salieron a la calle por la puerta de la tienda.",
+      "-Nos hemos quedado sin la ayuda de los duendecillos -dijo riendo la mujer del zapatero-. ¿Qué vas a hacer ahora que viene tanta gente a comprarte calzado?",
+      "-Sencillamente, haré todo lo mejor que pueda- respondió el zapatero.",
+      "– Seguro que sí, querido- dijo su mujer- como siempre."
+    ]
+  },
+  {
+    "id": "viene-lobo",
+    "title": "Que viene el lobo",
+    "accent": "#486f7a",
+    "cover": {
+      "image": "/assets/nido/cuentos/collection/viene-lobo.avif",
+      "layout": "heritage",
+      "credit": {
+        "title": "The Shepherd Boy and the Wolf",
+        "artist": "Milo Winter (1919)",
+        "license": "Public domain (Estados Unidos)",
+        "url": "https://www.gutenberg.org/ebooks/19994",
+        "imageUrl": "https://www.gutenberg.org/files/19994/19994-h/images/i015_th.jpg",
+        "changes": "Redimensionado y convertido a AVIF; imagen completa, sin recortar."
+      },
+      "ink": "#fff3cf",
+      "sub": "#e0c895"
+    },
+    "source": {
+      "url": "https://www.cuentosinfantiles.net/cuentos-que-viene-el-lobo/",
+      "publisher": "Cuentos infantiles",
+      "importedAt": "2026-09-12",
+      "permission": "Reproducción del texto autorizada por el usuario el 12 de septiembre de 2026.",
+      "sha256": "2b741eb552c43684304ad0a24c1b4b7d8d37d393141d7b4c7d48cdf39c6d6ce3"
+    },
+    "note": null,
+    "warning": "Versión tradicional sin adaptar. Se recomienda lectura acompañada; puede incluir situaciones intensas.",
+    "set": "forest-day",
+    "wallTheme": "wayra",
+    "light": "day",
+    "cameo": [
+      "arbol",
+      "mariposa"
+    ],
+    "props": [
+      "arboles",
+      "flores",
+      "pasto"
+    ],
+    "paragraphs": [
+      "Erase una vez un pastorcillo que cuidaba las ovejas de todo el pueblo. Algunos días era agradable permanecer en las colinas y el tiempo pasaba muy de prisa. Otros, el muchacho se aburría; no había nada que hacer salvo mirar cómo pastaban las ovejas de la mañana a la noche.",
+      "Un día decidió divertirse y se subió sobre un risco que dominaba el pueblo.",
+      "-¡Socorro! -gritó lo más fuerte que pudo- ¡Que viene el lobo y devora las ovejas!",
+      "En cuanto los del pueblo oyeron los gritos del pastorcillo, salieron de sus casas y subieron corriendo a la colina para ayudarle a ahuyentar al lobo… y lo encontraron desternillándose de risa por la broma que les había gastado. Enfadados, regresaron al pueblo y el chico, todavía riendo, volvió de nuevo a apacentar las ovejas.",
+      "Una semana más tarde, el muchacho se aburría de nuevo y subió al risco y gritó:",
+      "-¡Socorro! ¡Que viene el lobo y devora las ovejas!",
+      "Otra vez los del pueblo corrieron hasta la colina para ayudarle. De nuevo lo encontraron riéndose de verles tan colorados y se enfadaron mucho, pero lo único que podían hacer era soltarle una regañina.",
+      "Tres semanas después el muchacho les gastó exactamente la misma broma, y otra vez un mes después, y de nuevo al cabo de unas pocas semanas.",
+      "-¡Socorro! -gritaba- ¡Que viene el lobo y devora las ovejas!",
+      "Los buenos vecinos siempre se encontraban al pastorcillo riéndose a carcajada limpia por la broma que les había gastado.",
+      "Pero… un día de invierno, a la caída de la tarde, mientras el muchacho reunía las ovejas para regresar con ellas a casa, un lobo de verdad se acercó acechando al rebaño.",
+      "El pastorcillo se quedó aterrado. El lobo parecía enorme a la luz del crepúsculo y el chico sólo tenía su cayado para defenderse. Corrió hasta el risco y gritó:",
+      "-¡Socorro! ¡Que viene el lobo y devora las ovejas!",
+      "Pero nadie en el pueblo salió para ayudar al muchacho, porque nadie cree a un mentiroso, aunque alguna vez diga la verdad.",
+      "-Nos ha gastado la misma broma demasiadas veces -dijeron todos- Si hay un lobo esta vez, tendrá que comerse al muchacho."
+    ]
+  },
+  {
+    "id": "paloma-hormiga",
+    "title": "La paloma y la hormiga",
+    "accent": "#935447",
+    "cover": {
+      "image": "/assets/nido/cuentos/collection/paloma-hormiga.avif",
+      "layout": "heritage",
+      "credit": {
+        "title": "The Ant and the Dove",
+        "artist": "Milo Winter (1919)",
+        "license": "Public domain (Estados Unidos)",
+        "url": "https://www.gutenberg.org/ebooks/19994",
+        "imageUrl": "https://www.gutenberg.org/files/19994/19994-h/images/i101_th.jpg",
+        "changes": "Redimensionado y convertido a AVIF; imagen completa, sin recortar."
+      },
+      "ink": "#fff3cf",
+      "sub": "#e0c895"
+    },
+    "source": {
+      "url": "https://www.cuentosinfantiles.net/cuentos-la-paloma-y-la-hormiga/",
+      "publisher": "Cuentos infantiles",
+      "importedAt": "2026-09-12",
+      "permission": "Reproducción del texto autorizada por el usuario el 12 de septiembre de 2026.",
+      "sha256": "b1f80f4d0e6c8da6692923bd8dde0559edfacf357d5a3f914f95f18144998beb"
+    },
+    "note": null,
+    "warning": "Versión tradicional sin adaptar. Se recomienda lectura acompañada; puede incluir situaciones intensas.",
+    "set": "forest-day",
+    "wallTheme": "wayra",
+    "light": "day",
+    "cameo": [
+      "arbol",
+      "mariposa"
+    ],
+    "props": [
+      "arboles",
+      "flores",
+      "pasto"
+    ],
+    "paragraphs": [
+      "Un bonito día de primavera, cuando ya el sol iba cayendo en un caluroso atardecer, una blanca paloma se acercó a la fuente del río para beber de su cristalina y fresca agua. Necesitaba calmar la sed desúes de estar todo el día volando de acá para allá. Mientras bebía en la fuente, la paloma oyó unos lamentos.",
+      "-¡Socorro! -decía la débil voz-. Por favor, ayúdeme a salir o moriré.",
+      "La paloma miró por todaspartes, pero no vio a nadie.",
+      "– Rápido, señora paloma, o me ahogaré.",
+      "-¡Estoy aquí, en el agua!",
+      "– se oyó.",
+      "La paloma pudo ver entonces una pequeña hormiga metida en el río.",
+      "– No te preocupes- dijo la paloma-, ahora te ayudaré a salir del agua.",
+      "La paloma cogío rápidamente una ramita y se la acercó a la hormiga para que pudiera salir del agua. La pobre estaba agotada, un poco más y no lo cuenta. Quedó muy agradecida.",
+      "Poco después, mientras la hormiguita se secaba las ropas al sol, vio a un cazador que se disponía a disparar su escopeta contra la paloma. La hormiga reaccionó con rapidez, ¡tenía que impedir como fuese que el cazador disparase a su salvadora!",
+      "Y no se le ocurrió otra cosa que picarle en el pie, El cazador, al sentir el pinchazo , dio un brinco y soltó el arma de las manos.",
+      "La paloma se dio cuenta entonces de la presencia del cazador y alzó rápidamente el vuelo para elejarse de allí.",
+      "¡ Qué bien que la hormiguita estuviese ahí para ayudarla!",
+      "Cuando pasó el peligro, la paloma fue en busca de la hormiga para agradecerle lo que había hecho por ella.",
+      "Ambas se sentían muy contentas de haberse ayudado, pues eso las uniría para siempre. La paloma y la hormiga supieron entonces que su amistad duraría ya toda la vida."
+    ]
+  },
+  {
+    "id": "perla-dragon",
+    "title": "La perla del Dragón",
+    "accent": "#406265",
+    "cover": {
+      "image": "/assets/nido/cuentos/collection/perla-dragon.avif",
+      "layout": "heritage",
+      "credit": {
+        "title": "Dragons Playing with the Sacred Pearl",
+        "artist": "Anónimo (China, siglo XIX)",
+        "license": "CC0",
+        "url": "https://www.metmuseum.org/art/collection/search/54911",
+        "imageUrl": "https://images.metmuseum.org/CRDImages/as/original/19_103_4_O_sf.jpg",
+        "changes": "Redimensionado y convertido a AVIF; imagen completa, sin recortar."
+      },
+      "ink": "#fff3cf",
+      "sub": "#e0c895"
+    },
+    "source": {
+      "url": "https://www.cuentosinfantiles.net/cuentos-la-perla-del-dragon/",
+      "publisher": "Cuentos infantiles",
+      "importedAt": "2026-09-12",
+      "permission": "Reproducción del texto autorizada por el usuario el 12 de septiembre de 2026.",
+      "sha256": "c8e31a5c73b12fee29ecd900cf64c184829f2f151bc283f1f02e29c90ea21c54"
+    },
+    "note": null,
+    "warning": "Versión tradicional sin adaptar. Se recomienda lectura acompañada; puede incluir situaciones intensas.",
+    "set": "forest-day",
+    "wallTheme": "wayra",
+    "light": "day",
+    "cameo": [
+      "arbol",
+      "mariposa"
+    ],
+    "props": [
+      "arboles",
+      "flores",
+      "pasto"
+    ],
+    "paragraphs": [
+      "Hace muchísimos años, vivía un dragón en la isla de Borneo; tenía su cueva en lo alto del monte Kinabalu.",
+      "Aquél era un dragón pacífico y no molestaba a los habitantes de la isla. Tenía una perla de enorme tamaño y todos los días jugaba con ella: lanzaba la perla al aire y luego la recogía con la boca.",
+      "Aquella perla era tan hermosa, que muchos habían intentado robarla. Pero el dragón la guardaba con mucho cuidado; por eso, nadie había podido conseguirlo.",
+      "El Emperador de la China decidió enviar a su hijo a la isla de Borneo; llamó al joven Príncipe y le dijo:",
+      "-Hijo mío, la perla del dragón debe formar parte del tesoro imperial. Estoy seguro de que enco",
+      "ntrarás la forma de traérmela.",
+      "Después de varias semanas de travesía, el Príncipe llegó a las costas de Borneo.",
+      "A lo lejos se recortaba el monte Kinabalu, y en lo alto del monte el dragón jugaba con la perla.",
+      "De pronto, el Príncipe comenzó a sonreír porque había trazado un plan. Llamó a sus hombres y les dijo:",
+      "-Necesito una linterna redonda de papel y una cometa que pueda sostenerme en el aire.",
+      "Los hombres comenzaron a trabajar y pronto hicieron una linterna de papel. Después de siete días de trabajo, hicieron una cometa muy hermosa, que podía resistir el peso de un hombre. Al anochecer, comenzó a soplar el viento. El Príncipe montó en la cometa y se elevó por los aires.",
+      "La noche era muy oscura cuando el Príncipe bajó de la cometa en lo alto del monte y se deslizó dentro de la cueva.",
+      "El dragón dormía profundamente. Con todo cuidado, el Príncipe se apoderó de la perla, puso en su lugar la linterna de papel y escapó de la cueva. Entonces, montó en la cometa y encendió una luz.",
+      "Cuando sus hombres vieron la señal, comenzaron a recoger la cuerda de la cometa. Al cabo de algún tiempo, el Príncipe pisaba la cubierta de su barco.",
+      "-¡Levad anclas! -gritó.",
+      "El barco, aprovechando un viento suave, se hizo a la mar.",
+      "En cuanto salió el sol, el dragón fue a recoger la perla para jugar, como hacía todas las mañanas. Entonces, descubrió que le habían robado su perla. Comenzó a echar humo y fuego por la boca y se lanzó, monte abajo, en persecución de los ladrones.",
+      "Recorrió todo el monte, buscó la perla por todas partes, pero no pudo hallarla. Entonces, divisó un junco chino que navegaba rumbo a alta mar. El dragón saltó al agua y nadó velozmente hacia el barco.",
+      "-¡Ladrones! ¡Devolvedme mi perla! -gritaba el dragón.",
+      "Los marineros estaban muy asustados y lanzaban gritos de miedo.",
+      "La voz del Príncipe se elevó por encima de todos los gritos:",
+      "-¡Cargad el cañón grande!",
+      "Poco después hicieron fuego.",
+      "-¡Bruum!",
+      "El dragón oyó el estampido del disparo; vio una nube de humo y una bala de cañón que iba hacia él. La bala redonda brillaba con las primeras luces de la mañana y el dragón pensó que le devolvían su perla. Por eso, abrió la boca y se tragó la bala.",
+      "Entonces, el dragón se hundió en el mar y nunca más volvió a aparecer. Desde aquel día, la perla del dragón fue la joya más preciada del tesoro imperial de la China."
+    ]
+  },
+  {
+    "id": "habichuelas",
+    "title": "Las habichuelas mágicas",
+    "accent": "#746340",
+    "cover": {
+      "image": "/assets/nido/cuentos/collection/habichuelas.avif",
+      "layout": "heritage",
+      "credit": {
+        "title": "File:Walter Crane15.jpg",
+        "artist": "Walter Crane",
+        "license": "Public domain",
+        "url": "https://commons.wikimedia.org/wiki/File:Walter_Crane15.jpg",
+        "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/e/e8/Walter_Crane15.jpg",
+        "changes": "Redimensionado y convertido a AVIF; imagen completa, sin recortar."
+      },
+      "ink": "#fff3cf",
+      "sub": "#e0c895"
+    },
+    "source": {
+      "url": "https://www.cuentosinfantiles.net/cuentos-la-habichuelas-magicas/",
+      "publisher": "Cuentos infantiles",
+      "importedAt": "2026-09-12",
+      "permission": "Reproducción del texto autorizada por el usuario el 12 de septiembre de 2026.",
+      "sha256": "a952e8dd827741a67c3c588b24101dc78e0499dd7249a74b50b172ba6fc1b739"
+    },
+    "note": null,
+    "warning": "Versión tradicional sin adaptar. Se recomienda lectura acompañada; puede incluir situaciones intensas.",
+    "set": "forest-day",
+    "wallTheme": "wayra",
+    "light": "day",
+    "cameo": [
+      "arbol",
+      "mariposa"
+    ],
+    "props": [
+      "arboles",
+      "flores",
+      "pasto"
+    ],
+    "paragraphs": [
+      "Periquin vivia con su madre, que era viuda, en una cabaña de bosque. Con el tiempo fue empeorando la situacion familiar, la madre determino mandar a Periquin a la ciudad, para que alli intentase vender la unica vaca que poseian. El niño se puso en camino, llevando atado con una cuerda al animal, y se encontro con un hombre que llevaba un saquito de habichuelas. -Son maravillosas -explico aquel hombre-. Si te gustan, te las dare a cambio de la vaca. Asi lo hizo Periquin, y volvio muy contento a su casa. Pero la viuda, disgustada al ver la necedad del muchacho, cogio las habichuelas y las arrojo a la calle.",
+      "Despues se puso a llorar. Cuando se levanto Periquin al dia siguiente, fue grande su sorpresa al ver que las habichuelas habian crecido tanto durante la noche, que las ramas se perdian de vista. Se puso Periquin a trepar por la planta, y sube que sube, llego a un pais desconocido. Entro en un castillo y vio a un malvado gigante que tenia una gallina que ponia huevos de oro cada vez que el se lo mandaba. Espero el niño a que el gigante se durmiera, y tomando la gallina, escapo con ella. Llego a las ramas de las habichuelas, y descolgandose, toco el suelo y entro en la cabaña.",
+      "La madre se puso muy contenta. Y asi fueron vendiendo los huevos de oro, y con su producto vivieron tranquilos mucho tiempo, hasta que la gallina se murio y Periquin tuvo que trepar por la planta otra vez, dirigiendose al castillo del gigante. Se escondio tras una cortina y pudo observar como el dueño del castillo iba contando monedas de oro que sacaba de un bolson de cuero.",
+      "En cuanto se durmio el gigante, salio Periquin y, recogiendo el talego de oro, echo a correr hacia la planta gigantesca y bajo a su casa. Asi la viuda y su hijo tuvieron dinero para ir viviendo mucho tiempo. Sin embargo, llego un dia en que el bolson de cuero del dinero quedo completamente vacio.",
+      "Se cogio Periquin por tercera vez a las ramas de la planta, y fue escalandolas hasta llegar a la cima. Entonces vio al ogro guardar en un cajon una cajita que, cada vez que se levantaba la tapa, dejaba caer una moneda de oro. Cuando el gigante salio de la estancia, cogio el niño la cajita prodigiosa y se la guardo. Desde su escondite vio Periquin que el gigante se tumbaba en un sofa, y un arpa, oh maravilla!, tocaba sola, sin que mano alguna pulsara sus cuerdas, una delicada musica.",
+      "El gigante, mientras escuchaba aquella melodia, fue cayendo en el sueño poco a poco. Apenas le vio asi Periquin, cogio el arpa y echo a correr. Pero el arpa estaba encantada y, al ser tomada por Periquin, empezo a gritar: -Eh, señor amo, despierte usted, que me roban! Despertose sobresaltado el gigante y empezaron a llegar de nuevo desde la calle los gritos acusadores: -Señor amo, que me roban! Viendo lo que ocurria, el gigante salio en persecucion de Periquin.",
+      "Resonaban a espaldas del niño pasos del gigante, cuando, ya cogido a las ramas empezaba a bajar. Se daba mucha prisa, pero, al mirar hacia la altura, vio que tambien el gigante descendia hacia el.",
+      "No habia tiempo que perder, y asi que grito Periquin a su madre, que estaba en casa preparando la comida: -Madre, traigame el hacha en seguida, que me persigue el gigante! Acudio la madre con el hacha, y Periquin, de un certero golpe, corto el tronco de la tragica habichuela. Al caer, el gigante se estrello, pagando asi sus fechorias, y Periquin y su madre vivieron felices con el producto de la cajita que, al abrirse, dejaba caer una moneda de oro."
+    ]
+  }
+]

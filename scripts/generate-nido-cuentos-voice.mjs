@@ -38,6 +38,9 @@ const RETRYABLE_STATUS_CODES = new Set([429, 500, 502, 503, 504, 524, 529]);
 const MAX_ATTEMPTS = 5;
 const LOUDNESS_FILTER = "loudnorm=I=-16:TP=-1.5:LRA=11";
 const OUTPUT_BITRATE = "64k";
+// Permite usar un runtime de audio ya instalado sin modificar el PATH del Mac.
+const FFMPEG = process.env.NIDO_FFMPEG_BINARY || "ffmpeg";
+const FFPROBE = process.env.NIDO_FFPROBE_BINARY || "ffprobe";
 
 // Los ajustes entran en el hash del archivo: cambiar un perfil regraba solo
 // las locuciones de ese perfil, y nunca deja mp3 viejos dándose por buenos.
@@ -108,12 +111,21 @@ async function readJson(filePath) {
 
 function probeDuration(filePath) {
   const probe = spawnSync(
-    "ffprobe",
+    FFPROBE,
     ["-v", "error", "-show_entries", "format=duration", "-of", "default=noprint_wrappers=1:nokey=1", filePath],
     { encoding: "utf8" },
   );
   if (probe.error?.code === "ENOENT") {
-    throw new Error("Falta ffprobe: es obligatorio para verificar las locuciones.");
+    // Algunos runtimes incluyen ffmpeg, pero no ffprobe. Verificamos el audio
+    // decodificándolo por completo y medimos su duración real, sin estimarla.
+    const decoded = spawnSync(FFMPEG, [
+      "-nostdin", "-v", "error", "-xerror", "-i", filePath,
+      "-vn", "-progress", "pipe:1", "-f", "null", "-",
+    ], { encoding: "utf8" });
+    if (decoded.error || decoded.status !== 0) return null;
+    const times = [...decoded.stdout.matchAll(/^out_time_us=(\d+)$/gm)];
+    const duration = Number(times.at(-1)?.[1]) / 1_000_000;
+    return Number.isFinite(duration) && duration > 0 ? duration : null;
   }
   if (probe.status !== 0) return null;
   const duration = Number.parseFloat(probe.stdout.trim());
@@ -122,7 +134,7 @@ function probeDuration(filePath) {
 
 function normalizeLoudness(sourcePath, targetPath) {
   const result = spawnSync(
-    "ffmpeg",
+    FFMPEG,
     [
       "-v", "error", "-y", "-i", sourcePath,
       "-af", LOUDNESS_FILTER,
@@ -225,7 +237,7 @@ async function synthesize(apiKey, job) {
     const duration = probeDuration(temporaryPath);
     const minimum = job.kind === "word" ? 0.25 : 0.6;
     if (duration === null || duration < minimum || duration > 90) {
-      throw new Error(`ffprobe rechazó el audio generado para ${job.key} (${duration ?? "sin"} s).`);
+      throw new Error(`La verificación de duración rechazó el audio generado para ${job.key} (${duration ?? "sin"} s).`);
     }
     if (job.timestamps) {
       let words = wordStartsFromAlignment(job.text, alignment);
@@ -323,6 +335,9 @@ async function main() {
     return;
   }
 
+  // Fallar antes de consumir créditos si no se pueden normalizar los audios.
+  const audioRuntime = spawnSync(FFMPEG, ["-version"], { stdio: "ignore" });
+  if (audioRuntime.error || audioRuntime.status !== 0) throw new Error("Falta ffmpeg; configura NIDO_FFMPEG_BINARY antes de grabar.");
   const apiKey = getApiKey();
   if (!apiKey) throw new Error("ELEVENLABS_API_KEY está vacía.");
 

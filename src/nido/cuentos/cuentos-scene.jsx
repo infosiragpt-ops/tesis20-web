@@ -189,8 +189,13 @@ export function Souvenir({ id, size = 54, locked = false }) {
   );
 }
 
-/** Portada editorial: arte original generado para el cuento + texto exacto. */
+/** Portada editorial: conserva el arte aprobado o compone la edición histórica. */
 export function BookCover({ book, className = "" }) {
+  if (book.cover.preserve) return (
+    <svg className={`cuento-cover ${className}`} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 440 660" aria-hidden="true" focusable="false">
+      <image href={book.cover.image} width="440" height="660" preserveAspectRatio="xMidYMid meet" />
+    </svg>
+  );
   const words = book.title.split(" ");
   const lines = [];
   let current = "";
@@ -203,6 +208,19 @@ export function BookCover({ book, className = "" }) {
     }
   });
   if (current.trim()) lines.push(current.trim());
+
+  if (book.cover.layout === 'heritage') return (
+    <svg className={`cuento-cover ${className}`} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 440 660" aria-hidden="true" focusable="false">
+      <rect width="440" height="660" fill={book.accent} />
+      <rect x="14" y="14" width="412" height="632" rx="4" fill="none" stroke="#dbc78d" strokeWidth="2" />
+      <text x="220" y="44" textAnchor="middle" fill="#e9d8ac" fontSize="12" letterSpacing="4">BIBLIOTECA · NIDO</text>
+      {lines.map((line, i) => <text key={i} x="220" y={125 - (lines.length - 1) * 16 + i * 32} textAnchor="middle" fill="#fff2d2" fontSize={lines.length > 3 ? 25 : lines.length > 1 ? 32 : 44} fontWeight="700" fontFamily="Georgia,serif">{line}</text>)}
+      <rect x="30" y="204" width="380" height="372" fill="#f5edda" />
+      <image href={book.cover.image} x="37" y="211" width="366" height="358" preserveAspectRatio="xMidYMid meet" />
+      <path d="M140 604H300" stroke="#dbc78d" />
+      <text x="220" y="629" textAnchor="middle" fill="#fff2d2" fontSize="13" letterSpacing="2">LECTURA EN FAMILIA</text>
+    </svg>
+  );
 
   return (
     <svg className={`cuento-cover ${className}`} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 440 640" aria-hidden="true" focusable="false">

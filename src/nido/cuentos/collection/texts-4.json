@@ -1,0 +1,467 @@
+[
+  {
+    "id": "cigarra-hormiga",
+    "title": "La cigarra y la hormiga",
+    "accent": "#496d59",
+    "cover": {
+      "image": "/assets/nido/cuentos/collection/cigarra-hormiga.avif",
+      "layout": "heritage",
+      "credit": {
+        "title": "File:The Ant and the Grasshopper - Project Gutenberg etext 19994.jpg",
+        "artist": "Illustrated by Milo Winter (1886-1956)",
+        "license": "Public domain",
+        "url": "https://commons.wikimedia.org/wiki/File:The_Ant_and_the_Grasshopper_-_Project_Gutenberg_etext_19994.jpg",
+        "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/f/f8/The_Ant_and_the_Grasshopper_-_Project_Gutenberg_etext_19994.jpg",
+        "changes": "Redimensionado y convertido a AVIF; imagen completa, sin recortar."
+      },
+      "ink": "#fff3cf",
+      "sub": "#e0c895"
+    },
+    "source": {
+      "url": "https://www.cuentosinfantiles.net/cuentos-la-cigarra-y-la-hormiga/",
+      "publisher": "Cuentos infantiles",
+      "importedAt": "2026-09-12",
+      "permission": "Reproducción del texto autorizada por el usuario el 12 de septiembre de 2026.",
+      "sha256": "3133fb865736ae149a25980062c73ffc7b02b3a02e19e92a55908467b2a8a905"
+    },
+    "note": null,
+    "warning": "Versión tradicional sin adaptar. Se recomienda lectura acompañada; puede incluir situaciones intensas.",
+    "set": "mountain-day",
+    "wallTheme": "kusi",
+    "light": "day",
+    "cameo": [
+      "arbol",
+      "estrella"
+    ],
+    "props": [
+      "arboles",
+      "nubes"
+    ],
+    "paragraphs": [
+      "Era un caluroso día de verano y la cigarra se hallaba sentada en una brizna de hierba disfrutando del sol. “Es tan agradable esta época del año”, suspiraba. “No puedo entender por qué están todos trabajando. Deberían seguir mi ejemplo y disfrutar del buen tiempo.”",
+      "De pura felicidad comenzó a saltar de aquí para allá. Saltó por encima de una diminuta hormiga negra que luchaba por arrastrar un grano de trigo hasta su despensa.",
+      "-Deja ya de trabajar tanto -le gritó la cigarra- Ven y aprovecha este hermoso día.",
+      "La hormiga le miró y dijo:",
+      "-Es que pienso en el mañana. Y tú también deberías hacerlo. Si no empiezas ahora a almacenar alimentos, no tendrás comida para pasar el invierno.",
+      "La cigarra se rió",
+      "-Piensa mejor en el presente, -le respondió.",
+      "– Una mañana, algunos meses después, la cigarra se arrastraba por la tierra helada. Tenía tanto frío y tanta hambre que apenas podía moverse.",
+      "Al pasar junto a un grupo de hormigas, vio que estaban dando cuenta de un buen desayuno de trigo.",
+      "-Oh, por favor, dadme un poquitín de vuestra comida -les suplicó- Vosotras tenéis mucho y yo no tengo nada.",
+      "-Te conozco -gritó una de las hormigas- Tú te reías cuando yo te dije que fueses previsora. Piensa en el presente, me decías. Pues bueno, vé y consigúete tu propia comida ahora.",
+      "Y la hormiga le dio la espalda y terminó su desayuno."
+    ]
+  },
+  {
+    "id": "bella-princesa",
+    "title": "La bella princesa",
+    "accent": "#715682",
+    "cover": {
+      "image": "/assets/nido/cuentos/collection/bella-princesa.avif",
+      "layout": "heritage",
+      "credit": {
+        "title": "File:Princess Nobody - a tale of fairy land - page 31.jpg",
+        "artist": "Edmund Evans / Richard Doyle / Andrew Lang",
+        "license": "Public domain",
+        "url": "https://commons.wikimedia.org/wiki/File:Princess_Nobody_-_a_tale_of_fairy_land_-_page_31.jpg",
+        "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/5/54/Princess_Nobody_-_a_tale_of_fairy_land_-_page_31.jpg",
+        "changes": "Redimensionado y convertido a AVIF; imagen completa, sin recortar."
+      },
+      "ink": "#fff3cf",
+      "sub": "#e0c895"
+    },
+    "source": {
+      "url": "https://www.cuentosinfantiles.net/cuentos-la-bella-princesa/",
+      "publisher": "Cuentos infantiles",
+      "importedAt": "2026-09-12",
+      "permission": "Reproducción del texto autorizada por el usuario el 12 de septiembre de 2026.",
+      "sha256": "a0c88366f0e4c1030bd4fd50ac9943571aa480fc3fc1eedfb11b404a4d79efe9"
+    },
+    "note": null,
+    "warning": "Versión tradicional sin adaptar. Se recomienda lectura acompañada; puede incluir situaciones intensas.",
+    "set": "forest-day",
+    "wallTheme": "wayra",
+    "light": "day",
+    "cameo": [
+      "arbol",
+      "mariposa"
+    ],
+    "props": [
+      "arboles",
+      "flores",
+      "pasto"
+    ],
+    "paragraphs": [
+      "Vivía una vez en un pueblecito pesquero una joven de origen pobre, pero que era increíblemente hermosa, famosa en todo el reino por su belleza. Ella, conocedora de su belleza y de la admiración que despertaba entre los jóvenes del reino, rechazaba a todos los pretendientes que se acercaban a pedir su mano, y le decía con total seguridad a su madre “Tranquila mamá, que pronto vendrá un apuesto príncipe, que se enamorará de mí y me pedirá en matrimonio”. De pronto a lomos de un impresionante corcel llegó al pueblo un guapísimo príncipe y éste,nada más verla, se enamoró perdidamente de ella y empezó a enviar regalos y dedicarle maravillosas poesías, hasta que consiguió que la joven dijera que sí . La boda fue grandiosa y espectacular, y todos comentaban que hacían una pareja perfecta.",
+      "Pero cuando la boda se acabó y las fiestas terminaron, ella se dió cuenta que su maravilloso príncipe no era tan maravilloso como ella pensaba. Era un terrible tirano con su pueblo, la presenta",
+      "ba como de un trofeo de caza, alardeando de su gran belleza y era egoísta y mezquino. Cuando descubrió que todo en su marido era una falsa apariencia, con la que había conseguido conquistarla, no dudó en decírselo, pero él con una gran y cínica sonrisa le respondió de forma similar, “ te recuerdo que sólo me casé contigo por tu belleza, y que tú misma podrías haber elegido a otros muchos antes que a mí, que seguramente estaban enamorados de tí, tanto de tu belleza como de tu interior, de no haberte dejado llevar por la ambición y tus ganas de vivir en un palacio”.",
+      "La princesa lloró durante muchos días, sobre todo al darse cuenta de la enorme verdad de las palabras de su cruel marido. Y se acordaba de tantos y tantos jóvenes buenos y honrados a quienes había rechazado sólo por convertirse en una princesa.",
+      "Desesperada la princesa trató de huir de palacio, pero el príncipe se dió cuenta y no lo consintió, pues todos los nobles de su reino y de los reinos vecinos, hablaban de la extraordinaria belleza de su esposa, y con eso aumentaba su fama de hombre excepcional, cosa que le producía un enorme placer y un gran orgullo. Tantas veces intentó la princesa escapar, que este acabó por encerrarla y puso varios guardias que la vigilaban constantemente.",
+      "Tras pasar un tiempo encerrada, uno de los guardias empezó a sentir lástima por la princesa, y en sus encierros trataba de animarla y darle conversación. Así de esta forma, con el paso del tiempo se fueron haciendo buenos amigos. Un día la princesa pidió a su guardián, que dada la amistad que les unía, que por favor que la dejara escapar. Pero el soldado, que era noble y leal a su rey, no accedió a la petición de la princesa. Sin embargo, le respondió:",
+      "– Si deseáis tanto huir de aquí, yo sé una forma de hacerlo, pero le advierto princesa que el sacrificio por vuestra parte va a ser enorme.",
+      "La princesa accedió, confirmando que estaba dispuesta a cualquier cosa, y el soldado continuo:",
+      "– Ya que el príncipe sólo os quiere por vuestra belleza, si os desfiguráis el rostro, ya no le servireis para presumir y sacar pecho ante los demás príncipes y para evitar que nadie os vea seguro que os enviará lejos de palacio, y borrará cualquier rastro de vuestra presencia. Ya sabemos lo cruel y miserable que puede llegar a ser.",
+      "La princesa poniendo las manos en su rostro respondió sollozando:",
+      "– ¿Desfigurar mi bella cara? ¿Y a dónde iré después? ¿No te das cuenta que mi belleza es lo único que tengo? ¿Nadie querrá saber nada de una mujer horrible, fea e inútil como yo?",
+      "– Yo lo haré – respondió el soldado hincando su rodilla en el suelo, pues en el trato diario con la princesa había terminado enamorándose de ella – Para mí sois aún más bella por dentro que por fuera.",
+      "Y entonces la princesa se dió cuenta que también amaba a aquel honrado y leal soldado. LLorando amargamente, tomó la mano del soldado, y empuñando juntos un puñal, hicieron en su rostro dos largos y profundos cortes.",
+      "Cuando el príncipe fué a visitar a la princesa contempló horrorizado el rostro de su esposa, y tuvo la reacción que el guardían había previsto. Le dijo que no quería verla nunca más y que se fuera lo más lejos que pudiera, además se inventó una heroica historia sobre la muerte de la princesa que hizo que su leyenda sobre su belleza y bondad fuera más popular entre la gente. Mando al guardia que la acompañara y escoltara lo más lejos que pudiera.",
+      "De esa manera partieron los dos completamente felices y alegres, y la joven del bello rostro pudo por fin ser feliz junto a su maravilloso soldado, la única persona del mundo que no apartaba la mirada al ver su rostro, pues a través de él podía ver siempre su corazón."
+    ]
+  },
+  {
+    "id": "sirenita",
+    "title": "La sirenita",
+    "accent": "#927047",
+    "cover": {
+      "image": "/assets/nido/cuentos/collection/sirenita.avif",
+      "layout": "heritage",
+      "credit": {
+        "title": "File:The Little Mermaid by E.S. Hardy.jpg",
+        "artist": "E. S. Hardy",
+        "license": "Public domain",
+        "url": "https://commons.wikimedia.org/wiki/File:The_Little_Mermaid_by_E.S._Hardy.jpg",
+        "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/a/a4/The_Little_Mermaid_by_E.S._Hardy.jpg",
+        "changes": "Redimensionado y convertido a AVIF; imagen completa, sin recortar."
+      },
+      "ink": "#fff3cf",
+      "sub": "#e0c895"
+    },
+    "source": {
+      "url": "https://www.cuentosinfantiles.net/cuentos-la-sirenita/",
+      "publisher": "Cuentos infantiles",
+      "importedAt": "2026-09-12",
+      "permission": "Reproducción del texto autorizada por el usuario el 12 de septiembre de 2026.",
+      "sha256": "ae2345709241bdccecc46584915ffb9166901a041b34b7d2bde452766cd5a8a9"
+    },
+    "note": null,
+    "warning": "Versión tradicional sin adaptar. Se recomienda lectura acompañada; puede incluir situaciones intensas.",
+    "set": "sea-day",
+    "wallTheme": "ana",
+    "light": "day",
+    "cameo": [
+      "barco",
+      "pez"
+    ],
+    "props": [
+      "olas",
+      "nubes"
+    ],
+    "paragraphs": [
+      "Había una vez…",
+      "…Un hermoso lugar, en lo más profundo de los mares donde el agua es pura y transparente como el cristal, y en ella abundan las plantas, las flores y los peces de formas extraordinarias.",
+      "Allí existía un esplendoroso palacio que pertenecía al Rey de los Mares. Estaba realizado de coral y de caracolas y adornado con perlas de todos tamaños, estrellas y esponjas, y allí vivía el rey junto con sus seis lindas hijitas.",
+      "Sirenita, la más joven, además de ser la más bella, poseía una voz maravillosa; cuando cantaba acompañándose con el arpa, los peces acudían de todas partes para escucharla, las conchas se abrían, mostrando sus perlas, y las medusa al oírla dejaban de flotar. La pequeña sirena casi siempre estaba cantando, y cada vez que lo hacía levantaba la vista buscando la débil luz del sol, que a duras penas se filtraba a través de las aguas profundas. “¡Oh!, ¡Cuánto me gustaría salir a la superficie para ver por fin el cielo que todos dicen que es tan bonito, y escuchar la voz de los hombres y oler el perfume de las flores!” “Todavía eres demasiado joven”. Respondió la madre. “Dentro de unos años, cuando tengas quince, el rey te dará permiso para salir a la superficie, como a tus hermanas”.",
+      "Sirenita soñaba con el mundo de los hombres, el cual conocía a través de los relatos de sus hermanas, a quienes interrogaba durante horas para satisfacer su inagotable curiosidad cada vez que volvían de la superficie. En este tiempo, mientras esperaba salir a la superficie para conocer el universo ignorado, se ocupaba de su maravilloso jardín ornado con flores marítimas. Los caballitos de mar le hacían compañía y los delfines se le acercaban para jugar con ella; únicamente las estrellas de mar, quisquillosas, no respondían a su llamada. Por fin llegó el cumpleaños tan esperado y, durante toda la noche precedente, no consiguió dormir. A la mañana siguiente el padre la llamó y, al acariciarle sus largos y rubios cabellos, vio esculpida en su hombro una hermosísima flor. “¡Bien, ya puedes salir a respirar el aire y ver el cielo! ¡Pero recuerda que el mundo de arriba no es el nuestro, sólo podemos admirarlo! Somos hijos del mar y no tenemos alma como los hombres, Sé prudente y no te acerques a ellos. ¡Sólo te traerían desgracias!” Apenas su padre terminó de hablar, Sirenita le di un beso y se dirigió hacia la superficie, deslizándose ligera.",
+      "Se sentía tan veloz que ni siquiera los peces conseguían alcanzarla. De repente emergió del agua. ¡Qué fascinante! Veía por primera vez el cielo azul y las primeras estrellas centelleantes al anochecer . El sol, que ya se había puesto en el horizonte, había dejado sobre las olas un reflejo dorado que se diluía lentamente. Las gaviotas revoloteaban por encima de Sirenita y dejaban oír sus alegres graznidos de bienvenida. “¡Qué hermoso es todo!” exclamó feliz, dando palmadas. Pero su asombro y admiración aumentaron todavía: una nave se acercaba despacio al escollo donde estaba Sirenita. Los marinos echaron el ancla, y la nave, así amarrada, se balanceó sobre la superficie del mar en calma. Sirenita escuchaba sus voces y comentarios. “¡Cómo me gustaría hablar con ellos!”. Pensó.",
+      "Pero al decirlo, miró su larga cola cimbreante, que tenía en lugar de piernas, y se sintió acongojada: “¡Jamás seré como ellos!”. A bordo parecía que todos estuviesen poseídos por una extraña animación y, al cabo de poco, la noche se llenó de vítores: “¡Viva nuestro capitán! ¡Vivan sus veinte años!”. La pequeña sirena, atónita y extasiada, había descubierto mientras tanto al joven al que iba dirigido todo aquel alborozo. Alto, moreno, de porte real, sonreía feliz. sirenita no podía dejar de mirarlo y una extraña sensación de alegría y sufrimiento al mismo tiempo, que nunca había sentido con anterioridad, le oprimió el corazón. La fiesta seguía a bordo, pero el mar se encrespaba cada vez más. Sirenita se dio cuenta enseguida del peligro que corrían aquellos hombres: un viento helado y repentino agitó las olas, el cielo entintado de negro se desgarró con relámpagos amenazantes y una terrible borrasca sorprendió a la nave desprevenida. “¡Cuidado! ¡El mar…!” En vano Sirenita gritó y gritó.",
+      "Pero sus gritos, silenciados por el rumor del viento, no fueron oídos, y las olas, cada vez más altas, sacudieron con fuerza la nave. Después, bajo los gritos desesperados de los marineros, la arboladura y las velas se abatieron sobre cubierta, y con un siniestro fragor el barco se hundió. Sirenita, que momentos antes había visto cómo el joven capitán caía al mar, se puso a nadar para socorrerlo. Lo buscó inútilmente durante mucho rato entre las olas gigantescas. Había casi renunciado, cuando de improviso, milagrosamente, lo vio sobre la cresta blanca de una ola cercana y, de golpe lo tuvo en sus brazos. El joven estaba inconsciente, mientras Sirenita, nadando con todas sus fuerzas, lo sostenía para rescatarlo de una muerte segura.",
+      "Lo sostuvo hasta que la tempestad amainó. Al alba, que despuntaba sobre un mar todavía lívido, Sirenita se sintió feliz al acercarse a tierra y poder depositar el cuerpo del joven sobre la arena de la playa. Al no poder andar, permaneció mucho tiempo a su lado con la cola lamiendo el agua, frotando las manos del joven y dándole calor con su cuerpo. Hasta que un murmullo de voces que se aproximaban la obligaron a buscar refugio en el mar. “¡Corred! ¡Corred!” gritaba una dama de forma atolondrada. “¡Hay un hombre en la playa!” “¡Está vivo! ¡Pobrecito! ¡Ha sido la tormenta…! ¡ Llevémosle al castillo!” “¡No!¡No! Es mejor pedir ayuda…” La primera cosa que vio el joven al recobrar el conocimiento, fue el hermoso semblante de la más joven de las tres damas. “¡Gracias por haberme salvado!” Le susurró a la bella desconocida. Sirenita, desde el agua, vio que el hombre al que había salvado se dirigía hacia el castillo, ignorante de que fuese ella y no la otra, quién lo había salvado. Pausadamente nadó hacia el mar abierto; sabía que, en aquella playa, detrás suyo, había dejado algo de lo que nunca hubiera querido separarse. ¡Oh! ¡Qué maravillosas habían sido las horas transcurridas durante la tormenta teniendo al joven entre sus brazos! Cuando llegó a la mansión paterna, Sirenita empezó su relato, pero de pronto sintió un nudo en su garganta y, echándose a llorar, se refugió en su habitación. Días y más días permaneció encerrada sin querer ver a nadie, rehusando incluso hasta los alimentos.",
+      "Sabía que su amor por el joven capitán era un amor sin esperanza, porque ella, Sirenita, nunca podría casarse con un hombre. Sólo la Hechicera de los Abismos podía socorrerla. Pero, ¿a qué precio? A pesar de todo decidió consultarla. “¡…por consiguiente, quieres deshacerte de tu cola de pez! Y supongo que querrás dos piernas. ¡De acuerdo! Pero deberás sufrir atrozmente y, cada vez que pongas los pies en el suelo sentirás un terrible dolor.” “¡No me importa” respondió Sirenita con lágrimas en los ojos, “a condición de que pueda volver con él!” “¡No he terminado todavía!” dijo la vieja.” Deberás darme tu hermosa voz y te quedarás muda para siempre! Pero recuerda: si el hombre que amas se casa con otra, tu cuerpo desaparecerá en el agua como la espuma de una ola. “¡Acepto!” dijo por último Sirenita y, sin dudar un instante, le pidió el frasco que contenía la poción prodigiosa. Se dirigió a la playa y, en las proximidades de su mansión, emergió a la superficie; se arrastró a duras penas por la orilla y se bebió la pócima de la hechicera. Inmediatamente, un fuerte dolor le hizo perder el conocimiento y cuando volvió en sí, vio a su lado, como entre brumas, aquel semblante tan querido sonriéndole. El príncipe allí la encontró y, recordando que también él fue un náufrago, cubrió tiernamente con su capa aquel cuerpo que el mar había traído. “No temas” le dijo de repente,”estás a salvo. ¿De dónde vienes?” Pero Sirenita, a la que la bruja dejó muda, no pudo responderle. “Te llevaré al castillo y te curaré.”",
+      "Durante los días siguientes, para Sirenita empezó una nueva vida: llevaba maravillosos vestidos y acompañaba al príncipe en sus paseos. Una noche fue invitada al baile que daba la corte, pero tal y como había predicho la bruja, cada paso, cada movimiento de las piernas le producía atroces dolores como premio de poder vivir junto a su amado. Aunque no pudiese responder con palabras a las atenciones del príncipe, éste le tenía afecto y la colmaba de gentilezas. Sin embargo, el joven tenía en su corazón a la desconocida dama que había visto cuando fue rescatado después del naufragio. Desde entonces no la había visto más porque, después de ser salvado, la desconocida dama tuvo que partir de inmediato a su país. Cuando estaba con Sirenita, el príncipe le profesaba a ésta un sincero afecto, pero no desaparecía la otra de su pensamiento. Y la pequeña sirena, que se daba cuenta de que no era ella la predilecta del joven, sufría aún más. Por las noches, Sirenita dejaba a escondidas el castillo para ir a llorar junto a la playa. Pero el destino le reservaba otra sorpresa. Un día, desde lo alto del torreón del castillo, fue avistada una gran nave que se acercaba al puerto, y el príncipe decidió ir a recibirla acompañado de Sirenita. La desconocida que el príncipe llevaba en el corazón bajó del barco y, al verla, el joven corrió feliz a su encuentro.",
+      "Sirenita, petrificada, sintió un agudo dolor en el corazón. En aquel momento supo que perdería a su príncipe para siempre. La desconocida dama fue pedida en matrimonio por el príncipe enamorado, y la dama lo aceptó con agrado, puesto que ella también estaba enamorada. Al cabo de unos días de celebrarse la boda, los esposos fueron invitados a hacer un viaje por mar en la gran nave que estaba amarrada todavía en el puerto. Sirenita también subió a bordo con ellos, y el viaje dio comienzo. Al caer la noche, Sirenita, angustiada por haber perdido para siempre a su amado, subió a cubierta. Recordando la profecía de la hechicera, estaba dispuesta a sacrificar su vida y a desaparecer en el mar.",
+      "Procedente del mar, escuchó la llamada de sus hermanas: “¡Sirenita! ¡Sirenita! ¡Somos nosotras, tus hermanas! ¡Mira! ¿Ves este puñal? Es un puñal mágico que hemos obtenido de la bruja a cambio de nuestros cabellos. ¡Tómalo y, antes de que amanezca, mata al príncipe! Si lo haces, podrás volver a ser una sirenita como antes y olvidarás todas tus penas.” Como en un sueño, Sirenita, sujetando el puñal, se dirigió hacia el camarote de los esposos. Mas cuando vio el semblante del príncipe durmiendo, le dio un beso furtivo y subió de nuevo a cubierta. Cuando ya amanecía, arrojó el arma al mar, dirigió una última mirada al mundo que dejaba y se lanzó entre las olas, dispuesta a desaparecer y volverse espuma.",
+      "Cuando el sol despuntaba en el horizonte, lanzó un rayo amarillento sobre el mar y, Sirenita, desde las aguas heladas, se volvió para ver la luz por última vez. Pero de improviso, como por encanto, una fuerza misteriosa la arrancó del agua y la transportó hacia lo más alto del cielo. Las nubes se teñían de rosa y el mar rugía con la primera brisa de la mañana, cuando la pequeña sirena oyó cuchichear en medio de un sonido de campanillas: “¡Sirenita! ¡Sirenita! ¡Ven con nosotras!” “¿Quienes sois?” murmuró la muchacha, dándose cuenta de que había recobrado la voz “¿Dónde estáis?” “Estas con nosotras en el cielo. Somos las hadas del viento. No tenemos alma como los hombres, pero es nuestro deber ayudar a quienes hayan demostrado buena voluntad hacia ellos.” Sirenita , conmovida, miró hacia abajo, hacia el mar en el que navegaba el barco del príncipe, y notó que los ojos se le llenaban de lágrimas, mientras las hadas le susurraban: “¡Fíjate! Las flores de la tierra esperan que nuestras lágrimas se transformen en rocío de la mañana. ¡Ven con nosotras! Tenemos mucho trabajo. ¿Quieres ayudarnos?",
+      "-¡Claro que quiero! -gritó con alborozo la sirenita.",
+      "Y calmada, contenta, ligera, se lanzó en seguimiento de las hijas del aire."
+    ]
+  },
+  {
+    "id": "caperucita-original",
+    "title": "Caperucita Roja (versión original)",
+    "accent": "#486f7a",
+    "cover": {
+      "image": "/assets/nido/cuentos/covers/caperucita-premium-v1.avif",
+      "titled": true,
+      "ink": "#fff3cf",
+      "sub": "#e0c895"
+    },
+    "source": {
+      "url": "https://www.cuentosinfantiles.net/caperucita-roja-cuento-original/",
+      "publisher": "Cuentos infantiles",
+      "importedAt": "2026-09-12",
+      "permission": "Reproducción del texto autorizada por el usuario el 12 de septiembre de 2026.",
+      "sha256": "f9a764406b6454bbc30c08d3a6fe1c70319d0b7ba7f6a7d4fabb2e2b8decc89c"
+    },
+    "note": null,
+    "warning": "Versión de Perrault, sin final feliz. Lectura acompañada.",
+    "set": "forest-day",
+    "wallTheme": "wayra",
+    "light": "day",
+    "cameo": [
+      "arbol",
+      "mariposa"
+    ],
+    "props": [
+      "arboles",
+      "flores",
+      "pasto"
+    ],
+    "paragraphs": [
+      "Caperucita Roja",
+      "(Versión original de Charles Perrault, sin final feliz.)",
+      "Había una vez un preciosa muchacha que vivía en una pequeña aldea, era ás bonita que jamás se había visto en aquel lugar. Su madre la quería mucho, y su abuela la adoraba aún más. Un día su abuela le regaló una pequeña caperucita roja hecha por ella, y le quedaba tan bien a la linda niña esa caperucita roja que todos la llamaban Caperucita Roja. Un día, su madre, después de cocinar, le dijo: «Caperucita, tienes que ir a ver cómo está tu abuela, porque he oído que ha estado muy enferma.» Cogé una cesta grande, y llévale este pastel y sopa, le vendrá muy bien para mejorar de su enfermedad.",
+      "Caperucita Roja se puso en camino de inmediato para llegar lo antes posible, ya que su abuelita vivía en otro pueblo al otro lado del bosque.",
+      "Mientras caminaba por el bosque, un lobo la vigilaba escondido entre unos matorrales, era un lobo muy grande y feroz, y tenía una boca muy grande, con la que podía comerse a Caperucita Roja, pero no se atrevió a hacerlo, debido a que unos leñadores estaban trabajando en el bosque.",
+      "Pero si que se acercó a Caperucita Roja y le pregunto:",
+      "– Hola preciosa niña, ¿te has perdido? ¿A donde te diriges? ¿Qué llevas en esa cesta?",
+      "La pobre niña que era muy buena e inocente, y que no sabía que era peligroso hablr con un lobo, le dijo:",
+      "-Voy a ver a mi abuela y le llevo un pastel y sopa que a preparado mi madre.",
+      "¿Vive lejos? Dijo el lobo.",
+      "Al otro lado del bosque, respondió la Caperucita Roja, está más allá del molino que ves allí, en la primera casa del pueblo.",
+      "-Bueno -dijo el lobo-, yo también iré a visitarla, yo iré por otro camino, y veremos quién llega allí primero.",
+      "El lobo corrió lo más rápido que pudo, siguiendo un atajo que conocía en el bosque, y la niña siguió el camino que daba un pequeño rodeo, y además se fue entreteniendo recogiendo flores para su abuelita, y corriendo tras las mariposas.",
+      "No pasó mucho tiempo antes de que el lobo llegara a la casa de la abuelita.",
+      "Golpeó a la puerta: TOC, TOC, TOC",
+      "“¿Quién está ahí?”",
+      "-Tu nieta, Caperucita Roja -respondió el lobo, suavizando mucho su voz-. “¿Te traigo un pastel y sopa que te envía mi mama?”",
+      "La buena abuela, que estaba en la cama, porque estaba algo enferma, gritó: “Puedes entrar, la puerta está abierta”.",
+      "El lobo entro en la casa, y se lanzo sobre la buena mujer y se la comió en un momento, ya que había pasado más de tres días desde su última comida. Luego cerró la puerta y se metió en la cama de la abuela, esperando a la Caperucita Roja, que llego un rato más tarde y llamó a la puerta: TOC, TOC, TOC.",
+      "“¿Quién está ahí?”",
+      "El Caperucita Roja, al oír la gran voz del lobo, se asustó; Pero creyendo que su abuelita estaba resfriada y podía tener la voz ronca, respondió:",
+      "“Soy tu nieta Caperucita Roja, que te ha traído un pastel y un poco de sopa que mi madre te envía”.",
+      "El lobo contesto, suavizando su voz tanto como pudo, ” Entra la puerta está abierta”.",
+      "La Caperucita Roja abrió la puerta y entró en la casa.",
+      "El lobo, al verla entrar, le dijo, escondiéndose debajo de las sabana y pasando la cortina de la ventana para que no entrará casi luz:",
+      "-Deja el pastel y la olla con la sopa en la mesa, y acercate para que pueda verte.",
+      "La Caperucita Roja se acercó a la cama, y veía a su abuelita un poco rara, y le pregunto:",
+      "“¡Abuelita, abuelita, qué brazos grandes tienes!”",
+      "-Para abrazarte mejor.",
+      "“¡Abuelita, abuelita, qué orejas tan grandes tienes!”",
+      "-Para escucharte mejor.",
+      "“¡Abuelita, abuelita, qué grandes ojos tienes!”",
+      "-Para verte mejor.",
+      "“Abuela, ¡qué dientes más grandes tienes!”",
+      "– Para comerte mejor…",
+      "Y, diciendo estas palabras, este lobo malvado se lanzó sobre Caperucita Roja, y se la comió..",
+      "¿Qué podemos aprender de este cuento?:",
+      "Los niños y las niñas nunca deben hablar con extraños, aunque esos extraños parezcan encantadores, dulces, educados, y sin malas intenciones, ya que en algunas ocasiones tras ese disfraz de dulzura y amabilidad puede esconderse una persona con malas intenciones, y toda la información que podamos darle la utilizará para hacernos daño.",
+      "Charles Perrault"
+    ]
+  },
+  {
+    "id": "leon-raton",
+    "title": "El león y el ratón",
+    "accent": "#935447",
+    "cover": {
+      "image": "/assets/nido/cuentos/collection/leon-raton.avif",
+      "layout": "heritage",
+      "credit": {
+        "title": "The Lion and the Mouse",
+        "artist": "Milo Winter (1919)",
+        "license": "Public domain (Estados Unidos)",
+        "url": "https://www.gutenberg.org/ebooks/19994",
+        "imageUrl": "https://www.gutenberg.org/files/19994/19994-h/images/i014_th.jpg",
+        "changes": "Redimensionado y convertido a AVIF; imagen completa, sin recortar."
+      },
+      "ink": "#fff3cf",
+      "sub": "#e0c895"
+    },
+    "source": {
+      "url": "https://www.cuentosinfantiles.net/cuentos-el-leon-y-el-raton/",
+      "publisher": "Cuentos infantiles",
+      "importedAt": "2026-09-12",
+      "permission": "Reproducción del texto autorizada por el usuario el 12 de septiembre de 2026.",
+      "sha256": "15d2f52d2260a6fd3c5de230d74a2d7820c642f4fd3367da4a77080386695fe8"
+    },
+    "note": null,
+    "warning": "Versión tradicional sin adaptar. Se recomienda lectura acompañada; puede incluir situaciones intensas.",
+    "set": "forest-day",
+    "wallTheme": "wayra",
+    "light": "day",
+    "cameo": [
+      "arbol",
+      "mariposa"
+    ],
+    "props": [
+      "arboles",
+      "flores",
+      "pasto"
+    ],
+    "paragraphs": [
+      "Una tarde muy calurosa, un león dormitaba en una cueva fría y oscura. Estaba a punto de dormirse del todo cuando un ratón se puso a corretear sobre su hocico. Con un rugido iracundo, el león levantó su pata y aplastó al ratón contra el suelo.",
+      "-¿Cómó te atreves a despertarme? -gruñó- Te-voy a espachurrar.",
+      "-Oh, por favor, por favor, perdóname",
+      "la vida -chilló el ratón atemorizado-Prometo ayudarte algún día si me dejas marchar.",
+      "-¿Quieres tomarme el pelo? -dijo el león-. ¿Cómo podría un ratoncillo birrioso como tú ayudar a un león grande y fuerte como yo?",
+      "Se echó a reír con ganas. Se reía tanto que en un descuido deslizó su pata y el ratón escapó.",
+      "Unos días más tarde el león salió de caza por la jungla. Estaba justamente pensando en su próxima comida cuando tropezó con una cuerda estirada en medio del sendero. Una red enorme se abatió sobre él y, pese a toda su fuerza, no consiguió liberarse. Cuanto más se removía y se revolvía, más se enredaba y más se tensaba la red en torno a él.",
+      "El león empezó a rugir tan fuerte que todos los animales le oían, pues sus rugidos llegaban hasta los mismos confines de la jungla. Uno de esos animales era el ratonállo, que se encontraba royendo un grano de maíz. Soltó inmediatamente el grano y corrió hasta el león.",
+      "—¡Oh, poderoso león! -chilló- Si me hicieras el favor de quedarte quieto un ratito, podría ayudarte a escapar.",
+      "El león se sentía ya tan exhausto que permaneció tumbado mirando cómo el ratón roía las cuerdas de la red. Apenas podía creerlo cuando, al cabo de un rato, se dio cuenta de que estaba libre.",
+      "-Me salvaste la vida, ratónenle —di¡o—. Nunca volveré a burlarme de las promesas hechas por los amigos pequeños."
+    ]
+  },
+  {
+    "id": "zapatero-magico",
+    "title": "El zapatero mágico",
+    "accent": "#406265",
+    "cover": {
+      "image": "/assets/nido/cuentos/collection/zapatero-magico.avif",
+      "layout": "heritage",
+      "credit": {
+        "title": "File:The Shoemaker's Apron, Shoemaker's Apron.jpg",
+        "artist": "Jan Matulka",
+        "license": "Public domain",
+        "url": "https://commons.wikimedia.org/wiki/File:The_Shoemaker%27s_Apron,_Shoemaker%27s_Apron.jpg",
+        "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/c6/The_Shoemaker%27s_Apron%2C_Shoemaker%27s_Apron.jpg/960px-The_Shoemaker%27s_Apron%2C_Shoemaker%27s_Apron.jpg",
+        "changes": "Redimensionado y convertido a AVIF; imagen completa, sin recortar."
+      },
+      "ink": "#fff3cf",
+      "sub": "#e0c895"
+    },
+    "source": {
+      "url": "https://www.cuentosinfantiles.net/cuentos-el-zapatero-magico/",
+      "publisher": "Cuentos infantiles",
+      "importedAt": "2026-09-12",
+      "permission": "Reproducción del texto autorizada por el usuario el 12 de septiembre de 2026.",
+      "sha256": "d47594dea3721447f9217aec8b6b613facf858b78bb75ec7f34942c2d7c56235"
+    },
+    "note": null,
+    "warning": "Versión tradicional sin adaptar. Se recomienda lectura acompañada; puede incluir situaciones intensas.",
+    "set": "forest-day",
+    "wallTheme": "wayra",
+    "light": "day",
+    "cameo": [
+      "arbol",
+      "mariposa"
+    ],
+    "props": [
+      "arboles",
+      "flores",
+      "pasto"
+    ],
+    "paragraphs": [
+      "Era una de esas bellas tardes de verano cuando una madre le leía a su hijo uno de sus cuentos infantiles preferidos. Mientras ella hacia esto el niño jugaba con una pelota vieja y maltratada, y junto a él había otro niño que tenía una pelota mucho más grande y hermosa. Al ver eso el pequeño le dijo a su madre:",
+      "– Mamita mía, yo quiero una pelota tan bella como lo de ese niño.",
+      "– Mi amor, ya tú tienes una pelota – respondió la madre un poco triste.",
+      "– Lo sé mamá, pero es que mira que bella es, yo quiero una tan linda y grande como esa –dijo el niño tratando de convencer a su mamá.",
+      "La madre tratando de convencer a su hijo de que no había necesidad de eso le dijo:",
+      "– Pero… con tu pelota puedes jugar al igual que lo hace cualquiera. Que sea nueva no la hace diferente, aquí lo más importante es que tengas amigos para poder jugar con ellos. ¿Te has preguntado por qué, a pesar de que su pelota es nueva y hermosa, el niño juega solo mientras que tú con la vieja y usada juegas con muchos niños?",
+      "Al escuchar esas palabras de la madre el niño le dijo:",
+      "– Tienes toda la razón mamá.",
+      "– Ay mi niño, en la vida no necesitas tener muchas cosas nuevas para ser feliz. Los cuentos infantiles que tanto te gustan lo que nos enseñan es que lo más importante y lo que realmente vale son los sentimientos, los amigos que tengas y que te acompañen en todo momento, – le dijo la madre en un tono muy dulce. De hecho te voy a contar otro cuento que te hará comprender mejor.",
+      "Una vez, en un bosque muy precioso, vivió un zapatero anciano. El confeccionaba unos zapatos muy lindos y como ayudantes tenía a todos los animalitos del bosque. Ellos le llevaban todos los materiales preciosos que empleaba para hacer los zapatos.",
+      "Sus zapatos no solo se caracterizaban por ser muy lindos sino que tenían la propiedad de que si un niño cojo se los ponía, volvía a caminar. Por estas cualidades el anciano era conocido como el zapatero mágico. Muchas se sentían atraídos por el misterio y le preguntaban cómo hacía para lograr esos milagros, pero él no sabía que contestarle.",
+      "Una mañana, llegó una carta de palacio a la casa del zapatero. En la misma el Rey le pedía al zapatero que fuese rápidamente a palacio a fabricarle unos zapaticos a su hija, la pequeña princesa, que no podía caminar. El Rey buscaba un milagro pues ya muchos médicos la habían visto y nadie había conseguido ponerla de pie.",
+      "El anciano acepto la petición y se trasladó al palacio donde comenzó a confeccionar unos bellos zapaticos a la joven princesa que aún no podía caminar y que nada ni nadie lo había logrado hasta el momento. Los zapatos quedaron bellos, hechos con material que habían sido especialmente traídos por el Rey. Al terminar, rápido corrieron a ponérselos, todos esperaban atentos a que la princesa comenzara a caminar, pero que decepción tan grande, no lo logró.",
+      "Con la cabeza baja, regresó a su casa en el bosque, y al llegar se encontró que sus amiguitos los pajaritos le habían llevado unos pétalos rojos muy suaves. En eses momento el zapatero mágico volvió a intentarlo e hizo unos nuevos zapatos para la princesita.",
+      "Cuando amaneció el anciano envió los zapatos a palacio con una nota muy tierna que decía:",
+      "“Una princesa tan hermosa como tú necesita los zapatos más bellos del mundo, con todo el amor que puedas recibir”.",
+      "Días después el zapatero recibió la noticia de que la niña había vuelto a caminar. En agradecimiento a todo el trabajo y al gran milagro que había logrado, el Rey le ofreció todos los materiales y los recursos que necesitara para elaborar sus zapatos.",
+      "El anciano no aceptó nada porque ya había tratado con esos materiales una vez, en palacio, y para nada había resultado. Él adoraba seguir trabajando con sus amigos, los animalitos del bosque, además para él no existía mayor regalo y recompensa que aquella de poder ver caminado de nuevo a tantos niños.",
+      "Fue así como el Rey se pudo dar cuenta de que la magia no estaba en las herramientas ni en los materiales que empleaba para fabricar sus zapatos, sino en todo el amor que era capaz de brindar y en esa bondad con que hacia los zapatos solo para poder volver a ver a un niño caminar."
+    ]
+  },
+  {
+    "id": "heidi",
+    "title": "Heidi",
+    "accent": "#746340",
+    "cover": {
+      "image": "/assets/nido/cuentos/collection/heidi.avif",
+      "layout": "heritage",
+      "credit": {
+        "title": "File:Heidi - Cover.png",
+        "artist": "Maria L. Kirk; edición de Johanna Spyri",
+        "license": "Public domain",
+        "url": "https://commons.wikimedia.org/wiki/File:Heidi_-_Cover.png",
+        "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/f0/Heidi_-_Cover.png/960px-Heidi_-_Cover.png",
+        "changes": "Redimensionado y convertido a AVIF; imagen completa, sin recortar."
+      },
+      "ink": "#fff3cf",
+      "sub": "#e0c895"
+    },
+    "source": {
+      "url": "https://www.cuentosinfantiles.net/cuentos-heidi/",
+      "publisher": "Cuentos infantiles",
+      "importedAt": "2026-09-12",
+      "permission": "Reproducción del texto autorizada por el usuario el 12 de septiembre de 2026.",
+      "sha256": "e09b33c204b62fd0e0f2dae0cd398745f10d9dc3e787e559231514919cbd635c"
+    },
+    "note": "Capítulo 1: todo el texto disponible en la página indicada; no es la novela completa.",
+    "warning": "Versión tradicional sin adaptar. Se recomienda lectura acompañada; puede incluir situaciones intensas.",
+    "set": "forest-day",
+    "wallTheme": "wayra",
+    "light": "day",
+    "cameo": [
+      "arbol",
+      "mariposa"
+    ],
+    "props": [
+      "arboles",
+      "flores",
+      "pasto"
+    ],
+    "paragraphs": [
+      "Capítulo 1",
+      "Una soleada mañana de junio, una joven llamada Adela subía por el tortuoso camino del monte de la bonita población de Meyenfield.",
+      "El sendero era empinado y abrupto, pero el aire estaba impregnado del aroma de las flores silvestres que crecían en los frondosos pastos en lo alto de las montañas.",
+      "En una mano sostenía una chaqueta y un hatillo de ropa, y la otra la daba a una niña que aparentaba no tener más de cinco años. La niña tenía la cara colorada y sentía mucho calor. Iba demasiado abrigada para un día tan caluroso, pues llevaba dos vestidos, medias de lana, unas pesadas botas y una bufanda roja y gruesa de lana.",
+      "Siguieron adelante hasta que, a mitad de camino, llegaron al pueblecito de Dorfli. La joven se detuvo, y la niña se soltó de su mano y se sentó en el suelo.",
+      "—¿Estás cansada, Heidi? —pregunte Adela.",
+      "—No, pero tengo mucho calor.",
+      "—No falta mucho para llegar a de abuelo Anselmo. Si caminas dando pasos largos, pronto estaremos allí.",
+      "En aquel momento, Berta, una joven mujer de aspecto agradable, salió corriendo de su casa.",
+      "—¡Pero Adela! —exclamó— ¿Qué haces tú aquí? ¿Dónde llevas a esa niña? ¿Es ésa la sobrinita que has tenido a tu cargo desde que murió su madre?",
+      "—Sí, y la llevo a casa de tío Anselmo. Yo no puedo ocuparme más de ella, pues tengo trabajo en la ciudad.",
+      "—¿Vas a dejarla con él? ¡Debes de estar loca! ¿Cómo se te ha podido ocurrir semejante cosa? ¡Si está chiflado! ¿Qué sabrá él de cuidar a una niña? Vive solo en las montañas con sus dos cabras y apenas ve nunca a nadie ni habla con nadie. Las pocas veces que baja al pueblo siempre lleva un grueso bastón para asustar a la gente. ¡Si ni siquiera acude a la iglesia!",
+      "—¿Y qué puedo hacer yo? Al fin y al cabo, es su abuelo. ¡Pues que se ocupe ahora de la niña! ¡Yo ya he cumplido con mi deber!",
+      "Mientras las dos jóvenes mujeres subían por el camino de la montaña, charlando, Heidi se alejó saltando y se adentró en una verde pradera. Cuando vivía con su tía, en la población, nunca podía salir a jugar fuera de casa. Ahora corría, brincaba y jugaba entre las flores que relucían al sol.",
+      "Mas cuando se disponía a regresar junto a su tía, vio a un chico descalzo y con unos pantalones muy holgados que conducía un rebaño de cabras. Resoplando por el calor, Heidi corrió hacia él.",
+      "El chico se detuvo un momento para que las cabras mordisquearan la hierba. Cuando Heidi los alcanzó, se sentó y se puso a escuchar las campanitas de latón que sonaban en la cálida brisa.",
+      "Ni corta ni perezosa, empezó a quitarse las botas, la bufanda, los vestidos y las medias.",
+      "—¿Cuántas cabras tienes a tu cuidado?—preguntó al chico—. ¿Cómo se llaman? ¿A dónde las llevas? ¿De quiér son?",
+      "El chico sonrió. Heidi le hacía tantas preguntas seguidas, que no le daba tiempo de responder. Entonces la niña oyó a su tía Adela que gritaba:",
+      "—¡Heidi! ¿Qué estás haciendo?",
+      "—¿Dónde está tu ropa?",
+      "—Aquí —dijo Heidi, señalando el montón de ropa sobre la hierba—. Me la he quitado porque tenía mucho calor. Además, ¡las cabras no van vestidas!",
+      "—Ven aquí en seguida, niña tonta —dijo Adela, agarrando a Heidi de la mano—. Y tú, Pedro, trae ese montón de ropa. Puesto que vas a casa del abuelo, llévala tú.",
+      "Era una larga caminata hasta llegar … al prado que había en lo alto de la montaña. De pronto, divisaron la casa de abuelo Anselmo, y al anciano sentado a la puerta, fumando tranquilamente su pipa.",
+      "Adelantándose a los demás, Heidi corrió junto a su abuelo.",
+      "—Hola, abuelo —dijo, tendiéndole la mano.",
+      "—¿A qué viene todo esto? —inquirió el anciano. Luego estrechó bruscamente la mano de Heidi y la miró por debajo de sus pobladas cejas. La niña, que nunca había visto a nadie parecido al abuelo, se quedó absorta mirando fijamente su arrugado rostro cubierto por una enmarañada barba canosa.",
+      "—Hola, tío —dijo Adela—. He traído a la pequeña Heidi para que se quede a vivir contigo. Yo no puedo ocuparme más de ella. Ahora te toca a ti.",
+      "Los ojos de tío Anselmo lanzaban chispas.",
+      "—¿Que me toca a mí, dices? ¿Y qué sé yo de cuidar a una niña? Y tú, Pedro ¿qué estás mirando? ¡Largo de aquí, y llévate las cabras!",
+      "Aunque el viejo le intimidaba, estaba resuelta a dejar a Heidi con él.",
+      "—Espero que cuides bien de ella —dijo—. Y si tú no puedes hacerlo, tendrás que buscar a alguien que lo haga.",
+      "Tío Anselmo estaba furioso.",
+      "—¡Márchate! ¡Fuera de aquí!",
+      "No soporto a las personas como tú.",
+      "No quiero volver a verte más por aquí.",
+      "Adela no se lo hizo repetir. Se despidió apresuradamente de Heidi y se alejó a toda prisa.",
+      "Cuando Adela hubo desaparecido de la vista, abuelo Anselmo volvió a sentarse y siguió fumando su pipa.",
+      "—Y bien —dijo—. ¿Qué quieres?",
+      "—Me gustaría ver la casa por dentro, abuelo.",
+      "—Pues andando, y tráete la ropa.",
+      "Pero ya no voy a necesitarla, las cabras están todo el día correteando por las montañas y no van vestidas.",
+      "—Bueno, no te la pongas si no quieres. Pero traela, de todos modos y la meteremos en un armario.",
+      "Heidi obedeció y entró en la casa detrás del anciano. No había más que una habitación amplia y desnuda, con una sola silla, una mesa, un hogar y un gran armario de madera.",
+      "—¿Dónde dormiré yo, abuelo? —Donde quieras. No me importa. Heidi estaba entusiasmada y se puso a buscar un sitio donde dormir. En un rincón vio una escalera apoyada contra la pared. Subió por ella y descubrió un henil.",
+      "En la pared había un agujero redondo, y a través del mismo Heidi podía divisar el valle. Veía el río, los árboles y, si levantaba la vista, una montaña coronada de nieve que se alzaba majestuosa. —Creo que dormiré aquí arriba, abuelo —dijo— ¡Esto es estupendo! —Muy bien, pero vas a necesitar una sábana. Veré qué encuentro.",
+      "Cuando el anciano subió la escalera, vio que Heidi había formado un pequeño colchón con el heno.",
+      "—Eso está bien —dijo a la niña—. Pero necesitarás un poco más de heno para no sentir el suelo duro.",
+      "—Creo que has olvidado una cosa —dijo Heidi.",
+      "—¿Ah, sí? ¿Qué?",
+      "—Pues que necesitaré un cobertor, porque cuando me acuesto necesito cubrirme con algo, ¿no?",
+      "—Es verdad —dijo el anciano cariñosamente— ¿Te sirve esto?",
+      "Y extendió sobre la camita un pedazo grande de lino.",
+      "—Es muy bonito, abuelo. ¡Ojalá fuera ya de noche para poder acostarme!",
+      "—Pero antes tienes que comer algo. Debes estar hambrienta.",
+      "El viejo Anselmo bajó la escalera detrás de Heidi. Mientras él preparaba la cena para ambos, Heidi colocó dos cubiertos y dos cuencos de madera sobre la mesa.",
+      "—Me alegra ver que quieres ayudarme —murmuró el anciano—. Pero no sé dónde vas a sentarte. Esa banqueta es muy baja y no alcanzarás a la mesa.",
+      "Total que puso su silla frente a Heidi para que la utilizara a guisa de mesa. Luego le sirvió leche y le dio una rebanada de pan con queso.",
+      "Cenaron maravillosamente.",
+      "Después de cenar, abuelo Anselmo confeccionó una silla especial para Heidi. Más tarde, cuando empezó a oscurecer y el viento silbaba fuerte por entre los viejos abetos, Heidi oyó un silbido y el murmullo ae unas campanitas. Era Pedro que volvía con las dos cabras de Anselmo.",
+      "—¿Son nuestras esas dos cabras, abuelo?",
+      "—preguntó Heidi—. ¿Son nuestras de verdad? ¿Cómo se llaman’ ¿Vivirán siempre con nosotros?",
+      "—No tantas preguntas a la vez, Heidi —dijo el anciano—. La blanca se llama Flor, y la marrón, Mariposa. Ahora ve a buscar tu cuenco mientras Pedro ordeña la cabra.",
+      "Mientras el sol se ponía detrás de la elevada montaña y el viento silbaba cada vez más fuerte a través de los árboles, Heidi tomó asiento en el banco frente a la casita y se tomó la leche.",
+      "—Buenas noches, Flor; buenas noches, Mariposa —dijo la niña, antes de entrar a acostarse—. Buenas noches, abuelo; buenas noches, Pedro.",
+      "Durante la noche arreció el viento. Soplaba tan fuerte, que la casita crujía y chirriaba. En el cobertizo de las cabras, Flor y Mariposa, muy juntas, balaban.",
+      "Dos grandes ramas de abeto cayeron estrepitosamente sobre la casita.",
+      "Anselmo se levantó de la cama, creyendo que tal vez la niña estaría asustada. Pero cuando subió al henil halló a Heidi profundamente dormida, con su sonriente carita apoyada en las manos. Se quedó observándola hasta que unas nubes cubrieron la luna y oscurecieron la habitación.",
+      "—Buenas noches, pequeña Heidi —murmuró, inclinándose para besarla— ¡Que descanses!"
+    ]
+  }
+]

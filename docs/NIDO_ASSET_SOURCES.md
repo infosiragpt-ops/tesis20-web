@@ -6,6 +6,16 @@ licencia comercial aportada y archivada por Tesis20.
 
 ## Recursos creados para el proyecto
 
+### Portada de «Pulgarcito»
+
+- Fuente: imagen `77c621cc-75e5-4339-8414-ff899a312d3d.png` aportada por Luis el 12 de septiembre de 2026 para este cuento.
+- Destino: `public/assets/nido/cuentos/covers/pulgarcito-v1.avif`.
+- Tratamiento: compresión y cambio de tamaño proporcional para la web, sin recorte ni texto, sombreado o marcas añadidas. `cover.preserve` conserva también los textos de la ilustración en el libro y las miniaturas.
+- Texto: adaptación infantil en diez escenas del relato completo aportado por Luis. Conserva las aventuras del caballo, los viajeros, el caracol, los ladrones, la vaca y el lobo; omite detalles gráficos de violencia.
+- Figuras: geometría original en Three.js para Pulgarcito, sus padres, el caballo, la vaca y el caracol/concha. El lobo reutiliza la figura existente de la biblioteca.
+- Narración: 160 archivos nuevos con la voz Jhenny Cozy ya utilizada en Nido, normalizados a -16 LUFS y verificados por decodificación completa con ffmpeg; 993 audios previos reutilizados sin eliminación. Las diez páginas incluyen marcas de tiempo por palabra.
+- No se atribuye a la imagen una licencia o un generador que no haya indicado el usuario.
+
 ### `celebration-festival-v1.jpg`
 
 - Ruta: `public/assets/nido/worlds/celebration-festival-v1.jpg`
@@ -97,3 +107,41 @@ original o lo sustituya por una creación con trazabilidad:
 La aplicación utiliza `@phosphor-icons/react`. Su licencia debe mantenerse
 junto con las demás licencias de terceros del repositorio. Los glifos no se
 presentan como personajes ni como arte propio de Tesis20.
+
+## Colección de 35 textos autorizados — 12 de septiembre de 2026
+
+- El usuario confirmó en esta conversación que tiene autorización para copiar
+  los textos de los 35 enlaces de cuentosinfantiles.net que proporcionó.
+  Esto no se extiende a una licencia de las imágenes del sitio.
+- `src/nido/cuentos/collection/texts-{1,2,3,4,5}.json` conserva para cada
+  edición el enlace solicitado, los párrafos, fecha, autorización comunicada
+  y SHA-256 del cuerpo completo tras normalizar espacios. La prueba de
+  integridad verifica que paginar no elimina ni modifica palabras.
+- Se importa el cuerpo del relato, no publicidad, comentarios ni navegación.
+  Heidi conserva el capítulo 1 publicado en su enlace (no toda la novela).
+  Bambi conserva el relato de la primera página, sin mezclar la versión
+  alternativa a la que enlaza. Estas limitaciones se muestran al abrirlos.
+- Son ediciones de lectura, no adaptaciones para preescolar: conservan los
+  finales y situaciones del texto autorizado, con aviso de lectura acompañada.
+  No incluyen locuciones, cuestionarios ni modelos 3D nuevos a medida.
+  Las ediciones narradas anteriores conservan sus identificadores y progreso.
+
+### Ilustraciones de las portadas
+
+- Se reutilizan las portadas locales aprobadas de Pulgarcito y Caperucita.
+  Las otras 33 imágenes están en `public/assets/nido/cuentos/collection/`.
+- Proceden de Wikimedia Commons, Project Gutenberg y The Metropolitan Museum
+  of Art. Cada `cover.credit` en los JSON anteriores registra obra, autor,
+  licencia indicada por la fuente, ficha, URL del archivo y transformación.
+  Los créditos también son visibles en «Sobre esta edición y su portada».
+- Las fichas seleccionadas indican dominio público o CC0. Cuando Gutenberg
+  declara dominio público en Estados Unidos, se conserva esa precisión.
+  No se presenta una licencia universal ni se atribuyen estas ilustraciones
+  históricas a Tesis20 o a cuentosinfantiles.net.
+- Se conservó la imagen completa, reducida como máximo a 640 × 900 píxeles
+  y convertida a AVIF. El marco y título en español se componen en el libro;
+  las ilustraciones no son reproducciones de portadas comerciales actuales.
+  Algunas son ilustraciones temáticas, no escenas de la versión textual exacta.
+- El presupuesto específico mantiene los textos diferidos bajo 350 KiB y
+  las 33 portadas bajo 2.5 MiB; no aumenta los límites del motor ni de la
+  carga inicial del sitio. Solo se solicitan portadas cercanas o seleccionadas.

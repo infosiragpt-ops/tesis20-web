@@ -67,6 +67,9 @@ export function enumerateCuentosVoicePlan(books) {
   const jobs = [];
   const seenWords = new Map();
   for (const book of books) {
+    // Las ediciones de texto íntegro no ofrecen narración hasta disponer de
+    // grabaciones verificadas. El resto de la biblioteca sigue siendo exhaustivo.
+    if (book.narration === 'reading-only') continue;
     book.pages.forEach((page, index) => {
       jobs.push({
         kind: "page",
