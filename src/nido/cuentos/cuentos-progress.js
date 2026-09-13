@@ -2,12 +2,12 @@
 // servidor y no pedimos ningún dato personal.
 
 import { useCallback, useEffect, useState } from "react";
-import { BOOKS } from "./cuentos-data.js";
+import { BOOKS, bookPins } from "./cuentos-data.js";
 
 const KEY = "tesis20-nido-cuentos-v1";
 
 function emptyBook() {
-  return { pages: [], pins: [], quiz: [], quizOk: 0, opened: false };
+  return { pages: [], pins: [], quiz: [], quizOk: 0, opened: false, lastPage: null };
 }
 
 function emptyState() {
@@ -18,27 +18,32 @@ function emptyState() {
   return { v: 1, books, lastBook: null };
 }
 
-function normalize(raw) {
+export function normalizeProgress(raw) {
   const base = emptyState();
   if (!raw || typeof raw !== "object") return base;
   BOOKS.forEach((book) => {
     const stored = raw.books?.[book.id];
     if (!stored) return;
+    const validPage = n => Number.isInteger(n) && n >= 0 && n < book.pages.length;
+    const pages = [...new Set(Array.isArray(stored.pages) ? stored.pages.filter(validPage) : [])];
+    const allowedPins = new Set(bookPins(book).map(pin => pin.id));
+    const quiz = [...new Set(Array.isArray(stored.quiz) ? stored.quiz.filter(n => Number.isInteger(n) && n >= 0 && n < book.quiz.length) : [])];
     base.books[book.id] = {
-      pages: Array.isArray(stored.pages) ? stored.pages.filter((n) => Number.isInteger(n)) : [],
-      pins: Array.isArray(stored.pins) ? stored.pins.filter((id) => typeof id === "string") : [],
-      quiz: Array.isArray(stored.quiz) ? stored.quiz.filter((n) => Number.isInteger(n)) : [],
-      quizOk: Number.isInteger(stored.quizOk) ? stored.quizOk : 0,
+      pages,
+      pins: [...new Set(Array.isArray(stored.pins) ? stored.pins.filter(id => allowedPins.has(id)) : [])],
+      quiz,
+      quizOk: Number.isInteger(stored.quizOk) ? Math.max(0, Math.min(stored.quizOk, quiz.length)) : 0,
       opened: Boolean(stored.opened),
+      lastPage: validPage(stored.lastPage) ? stored.lastPage : (pages.at(-1) ?? null),
     };
   });
-  base.lastBook = typeof raw.lastBook === "string" ? raw.lastBook : null;
+  base.lastBook = BOOKS.some(book => book.id === raw.lastBook) ? raw.lastBook : null;
   return base;
 }
 
 export function readProgress() {
   try {
-    return normalize(JSON.parse(window.localStorage.getItem(KEY) || "null"));
+    return normalizeProgress(JSON.parse(window.localStorage.getItem(KEY) || "null"));
   } catch {
     return emptyState();
   }
@@ -95,11 +100,13 @@ export function useProgress() {
 
   const markPage = useCallback(
     (bookId, pageIndex) => {
+      const book = BOOKS.find(item => item.id === bookId);
+      if (!book || !Number.isInteger(pageIndex) || pageIndex < 0 || pageIndex >= book.pages.length) return false;
       let isNew = false;
       update(bookId, (entry) => {
-        if (entry.pages.includes(pageIndex)) return { ...entry, opened: true };
+        if (entry.pages.includes(pageIndex)) return { ...entry, opened: true, lastPage: pageIndex };
         isNew = true;
-        return { ...entry, opened: true, pages: [...entry.pages, pageIndex] };
+        return { ...entry, opened: true, pages: [...entry.pages, pageIndex], lastPage: pageIndex };
       });
       return isNew;
     },

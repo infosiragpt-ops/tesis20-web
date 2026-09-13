@@ -346,6 +346,7 @@
 
 .cuentos-picker__row strong {
   display: block;
+  color: #343144;
   min-height: 2.3em;
   font-size: 15px;
   line-height: 1.2;
@@ -610,22 +611,36 @@
 }
 
 .cuentos-stars-row select { max-width: 136px; background: #fff5dd; border: 0; border-radius: 8px; font: 600 12px/1.4 system-ui; color: #273052; padding: 4px; }
-.cuentos-library-search { position: absolute; left: 18px; top: 84px; z-index: 25; width: min(320px, calc(100vw - 36px)); pointer-events: auto; }
-.cuentos-library-search > button { font-size: 13px; min-height: 38px; padding: 6px 16px; }
-.cuentos-search-panel { margin-top: 8px; padding: 16px; border-radius: 16px; background: #fff6e3; color: #343144; box-shadow: 0 10px 40px #251b3180; border: 2px solid #c8a466; }
+.cuentos-shelf-ui:has(.cuentos-search-panel) { z-index: 21; }
+.cuentos-library-search { position: absolute; left: 18px; top: 84px; z-index: 25; width: min(380px, calc(100vw - 36px)); pointer-events: auto; }
+.cuentos-library-search > button { font-size: 13px; min-height: 44px; padding: 6px 16px; }
+.cuentos-search-panel { box-sizing: border-box; max-height: calc(100dvh - 164px); overflow-y: auto; overscroll-behavior: contain; margin-top: 8px; padding: 14px; border-radius: 16px; background: #fff6e3; color: #343144; box-shadow: 0 10px 40px #251b3180; border: 2px solid #c8a466; }
 .cuentos-search-panel label { display: block; font-size: 15px; font-weight: 800; }
 .cuentos-search-panel input { box-sizing: border-box; width: 100%; padding: 10px 12px; margin-top: 10px; border: 1px solid #ac936d; border-radius: 8px; font: 16px system-ui; background: white; color: #262942; }
 .cuentos-search-panel p { font: 12px/1.5 system-ui; margin: 8px 0; }
-.cuentos-search-panel ul { list-style: none; padding: 0; margin: 0; max-height: min(320px, 40dvh); overflow-y: auto; overscroll-behavior: contain; }
-.cuentos-search-panel li button { border: 0; border-top: 1px solid #d7c5a4; text-align: left; width: 100%; padding: 10px 6px; color: #33314b; background: transparent; }
+.cuentos-search-panel ul { list-style: none; padding: 0; margin: 0; max-height: min(360px, 36dvh); overflow-y: auto; overscroll-behavior: contain; scrollbar-color: #b69b6b #f7edd7; scrollbar-width: thin; }
+.cuentos-search-panel li button { display: flex; align-items: center; gap: 12px; border: 0; border-top: 1px solid #d7c5a4; text-align: left; width: 100%; min-height: 78px; padding: 10px 6px; color: #33314b; background: transparent; }
 .cuentos-search-panel li button:hover, .cuentos-search-panel li button:focus-visible { background: #efdeba; border-radius: 8px; }
 .cuentos-search-panel strong, .cuentos-search-panel small { display: block; }
-.cuentos-search-panel small { margin-top: 3px; font-size: 11px; color: #726548; }
+.cuentos-search-panel small { margin-top: 4px; font: 12px/1.45 system-ui; color: #655439; }
+.cuentos-search-panel li img { flex: 0 0 40px; object-fit: cover; border-radius: 3px; background: #dfd0b1; box-shadow: 0 2px 5px #382c3240; }
+.cuentos-search-result__copy { min-width: 0; }
+.cuentos-search-result__copy strong { font-size: 14px; line-height: 1.3; }
+.cuentos-search-result__progress { display: block; margin-top: 4px; font: 600 11px/1.5 system-ui; color: #406243; }
+.cuentos-search-panel__head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.cuentos-search-close { flex: 0 0 44px; min-height: 44px; border-radius: 50%; border: 1px solid #c8a466; background: #f8ebd0; color: #343144; font: 26px/1 system-ui; }
+.cuentos-search-filter { display: flex; align-items: center; gap: 10px; margin-top: 12px; }
+.cuentos-search-filter label { font: 600 12px/1.4 system-ui; }
+.cuentos-search-filter select { min-width: 0; flex: 1; min-height: 44px; border: 1px solid #ac936d; border-radius: 8px; padding: 6px 10px; color: #343144; background: #fffaf0; font: 16px/1.4 system-ui; }
+.cuentos-search-empty { text-align: center; padding: 14px 6px; }
+.cuentos-search-empty button { min-height: 44px; padding: 8px 16px; border: 1px solid #ac936d; border-radius: 10px; background: #f2dfb6; color: #343144; font: 600 14px/1.4 system-ui; }
+.cuentos-search-panel :is(button, input, select):focus-visible { outline: 3px solid #365e9d; outline-offset: 2px; }
 .cuentos-source { text-align: left; font: 12px/1.5 system-ui; margin: 10px 0; color: #60533e; max-height: 126px; overflow-y: auto; }
 .cuentos-source summary { cursor: pointer; color: #3b4967; }
 .cuentos-source a { color: #3b4967; text-decoration: underline; }
 @media (max-width: 760px) {
-  .cuentos-library-search { top: 130px; left: 12px; width: min(310px, calc(100vw - 24px)); }
+  .cuentos-library-search { top: 112px; left: 12px; width: min(380px, calc(100vw - 24px)); }
+  .cuentos-search-panel { max-height: calc(100dvh - 182px); }
   .cuentos-stars-row { max-width: calc(100vw - 24px); }
   .cuentos-stars-row select { max-width: 100px; font-size: 10px; }
 }

@@ -31,7 +31,8 @@ import {
   wordTrack,
 } from "./cuentos-audio.js";
 import { wordKey } from "./cuentos-voice-plan.js";
-import { pageWindow, searchBooks } from "./collection-layout.js";
+import { pageWindow, resumePage } from "./collection-layout.js";
+import { LibrarySearch } from "./LibrarySearch.jsx";
 import { createStage } from "./three/stage.js";
 import { MagicCursor } from "./MagicCursor.jsx";
 import { coverArtTexture, storyPageTexture, svgElementToTexture } from "./three/textures.js";
@@ -291,8 +292,7 @@ export default function CuentosApp() {
     openingRef.current = true;
     sfx.open();
     const entry = latest.current.state.books[book.id];
-    const last = entry && entry.pages.length ? Math.max(...entry.pages) : -1;
-    const start = entry?.pages.length && last + 1 < book.pages.length ? last + 1 : 0;
+    const start = resumePage(book, entry);
     let tex;
     try {
       tex = await pageTexture(book, start);
@@ -546,9 +546,6 @@ function ShelfOverlay({ state, focusedId, onFocus, onOpen }) {
   const rowRef = useRef(null);
   const dragRef = useRef(null);
   const suppressClick = useRef(false);
-  const [searchOpen, setSearchOpen] = useState(false);
-  const [query, setQuery] = useState('');
-  const matches = useMemo(() => searchBooks(BOOKS, query), [query]);
 
   useEffect(() => {
     const end = () => { dragRef.current = null; };
@@ -597,18 +594,7 @@ function ShelfOverlay({ state, focusedId, onFocus, onOpen }) {
 
   return (
     <div className="cuentos-shelf-ui">
-      <div className="cuentos-library-search">
-        <button type="button" className="cuentos-btn" aria-expanded={searchOpen} onClick={() => setSearchOpen(value => !value)}>⌕ Buscar entre {BOOKS.length} libros</button>
-        {searchOpen ? <section className="cuentos-search-panel" aria-label="Buscar un cuento">
-          <label htmlFor="story-search">¿Qué cuento quieres leer?</label>
-          <input id="story-search" value={query} onChange={event => setQuery(event.target.value)} placeholder="Título del cuento" autoFocus type="search" />
-          <p role="status">{matches.length} {matches.length === 1 ? 'libro encontrado' : 'libros encontrados'}</p>
-          <ul>{matches.map(book => <li key={book.id}><button type="button" onClick={() => { setSearchOpen(false); onOpen(book.id); }}>
-            <strong>{book.title}</strong><small>{book.edition || 'Versión narrada'} · {book.pages.length} páginas</small>
-          </button></li>)}</ul>
-          {!matches.length ? <p>Prueba con otra palabra, por ejemplo «princesa».</p> : null}
-        </section> : null}
-      </div>
+      <LibrarySearch books={BOOKS} state={state} onOpen={onOpen} />
       <button type="button" className="cuentos-arrow cuentos-arrow--left" onClick={() => move(-1)} aria-label="Ver cuentos anteriores">
         ‹
       </button>
@@ -639,7 +625,7 @@ function ShelfOverlay({ state, focusedId, onFocus, onOpen }) {
                     {Math.abs(index - focus) < 5 ? <BookCover book={book} /> : null}
                   </span>
                   <span className="cuentos-picker__copy">
-                    <strong style={{ color: book.accent }}>{book.title}</strong>
+                    <strong>{book.title}</strong>
                     <span className="cuentos-picker__bar">
                       <i style={{ width: `${status.pct}%`, background: book.accent }} />
                     </span>
@@ -681,7 +667,7 @@ function DeskPanel({ book, status, ready, onOpen, onBack }) {
         <p className="cuentos-desk__hint">Arrastra la tapa hacia la izquierda para abrirlo, o el libro hacia arriba para devolverlo.</p>
         <div className="cuentos-desk__actions">
           <button type="button" className="cuentos-btn cuentos-btn--read" onClick={onOpen} autoFocus>
-            📖 Abrir el libro
+            {status.started && !status.finished ? `📖 Continuar en la página ${resumePage(book, status) + 1}` : '📖 Abrir el libro'}
           </button>
           <button type="button" className="cuentos-btn cuentos-btn--ghost" onClick={onBack}>
             Volver a la estantería
@@ -1208,7 +1194,7 @@ function Album({ state, stats, onClose, onReset }) {
           <div>
             <p className="cuentos-modal__eyebrow">Tesis20 Nido · búsqueda del tesoro</p>
             <h2>Mis souvenirs</h2>
-            <p className="cuentos-album__lead">En cada cuento hay cinco souvenirs escondidos. Tócalos cuando los veas brillar y se quedan contigo en la repisa.</p>
+            <p className="cuentos-album__lead">Los cuentos narrados incluyen cinco souvenirs escondidos. Tócalos cuando brillen para guardarlos. Las ediciones de solo lectura conservan tu progreso, sin quiz ni souvenirs.</p>
           </div>
           <div className="cuentos-album__totals">
             <span>
