@@ -33,6 +33,7 @@ import {
 import { wordKey } from "./cuentos-voice-plan.js";
 import { pageWindow, resumePage } from "./collection-layout.js";
 import { LibrarySearch } from "./LibrarySearch.jsx";
+import { dialogControls, handleDialogKey, readerShortcutsBlocked } from "./dialog-focus.js";
 import { createStage } from "./three/stage.js";
 import { MagicCursor } from "./MagicCursor.jsx";
 import { coverArtTexture, storyPageTexture, svgElementToTexture } from "./three/textures.js";
@@ -423,6 +424,7 @@ export default function CuentosApp() {
           book={selectedBook}
           page={page}
           state={state}
+          suspended={album || help}
           pinRef={pinRef}
           onPage={goToPage}
           onClose={closeReading}
@@ -703,7 +705,7 @@ export function stepsKeyFor(book, page, act) {
   return page?.steps || STEPS_BY_SET[book.set] || "pasos-suaves";
 }
 
-function Reader({ book, page, state, pinRef, onPage, onClose, onStar, onPin, onQuiz, onAct, onSpeaking, onWordTick, onName, onMove, onCinema, onStoryWord, onScene, isWorking }) {
+function Reader({ book, page, state, suspended, pinRef, onPage, onClose, onStar, onPin, onQuiz, onAct, onSpeaking, onWordTick, onName, onMove, onCinema, onStoryWord, onScene, isWorking }) {
   const hasNarration = book.narration !== 'reading-only';
   const pageData = book.pages[page];
   const entry = state.books[book.id] || { pages: [], pins: [], quiz: [], quizOk: 0 };
@@ -712,6 +714,13 @@ function Reader({ book, page, state, pinRef, onPage, onClose, onStar, onPin, onQ
   const [speaking, setSpeaking] = useState(false);
   const [quizOpen, setQuizOpen] = useState(false);
   const autoRef = useRef(false);
+  useEffect(() => {
+    if (suspended) {
+      autoRef.current = false;
+      stopSpeech();
+      setAutoRead(false);
+    }
+  }, [suspended]);
   // Modo película: con «Léemelo» la cámara entra en la escena y el texto pasa
   // a subtítulos. Se recuerda si el lector prefirió ver el libro.
   const [cinema, setCinema] = useState(() => {
@@ -938,7 +947,7 @@ function Reader({ book, page, state, pinRef, onPage, onClose, onStar, onPin, onQ
 
   useEffect(() => {
     const onKey = (event) => {
-      if (/^(INPUT|SELECT|TEXTAREA)$/.test(event.target?.tagName)) return;
+      if (readerShortcutsBlocked(event, suspended)) return;
       if (quizOpen) {
         if (event.key === "Escape") setQuizOpen(false);
         return;
@@ -956,7 +965,7 @@ function Reader({ book, page, state, pinRef, onPage, onClose, onStar, onPin, onQ
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [page, turnTo, onClose, quizOpen, autoRead, cinema, toggleCinema]);
+  }, [page, turnTo, onClose, quizOpen, autoRead, cinema, toggleCinema, suspended]);
 
   const sayWord = (token) => {
     if (autoRef.current) return;
@@ -1076,6 +1085,7 @@ function Reader({ book, page, state, pinRef, onPage, onClose, onStar, onPin, onQ
 /* ============================= quiz =========================== */
 
 function Quiz({ book, entry, onAnswer, onClose }) {
+  const dialogRef = useDialogFocus(onClose);
   const [index, setIndex] = useState(0);
   const [picked, setPicked] = useState(null);
   const [score, setScore] = useState(0);
@@ -1134,7 +1144,7 @@ function Quiz({ book, entry, onAnswer, onClose }) {
   };
 
   return (
-    <div className="cuentos-modal" role="dialog" aria-modal="true" aria-label={`Quiz de ${book.title}`}>
+    <div ref={dialogRef} tabIndex={-1} className="cuentos-modal" role="dialog" aria-modal="true" aria-label={`Quiz de ${book.title}`}>
       <div className="cuentos-modal__panel cuentos-modal__panel--quiz">
         {done ? (
           <div className="cuentos-quiz__done">
@@ -1185,10 +1195,29 @@ function Quiz({ book, entry, onAnswer, onClose }) {
 
 /* ============================ álbum =========================== */
 
+function useDialogFocus(onClose) {
+  const dialogRef = useRef(null);
+  const closeRef = useRef(onClose);
+  useEffect(() => { closeRef.current = onClose; }, [onClose]);
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    const opener = document.activeElement;
+    (dialogControls(dialog)[0] || dialog).focus({ preventScroll: true });
+    const onKey = (event) => handleDialogKey(event, dialog, () => closeRef.current());
+    window.addEventListener('keydown', onKey, true);
+    return () => {
+      window.removeEventListener('keydown', onKey, true);
+      if (opener?.isConnected) opener.focus({ preventScroll: true });
+    };
+  }, []);
+  return dialogRef;
+}
+
 function Album({ state, stats, onClose, onReset }) {
   const [confirm, setConfirm] = useState(false);
+  const dialogRef = useDialogFocus(onClose);
   return (
-    <div className="cuentos-modal" role="dialog" aria-modal="true" aria-label="Mis souvenirs">
+    <div ref={dialogRef} tabIndex={-1} className="cuentos-modal" role="dialog" aria-modal="true" aria-label="Mis souvenirs">
       <div className="cuentos-modal__panel cuentos-modal__panel--album">
         <header className="cuentos-album__head">
           <div>
@@ -1281,15 +1310,16 @@ function Album({ state, stats, onClose, onReset }) {
 /* ============================ ayuda =========================== */
 
 const STEPS = [
-  { icon: "📚", title: "Elige un cuento", text: "Toca un libro de la repisa: baja a la mesa. Ábrelo tocándolo o arrastrando su tapa hacia la izquierda; para guardarlo, arrástralo hacia arriba. Cada uno tiene 10 páginas ilustradas." },
-  { icon: "🔊", title: "Léemelo", text: "La voz lee en voz alta y va marcando cada palabra. También puedes tocar una palabra suelta." },
-  { icon: "🔍", title: "Busca el souvenir", text: "En cinco páginas hay un objeto escondido que brilla sobre la ilustración. Tócalo y aparecerá como figura en la repisa." },
-  { icon: "⭐", title: "Responde el quiz", text: "Al terminar el libro aparecen cinco preguntas sobre lo que pasó." },
+  { icon: "📚", title: "Elige un cuento", text: "Busca por título o arrastra la repisa. Toca un libro y abre su tapa hacia la izquierda, o usa «Abrir el libro». Para guardarlo, arrástralo hacia arriba o vuelve a la estantería. Cada ficha indica cuántas páginas tiene; tu última página se guarda en este dispositivo." },
+  { icon: "🔊", title: "Lectura y narración", text: "En «Con narración», la voz lee y marca cada palabra; también puedes tocar una palabra suelta. Los libros de «Solo lectura» permiten leer el texto completo en familia, sin audio narrado. Usa las flechas, las estrellas o el selector de página para avanzar." },
+  { icon: "🔍", title: "Busca el souvenir", text: "Los cuentos narrados esconden cinco souvenirs. Toca los objetos que brillan para guardarlos. Las ediciones de solo lectura no incluyen souvenirs." },
+  { icon: "⭐", title: "Responde el quiz", text: "Los cuentos narrados ofrecen cinco preguntas al llegar a la última página. Los de solo lectura conservan el progreso, sin quiz. Abrir la ayuda o los souvenirs pausa la narración sin cambiar tu página." },
 ];
 
 function Help({ onClose }) {
+  const dialogRef = useDialogFocus(onClose);
   return (
-    <div className="cuentos-modal" role="dialog" aria-modal="true" aria-label="Cómo se juega">
+    <div ref={dialogRef} tabIndex={-1} className="cuentos-modal" role="dialog" aria-modal="true" aria-label="Cómo se juega">
       <div className="cuentos-modal__panel cuentos-modal__panel--help">
         <button type="button" className="cuentos-modal__close" onClick={onClose} aria-label="Cerrar">
           ×
@@ -1307,7 +1337,7 @@ function Help({ onClose }) {
             </li>
           ))}
         </ul>
-        <p className="cuentos-help__note">La narración usa una voz de estudio grabada para Tesis20 Nido; si un audio no se puede descargar, lee la voz del navegador. Si no se escucha, revisa que el dispositivo no esté en silencio y que el sonido de la aplicación esté activado.</p>
+        <p className="cuentos-help__note">La voz de estudio está disponible en los libros marcados «Con narración». Si no se escucha, comprueba la conexión y el botón de sonido. Los libros de solo lectura seguirán sin narración hasta que sus grabaciones estén disponibles.</p>
         <button type="button" className="cuentos-btn cuentos-btn--read" onClick={onClose}>
           Empezar a leer
         </button>
