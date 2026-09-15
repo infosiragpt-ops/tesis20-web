@@ -66,6 +66,35 @@ export function after(seconds, fn) {
   return tween({ t: 0 }, { t: 1 }, { duration: seconds, easing: ease.linear, onComplete: fn });
 }
 
+/** Cancel one interaction, including its delayed and chained animations. */
+export function createTweenScope() {
+  const jobs = new Set();
+  let generation = 0;
+  function scopedTween(target, to, options = {}) {
+    const current = generation;
+    const job = tween(target, to, {
+      ...options,
+      onUpdate: (...args) => { if (current === generation) options.onUpdate?.(...args); },
+      onComplete: () => {
+        jobs.delete(job);
+        if (current === generation) options.onComplete?.();
+      },
+    });
+    const cancel = job.cancel;
+    job.cancel = () => { jobs.delete(job); cancel.call(job); };
+    jobs.add(job);
+    return job;
+  }
+  return {
+    tween: scopedTween,
+    after: (seconds, fn) => scopedTween({ t: 0 }, { t: 1 }, { duration: seconds, easing: ease.linear, onComplete: fn }),
+    cancel() {
+      generation += 1;
+      for (const job of jobs) job.cancel();
+    },
+  };
+}
+
 /**
  * Avanza los tweens con el reloj absoluto (`now` en segundos). Así la
  * animación dura lo mismo aunque el dispositivo dibuje pocos frames.

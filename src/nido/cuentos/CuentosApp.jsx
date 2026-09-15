@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { BOOKS, PIN_LABELS, TOTAL_PINS, TOTAL_QUIZ, TOTAL_STARS, bookPins } from "./cuentos-data.js";
 import { BookCover, Scene, Souvenir, pinSpot } from "./cuentos-scene.jsx";
 import { seeded } from "./cuentos-art-base.jsx";
@@ -546,6 +546,7 @@ function ShelfOverlay({ state, focusedId, onFocus, onOpen }) {
   const focus = Math.max(0, BOOKS.findIndex(book => book.id === focusedId));
   const lastHover = useRef(-1);
   const rowRef = useRef(null);
+  const rowPositioned = useRef(false);
   const dragRef = useRef(null);
   const suppressClick = useRef(false);
 
@@ -556,12 +557,15 @@ function ShelfOverlay({ state, focusedId, onFocus, onOpen }) {
     return () => { window.removeEventListener("pointerup", end); window.removeEventListener("blur", end); };
   }, []);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
+    // Restore the shelf before paint. Animating from the first title after
+    // every book closes moves the next card out from under a quick tap.
     rowRef.current?.children[focus]?.scrollIntoView({
-      behavior: prefersReducedMotion() ? "auto" : "smooth",
+      behavior: !rowPositioned.current || prefersReducedMotion() ? "auto" : "smooth",
       block: "nearest",
       inline: "center",
     });
+    rowPositioned.current = true;
   }, [focus]);
 
   const hover = (index, id) => {
