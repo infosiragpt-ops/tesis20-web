@@ -11,7 +11,7 @@ import { highlightStoryWord } from "./textures.js";
 import { WORK_TASKS, buildWorkPieces, buildWorkPile } from "./work-pieces.js";
 import { TOY_SCALE } from "./toys/index.js";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
-import { tween, ease, after, updateTweens, cancelAllTweens } from "./tween.js";
+import { tween, ease, after, updateTweens, cancelAllTweens, createTweenScope } from "./tween.js";
 import {
   WALL_THEMES,
   wallpaperTexture,
@@ -1341,6 +1341,8 @@ export function createStage(canvas, options) {
   let deskDrag = null;
   let hoveringDeskBook = false;
   let openT = 0;
+  const bookMotion = createTweenScope();
+  const pageMotion = createTweenScope();
   let hintTimer = 0;
   let hintTween = null;
   // Mientras el libro vuela, se abre o se cierra no se aceptan gestos: un
@@ -1582,15 +1584,18 @@ export function createStage(canvas, options) {
   function settleDeskBook(snap = null, duration = 0.42) {
     const entry = selected;
     if (!entry) return;
+    bookMotion.cancel();
+    pageMotion.cancel();
+    entry.endTurn();
     const g = entry.group;
     const target = snap || { x: DESK_POSE.x, y: DESK_POSE.y, z: DESK_POSE.z, rx: DESK_POSE.rx, ry: DESK_POSE.ry, rz: DESK_POSE.rz, scale: DESK_BOOK.scale, open: 0, popup: entry.popupPivot.scale.y };
     lockFor(duration);
     const open = { t: openT };
-    tween(open, { t: target.open }, { duration, easing: ease.outBack, onUpdate: () => setOpenT(open.t) });
-    tween(g.position, { x: target.x, y: target.y, z: target.z }, { duration, easing: ease.outBack });
-    tween(g.rotation, { x: target.rx, y: target.ry, z: target.rz }, { duration, easing: ease.out });
-    tween(g.scale, { x: target.scale, y: target.scale, z: target.scale }, { duration, easing: ease.out });
-    tween(entry.popupPivot.scale, { y: target.popup }, { duration, easing: ease.out });
+    bookMotion.tween(open, { t: target.open }, { duration, easing: ease.outBack, onUpdate: () => setOpenT(open.t) });
+    bookMotion.tween(g.position, { x: target.x, y: target.y, z: target.z }, { duration, easing: ease.outBack });
+    bookMotion.tween(g.rotation, { x: target.rx, y: target.ry, z: target.rz }, { duration, easing: ease.out });
+    bookMotion.tween(g.scale, { x: target.scale, y: target.scale, z: target.scale }, { duration, easing: ease.out });
+    bookMotion.tween(entry.popupPivot.scale, { y: target.popup }, { duration, easing: ease.out });
   }
 
   function moveDeskDrag(event) {
@@ -1874,6 +1879,8 @@ export function createStage(canvas, options) {
   function selectBook(bookId, ownedPins = []) {
     const entry = bookEntries.find((e) => e.book.id === bookId);
     if (!entry || selected || isBusy()) return false;
+    bookMotion.cancel();
+    pageMotion.cancel();
     activateBook(entry);
     panTween?.cancel();
     feedback.clear();
@@ -1886,10 +1893,10 @@ export function createStage(canvas, options) {
     const g = entry.group;
     const d = reduceMotion ? 0.01 : 1.15;
     lockFor(d);
-    tween(g.position, { x: entry.home.x, y: entry.home.y + 0.5, z: entry.home.z + 0.4 }, { duration: d * 0.3, easing: ease.out,
-      onComplete: () => tween(g.position, { x: DESK_BOOK.x, y: 0.0, z: DESK_BOOK.z }, { duration: d * 0.7, easing: ease.inOut }) });
-    tween(g.rotation, { x: -Math.PI / 2, y: 0, z: 0.02 }, { duration: d, easing: ease.inOut });
-    tween(g.scale, { x: DESK_BOOK.scale, y: DESK_BOOK.scale, z: DESK_BOOK.scale }, { duration: d, easing: ease.inOut });
+    bookMotion.tween(g.position, { x: entry.home.x, y: entry.home.y + 0.5, z: entry.home.z + 0.4 }, { duration: d * 0.3, easing: ease.out,
+      onComplete: () => bookMotion.tween(g.position, { x: DESK_BOOK.x, y: 0.0, z: DESK_BOOK.z }, { duration: d * 0.7, easing: ease.inOut }) });
+    bookMotion.tween(g.rotation, { x: -Math.PI / 2, y: 0, z: 0.02 }, { duration: d, easing: ease.inOut });
+    bookMotion.tween(g.scale, { x: DESK_BOOK.scale, y: DESK_BOOK.scale, z: DESK_BOOK.scale }, { duration: d, easing: ease.inOut });
     moveCamera(viewFor("desk"), d);
     setWall(entry.book.wallTheme || bookId);
     spawnDeskToys(entry.book, ownedPins);
@@ -1934,6 +1941,9 @@ export function createStage(canvas, options) {
     mode = "reading";
     stopHint();
     if (deskDrag) endDeskDrag(true);
+    bookMotion.cancel();
+    pageMotion.cancel();
+    selected.endTurn();
     openingPending = false;
     notifyGesture();
     feedback.clear();
@@ -1943,14 +1953,14 @@ export function createStage(canvas, options) {
     const d = (reduceMotion ? 0.01 : 1.0) * (1 - openT * 0.6);
     lockFor(d);
     const open = { t: openT };
-    tween(open, { t: 1 }, { duration: d, easing: ease.inOut, onUpdate: () => setOpenT(open.t) });
-    tween(entry.group.position, { x: DESK_BOOK.x + 0.12, y: 0, z: DESK_BOOK.z }, { duration: d, easing: ease.inOut });
-    tween(entry.group.rotation, { x: DESK_POSE.rx, y: DESK_POSE.ry, z: DESK_POSE.rz }, { duration: d, easing: ease.inOut });
-    tween(entry.group.scale, { x: DESK_BOOK.scale, y: DESK_BOOK.scale, z: DESK_BOOK.scale }, { duration: d, easing: ease.inOut });
+    bookMotion.tween(open, { t: 1 }, { duration: d, easing: ease.inOut, onUpdate: () => setOpenT(open.t) });
+    bookMotion.tween(entry.group.position, { x: DESK_BOOK.x + 0.12, y: 0, z: DESK_BOOK.z }, { duration: d, easing: ease.inOut });
+    bookMotion.tween(entry.group.rotation, { x: DESK_POSE.rx, y: DESK_POSE.ry, z: DESK_POSE.rz }, { duration: d, easing: ease.inOut });
+    bookMotion.tween(entry.group.scale, { x: DESK_BOOK.scale, y: DESK_BOOK.scale, z: DESK_BOOK.scale }, { duration: d, easing: ease.inOut });
     moveCamera(viewFor("reading"), d);
-    after(d * 0.7, () => {
+    pageMotion.after(d * 0.7, () => {
       entry.popupPivot.visible = true;
-      tween(entry.popupPivot.scale, { y: 1 }, { duration: reduceMotion ? 0.01 : 0.6, easing: ease.outBack });
+      pageMotion.tween(entry.popupPivot.scale, { y: 1 }, { duration: reduceMotion ? 0.01 : 0.6, easing: ease.outBack });
     });
     deskToys.forEach((holder, i) => {
       const [x, z] = DESK_SLOTS[i];
@@ -1962,17 +1972,28 @@ export function createStage(canvas, options) {
     if (!selected) return;
     if (cinema) leaveCinema();
     if (deskDrag && !instant) endDeskDrag(true);
+    stopHint();
+    bookMotion.cancel();
+    pageMotion.cancel();
     const entry = selected;
+    entry.endTurn();
     const wasReading = mode === "reading";
     if (mode === "reading") mode = "desk";
     const d = instant || reduceMotion ? 0.01 : 0.8;
     if (!instant) lockFor(d);
-    if (instant) setOpenT(0);
+    if (instant) {
+      setOpenT(0);
+      entry.popupPivot.scale.y = 0.0001;
+      entry.popupPivot.visible = false;
+      return;
+    }
     if (wasReading) {
-      tween(entry.popupPivot.scale, { y: 0.0001 }, { duration: d * 0.4, easing: ease.in, onComplete: () => { entry.popupPivot.visible = false; } });
+      bookMotion.tween(entry.popupPivot.scale, { y: 0.0001 }, { duration: d * 0.4, easing: ease.in, onComplete: () => { entry.popupPivot.visible = false; } });
       const open = { t: openT };
-      tween(open, { t: 0 }, { duration: d * Math.max(0.35, openT), delay: d * 0.25, easing: ease.inOut, onUpdate: () => setOpenT(open.t) });
-      tween(entry.group.position, { x: DESK_BOOK.x }, { duration: d, easing: ease.inOut });
+      bookMotion.tween(open, { t: 0 }, { duration: d * Math.max(0.35, openT), delay: d * 0.25, easing: ease.inOut, onUpdate: () => setOpenT(open.t) });
+      bookMotion.tween(entry.group.position, { x: DESK_POSE.x, y: DESK_POSE.y, z: DESK_POSE.z }, { duration: d, easing: ease.inOut });
+      bookMotion.tween(entry.group.rotation, { x: DESK_POSE.rx, y: DESK_POSE.ry, z: DESK_POSE.rz }, { duration: d, easing: ease.inOut });
+      bookMotion.tween(entry.group.scale, { x: DESK_BOOK.scale, y: DESK_BOOK.scale, z: DESK_BOOK.scale }, { duration: d, easing: ease.inOut });
       if (!instant) moveCamera(viewFor("desk"), d);
       if (!instant) scheduleHint(d + 1.2);
       deskToys.forEach((holder, i) => {
@@ -1983,25 +2004,26 @@ export function createStage(canvas, options) {
   }
 
   function showPage(texture) {
-    if (!selected) return;
+    if (!selected || mode !== "reading") return;
+    pageMotion.cancel();
     const entry = selected;
     const pivot = entry.popupPivot;
     const d = reduceMotion ? 0.01 : 0.28;
     const leaf = { t: 0 };
     entry.setTurn(0);
-    tween(leaf, { t: 1 }, {
+    pageMotion.tween(leaf, { t: 1 }, {
       duration: reduceMotion ? 0.01 : 0.74,
       easing: ease.inOut,
       onUpdate: () => entry.setTurn(leaf.t),
       onComplete: () => entry.endTurn(),
     });
-    tween(pivot.scale, { y: 0.0001 }, {
+    pageMotion.tween(pivot.scale, { y: 0.0001 }, {
       duration: d,
       easing: ease.in,
       onComplete: () => {
         entry.setPopupTexture(texture);
         pivot.visible = true;
-        tween(pivot.scale, { y: 1 }, { duration: reduceMotion ? 0.01 : 0.55, easing: ease.outBack });
+        pageMotion.tween(pivot.scale, { y: 1 }, { duration: reduceMotion ? 0.01 : 0.55, easing: ease.outBack });
       },
     });
   }
@@ -2250,6 +2272,8 @@ export function createStage(canvas, options) {
 
   function dispose() {
     stopHint();
+    bookMotion.cancel();
+    pageMotion.cancel();
     environment.dispose();
     running = false;
     cancelAnimationFrame(frame);
