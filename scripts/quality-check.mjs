@@ -862,9 +862,12 @@ check(
 // 2026-08-03: 772 → 792 KiB por el buscador especializado de /recursos:
 // carga, filtrado y ranking local de tesis. Su chunk es diferido y el JS
 // inicial conserva el límite de 450 KiB.
+// 2026-09-15: +40 KiB acotados para los repartos de 35 clásicos, geometría
+// articulada y lectura del dispositivo. Todo sigue diferido a /nido; no cambia
+// ningún límite inicial ni por chunk. Medición de esta entrega: ~1406 KiB.
 check(
-  javascriptBytes - classicTextBytes <= 1400 * 1024,
-  `El JavaScript de aplicación sin los textos de la colección no debe superar 1400 KiB (${Math.ceil((javascriptBytes - classicTextBytes) / 1024)} KiB).`,
+  javascriptBytes - classicTextBytes <= 1440 * 1024,
+  `El JavaScript de aplicación sin los textos de la colección no debe superar 1440 KiB (${Math.ceil((javascriptBytes - classicTextBytes) / 1024)} KiB).`,
 );
 // 2026-09-12: 35 textos autorizados y 33 ilustraciones históricas. Se acotan
 // aparte los datos editoriales, sin aumentar el presupuesto del motor ni de
@@ -913,7 +916,8 @@ check(
 const pulgarcitoCoverBytes = await fileSize('dist/assets/nido/cuentos/covers/pulgarcito-v1.avif');
 check(pulgarcitoCoverBytes <= 70 * 1024, 'La portada aprobada de Pulgarcito supera 70 KiB.');
 const baseDeployBytes = deployBytesWithoutAudioAndPdf - classicTextBytes - classicCoverBytes - pulgarcitoCoverBytes;
-check(baseDeployBytes <= 10.5 * 1024 * 1024, `El build sin audios/PDF ni la colección editorial acotada supera 10.5 MiB (${(baseDeployBytes / 1024 / 1024).toFixed(2)} MiB).`);
+// +50 KiB para la dirección y geometría de clásicos; sin audios nuevos.
+check(baseDeployBytes <= 10.55 * 1024 * 1024, `El build sin audios/PDF ni la colección editorial acotada supera 10.55 MiB (${(baseDeployBytes / 1024 / 1024).toFixed(2)} MiB).`);
 
 for (const htmlFile of distFiles.filter((file) => file.endsWith(".html"))) {
   check((await fileSize(htmlFile)) <= 300 * 1024, `${htmlFile} supera 300 KiB.`);

@@ -6,10 +6,10 @@
 import * as THREE from "three";
 import { mat, blob, cyl, cone, box, fit, eyeball, brow, smile, cheek } from "./_shared.js";
 
-function child({ coat, trousers, girl = false, chullo = false, sailor = false, skinTone = "#bc8257" }) {
+export function child({ coat, trousers, girl = false, chullo = false, sailor = false, skinTone = "#bc8257", hairColor = '#352522', decorate }) {
   const g = new THREE.Group();
   const skin = mat(skinTone, { rough: 0.62, surface: "skin" });
-  const hair = mat("#352522", { rough: 0.66 , surface: "fur" });
+  const hair = mat(hairColor, { rough: 0.66 , surface: "fur" });
   const fabric = mat(coat, { rough: 0.84, surface: "cloth" });
   const pants = mat(trousers, { rough: 0.8, surface: "cloth" });
   const gold = mat("#f1cc70", { rough: 0.5 });
@@ -93,6 +93,7 @@ function child({ coat, trousers, girl = false, chullo = false, sailor = false, s
     g.add(arm);
   });
 
+  decorate?.(g, headG);
   return fit(g, 0.32);
 }
 

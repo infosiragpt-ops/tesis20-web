@@ -35,8 +35,8 @@ export function searchBooks(books, query, filter = 'all', entries = {}) {
   const terms = key(query).trim().split(/\s+/).filter(Boolean);
   return books.filter(book => {
     if (!terms.every(term => key(book.title).includes(term))) return false;
-    if (filter === 'narrated') return book.narration !== 'reading-only';
-    if (filter === 'reading') return book.narration === 'reading-only';
+    if (filter === 'narrated') return !['reading-only', 'device'].includes(book.narration);
+    if (filter === 'reading' || filter === 'device') return book.narration === 'device';
     if (filter === 'started') {
       const pages = new Set((entries[book.id]?.pages || []).filter(i => Number.isInteger(i) && i >= 0 && i < book.pages.length));
       return pages.size > 0 && pages.size < book.pages.length;

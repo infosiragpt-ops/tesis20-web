@@ -56,8 +56,8 @@ export function LibrarySearch({ books, state, onOpen }) {
         <label htmlFor="story-filter">Mostrar</label>
         <select id="story-filter" value={filter} onChange={event => setFilter(event.target.value)}>
           <option value="all">Todos los cuentos</option>
-          <option value="narrated">Con narración</option>
-          <option value="reading">Solo lectura</option>
+          <option value="narrated">Voz de estudio</option>
+          <option value="device">Voz del dispositivo</option>
           <option value="started">Seguir leyendo</option>
         </select>
       </div>
@@ -68,7 +68,7 @@ export function LibrarySearch({ books, state, onOpen }) {
           <img src={book.cover.image} alt="" width="40" height="58" loading="lazy" decoding="async" />
           <span className="cuentos-search-result__copy">
             <strong>{book.title}</strong>
-            <small>{book.narration === 'reading-only' ? 'Solo lectura · texto íntegro' : 'Con narración'} · {book.pages.length} páginas</small>
+            <small>{book.narration === 'device' ? 'Voz del dispositivo · texto íntegro' : 'Voz de estudio'} · {book.pages.length} páginas</small>
             {status.started ? <span className="cuentos-search-result__progress">{status.finished ? 'Completado · volver a leer' : `Continuar en la página ${resumePage(book, status) + 1} · ${status.pct}% leído`}</span> : null}
           </span>
         </button></li>;

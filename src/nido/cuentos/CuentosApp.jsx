@@ -7,6 +7,8 @@ import { CAST } from "./cuentos-art-cast.jsx";
 import { MEDALS, bookStatus, totals, useProgress } from "./cuentos-progress.js";
 import {
   isMuted,
+  browserSpeechAvailable,
+  setMuted,
   loadCuentosSound,
   loadCuentosVoices,
   onMuteChange,
@@ -664,7 +666,7 @@ function DeskPanel({ book, status, ready, onOpen, onBack }) {
         <h2>{book.title}</h2>
         <p className="cuentos-desk__tagline">{book.tagline}</p>
         <p className="cuentos-desk__meta">
-          {book.pages.length} páginas · {status.finished ? "terminado" : `${status.pct}% leído`}{book.narration === 'reading-only' ? ' · lectura sin audio narrado' : ` · ${status.pins.length} de ${bookPins(book).length} souvenirs`}
+          {book.pages.length} páginas · {status.finished ? "terminado" : `${status.pct}% leído`}{book.narration === 'device' ? ' · voz del dispositivo, sin coste' : ` · ${status.pins.length} de ${bookPins(book).length} souvenirs`}
         </p>
         {book.source ? <details className="cuentos-source"><summary>Sobre esta edición y su portada</summary>
           <p>{book.warning}</p><a href={book.source.url} target="_blank" rel="noreferrer">Texto: {book.source.publisher}</a>
@@ -711,6 +713,8 @@ export function stepsKeyFor(book, page, act) {
 
 function Reader({ book, page, state, suspended, pinRef, onPage, onClose, onStar, onPin, onQuiz, onAct, onSpeaking, onWordTick, onName, onMove, onCinema, onStoryWord, onScene, isWorking }) {
   const hasNarration = book.narration !== 'reading-only';
+  const deviceVoice = book.narration === 'device';
+  const [voiceName, setVoiceName] = useState('');
   const pageData = book.pages[page];
   const entry = state.books[book.id] || { pages: [], pins: [], quiz: [], quizOk: 0 };
   const [activeWord, setActiveWord] = useState(-1);
@@ -718,6 +722,16 @@ function Reader({ book, page, state, suspended, pinRef, onPage, onClose, onStar,
   const [speaking, setSpeaking] = useState(false);
   const [quizOpen, setQuizOpen] = useState(false);
   const autoRef = useRef(false);
+  const readGeneration = useRef(0);
+  useEffect(() => onMuteChange(next => {
+    if (!next) return;
+    autoRef.current = false;
+    readGeneration.current += 1;
+    setAutoRead(false);
+    setSpeaking(false);
+    setActiveWord(-1);
+    onStoryWord?.(-1);
+  }), []);
   useEffect(() => {
     if (suspended) {
       autoRef.current = false;
@@ -741,11 +755,8 @@ function Reader({ book, page, state, suspended, pinRef, onPage, onClose, onStar,
     onCinemaRef.current?.(Boolean(autoRead && cinema));
   }, [autoRead, cinema]);
   useEffect(() => () => onCinemaRef.current?.(false), []);
-  useEffect(() => {
-    if (!readNotice) return undefined;
-    const timer = window.setTimeout(() => setReadNotice(null), 6500);
-    return () => window.clearTimeout(timer);
-  }, [readNotice]);
+  // Keep failures visible until the next reading attempt; a disappearing
+  // notice made a failed device voice look like a mysteriously stopped book.
   const toggleCinema = useCallback(() => {
     sfx.select();
     setCinema((prev) => {
@@ -765,6 +776,17 @@ function Reader({ book, page, state, suspended, pinRef, onPage, onClose, onStar,
     // siempre debe empezar por su título, no conservar el final de la anterior.
     if (textCardRef.current) textCardRef.current.scrollTop = 0;
   }, [page]);
+
+  useEffect(() => {
+    const card = textCardRef.current;
+    const word = card?.querySelector('.cuentos-word.is-active');
+    // Only the visible mobile text pane scrolls; never scroll the whole app
+    // or move focus while the child is listening.
+    if (!word || card.clientHeight < 10) return;
+    const bounds = card.getBoundingClientRect(), line = word.getBoundingClientRect();
+    if (line.bottom > bounds.bottom - 18) card.scrollTop += line.bottom - bounds.bottom + 32;
+    else if (line.top < bounds.top + 12) card.scrollTop += line.top - bounds.top - 20;
+  }, [activeWord]);
 
   const words = useMemo(() => pageData.x.split(WORD_SPLIT), [pageData.x]);
   const wordIndexes = useMemo(() => {
@@ -791,7 +813,7 @@ function Reader({ book, page, state, suspended, pinRef, onPage, onClose, onStar,
   // que se pidan, para que «Léemelo» y el pase de hoja no esperen a la red.
   useEffect(() => {
     let cancelled = false;
-    if (!hasNarration) return undefined;
+    if (!hasNarration || deviceVoice) return undefined;
     loadCuentosVoices().then(() => {
       if (cancelled) return;
       prefetchTracks([pageTrack(book.id, page), pageTrack(book.id, page + 1)]);
@@ -799,7 +821,7 @@ function Reader({ book, page, state, suspended, pinRef, onPage, onClose, onStar,
     return () => {
       cancelled = true;
     };
-  }, [book.id, page, hasNarration]);
+  }, [book.id, page, hasNarration, deviceVoice]);
 
   // Efectos de la página: los de apertura suenan al mostrarla; los de las
   // palabras se descargan ya para dispararse en el instante justo.
@@ -859,11 +881,16 @@ function Reader({ book, page, state, suspended, pinRef, onPage, onClose, onStar,
     [pageData.cues, bodyWords, onAct, onName, onMove, onScene, nameIndex],
   );
 
-  useEffect(() => () => stopSpeech(), []);
+  useEffect(() => () => {
+    autoRef.current = false;
+    readGeneration.current += 1;
+    stopSpeech();
+  }, []);
 
   const turnTo = useCallback(
     (next) => {
       if (next < 0 || next > book.pages.length - 1) return;
+      readGeneration.current += 1;
       stopSpeech();
       setSpeaking(false);
       setActiveWord(-1);
@@ -875,15 +902,22 @@ function Reader({ book, page, state, suspended, pinRef, onPage, onClose, onStar,
   );
 
   const readAloud = useCallback(() => {
-    if (!speechAvailable()) return;
-    setSpeaking(true);
+    const generation = ++readGeneration.current;
+    if (deviceVoice ? !browserSpeechAvailable() : !speechAvailable()) {
+      autoRef.current = false;
+      setAutoRead(false);
+      setReadNotice('Este navegador no ofrece lectura en voz alta. Abre el cuento en Safari, Chrome o Edge con una voz en español instalada.');
+      return;
+    }
+    setSpeaking(!deviceVoice);
     // Se espera al manifiesto de voces (ya pedido al abrir la biblioteca) para
     // que la primera página no salga con la voz del navegador por una carrera.
-    loadCuentosVoices().then(() => {
-      if (pageRef.current !== page || !autoRef.current) return;
+    const begin = () => {
+      if (generation !== readGeneration.current || pageRef.current !== page || !autoRef.current) return;
       onSpeaking?.(pageData.cast?.[0] || null);
       speak(`${pageData.t}. ${pageData.x}`, {
-        track: pageTrack(book.id, page),
+        track: deviceVoice ? null : pageTrack(book.id, page),
+        onStart: voice => { setVoiceName(voice.name); setSpeaking(true); },
         onWord: (index) => {
           const titleWords = pageData.t.split(/\s+/).filter(Boolean).length;
           setActiveWord(index < 0 ? -1 : index - titleWords);
@@ -900,11 +934,16 @@ function Reader({ book, page, state, suspended, pinRef, onPage, onClose, onStar,
           // falla, voz del sistema que corta) no se pasa sola: se avisa y se
           // espera a que el lector vuelva a tocar «Léemelo».
           if (result && result.ok === false) {
+            autoRef.current = false;
             setAutoRead(false);
             setReadNotice(
               result.reason === "muted"
                 ? "Activa el sonido con el botón 🔊 de arriba para escuchar el cuento."
-                : "No se pudo escuchar esta página. Toca ▶ Léemelo para intentarlo otra vez.",
+                : result.reason === 'spanish-unavailable'
+                  ? 'No hay una voz en español disponible. Instálala en los ajustes de voz de tu dispositivo y vuelve a tocar Léemelo.'
+                  : ['interrupted', 'canceled'].includes(result.reason)
+                    ? 'La voz del dispositivo se interrumpió. Toca Léemelo para volver a leer esta página.'
+                    : "No se pudo escuchar esta página. Toca ▶ Léemelo para intentarlo otra vez.",
             );
             return;
           }
@@ -915,7 +954,7 @@ function Reader({ book, page, state, suspended, pinRef, onPage, onClose, onStar,
             // (hasta 10 s) a que termine su trabajo antes de pasar.
             const startedAt = Date.now();
             const advance = () => {
-              if (!autoRef.current || pageRef.current !== page) return;
+              if (generation !== readGeneration.current || !autoRef.current || pageRef.current !== page) return;
               if (isWorking?.() && Date.now() - startedAt < 10000) {
                 window.setTimeout(advance, 400);
                 return;
@@ -927,15 +966,18 @@ function Reader({ book, page, state, suspended, pinRef, onPage, onClose, onStar,
           }
         },
       });
-    });
-  }, [pageData, page, book.id, book.pages.length, turnTo, fireCue, isWorking]);
+    };
+    // Keep the first device utterance in the actual click/touch gesture (iOS).
+    if (deviceVoice) begin();
+    else loadCuentosVoices().then(begin);
+  }, [pageData, page, book.id, book.pages.length, deviceVoice, turnTo, fireCue, isWorking]);
 
   useEffect(() => {
     autoRef.current = autoRead;
     if (autoRead) firedCues.current = new Set();
     if (autoRead) setReadNotice(null);
-    if (autoRead) readAloud();
-    else {
+    if (!autoRead) {
+      readGeneration.current += 1;
       stopSpeech();
       setSpeaking(false);
       setActiveWord(-1);
@@ -975,8 +1017,10 @@ function Reader({ book, page, state, suspended, pinRef, onPage, onClose, onStar,
     if (autoRef.current) return;
     const clean = token.replace(/[^\wáéíóúüñÁÉÍÓÚÜÑ¿?¡!.,";:-]/g, "");
     if (!clean) return;
+    setMuted(false);
+    unlockAudio();
     sfx.hover();
-    speak(clean, { rate: 0.8, track: wordTrack(token) });
+    speak(clean, { rate: 0.8, track: deviceVoice ? null : wordTrack(token) });
   };
 
   const pinFound = pageData.pin ? entry.pins.includes(pageData.pin) : true;
@@ -1042,9 +1086,13 @@ function Reader({ book, page, state, suspended, pinRef, onPage, onClose, onStar,
           ←
         </button>
         <div className="cuentos-controls__center">
-          {hasNarration && speechAvailable() ? (
-            <button type="button" className={`cuentos-btn cuentos-btn--read ${autoRead ? "is-on" : ""}`} onClick={() => setAutoRead((prev) => !prev)}>
-              {autoRead ? (speaking ? "⏸ Pausa" : "⏸ Leyendo…") : "▶ Léemelo"}
+          {hasNarration ? (
+            <button type="button" className={`cuentos-btn cuentos-btn--read ${autoRead ? "is-on" : ""}`} onClick={() => {
+              if (autoRef.current) { autoRef.current = false; stopSpeech(); setAutoRead(false); return; }
+              setMuted(false); unlockAudio(); setReadNotice(null);
+              firedCues.current = new Set(); autoRef.current = true; setAutoRead(true); readAloud();
+            }}>
+              {autoRead ? (speaking ? "⏸ Pausa" : "⏸ Preparando voz…") : "▶ Léemelo"}
             </button>
           ) : null}
           {hasNarration ? <button type="button" className={`cuentos-btn cuentos-btn--ghost cuentos-btn--cine ${cinema ? "is-on" : ""}`} onClick={toggleCinema} aria-pressed={cinema} title="Con «Léemelo», se encuadra el libro completo y se sigue la lectura sobre la hoja">
@@ -1070,6 +1118,8 @@ function Reader({ book, page, state, suspended, pinRef, onPage, onClose, onStar,
           →
         </button>
       </div>
+
+      {deviceVoice ? <p className="cuentos-device-voice" role="status">Voz del dispositivo · sin coste{voiceName ? ` · ${voiceName}` : ''}</p> : null}
 
       {quizOpen ? (
         <Quiz
@@ -1227,7 +1277,7 @@ function Album({ state, stats, onClose, onReset }) {
           <div>
             <p className="cuentos-modal__eyebrow">Tesis20 Nido · búsqueda del tesoro</p>
             <h2>Mis souvenirs</h2>
-            <p className="cuentos-album__lead">Los cuentos narrados incluyen cinco souvenirs escondidos. Tócalos cuando brillen para guardarlos. Las ediciones de solo lectura conservan tu progreso, sin quiz ni souvenirs.</p>
+            <p className="cuentos-album__lead">Los cuentos con voz de estudio incluyen cinco souvenirs escondidos. Tócalos cuando brillen para guardarlos. Los clásicos con voz del dispositivo conservan tu progreso, sin quiz ni souvenirs.</p>
           </div>
           <div className="cuentos-album__totals">
             <span>
@@ -1270,7 +1320,7 @@ function Album({ state, stats, onClose, onReset }) {
                     <i style={{ width: `${status.pct}%`, background: book.accent }} />
                   </span>
                   <small>
-                    {status.finished ? "Terminado" : `${status.pct}% leído`}{book.narration === 'reading-only' ? ' · Texto íntegro, lectura' : ` · ${status.pins.length} de ${bookPins(book).length} souvenirs · quiz ${status.quizOk}/${book.quiz.length}`}
+                    {status.finished ? "Terminado" : `${status.pct}% leído`}{book.narration === 'device' ? ' · Texto íntegro · voz del dispositivo' : ` · ${status.pins.length} de ${bookPins(book).length} souvenirs · quiz ${status.quizOk}/${book.quiz.length}`}
                   </small>
                 </div>
                 <div className="cuentos-album__pins">
@@ -1315,9 +1365,9 @@ function Album({ state, stats, onClose, onReset }) {
 
 const STEPS = [
   { icon: "📚", title: "Elige un cuento", text: "Busca por título o arrastra la repisa. Toca un libro y abre su tapa hacia la izquierda, o usa «Abrir el libro». Para guardarlo, arrástralo hacia arriba o vuelve a la estantería. Cada ficha indica cuántas páginas tiene; tu última página se guarda en este dispositivo." },
-  { icon: "🔊", title: "Lectura y narración", text: "En «Con narración», la voz lee y marca cada palabra; también puedes tocar una palabra suelta. Los libros de «Solo lectura» permiten leer el texto completo en familia, sin audio narrado. Usa las flechas, las estrellas o el selector de página para avanzar." },
-  { icon: "🔍", title: "Busca el souvenir", text: "Los cuentos narrados esconden cinco souvenirs. Toca los objetos que brillan para guardarlos. Las ediciones de solo lectura no incluyen souvenirs." },
-  { icon: "⭐", title: "Responde el quiz", text: "Los cuentos narrados ofrecen cinco preguntas al llegar a la última página. Los de solo lectura conservan el progreso, sin quiz. Abrir la ayuda o los souvenirs pausa la narración sin cambiar tu página." },
+  { icon: "🔊", title: "Lectura y narración", text: "Toca «Léemelo» para escuchar y seguir las palabras. Los clásicos usan una voz en español de tu dispositivo, sin coste; los otros cuentos conservan su voz de estudio. Las figuras se animan durante la lectura. Usa las flechas, estrellas o selector para cambiar de página." },
+  { icon: "🔍", title: "Busca el souvenir", text: "Los cuentos con voz de estudio esconden cinco souvenirs. Toca los objetos que brillan para guardarlos. Las ediciones clásicas no incluyen souvenirs." },
+  { icon: "⭐", title: "Responde el quiz", text: "Los cuentos con voz de estudio ofrecen cinco preguntas al llegar al final. Los clásicos conservan el progreso, sin quiz. Abrir la ayuda o los souvenirs detiene la narración sin cambiar tu página." },
 ];
 
 function Help({ onClose }) {
@@ -1341,7 +1391,7 @@ function Help({ onClose }) {
             </li>
           ))}
         </ul>
-        <p className="cuentos-help__note">La voz de estudio está disponible en los libros marcados «Con narración». Si no se escucha, comprueba la conexión y el botón de sonido. Los libros de solo lectura seguirán sin narración hasta que sus grabaciones estén disponibles.</p>
+        <p className="cuentos-help__note">La calidad de la voz del dispositivo depende de las voces en español instaladas. No se generan audios de pago. En dispositivos sin marcas de palabra, el resaltado es aproximado. «Léemelo» activa el sonido; «Pausa» detiene la lectura y permite volver a empezarla.</p>
         <button type="button" className="cuentos-btn cuentos-btn--read" onClick={onClose}>
           Empezar a leer
         </button>

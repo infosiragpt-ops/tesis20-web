@@ -5,6 +5,9 @@
 // puede descargar, se cae a la voz del navegador para no dejar mudo al lector.
 
 import { wordIndexAt, wordKey } from "./cuentos-voice-plan.js";
+import { createDeviceNarration } from "./device-narrator.js";
+
+let deviceNarration = null;
 
 let ctx = null;
 let master = null;
@@ -473,6 +476,23 @@ export const TOY_SOUND_ALIAS = {
   nino: "toy-nino",
   caperuza: "toy-nino",
   casita: "toy-casa",
+  // Classic figures use existing gentle foley, not invented animal voices
+  // or new paid recordings. Their names remain visible on hover/touch.
+  campesino: 'pasos-suaves', campesina: 'pasos-suaves', princesa: 'pasos-suaves', principe: 'pasos-suaves',
+  reina: 'pasos-suaves', rey: 'pasos-suaves', rapunzel: 'pasos-suaves', bruja: 'chispas',
+  pinocho: 'martillo', alibaba: 'pasos-arena', aladino: 'pasos-arena', genio: 'luces-magicas',
+  gigante: 'pasos-bosque', gulliver: 'pasos-suaves', bella: 'pasos-suaves', soldadito: 'pasos-suaves',
+  bailarina: 'pasos-suaves', guillermo: 'pasos-pasto', cenicienta: 'chispas', blancanieves: 'pasos-suaves',
+  'barba-azul': 'pasos-suaves', hada: 'luces-magicas', sirena: 'chapoteo-suave', heidi: 'pasos-pasto',
+  zapatero: 'martillo', duende: 'pasos-suaves', 'papa-noel': 'chispas', pastor: 'pasos-pasto',
+  'nino-clasico': 'pasos-suaves', teseo: 'pasos-suaves', bambi: 'pasos-pasto', 'gato-botas': 'pasos-suaves',
+  gato: 'pasos-suaves', leon: 'pasos-pasto', raton: 'pasos-suaves', liebre: 'pasos-pasto', tortuga: 'pasos-pasto',
+  patito: 'chapoteo-suave', cisne: 'chapoteo-suave', paloma: 'pajaros', hormiga: 'pasos-pasto',
+  cigarra: 'noche-grillos', burro: 'pasos-pasto', perro: 'pasos-pasto', gallo: 'pasos-pasto',
+  dragon: 'viento-suave', bestia: 'pasos-bosque', minotauro: 'pasos-bosque',
+  castillo: 'toc-toc', torre: 'toc-toc', 'cama-guisante': 'toy-ramo', 'lampara-magica': 'luces-magicas',
+  tesoro: 'chispas', habichuela: 'arbol-cruje', zapatos: 'pasos-suaves', 'rosa-encantada': 'toy-ramo',
+  perla: 'chispas', laberinto: 'pasos-suaves', taller: 'martillo',
 };
 export function toySoundKey(toyId) {
   if (!toyId) return null;
@@ -656,8 +676,6 @@ let session = 0;
 const clipCache = new Map();
 const clipPending = new Map();
 
-let currentUtterance = null;
-let wordTimer = null;
 
 /** Descarga el manifiesto una sola vez por sesión. Nunca rechaza. */
 export function loadCuentosVoices() {
@@ -888,8 +906,8 @@ function playRecorded(track, { onWord, onEnd }, mySession) {
   });
 }
 
-function browserSpeechAvailable() {
-  return typeof window !== "undefined" && "speechSynthesis" in window;
+export function browserSpeechAvailable() {
+  return typeof window !== "undefined" && Boolean(window.speechSynthesis) && typeof window.SpeechSynthesisUtterance === 'function';
 }
 
 /** Hay alguna voz: la de estudio (cualquier navegador con <audio>) o la del sistema. */
@@ -897,35 +915,15 @@ export function speechAvailable() {
   return typeof window !== "undefined" && (typeof window.Audio === "function" || browserSpeechAvailable());
 }
 
-function pickVoice() {
-  const voices = window.speechSynthesis?.getVoices?.() || [];
-  if (!voices.length) return null;
-  const byLang = (tag) => voices.filter((v) => v.lang?.toLowerCase().startsWith(tag));
-  const preferred = [
-    ...byLang("es-pe"),
-    ...byLang("es-419"),
-    ...byLang("es-mx"),
-    ...byLang("es-us"),
-    ...byLang("es-cl"),
-    ...byLang("es-co"),
-    ...byLang("es"),
-  ];
-  const female = preferred.find((v) => /paulina|mónica|monica|luciana|sabina|helena|google/i.test(v.name));
-  return female || preferred[0] || null;
-}
-
 export function stopSpeech() {
   session += 1;
-  if (wordTimer) {
-    window.clearInterval(wordTimer);
-    wordTimer = null;
-  }
+  deviceNarration?.cancel();
+  deviceNarration = null;
   if (sequenceTimer) {
     window.clearTimeout(sequenceTimer);
     sequenceTimer = 0;
   }
   if (typeof window !== "undefined") stopFrameLoop();
-  currentUtterance = null;
   if (narrator) {
     narrator.onended = null;
     narrator.onerror = null;
@@ -939,82 +937,17 @@ export function stopSpeech() {
  * eventos `boundary` cuando el navegador los emite y, si no, con un
  * temporizador calculado por número de sílabas.
  */
-function speakWithBrowser(text, { onWord, onEnd, rate = 0.86 }, mySession) {
+function speakWithBrowser(text, { onWord, onEnd, onStart, rate = 0.86 }, mySession) {
   if (!browserSpeechAvailable()) {
     onEnd?.({ ok: false, reason: "unavailable" });
     return;
   }
-  const startedAt = performance.now();
-
-  const words = text.split(/\s+/).filter(Boolean);
-  const offsets = [];
-  let cursor = 0;
-  words.forEach((word) => {
-    const at = text.indexOf(word, cursor);
-    offsets.push(at);
-    cursor = at + word.length;
+  deviceNarration = createDeviceNarration(text, {
+    synth: window.speechSynthesis, Utterance: window.SpeechSynthesisUtterance, rate,
+    onWord: index => { if (mySession === session) onWord?.(index); },
+    onStart: voice => { if (mySession === session) onStart?.(voice); },
+    onEnd: result => { if (mySession === session) onEnd?.(result); },
   });
-
-  const utterance = new window.SpeechSynthesisUtterance(text);
-  const voice = pickVoice();
-  if (voice) utterance.voice = voice;
-  utterance.lang = voice?.lang || "es-PE";
-  utterance.rate = rate;
-  utterance.pitch = 1.05;
-  currentUtterance = utterance;
-
-  let boundaryWorks = false;
-  let index = 0;
-
-  const advance = (next) => {
-    index = next;
-    onWord?.(next);
-  };
-
-  utterance.onboundary = (event) => {
-    if (mySession !== session) return;
-    if (event.name && event.name !== "word") return;
-    boundaryWorks = true;
-    if (wordTimer) {
-      window.clearInterval(wordTimer);
-      wordTimer = null;
-    }
-    const at = event.charIndex;
-    let found = 0;
-    for (let i = 0; i < offsets.length; i += 1) {
-      if (offsets[i] <= at) found = i;
-      else break;
-    }
-    advance(found);
-  };
-
-  const settle = (result) => {
-    if (mySession !== session) return;
-    if (wordTimer) {
-      window.clearInterval(wordTimer);
-      wordTimer = null;
-    }
-    onWord?.(-1);
-    currentUtterance = null;
-    onEnd?.(result);
-  };
-  utterance.onend = () => settle(readResult(performance.now() - startedAt, words.length * 320));
-  utterance.onerror = (event) => settle({ ok: false, reason: event?.error || "error" });
-
-  // Reserva por si el navegador no emite `boundary` (pasa en varios Safari).
-  const perWord = Math.max(230, (1000 / (rate * 3.1)) * 1.05);
-  wordTimer = window.setInterval(() => {
-    if (boundaryWorks) {
-      window.clearInterval(wordTimer);
-      wordTimer = null;
-      return;
-    }
-    if (index + 1 >= words.length) return;
-    advance(index + 1);
-  }, perWord);
-
-  advance(0);
-  window.speechSynthesis.speak(utterance);
 }
 
 /**
@@ -1022,7 +955,7 @@ function speakWithBrowser(text, { onWord, onEnd, rate = 0.86 }, mySession) {
  * clip de estudio y el subrayado sigue sus marcas de tiempo; sin él, o si el
  * clip falla, habla el navegador. Devuelve una función para detenerlo.
  */
-export function speak(text, { track = null, onWord, onEnd, rate = 0.86 } = {}) {
+export function speak(text, { track = null, onWord, onEnd, onStart, rate = 0.86 } = {}) {
   if (typeof window === "undefined" || muted) {
     onEnd?.({ ok: false, reason: muted ? "muted" : "unavailable" });
     return () => {};
@@ -1032,10 +965,10 @@ export function speak(text, { track = null, onWord, onEnd, rate = 0.86 } = {}) {
   if (track?.src && ensureNarrator()) {
     playRecorded(track, { onWord, onEnd }, mySession).catch(() => {
       if (mySession !== session) return;
-      speakWithBrowser(text, { onWord, onEnd, rate }, mySession);
+      speakWithBrowser(text, { onWord, onEnd, onStart, rate }, mySession);
     });
   } else {
-    speakWithBrowser(text, { onWord, onEnd, rate }, mySession);
+    speakWithBrowser(text, { onWord, onEnd, onStart, rate }, mySession);
   }
   return () => {
     if (mySession === session) stopSpeech();
@@ -1080,11 +1013,7 @@ export function pauseSpeech() {
     window.cancelAnimationFrame(frameTimer);
     frameTimer = 0;
   }
-  if (browserSpeechAvailable()) window.speechSynthesis.pause();
-  if (wordTimer) {
-    window.clearInterval(wordTimer);
-    wordTimer = null;
-  }
+  deviceNarration?.pause();
 }
 
 export function resumeSpeech() {
@@ -1094,7 +1023,7 @@ export function resumeSpeech() {
     if (playing?.catch) playing.catch(() => {});
     if (resumeTick && !frameTimer) resumeTick();
   }
-  if (browserSpeechAvailable()) window.speechSynthesis.resume();
+  deviceNarration?.resume();
 }
 
 export function isSpeaking() {

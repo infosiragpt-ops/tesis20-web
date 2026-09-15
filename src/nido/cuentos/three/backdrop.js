@@ -55,7 +55,7 @@ const DEFAULT_SCENERY = [[0, 0, 1, 0.45]];
 // Las portadas históricas contienen rótulos y personajes: no se recortan
 // como paisaje. Estas ediciones mantienen el decorado del escenario.
 export function sceneryFor(book) {
-  return book.narration === 'reading-only' ? null : SCENERY[book.id];
+  return book.source ? null : SCENERY[book.id];
 }
 
 /**

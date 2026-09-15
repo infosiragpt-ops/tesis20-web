@@ -642,7 +642,7 @@
   .cuentos-library-search { top: 112px; left: 12px; width: min(380px, calc(100vw - 24px)); }
   .cuentos-search-panel { max-height: calc(100dvh - 182px); }
   .cuentos-stars-row { max-width: calc(100vw - 24px); }
-  .cuentos-stars-row select { max-width: 100px; font-size: 10px; }
+  .cuentos-stars-row select { max-width: 132px; font-size: 10px; }
 }
 
 .cuentos-card {
@@ -1778,6 +1778,13 @@
 }
 
 /* Aviso cuando la página no se pudo escuchar: no se pasa sola. */
+.cuentos-device-voice {
+  position: absolute; bottom: max(4px, env(safe-area-inset-bottom)); left: 50%;
+  transform: translateX(-50%); max-width: calc(100% - 24px); width: max-content;
+  margin: 0; padding: 3px 10px; border-radius: 20px; background: #fff8e7ed;
+  color: #544732; font: 11px/1.4 system-ui; z-index: 14; pointer-events: none;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
 .cuentos-read-notice {
   position: absolute;
   left: 50%;
@@ -1796,8 +1803,9 @@
 }
 
 @media (max-width: 760px) and (orientation: portrait) {
-  .cuentos--reading.cuentos--cinema .cuentos-canvas { top: 0; height: 100%; }
-  .cuentos--reading.cuentos--cinema .cuentos-zoom { top: auto; bottom: 150px; }
+  .cuentos--reading.cuentos--cinema .cuentos-canvas { top: 130px; height: calc(61% - 130px); }
+  .cuentos--reading.cuentos--cinema .cuentos-zoom { top: 138px; bottom: auto; }
+  .cuentos-device-voice { top: 144px; bottom: auto; right: 12px; left: auto; transform: none; max-width: calc(100% - 150px); font-size: 9px; }
   .cuentos-captions { bottom: max(120px, calc(env(safe-area-inset-bottom) + 112px)); padding: 10px 14px 12px; }
   .cuentos-captions__text { font-size: 17px; line-height: 1.45; }
   .cuentos-read-notice { bottom: max(116px, calc(env(safe-area-inset-bottom) + 108px)); }

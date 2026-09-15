@@ -26,6 +26,7 @@ import { buildToy, ghostify, PIN_TOY, hasToy } from "./toys/index.js";
 import { mat, blob, box, cyl, cone } from "./toys/_shared.js";
 import { bookIndexAt, bookPositionAt, clamp, clampZoom, dragScale, settleBook, deskDragIntent, dragProgress, shouldCompleteDrag } from "./library-gestures.js";
 import { createToyFeedback } from "./toy-feedback.js";
+import { dioramaLayout } from './diorama-layout.js';
 
 const SHELF_TOYS = ["buho", "luna", "cometa", "oveja", "arbol", "ballena", "frasco", "barco", "tren", "estrella"];
 
@@ -456,27 +457,6 @@ export function createStage(canvas, options) {
    * Escenografía en segunda fila, a los lados y más chica, sin tapar la
    * ilustración. `face` gira cada figura hacia el centro.
    */
-  function dioramaLayout(castCount, propCount) {
-    const slots = [];
-    const castScale = castCount === 1 ? 0.72 : castCount === 2 ? 0.6 : 0.52;
-    if (castCount === 1) slots.push({ x: 0, z: 0.05, scale: castScale, face: 0 });
-    if (castCount === 2) {
-      slots.push({ x: -0.085, z: 0.045, scale: castScale, face: 0.28 });
-      slots.push({ x: 0.085, z: 0.045, scale: castScale, face: -0.28 });
-    }
-    if (castCount === 3) {
-      slots.push({ x: 0, z: 0.06, scale: castScale * 1.1, face: 0 });
-      slots.push({ x: -0.135, z: 0.02, scale: castScale, face: 0.42 });
-      slots.push({ x: 0.135, z: 0.02, scale: castScale, face: -0.42 });
-    }
-    // Escenografía detrás y a los lados, más chica, para que no tape a nadie.
-    const propScale = castCount === 0 ? 0.6 : castCount === 1 ? 0.42 : castCount === 2 ? 0.38 : 0.34;
-    const propX = castCount >= 3 ? 0.21 : castCount === 2 ? 0.2 : castCount === 1 ? 0.15 : 0.08;
-    const propZ = castCount === 0 ? 0.02 : -0.08;
-    if (propCount >= 1) slots.push({ x: -propX, z: propZ, scale: propScale, face: 0.35 });
-    if (propCount >= 2) slots.push({ x: propX, z: propZ, scale: propScale, face: -0.35 });
-    return slots;
-  }
 
   // Narración viva: mientras la voz lee, el protagonista «habla» (un gesto de
   // cabeza por palabra) y los demás lo miran y se mecen. Sin narración vuelven
@@ -766,6 +746,7 @@ export function createStage(canvas, options) {
 
   function updateCinemaCamera(dt) {
     if (!selected?.popupPivot) return false;
+    const portrait = window.innerWidth / window.innerHeight < 0.85;
     selected.popupPivot.getWorldQuaternion(tmpQuat);
     cineFront.set(0, 0, 1).applyQuaternion(tmpQuat).normalize();
     cineUp.set(0, 1, 0).applyQuaternion(tmpQuat).normalize();
@@ -777,7 +758,8 @@ export function createStage(canvas, options) {
     const push = 1.08 - 0.08 * (1 - Math.cos(k * Math.PI)) * 0.5;
     // Foco: el centro del libro abierto, apenas inclinado hacia quien habla.
     const speaker = speakingId ? pageActorById.get(speakingId) : null;
-    cineFocusTarget.copy(cine.bookCenter);
+    if (portrait) cineFocusTarget.fromArray(CAM_PORTRAIT.reading.look);
+    else cineFocusTarget.copy(cine.bookCenter);
     if (speaker && speaker.visible) {
       speaker.getWorldPosition(cineActorPos);
       cineFocusTarget.lerp(cineActorPos, 0.12);
@@ -801,7 +783,8 @@ export function createStage(canvas, options) {
     const fit = cine.bookRadius / Math.sin(Math.min(fovV, fovH) / 2);
     // La esfera sobreestima (el libro es plano y ancho): 0,6 lo deja entero
     // en cuadro y grande.
-    const dist = (fit * 0.6 * push) / Math.max(0.5, zoom.value);
+    const portraitDistance = Math.hypot(...CAM_PORTRAIT.reading.pos.map((value, i) => value - CAM_PORTRAIT.reading.look[i]));
+    const dist = (portrait ? portraitDistance : fit * 0.6 * push) / Math.max(0.5, zoom.value);
     // Dirección base: la de la vista de lectura (el libro visto desde el
     // frente y un poco desde arriba), girada por la deriva y el arrastre.
     const view = viewFor("reading");
@@ -1842,7 +1825,7 @@ export function createStage(canvas, options) {
 
   /* ---------------------------- estados ----------------------------- */
   function viewFor(name) {
-    if (name === 'reading' && selected?.book.narration === 'reading-only' && window.innerWidth / window.innerHeight >= 0.85) {
+    if (name === 'reading' && selected?.book.source && window.innerWidth / window.innerHeight >= 0.85) {
       // Deja visible el final de las páginas largas por encima de los controles.
       return { pos: [-0.14, 1.7, 2.65], look: [-0.14, 0.26, 0.6] };
     }
