@@ -47,6 +47,8 @@ import * as pulgarcito from "./pulgarcito.js";
 import { father, mother } from "./pulgarcito.js";
 import { caballo, vaca, caracol, concha } from "./pulgarcito-animals.js";
 import { nina, nino, nina2, maquinista } from "./personajes.js";
+import { CLASSIC_TOYS } from './classic-toys.js';
+import { CLASSIC_PROPS } from './classic-props.js';
 
 const pipo = { id: "pipo", label: "Pipo", build: () => cerdito.build({ hat: true, item: "paja" }) };
 const lolo = { id: "lolo", label: "Lolo", build: () => cerdito.build({ shirt: "#4fa85f", item: "madera" }) };
@@ -59,6 +61,8 @@ const REGISTRY = { abuelita, arbol, ballena, barco, bufeo, buho, cactus, campana
 // junto a los personajes grandes (1 = altura estándar de figura).
 export const TOY_SCALE = { mariposa: 0.5, picaflor: 0.75, carpintero: 0.75, pajarito: 0.55, rana: 0.85, pez: 0.85, pulgarcito: 0.72, caracol: 0.7, 'concha-caracol': 0.58 };
 Object.assign(REGISTRY, { pulgarcito, caballo, vaca, caracol, "concha-caracol": concha, "papa-pulgarcito": father, "mama-pulgarcito": mother });
+for (const toy of [...CLASSIC_TOYS, ...CLASSIC_PROPS]) REGISTRY[toy.id] = toy;
+Object.assign(TOY_SCALE, { gigante: 1.3, raton: .6, hormiga: .55, cigarra: .7, paloma: .7, 'cama-guisante': 1.15, castillo: 1.2, torre: 1.2 });
 
 export function registerToys(modules) {
   modules.forEach((module) => {

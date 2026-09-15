@@ -636,7 +636,7 @@ export function storyPageTexture(book, page, pageIndex, totalPages) {
   ctx.textAlign = "center";
   ctx.fillStyle = "rgba(92,63,34,.58)";
   ctx.font = `600 ${compact ? 29 : 25}px ui-rounded, "Trebuchet MS", sans-serif`;
-  ctx.fillText(book.narration === 'reading-only' ? "Comparte este cuento en familia" : "Toca Léemelo para escuchar el cuento", 512, 1325);
+  ctx.fillText(book.narration === 'device' ? "Léemelo · voz del dispositivo" : "Toca Léemelo para escuchar el cuento", 512, 1325);
 
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;

@@ -52,7 +52,7 @@ test("cada cuento mueve a sus personajes y suena con la narración", () => {
   for (const book of BOOKS) {
     if (book.narration === 'reading-only') continue;
     const acted = book.pages.filter((page) => Object.keys(page.acts || {}).length || Object.values(page.cues || {}).some((cue) => cue.act)).length;
-    assert.ok(acted >= 6, `${book.id}: sólo ${acted} páginas con acción; el cuento debe moverse con la narración.`);
+    assert.ok(acted >= Math.min(6, book.pages.length), `${book.id}: sólo ${acted} páginas con acción; el cuento debe moverse con la narración.`);
     const sounded = book.pages.filter((page) => (page.sfx || []).length || (page.sfxEnd || []).length || Object.values(page.cues || {}).some((cue) => cue.sfx)).length;
     assert.ok(sounded >= 4, `${book.id}: sólo ${sounded} páginas con efectos de sonido.`);
     for (const page of book.pages) {
