@@ -53,10 +53,20 @@ const verbs = [
   [/^(vol(?:ar|ando|aba[ns]?|aron|ó|áis|aremos|arán|aría[ns]?)|vuel(?:a[ns]?|o|en))$/, 'fly'],
   [/^(nad(?:ar|ando|aba[ns]?|aron|ó|o|as?|amos|áis|an|aremos|arán)|sumerg(?:irse|ió|ía[ns]?|ieron))$/, 'swim'], [/^(salt|brinc|levant)/, 'jump'],
   [/^(durm|dorm|ronc)/, 'sleep'], [/^(tembl|tirita|llor|solloz)/, 'shiver'],
-  [/^(cant)/, 'sing'], [/^(bail)/, 'dance'], [/^(mir|observ|contempl|leyó|leí)/, 'look'],
+  [/^(cant)/, 'sing'], [/^(bail|danz)/, 'dance'], [/^(mir|observ|contempl|leyó|leí)/, 'look'],
   [/^(escuch|oyó)/, 'listen'], [/^(pens|pregunt|malhumor|refunfuñ)/, 'think'], [/^(salud)/, 'wave'],
   [/^(trabaj(?:ar|ando|aba[ns]?|ó|aron|a[ns]?)|cos(?:er|iendo|ía[ns]?|ió|ieron|e[ns]?)|constru(?:ir|yendo|ía[ns]?|yó|yeron|ye[ns]?)|remend(?:ar|ando|aba[ns]?|ó|aron)|tiraron)$/, 'build'],
-  [/^(sonri|rió|alegr|exclam|grit|abraz|rieron)/, 'cheer'],
+  [/^(abraz)/, 'hug'],
+  [/^(sonri|rió|alegr|exclam|grit|rieron|feliz|felices)/, 'cheer'],
+];
+const moods = [
+  [/^(hola|adiós|adios)$/, 'wave'],
+  [/^(gracias|perdón|perdon)$/, 'nod'],
+  [/^(miedo|temor|asustó|asustado|asustada)$/, 'shiver'],
+  [/^(cielo|estrellas|luna|sol)$/, 'look'],
+  [/^(silencio|escuchó|oyeron)$/, 'listen'],
+  [/^(amor|cariño|beso)$/, 'hug'],
+  [/^(contento|contenta|alegría)$/, 'cheer'],
 ];
 const travelers = new Set(['walk','run','fly','swim','jump']);
 
@@ -190,7 +200,7 @@ const TRES_DESEOS_SCENES = [
     acts:{campesino:'dance',campesina:'dance',hada:'fly'}, sfx:'luces-magicas',
     enter:{campesino:'left',campesina:'right',hada:'right'},
     cues:{
-      abrazaron:{act:{campesino:'cheer'},hold:2000},
+      abrazaron:{act:{campesino:'hug',campesina:'hug'},hold:2200},
       rieron:{act:{campesina:'cheer'},hold:1600},
       bailar:{act:{campesino:'dance'},hold:2600},
       cocina:{act:{campesina:'dance'},hold:2000},
@@ -239,13 +249,19 @@ export function directClassic(item, texts) {
       const named = direction.cast.find(a => cast.includes(a.id) && a.words.includes(word));
       if (named) { subject = named.id; cues[word] = { act: { [subject]: 'nod' }, hold: 1200 }; }
       const verb = verbs.find(([pattern]) => pattern.test(word));
-      if (!verb) return;
-      const act = verb[1];
-      cues[word] = { act: { [subject]: act }, hold: act === 'sleep' ? 4200 : 2400 };
-      if (travelers.has(act)) cues[word].move = { [subject]: index % 2 ? 'left' : 'right' };
-      if (act === 'build') cues[word].sfx = 'martillo';
-      // Sustained acting uses an action actually present in this passage.
-      if (!['run', 'jump'].includes(act)) acts[subject] = act;
+      if (verb) {
+        const act = verb[1];
+        cues[word] = { act: { [subject]: act }, hold: act === 'sleep' ? 4200 : act === 'hug' || act === 'dance' ? 2800 : 2400 };
+        if (travelers.has(act)) cues[word].move = { [subject]: index % 2 ? 'left' : 'right' };
+        if (act === 'build') cues[word].sfx = 'martillo';
+        // Sustained acting uses an action actually present in this passage.
+        if (!['run', 'jump'].includes(act)) acts[subject] = act;
+        return;
+      }
+      const mood = moods.find(([pattern]) => pattern.test(word));
+      if (mood && !cues[word]) {
+        cues[word] = { act: { [subject]: mood[1] }, hold: 1800 };
+      }
     });
     if (directed) Object.assign(acts, directed.acts);
     if (directed?.cues) Object.assign(cues, directed.cues);

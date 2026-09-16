@@ -15,6 +15,8 @@ test('reported nouns do not become swimming, flying or sewing actions', () => {
   assert.equal(acting.cues['nadó'].act.dragon,'swim');
   assert.equal(acting.cues['voló'].act.dragon,'fly');
   assert.equal(acting.cues['cosió'].act.dragon,'build');
+  const hugging=directClassic(item,['El príncipe abrazó al dragón con alegría.']).pages[0];
+  assert.equal(hugging.cues['abrazó'].act.principe,'hug');
 });
 
 test('dragon edition follows the cave, stolen pearl, voyage and imperial ending', () => {

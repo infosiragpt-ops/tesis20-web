@@ -1,17 +1,15 @@
 import * as THREE from 'three';
-import { ell, tube, part, finish } from './sculpting.js';
+import { ell, tube, part, finish, eyePair } from './sculpting.js';
 
 // Authored realtime reptile, not a reskinned mammal or a photorealism claim.
 // Low haunches, heavy neck, long jaw, swept horns and a visible coiled tail.
 export function buildDragon() {
   const root = new THREE.Group(); root.userData.viewYaw = .68;
-  const skin = new THREE.MeshPhysicalMaterial({color:'#496d43',roughness:.78,clearcoat:.05});
-  const belly = new THREE.MeshStandardMaterial({color:'#cbb37c',roughness:.75});
-  const horn = new THREE.MeshStandardMaterial({color:'#796040',roughness:.69});
-  const gold = new THREE.MeshStandardMaterial({color:'#b4a367',roughness:.7});
-  const black = new THREE.MeshStandardMaterial({color:'#1c2c21',roughness:.72});
-  const amber = new THREE.MeshPhysicalMaterial({color:'#c9913f',roughness:.18,clearcoat:1});
-  const pupil = new THREE.MeshPhysicalMaterial({color:'#131b14',roughness:.16,clearcoat:1});
+  const skin = new THREE.MeshPhysicalMaterial({color:'#54784c',roughness:.76,clearcoat:.08});
+  const belly = new THREE.MeshStandardMaterial({color:'#d4c086',roughness:.74});
+  const horn = new THREE.MeshStandardMaterial({color:'#8a6d48',roughness:.69});
+  const gold = new THREE.MeshStandardMaterial({color:'#c4b06e',roughness:.68});
+  const black = new THREE.MeshStandardMaterial({color:'#2a3328',roughness:.72});
   const pixels=new Uint8Array(256*256*4);
   for(let y=0;y<256;y++)for(let x=0;x<256;x++) {
     const row=Math.floor(y/16),u=((x+(row%2)*8)%16)/16,v=y%16/16;
@@ -69,13 +67,9 @@ export function buildDragon() {
   ell(head,skin,[0,-.03,.286],[.157,.078,.205]);
   ell(head,belly,[0,-.094,.253],[.148,.035,.211]);
   armourEllipsoid(head,[0,.026,.075],[.207,.165,.237],9,11);
+  eyePair(head,{spread:.168,y:.058,z:.188,radius:.036,iris:'#c9913f',friendly:true});
   for(const s of [-1,1]) {
-    const eye=part(head,'eye',1,[s*.179,.055,.170]);
-    ell(eye,black,[0,0,0],[.044,.041,.031]);
-    ell(eye,amber,[s*.005,0,.018],[.034,.031,.022]);
-    ell(eye,pupil,[s*.008,0,.035],[.008,.025,.009]);
-    ell(eye,belly,[s*.004,.012,.043],[.006,.006,.004],undefined,8);
-    tube(head,skin,[[s*.128,.104,.23],[s*.19,.105,.16],[s*.208,.07,.08]],[.034,.036,.016],{segments:12,sides:8});
+    tube(head,skin,[[s*.128,.118,.23],[s*.18,.112,.16],[s*.198,.08,.08]],[.028,.03,.014],{segments:12,sides:8});
     ell(head,black,[s*.092,-.008,.463],[.023,.013,.019],undefined,10);
     tube(head,black,[[s*.06,-.087,.46],[s*.14,-.084,.35],[s*.183,-.069,.135]],[.003,.004,.002],{segments:16,sides:5});
     tube(head,horn,[[s*.15,.145,-.035],[s*.235,.26,-.14],[s*.25,.32,-.32],[s*.20,.36,-.41]],[.065,.049,.019,.001],{segments:20,sides:10});

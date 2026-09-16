@@ -34,18 +34,32 @@ export function tube(parent, material, points, radii, { segments = 16, sides = 8
   const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3)); geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); geo.setIndex(indices); geo.computeVertexNormals();
   const mesh = new THREE.Mesh(geo, material); mesh.castShadow = true; mesh.receiveShadow = true; parent.add(mesh); return mesh;
 }
-export function eyePair(head, { spread = .08, y = .02, z = .10, radius = .026, iris = '#564229', friendly = false } = {}) {
-  const sclera = mat(friendly ? '#fff4e8' : '#1c2019', { rough: friendly ? .38 : .2, clearcoat: friendly ? .42 : .9 });
-  const irisMat = mat(iris, { rough: .32, clearcoat: .55 });
-  const pupil = mat(friendly ? '#2c1b12' : '#1c2019', { rough: .22, clearcoat: .65 });
-  const glint = mat('#fff7e6', { rough: .15 });
+// Soft storybook eyes for ages 3–6: cream sclera, a large warm iris, a small
+// pupil and two glints. Vacant black discs read as horror at reading distance.
+export function eyePair(head, { spread = .08, y = .02, z = .10, radius = .026, iris = '#6a4a2e', friendly = true, lids = true } = {}) {
+  const cute = friendly !== false;
+  const sclera = mat(cute ? '#fff6ea' : '#1c2019', { rough: cute ? .42 : .2, clearcoat: cute ? .36 : .9 });
+  const irisMat = mat(iris, { rough: .28, clearcoat: .62 });
+  const pupil = mat(cute ? '#3a2418' : '#1c2019', { rough: .2, clearcoat: .72 });
+  const glint = mat('#fffaf0', { rough: .12 });
+  const lid = mat('#f0d0ba', { rough: .74, surface: 'skin' });
   for (const s of [-1, 1]) {
     const eye = part(head, 'eye', 1, [s * spread, y, z]);
-    ell(eye, sclera, [0, 0, 0], [radius, radius * (friendly ? .86 : 1.02), radius * .56]);
-    ell(eye, irisMat, [0, friendly ? -.0004 : -.001, radius * .46], [radius * (friendly ? .55 : .67), radius * (friendly ? .62 : .76), radius * .2]);
-    ell(eye, pupil, [0, 0, radius * .60], [radius * (friendly ? .22 : .36), radius * (friendly ? .28 : .52), radius * .18]);
-    ell(eye, glint, [-radius * .22, radius * .2, radius * .72], [radius * .12, radius * .12, radius * .1], [0, 0, 0], 8);
+    ell(eye, sclera, [0, 0, 0], [radius, radius * (cute ? .88 : 1.02), radius * .58]);
+    ell(eye, irisMat, [0, cute ? -.0006 : -.001, radius * .42], [radius * (cute ? .64 : .67), radius * (cute ? .70 : .76), radius * .24]);
+    ell(eye, pupil, [0, cute ? -.0002 : 0, radius * .56], [radius * (cute ? .18 : .36), radius * (cute ? .22 : .52), radius * .16]);
+    ell(eye, glint, [-radius * .22, radius * .24, radius * .74], [radius * .14, radius * .14, radius * .1], [0, 0, 0], 8);
+    if (cute) ell(eye, glint, [radius * .16, -radius * .1, radius * .68], [radius * .07, radius * .07, radius * .05], [0, 0, 0], 6);
+    if (cute && lids) ell(eye, lid, [0, radius * .58, radius * .1], [radius * 1.02, radius * .26, radius * .42], [.18, 0, 0], 10);
   }
+}
+
+export function softSmile(head, lip, { width = .009, y = .018, z = .032, female = false } = {}) {
+  tube(head, lip, [[-width, y, z], [0, y - (female ? .006 : .0045), z + .004], [width, y, z]], [.0012, .002, .0012], { segments: 12, sides: 6 });
+}
+
+export function softCheeks(head, blush, { spread = .018, y = .026, z = .026, size = .007 } = {}) {
+  for (const s of [-1, 1]) ell(head, blush, [s * spread, y, z], [size, size * .72, size * .58], [0, 0, 0], 10);
 }
 export function finish(root, family, anatomy = {}) {
   // Present animal bodies in three-quarter view; the outer holder remains

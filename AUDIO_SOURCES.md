@@ -93,16 +93,19 @@ juegos, en `public/assets/nido/audio/cuentos/` con el manifiesto
   originales conservan preguntas y opciones del quiz; los clásicos no tienen
   quiz. Hay una locución por palabra distinta del cuerpo. Las repeticiones
   comparten mp3. Si un clip no está, el lector cae a la voz del dispositivo.
-- Recorte de este lote: las 10 páginas de `clasico-tres-deseos` están grabadas,
-  más las páginas de los demás clásicos salvo 4 de `clasico-habichuelas`
-  (índices 6, 8, 9 y 10) que quedaron a medias por cupo de ElevenLabs
-  (158 500 créditos). Esas páginas y las palabras sueltas nuevas de los
-  clásicos caen a la voz del dispositivo hasta un lote posterior.
-  `NIDO_TTS_BOOKS`, `NIDO_TTS_SKIP_WORDS` y `NIDO_TTS_MERGE` permiten
-  reanudar sin borrar los mp3 ya grabados.
-- Tres perfiles de voz: `narracion` (0,90 de velocidad), `pregunta` (0,92) y
-  `palabra` (0,85, más estable). Los ajustes entran en el hash del archivo, así
-  que cambiar un perfil regraba solo lo afectado.
+- Generador `nido-cuentos-v2`: misma voz «Jhenny Cozy» (`EDitztUwd7lban76PAZs`).
+  Se subió el estilo y se bajó un poco la estabilidad para una narradora más
+  cálida y entusiasta, todavía clara para 3 años. Un cambio de perfil o de
+  versión invalida los hashes y obliga a regrabar. El lote v2 de páginas no
+  se pudo completar: la cuenta ElevenLabs quedó en 0–14 créditos de 158 500.
+  Las páginas siguen en clips v1; el dispositivo cubre lo que falte
+  (`clasico-habichuelas` 6/8/9/10 y palabras sueltas nuevas). Cuatro
+  respuestas del quiz de `cerditos` sí se regrabaron.
+- `NIDO_TTS_BOOKS`, `NIDO_TTS_SKIP_WORDS` y `NIDO_TTS_MERGE` permiten reanudar
+  sin borrar los mp3 ya grabados si el cupo se acaba a mitad de lote.
+- Tres perfiles de voz: `narracion` (velocidad 0,90, estabilidad 0,35, estilo
+  0,70), `pregunta` (0,92 / 0,42 / 0,55, un poco más alegre) y `palabra`
+  (0,85 / 0,60 / 0,25, más clara). Los ajustes entran en el hash del archivo.
 - Entrega: MP3 mono de 64 kbps normalizado a -16 LUFS, cacheado como inmutable
   (el nombre es el hash del contenido). El reproductor (`cuentos-audio.js`)
   descarga cada clip entero y lo reproduce desde un blob con un único elemento

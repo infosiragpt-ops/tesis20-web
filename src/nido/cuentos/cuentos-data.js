@@ -49,7 +49,13 @@ export const NARRATED_BOOKS = [
         cast: ["pipo", "lolo", "tito"],
         props: ["sol", "nubes", "casa", "arboles", "flores"],
         sfxEnd: ["cerditos-alegres"],
-        acts: { pipo: "cheer" },
+        enter: { pipo: "left", lolo: "none", tito: "right" },
+        acts: { pipo: "cheer", lolo: "wave", tito: "nod" },
+        cues: {
+          hermanos: { act: { pipo: "hug", lolo: "hug", tito: "hug" }, hold: 2200 },
+          grandes: { act: { pipo: "cheer" }, hold: 1600 },
+          casa: { act: { tito: "nod" }, hold: 1400 },
+        },
       },
       {
         t: "La casa de paja",
@@ -153,7 +159,13 @@ export const NARRATED_BOOKS = [
         props: ["sol", "nubes", "ladrillos", "flores", "pasto"],
         work: { actor: "pipo", task: "ladrillos" },
         sfxEnd: ["cerditos-alegres"],
-        acts: { pipo: "cheer", lolo: "cheer", tito: "cheer" },
+        enter: { pipo: "left", lolo: "right", tito: "none" },
+        acts: { pipo: "cheer", lolo: "cheer", tito: "dance" },
+        cues: {
+          volvió: { act: { pipo: "wave" }, hold: 1400 },
+          felices: { act: { pipo: "hug", lolo: "hug", tito: "hug" }, hold: 2600 },
+          ladrillos: { act: { tito: "build" }, hold: 1800 },
+        },
       },
     ],
     quiz: [
@@ -276,7 +288,12 @@ export const NARRATED_BOOKS = [
         cast: ["caperucita", "abuelita", "cazador"],
         props: ["casa", "arboles", "piedras", "pasto"],
         steps: "pasos-suaves",
-        acts: { caperucita: "cheer" },
+        acts: { caperucita: "cheer", abuelita: "wave", cazador: "nod" },
+        cues: {
+          salió: { act: { caperucita: "jump" }, hold: 1800 },
+          salvas: { act: { caperucita: "cheer", abuelita: "cheer" }, hold: 2200 },
+          piedras: { act: { cazador: "build" }, hold: 1600 },
+        },
         sfxEnd: ["cerditos-alegres"],
       },
       {
@@ -285,7 +302,12 @@ export const NARRATED_BOOKS = [
         light: "day",
         cast: ["caperucita", "abuelita"],
         props: ["casa", "sol", "flores", "sendero", "pasto"],
-        cues: { abrazó: { sfx: "abuelita-abrazo", act: { caperucita: "cheer", abuelita: "cheer" } } },
+        acts: { caperucita: "hug", abuelita: "hug" },
+        cues: {
+          pastel: { act: { abuelita: "nod" }, hold: 1400 },
+          abrazó: { sfx: "abuelita-abrazo", act: { caperucita: "hug", abuelita: "hug" }, hold: 2800 },
+          felices: { act: { caperucita: "dance", abuelita: "cheer" }, hold: 2200 },
+        },
       },
     ],
     quiz: [
@@ -432,7 +454,7 @@ export const NARRATED_BOOKS = [
         enter: { oso: "right" },
         sfxEnd: ["toy-gorro"],
         acts: { oso: "walk" },
-        cues: { cerró: { act: { oso: "sleep" }, hold: 9000 } },
+        cues: { cerró: { act: { oso: "sleep" }, hold: 9000 }, contento: { act: { oso: "hug" }, hold: 1800 } },
       },
     ],
     quiz: [
@@ -572,7 +594,7 @@ export const NARRATED_BOOKS = [
         enter: { pez: "left" },
         sfxEnd: ["toy-bufeo"],
         acts: { bufeo: "swim", pez: "swim" },
-        cues: { comparte: { act: { bufeo: "cheer", pez: "cheer" }, hold: 3000 } },
+        cues: { comparte: { act: { bufeo: "hug", pez: "cheer" }, hold: 3000 }, grande: { act: { bufeo: "swim" }, move: { bufeo: "right" }, hold: 1800 } },
         pin: "bufeo",
       },
     ],
@@ -617,7 +639,8 @@ export const NARRATED_BOOKS = [
         acts: { nina: "nod" },
         cues: {
           cometa: { sfx: "toy-cometa" },
-          abrazó: { act: { nina: "cheer" }, hold: 3000 },
+          abrazó: { act: { nina: "hug" }, hold: 3000 },
+          lazos: { act: { nina: "cheer" }, hold: 1600 },
         },
         pin: "cometa",
       },
@@ -720,7 +743,7 @@ export const NARRATED_BOOKS = [
         enter: { nina: "right" },
         sfxEnd: ["toy-nino"],
         acts: { nina: "walk" },
-        cues: { contó: { act: { nina: "wave" }, hold: 2500 } },
+        cues: { contó: { act: { nina: "wave" }, hold: 2500 }, volar: { act: { nina: "cheer" }, hold: 1800 } },
       },
     ],
     quiz: [
@@ -1001,7 +1024,7 @@ export const NARRATED_BOOKS = [
         props: ["arboles", "nubes"],
         sfxEnd: ["toy-picaflor"],
         acts: { picaflor: "fly", mariposa: "fly" },
-        cues: { pájaros: { sfx: "pajaros" }, voló: { act: { picaflor: "fly" }, move: { picaflor: "away-left" } } },
+        cues: { pájaros: { sfx: "pajaros" }, voló: { act: { picaflor: "fly" }, move: { picaflor: "away-left" } }, camino: { act: { picaflor: "cheer" }, hold: 1600 } },
         pin: "picaflor",
       },
     ],
@@ -1298,8 +1321,9 @@ export const NARRATED_BOOKS = [
         sfxEnd: ["olas"],
         acts: { nina2: "sing" },
         cues: {
-          canta: { sfx: "canto-nina" },
+          canta: { sfx: "canto-nina", act: { nina2: "sing" }, hold: 2200 },
           contesta: { sfx: "toy-ballena" },
+          escuchan: { act: { nina2: "listen" }, hold: 1800 },
         },
       },
     ],
@@ -1448,6 +1472,7 @@ export const NARRATED_BOOKS = [
         cues: {
           escuchar: { act: { vicuna: "listen" }, hold: 4000 },
           volver: { act: { vicuna: "cheer" }, hold: 3000 },
+          pena: { act: { vicuna: "dance" }, hold: 1800 },
         },
       },
     ],

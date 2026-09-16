@@ -28,6 +28,7 @@ export const ACTS = {
   sniff: "olfatea el suelo",
   peck: "picotea hacia adelante",
   dance: "baila al ritmo",
+  hug: "abraza con los brazos abiertos",
 };
 
 export const ACT_NAMES = new Set(Object.keys(ACTS));

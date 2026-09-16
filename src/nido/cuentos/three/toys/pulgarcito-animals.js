@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { mat, mesh, blob, cyl, cone, fit } from "./_shared.js";
+import { eyePair } from "./sculpting.js";
 
 function farmAnimal(cow = false) {
   const g = new THREE.Group();
@@ -17,13 +18,10 @@ function farmAnimal(cow = false) {
   head.add(blob(.046, cow ? mat("#dfa29c") : coat, { y: -.022, z: .05, s: [1.12, .66, .83] }));
   for (const side of [-1, 1]) {
     head.add(blob(.025, coat, { x: side * .055, y: .038, s: [1.2, cow ? .45 : 1.25, .48], rz: side * -.6 }));
-    const eye = new THREE.Group(); eye.position.set(side * .032, .008, .048); eye.userData.eye = true;
-    eye.add(blob(.01, dark, { s: [.85, 1.1, .8] }));
-    eye.add(blob(.0033, mat("#fffef5"), { x: .002, y: .004, z: .008 }));
-    head.add(eye);
     head.add(blob(.0045, dark, { x: side * .017, y: -.016, z: .084, s: [1, .6, .5] }));
     if (cow) head.add(cone(.013, .035, mat("#d5ba85"), { x: side * .037, y: .066, rz: side * -.35 }));
   }
+  eyePair(head, { spread: .032, y: .01, z: .05, radius: .011, iris: "#6a4a2c", friendly: true });
   g.add(head);
   const tail = new THREE.Group(); tail.position.set(0, .177, -.122); tail.userData.tail = 1;
   tail.add(cyl(.009, .009, .07, coat, { y: -.016, rz: .3 }));
@@ -60,11 +58,8 @@ function snail(empty = false) {
     head.add(blob(.03, body, { s: [.85, 1.6, .8] }));
     for (const side of [-1, 1]) {
       head.add(cyl(.004, .006, .064, body, { x: side * .02, y: .056, z: .002, rz: -side * .3 }));
-      const eye = new THREE.Group(); eye.position.set(side * .03, .086, .002); eye.userData.eye = true;
-      eye.add(blob(.008, mat("#2d2a26")));
-      eye.add(blob(.0025, mat("#fff8df"), { y: .003, z: .006 }));
-      head.add(eye);
     }
+    eyePair(head, { spread: .03, y: .086, z: .01, radius: .009, iris: "#6a5330", friendly: true });
     g.add(head);
   }
   return fit(g, .3);

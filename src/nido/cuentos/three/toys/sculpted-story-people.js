@@ -16,8 +16,8 @@ function build(kind) {
     decorate(root,head) {
       if(kind==='caperucita') {
         // The hood has an open face. Its curved edge frames, not covers, eyes.
-        ell(head,cloth,[0,.062,-.022],[.058,.063,.036]);
-        tube(head,cloth,[[-.046,.007,.022],[-.052,.067,.027],[-.029,.119,.023],[.029,.119,.023],[.052,.067,.027],[.046,.007,.022]],[.012,.015,.017,.017,.015,.012],{segments:32,sides:10});
+        ell(head,cloth,[0,.064,-.02],[.06,.065,.038]);
+        tube(head,cloth,[[-.048,.006,.024],[-.054,.07,.028],[-.03,.122,.024],[.03,.122,.024],[.054,.07,.028],[.048,.006,.024]],[.013,.016,.018,.018,.016,.013],{segments:32,sides:10});
         const points=[new THREE.Vector2(.01,.22),new THREE.Vector2(.034,.21),new THREE.Vector2(.057,.14),new THREE.Vector2(.067,.075)];
         const cape=new THREE.Mesh(new THREE.LatheGeometry(points,28,Math.PI/2,Math.PI),cloth);
         cape.castShadow=true;cape.receiveShadow=true;root.add(cape);

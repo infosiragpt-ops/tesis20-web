@@ -1185,11 +1185,11 @@ export function createStage(canvas, options) {
         return true;
       }
       case "cheer": {
-        actor.position.y = baseY + Math.abs(Math.sin(t * 6 + ph)) * 0.03;
-        actor.rotation.y += Math.sin(t * 4 + ph) * 0.35;
-        armsUp(1.7, 0.25);
-        flap(12, 0.4);
-        wagTail(8, 0.25);
+        actor.position.y = baseY + Math.abs(Math.sin(t * 6.4 + ph)) * 0.036;
+        actor.rotation.y += Math.sin(t * 4.2 + ph) * 0.4;
+        armsUp(1.85, 0.28);
+        flap(14, 0.48);
+        wagTail(9, 0.3);
         return true;
       }
       case "sleep": {
@@ -1259,10 +1259,11 @@ export function createStage(canvas, options) {
         return true;
       }
       case "fly": {
-        actor.position.y = baseY + 0.045 + Math.sin(t * 2.5 + ph) * 0.02;
-        actor.rotation.x = -0.1;
-        actor.rotation.z = Math.sin(t * 1.7 + ph) * 0.1;
-        flap(18, 0.55);
+        actor.position.y = baseY + 0.05 + Math.sin(t * 2.6 + ph) * 0.024;
+        actor.rotation.x = -0.12;
+        actor.rotation.z = Math.sin(t * 1.8 + ph) * 0.12;
+        actor.rotation.y += Math.sin(t * 1.1 + ph) * 0.08;
+        flap(20, 0.62);
         return true;
       }
       case "jump": {
@@ -1275,11 +1276,13 @@ export function createStage(canvas, options) {
         return true;
       }
       case "swim": {
-        actor.rotation.z = Math.sin(t * 2.2 + ph) * 0.12;
-        actor.rotation.x = Math.sin(t * 2.2 + ph + 1) * 0.15;
-        actor.position.y = baseY + Math.sin(t * 2.2 + ph) * 0.012;
-        wagTail(6, 0.35);
-        flutters.forEach((part) => { part.rotation.y += Math.sin(t * 6 + ph) * 0.3 * part.userData.flutter; });
+        actor.rotation.z = Math.sin(t * 2.4 + ph) * 0.14;
+        actor.rotation.x = Math.sin(t * 2.3 + ph + 1) * 0.16;
+        actor.position.y = baseY + Math.sin(t * 2.3 + ph) * 0.016;
+        actor.position.x = baseX + Math.sin(t * 1.4 + ph) * 0.006;
+        wagTail(6.5, 0.4);
+        flap(7, 0.18);
+        flutters.forEach((part) => { part.rotation.y += Math.sin(t * 6 + ph) * 0.34 * part.userData.flutter; });
         return true;
       }
       case "sniff": {
@@ -1300,13 +1303,25 @@ export function createStage(canvas, options) {
         return true;
       }
       case "dance": {
-        actor.rotation.y += Math.sin(t * 4 + ph) * 0.5;
-        actor.position.y = baseY + Math.abs(Math.sin(t * 8 + ph)) * 0.02;
-        actor.rotation.z = Math.sin(t * 4 + ph) * 0.12;
-        arms.forEach((arm) => { arm.rotation.z += arm.userData.arm * (1.2 + Math.sin(t * 8 + ph + arm.userData.arm) * 0.6); });
-        flap(10, 0.35);
-        ears.forEach((ear) => { ear.rotation.z += Math.sin(t * 8 + ph) * 0.15 * ear.userData.ear; });
-        wagTail(8, 0.3);
+        actor.rotation.y += Math.sin(t * 4 + ph) * 0.55;
+        actor.position.y = baseY + Math.abs(Math.sin(t * 8 + ph)) * 0.024;
+        actor.rotation.z = Math.sin(t * 4 + ph) * 0.14;
+        arms.forEach((arm) => { arm.rotation.z += arm.userData.arm * (1.35 + Math.sin(t * 8 + ph + arm.userData.arm) * 0.7); });
+        stride(8, 0.18);
+        flap(12, 0.42);
+        ears.forEach((ear) => { ear.rotation.z += Math.sin(t * 8 + ph) * 0.18 * ear.userData.ear; });
+        wagTail(8, 0.34);
+        return true;
+      }
+      case "hug": {
+        armsUp(1.55, 0.08);
+        actor.rotation.y += Math.sin(t * 2.2 + ph) * 0.1;
+        actor.position.y = baseY + Math.abs(Math.sin(t * 3 + ph)) * 0.008;
+        if (head) {
+          head.rotation.z += 0.1;
+          head.rotation.x += 0.08;
+        }
+        wagTail(4, 0.18);
         return true;
       }
       default:

@@ -20,12 +20,14 @@ function person(id, label, coat, kind = '', girl = false, hairColor = '#674331')
       }
       if (kind === 'rapunzel') {
         const braid = mat('#ebc65e', { surface: 'fur' });
-        for (let i = 0; i < 13; i++) head.add(blob(.012, braid, { x: .052 + Math.sin(i * 1.8) * .006, y: .04 - i * .018, z: .016 }));
+        for (let i = 0; i < 16; i++) head.add(blob(.013, braid, { x: .054 + Math.sin(i * 1.7) * .007, y: .042 - i * .017, z: .018 }));
+        head.add(blob(.01, gold(), { x: .056, y: .038, z: .02 }));
       }
       if (['witch', 'wooden', 'elf', 'santa'].includes(kind)) {
-        const color = kind === 'witch' ? '#46314f' : kind === 'santa' ? '#c84240' : coat;
-        head.add(cone(.054, .1, mat(color, { surface: 'cloth' }), { y: .145, rz: -.15 }));
+        const color = kind === 'witch' ? '#5a4564' : kind === 'santa' ? '#c84240' : coat;
+        head.add(cone(kind === 'witch' ? .05 : .054, kind === 'witch' ? .09 : .1, mat(color, { surface: 'cloth' }), { y: kind === 'witch' ? .138 : .145, rz: kind === 'witch' ? -.08 : -.15 }));
         head.add(cyl(.065, .065, .008, mat(color), { y: .098 }));
+        if (kind === 'witch') head.add(blob(.01, mat('#d9a08c', { surface: 'skin' }), { x: .02, y: .028, z: .04, s: [1.2, .7, .6] }));
       }
       if (kind === 'wooden') {
         head.add(cyl(.006, .011, .057, mat('#c89860'), { y: .043, z: .077, rx: Math.PI / 2 }));
@@ -37,7 +39,7 @@ function person(id, label, coat, kind = '', girl = false, hairColor = '#674331')
         g.add(box(.057, .075, .004, mat('#f5e5bf'), { y: .14, z: .041 }));
       }
       if (['santa', 'sage'].includes(kind)) {
-        for (let i = 0; i < 9; i++) head.add(blob(.015, mat('#f2ece0', { surface: 'wool' }), { x: (i % 3 - 1) * .019, y: .022 - Math.floor(i / 3) * .014, z: .033 }));
+        for (let i = 0; i < 14; i++) head.add(blob(.016, mat('#f2ece0', { surface: 'wool' }), { x: (i % 4 - 1.5) * .016, y: .024 - Math.floor(i / 4) * .013, z: .034 }));
       }
       if (['turban', 'genie'].includes(kind)) {
         head.add(blob(.057, mat('#f5e6ca', { surface: 'cloth' }), { y: .098, s: [1, .55, 1] }));
@@ -49,8 +51,9 @@ function person(id, label, coat, kind = '', girl = false, hairColor = '#674331')
         const glow = mat('#f7efff', { opacity: .35, clearcoat: .4 });
         [-1, 1].forEach(side => {
           const wing = new THREE.Group(); wing.position.set(side * .02, .175, -.03); wing.userData.wing = side;
-          wing.add(blob(.05, film, { x: side * .038, y: .012, s: [.78, 1.45, .1] }));
-          wing.add(blob(.036, glow, { x: side * .03, y: -.02, s: [.7, 1.05, .08] }));
+          wing.add(blob(.055, film, { x: side * .042, y: .016, s: [.82, 1.55, .1] }));
+          wing.add(blob(.04, glow, { x: side * .032, y: -.016, s: [.74, 1.12, .08] }));
+          wing.add(blob(.022, glow, { x: side * .028, y: .04, s: [.5, .7, .06] }));
           g.add(wing);
         });
       }

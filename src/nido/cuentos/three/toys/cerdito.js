@@ -119,7 +119,7 @@ export function build({ outfit = "#5aa0d8", hat = false, shirt = null, plaid = f
   tng.scale.set(1.2, 0.45, 0.6);
   headGroup.add(tng);
   // Ojos grandes con brillo y cejas
-  eyePair(headGroup,{spread:.04,y:.028,z:.085,radius:.019,iris:'#735439'});
+  eyePair(headGroup,{spread:.04,y:.03,z:.086,radius:.02,iris:'#735439',friendly:true});
   [-1, 1].forEach((side) => {
     const b = mesh(new THREE.TorusGeometry(0.014, 0.0025, 8, 20, Math.PI * 0.8), brow, { x: side * 0.04, y: 0.056, z: 0.09, rz: side * 0.2 + Math.PI * 0.1 });
     headGroup.add(b);
@@ -208,9 +208,9 @@ export function build({ outfit = "#5aa0d8", hat = false, shirt = null, plaid = f
 
   // Keep the three familiar outfits and tools, with less infantile head
   // proportions, smaller eyes and articulated load-bearing legs.
-  headGroup.scale.set(.82,.86,.89);
+  headGroup.scale.set(.84,.88,.9);
   headGroup.position.y=.286;
-  headGroup.traverse(obj=>{if(obj.userData.eye){obj.scale.multiplyScalar(.82);}});
+  headGroup.traverse(obj=>{if(obj.userData.eye){obj.scale.multiplyScalar(.9);}});
   tail.userData.tail=1;
   const holder=fit(g,.30);
   holder.userData.sculpted={revision:1,family:'fantasy',species:'pig',legs:2};

@@ -2,6 +2,12 @@ import assert from "node:assert/strict";
 import { access, readFile } from "node:fs/promises";
 import test from "node:test";
 
+import {
+  GENERATOR_VERSION,
+  PROFILES,
+  VOICE,
+  mergeQuiz,
+} from "../../scripts/generate-nido-cuentos-voice.mjs";
 import { NARRATED_BOOKS as BOOKS } from "../../src/nido/cuentos/cuentos-data.js";
 import {
   enumerateCuentosVoicePlan,
@@ -26,6 +32,26 @@ const AUDIO_DIR = new URL("../../public/assets/nido/audio/cuentos/", import.meta
 async function readManifest() {
   return JSON.parse(await readFile(MANIFEST_URL, "utf8"));
 }
+
+test("un lote incompleto no borra preguntas del quiz ya grabadas", () => {
+  const merged = mergeQuiz(
+    [{ q: "old-q.mp3", a: ["old-a0.mp3", "old-a1.mp3", "old-a2.mp3"] }, { q: "old-q2.mp3", a: ["old-b0.mp3"] }],
+    [{ q: null, a: ["new-a0.mp3"] }],
+  );
+  assert.equal(merged[0].q, "old-q.mp3");
+  assert.deepEqual(merged[0].a, ["new-a0.mp3", "old-a1.mp3", "old-a2.mp3"]);
+  assert.equal(merged[1].q, "old-q2.mp3");
+});
+
+test("la narración de estudio es más entusiasta y sigue a Jhenny Cozy", () => {
+  assert.equal(GENERATOR_VERSION, "nido-cuentos-v2");
+  assert.equal(VOICE, "EDitztUwd7lban76PAZs");
+  assert.equal(PROFILES.narracion.speed, 0.9);
+  assert.ok(PROFILES.narracion.style >= 0.65 && PROFILES.narracion.style <= 0.75);
+  assert.ok(PROFILES.narracion.stability >= 0.32 && PROFILES.narracion.stability <= 0.38);
+  assert.ok(PROFILES.pregunta.style > 0.4);
+  assert.equal(PROFILES.palabra.speed, 0.85);
+});
 
 test("las claves de palabra ignoran puntuación y mayúsculas", () => {
   assert.equal(wordKey("—¿Dónde"), "dónde");

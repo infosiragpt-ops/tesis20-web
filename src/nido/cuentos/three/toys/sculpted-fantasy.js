@@ -7,12 +7,12 @@ function fantasy(kind) {
   const cream=mat('#d7c5a1',{surface:'fur',rough:.9}),leather=mat('#533e31',{rough:.73}),coat=mat(cat?'#815344':'#42586b',{surface:'cloth',rough:.88});
   ell(root,cat?coat:fur,[0,.39,0],[cat?.12:.18,.21,.105]);
   ell(root,cat?cream:coat,[0,.43,.078],[cat?.073:.11,.15,.034]);
-  const head=part(root,'head',1,[0,.69,.018]);ell(head,fur,[0,0,0],[cat?.125:.15,.135,.11]);
-  ell(head,cream,[0,-.04,.105],[bull?.092:.075,.055,.066]);ell(head,leather,[0,-.01,.161],[bull?.059:.024,.018,.022]);
-  eyePair(head,{spread:cat?.069:.082,y:.028,z:.092,radius:.022});
+  const head=part(root,'head',1,[0,.69,.018]);ell(head,fur,[0,0,0],[cat?.13:.145,.13,.112]);
+  ell(head,cream,[0,-.032,.108],[bull?.08:.078,.058,.062]);ell(head,leather,[0,-.006,.158],[bull?.04:.022,.016,.02]);
+  eyePair(head,{spread:cat?.07:.078,y:.032,z:.094,radius:cat?.026:.024,iris:cat?'#7a4e28':'#6a4a2c'});
   for(const s of [-1,1]) {
     const ear=part(head,'ear',s,[s*.11,.081,-.013]);tube(ear,fur,[[0,0,0],[s*.015,.1,-.015]],[.044,.001],{segments:10,flatten:.5});
-    if(!cat)tube(head,cream,[[s*.092,.104,-.05],[s*.16,.18,-.035],[s*.17,.22,.055]],[.036,.021,.001],{segments:15});
+    if(!cat)tube(head,cream,[[s*.09,.1,-.04],[s*.14,.16,-.02],[s*.15,.2,.04]],[.03,.016,.001],{segments:14});
     const arm=part(root,'arm',s,[s*(cat?.106:.156),.51,0]);
     tube(arm,cat?coat:fur,[[0,0,0],[s*.052,-.12,.005],[s*.034,-.23,.03]],[cat?.041:.065,.035,.026]);
     ell(arm,fur,[s*.034,-.24,.033],[.033,.041,.028]);
