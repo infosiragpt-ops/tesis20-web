@@ -30,8 +30,9 @@ swimming, sewing and flying. Bambi's mother is a doe; Heidi has goats instead
 of sheep; the ugly-duckling story has a hen rather than a rooster. Sleeping
 figures keep their eyes shut. Page-specific scenery also selects its ambience.
 
-Publication remains pending explicit authorization to send the code to the
-public GitHub repository, after the approval reviewer blocked that upload.
+After the public-code destination was explained, the user replied "termina
+todo y despliega a produccion". This release is being prepared under that
+informed instruction; production verification must still follow deployment.
 
 ## Model and runtime contract
 
@@ -68,9 +69,12 @@ public GitHub repository, after the approval reviewer blocked that upload.
   engine recovery and bounded Spanish-voice retry are implemented and unit
   tested, but do not resolve this observed failure. Do not report narration as
   working based on earlier successful checks or simulated speech events.
-- Publication is not performed. Public production still serves the older art.
-  Public-code upload needs the explicit destination approval requested from
-  the user; no alternative deployment path is used to bypass that block.
+- An isolated browser page, without Nido, reproduces native `end` before
+  `start` for Mónica, Paulina and Chrome's Spanish voice. An unsandboxed macOS
+  synthesis check produces a non-empty audio file. This narrows the issue to
+  the tested browser/runtime environment but does not certify end-user audio.
+- At preparation time public production still serves the older art. A merge
+  or passing build alone is not evidence that the public deployment updated.
 - This is representative rendered review plus exhaustive model/catalog checks,
   not a claim that every frame of all 922 pages was manually reviewed or that
   physical iOS Safari testing was performed.
