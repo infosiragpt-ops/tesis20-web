@@ -4,15 +4,14 @@
     "title": "El patito feo",
     "accent": "#496d59",
     "cover": {
-      "image": "/assets/nido/cuentos/collection/patito-feo.avif",
-      "layout": "heritage",
-      "credit": {
-        "title": "File:The Ugly Duckling cropped.jpg",
-        "artist": "Milo Winter",
-        "license": "Public domain",
-        "url": "https://commons.wikimedia.org/wiki/File:The_Ugly_Duckling_cropped.jpg",
-        "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/d2/The_Ugly_Duckling_cropped.jpg/960px-The_Ugly_Duckling_cropped.jpg",
-        "changes": "Redimensionado y convertido a AVIF; imagen completa, sin recortar."
+      "image": "/assets/nido/cuentos/covers/patito-feo-chatgpt-v2.avif",
+      "titled": true,
+      "preserve": true,
+      "generation": {
+        "tool": "ChatGPT Imágenes (web)",
+        "createdAt": "2026-09-16",
+        "conversation": "https://chatgpt.com/c/6aaab6a2-c998-83e9-8fa5-2f71bd2cc1a6",
+        "changes": "Portada original generada a petición del usuario; optimizada en AVIF, 840 × 1260, imagen completa y título original sin recorte."
       },
       "ink": "#fff3cf",
       "sub": "#e0c895"
@@ -199,15 +198,14 @@
     "title": "Los viajes de Gulliver",
     "accent": "#927047",
     "cover": {
-      "image": "/assets/nido/cuentos/collection/gulliver.avif",
-      "layout": "heritage",
-      "credit": {
-        "title": "File:Ch 1 Gulliver Grandville 04.jpg",
-        "artist": "J. J. Grandville (siglo XIX)",
-        "license": "Public domain",
-        "url": "https://commons.wikimedia.org/wiki/File:Ch_1_Gulliver_Grandville_04.jpg",
-        "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/0/0b/Ch_1_Gulliver_Grandville_04.jpg",
-        "changes": "Redimensionado y convertido a AVIF; imagen completa, sin recortar."
+      "image": "/assets/nido/cuentos/covers/gulliver-chatgpt-v2.avif",
+      "titled": true,
+      "preserve": true,
+      "generation": {
+        "tool": "ChatGPT Imágenes (web)",
+        "createdAt": "2026-09-16",
+        "conversation": "https://chatgpt.com/c/6aaab758-ade0-83e9-8883-0188e38c98cc",
+        "changes": "Portada original generada a petición del usuario; optimizada en AVIF, 840 × 1260, imagen completa y título original sin recorte."
       },
       "ink": "#fff3cf",
       "sub": "#e0c895"
@@ -420,15 +418,14 @@
     "title": "El soldadito de plomo",
     "accent": "#935447",
     "cover": {
-      "image": "/assets/nido/cuentos/collection/soldadito.avif",
-      "layout": "heritage",
-      "credit": {
-        "title": "File:Hey Märchen 084.jpg",
-        "artist": "Paul Hey",
-        "license": "Public domain",
-        "url": "https://commons.wikimedia.org/wiki/File:Hey_M%C3%A4rchen_084.jpg",
-        "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/51/Hey_M%C3%A4rchen_084.jpg/960px-Hey_M%C3%A4rchen_084.jpg",
-        "changes": "Redimensionado y convertido a AVIF; imagen completa, sin recortar."
+      "image": "/assets/nido/cuentos/covers/soldadito-chatgpt-v2.avif",
+      "titled": true,
+      "preserve": true,
+      "generation": {
+        "tool": "ChatGPT Imágenes (web)",
+        "createdAt": "2026-09-16",
+        "conversation": "https://chatgpt.com/c/6aaab759-a1f8-83e9-9ed5-7ce80777e06a",
+        "changes": "Portada original generada a petición del usuario; optimizada en AVIF, 840 × 1260, imagen completa y título original sin recorte."
       },
       "ink": "#fff3cf",
       "sub": "#e0c895"
@@ -494,15 +491,14 @@
     "title": "Guillermo Tell",
     "accent": "#406265",
     "cover": {
-      "image": "/assets/nido/cuentos/collection/guillermo-tell.avif",
-      "layout": "heritage",
-      "credit": {
-        "title": "File:William Tell Told Again - plate 01.jpeg",
-        "artist": "Philip Dadd",
-        "license": "Public domain",
-        "url": "https://commons.wikimedia.org/wiki/File:William_Tell_Told_Again_-_plate_01.jpeg",
-        "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/6/62/William_Tell_Told_Again_-_plate_01.jpeg",
-        "changes": "Redimensionado y convertido a AVIF; imagen completa, sin recortar."
+      "image": "/assets/nido/cuentos/covers/guillermo-tell-chatgpt-v2.avif",
+      "titled": true,
+      "preserve": true,
+      "generation": {
+        "tool": "ChatGPT Imágenes (web)",
+        "createdAt": "2026-09-16",
+        "conversation": "https://chatgpt.com/c/6aaab75a-edfc-83e9-8ea9-1f81fe4b3b78",
+        "changes": "Portada original generada a petición del usuario; optimizada en AVIF, 840 × 1260, imagen completa y título original sin recorte."
       },
       "ink": "#fff3cf",
       "sub": "#e0c895"
@@ -571,15 +567,14 @@
     "title": "La princesa y el guisante",
     "accent": "#746340",
     "cover": {
-      "image": "/assets/nido/cuentos/collection/princesa-guisante.avif",
-      "layout": "heritage",
-      "credit": {
-        "title": "File:Edmund Dulac - Princess and pea.jpg",
-        "artist": "Edmund Dulac",
-        "license": "Public domain",
-        "url": "https://commons.wikimedia.org/wiki/File:Edmund_Dulac_-_Princess_and_pea.jpg",
-        "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/12/Edmund_Dulac_-_Princess_and_pea.jpg/960px-Edmund_Dulac_-_Princess_and_pea.jpg",
-        "changes": "Redimensionado y convertido a AVIF; imagen completa, sin recortar."
+      "image": "/assets/nido/cuentos/covers/princesa-guisante-chatgpt-v2.avif",
+      "titled": true,
+      "preserve": true,
+      "generation": {
+        "tool": "ChatGPT Imágenes (web)",
+        "createdAt": "2026-09-16",
+        "conversation": "https://chatgpt.com/c/6aaab7f9-7edc-83e9-b79b-e3d5bdc7894a",
+        "changes": "Portada original generada a petición del usuario; optimizada en AVIF, 840 × 1260, imagen completa y título original sin recorte."
       },
       "ink": "#fff3cf",
       "sub": "#e0c895"

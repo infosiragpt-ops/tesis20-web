@@ -671,6 +671,7 @@ function DeskPanel({ book, status, ready, onOpen, onBack }) {
         {book.source ? <details className="cuentos-source"><summary>Sobre esta edición y su portada</summary>
           <p>{book.warning}</p><a href={book.source.url} target="_blank" rel="noreferrer">Texto: {book.source.publisher}</a>
           {book.cover.credit ? <p>Portada: {book.cover.credit.artist}. <a href={book.cover.credit.url} target="_blank" rel="noreferrer">{book.cover.credit.license}</a>. Ilustración histórica; no es la portada de esta web.</p> : null}
+          {book.cover.generation ? <p>Portada creada con ChatGPT Imágenes para esta biblioteca. Ilustración digital; el texto del cuento se conserva íntegro.</p> : null}
         </details> : null}
         <p className="cuentos-desk__hint">Arrastra la tapa hacia la izquierda para abrirlo, o el libro hacia arriba para devolverlo.</p>
         <div className="cuentos-desk__actions">

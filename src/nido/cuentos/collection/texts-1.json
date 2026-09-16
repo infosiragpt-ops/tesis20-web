@@ -127,15 +127,14 @@
     "title": "Alí Babá y los 40 ladrones",
     "accent": "#927047",
     "cover": {
-      "image": "/assets/nido/cuentos/collection/alibaba.avif",
-      "layout": "heritage",
-      "credit": {
-        "title": "File:Morgiana, 1001 nights, Ali Baba and the forthy thieves.jpg",
-        "artist": "Harry G. Theaker (1873–1954)",
-        "license": "Public domain",
-        "url": "https://commons.wikimedia.org/wiki/File:Morgiana,_1001_nights,_Ali_Baba_and_the_forthy_thieves.jpg",
-        "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/d/d4/Morgiana%2C_1001_nights%2C_Ali_Baba_and_the_forthy_thieves.jpg",
-        "changes": "Redimensionado y convertido a AVIF; imagen completa, sin recortar."
+      "image": "/assets/nido/cuentos/covers/alibaba-chatgpt-v2.avif",
+      "titled": true,
+      "preserve": true,
+      "generation": {
+        "tool": "ChatGPT Imágenes (web)",
+        "createdAt": "2026-09-16",
+        "conversation": "https://chatgpt.com/c/6aaaaf33-6408-83e9-b051-765c28be9f3a",
+        "changes": "Portada original generada a petición del usuario; optimizada en AVIF, 840 × 1260, imagen completa y título original sin recorte."
       },
       "ink": "#fff3cf",
       "sub": "#e0c895"
@@ -408,15 +407,14 @@
     "title": "El gigante egoísta",
     "accent": "#746340",
     "cover": {
-      "image": "/assets/nido/cuentos/collection/gigante-egoista.avif",
-      "layout": "heritage",
-      "credit": {
-        "title": "File:Plate 2 of The Happy Prince and Other Tales (1888).png",
-        "artist": "Crane, Walter, 1845-1915",
-        "license": "Public domain",
-        "url": "https://commons.wikimedia.org/wiki/File:Plate_2_of_The_Happy_Prince_and_Other_Tales_(1888).png",
-        "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/d2/Plate_2_of_The_Happy_Prince_and_Other_Tales_%281888%29.png/960px-Plate_2_of_The_Happy_Prince_and_Other_Tales_%281888%29.png",
-        "changes": "Redimensionado y convertido a AVIF; imagen completa, sin recortar."
+      "image": "/assets/nido/cuentos/covers/gigante-egoista-chatgpt-v2.avif",
+      "titled": true,
+      "preserve": true,
+      "generation": {
+        "tool": "ChatGPT Imágenes (web)",
+        "createdAt": "2026-09-16",
+        "conversation": "https://chatgpt.com/c/6aaab6a1-9130-83e9-81df-4933f7ef9058",
+        "changes": "Portada original generada a petición del usuario; optimizada en AVIF, 840 × 1260, imagen completa y título original sin recorte."
       },
       "ink": "#fff3cf",
       "sub": "#e0c895"

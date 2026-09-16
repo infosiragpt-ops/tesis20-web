@@ -11,6 +11,7 @@ import {
   TEACHER_PORTRAIT_POOLS,
 } from "../src/teacher-portrait.js";
 import { ACTIVE_THESIS_REPOSITORIES } from "../src/data/thesis-repositories.js";
+import { CLASSIC_COLLECTION } from "../src/nido/cuentos/classic-collection.js";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const siteOrigin = "https://www.tesis20.com";
@@ -749,6 +750,10 @@ let initialStylesheetBytes = 0;
 let deployBytesWithoutAudioAndPdf = 0;
 let classicTextBytes = 0;
 let classicCoverBytes = 0;
+let generatedCoverBytes = 0;
+const generatedCoverPaths = new Set(CLASSIC_COLLECTION
+  .filter(book => book.cover.generation?.tool === 'ChatGPT Imágenes (web)')
+  .map(book => `dist${book.cover.image}`));
 const isClassicText = file => /dist\/build-assets\/nido-classics-[1-5]-[^/]+\.js$/.test(file);
 const classicCovers = distFiles.filter(file => /^dist\/assets\/nido\/cuentos\/collection\/[^/]+\.avif$/.test(file));
 for (const distFile of distFiles) {
@@ -757,6 +762,10 @@ for (const distFile of distFiles) {
   if (classicCovers.includes(distFile)) {
     classicCoverBytes += bytes;
     check(bytes <= 160 * 1024, `${distFile} supera 160 KiB para una portada diferida.`);
+  }
+  if (generatedCoverPaths.has(distFile)) {
+    generatedCoverBytes += bytes;
+    check(bytes <= 250 * 1024, `${distFile} supera 250 KiB para una portada editorial generada.`);
   }
   // El directorio se controla por separado con un presupuesto comprimido,
   // que representa mejor su transferencia real que el JSON minificado en disco.
@@ -875,6 +884,14 @@ check(
 check(classicTextBytes > 0 && classicTextBytes <= 350 * 1024, 'Los 35 textos de la colección superan 350 KiB o faltan en el build.');
 check(classicCovers.length === 33, 'La colección necesita exactamente 33 portadas nuevas y reutiliza dos portadas existentes.');
 check(classicCoverBytes <= 2.5 * 1024 * 1024, 'Las 33 portadas de la colección superan 2.5 MiB.');
+// Arte solicitado el 16-09-2026: carga diferida por proximidad, presupuesto
+// separado y verificado contra el catálogo. No amplía el límite del motor.
+check(generatedCoverPaths.size <= 33, 'La renovación editorial supera las 33 portadas de clásicos.');
+for (const coverPath of generatedCoverPaths) {
+  check(/^dist\/assets\/nido\/cuentos\/covers\/[a-z0-9-]+-chatgpt-v2\.avif$/.test(coverPath), `Ruta editorial inesperada: ${coverPath}`);
+  check(distFiles.includes(coverPath), `Falta la portada editorial ${coverPath}.`);
+}
+check(generatedCoverBytes <= generatedCoverPaths.size * 250 * 1024, 'Las nuevas portadas exceden su presupuesto de 250 KiB por título.');
 check(
   initialStylesheetBytes > 0 && initialStylesheetBytes <= 85 * 1024,
   `El CSS inicial debe estar entre 1 y 85 KiB (${Math.ceil(initialStylesheetBytes / 1024)} KiB).`,
@@ -915,7 +932,7 @@ check(
 // igual que los textos y las ilustraciones históricas de la colección.
 const pulgarcitoCoverBytes = await fileSize('dist/assets/nido/cuentos/covers/pulgarcito-v1.avif');
 check(pulgarcitoCoverBytes <= 70 * 1024, 'La portada aprobada de Pulgarcito supera 70 KiB.');
-const baseDeployBytes = deployBytesWithoutAudioAndPdf - classicTextBytes - classicCoverBytes - pulgarcitoCoverBytes;
+const baseDeployBytes = deployBytesWithoutAudioAndPdf - classicTextBytes - classicCoverBytes - generatedCoverBytes - pulgarcitoCoverBytes;
 // +50 KiB para la dirección y geometría de clásicos; sin audios nuevos.
 check(baseDeployBytes <= 10.55 * 1024 * 1024, `El build sin audios/PDF ni la colección editorial acotada supera 10.55 MiB (${(baseDeployBytes / 1024 / 1024).toFixed(2)} MiB).`);
 
