@@ -13,7 +13,6 @@ const father = actor('campesino', 'padre campesino hombre federico');
 const p = (cast, props, sound = 'viento-suave') => ({ cast, props, sound });
 
 export const CLASSIC_DIRECTION = {
-  pulgarcito: p([actor('pulgarcito','pulgarcito muchacho'), father, mother, actor('caballo','caballo'), actor('vaca','vaca'), actor('lobo','lobo')], ['casa','arbol'], 'pajaros'),
   rapunzel: p([actor('rapunzel','rapunzel muchacha niña'), prince, witch, father, mother], ['torre','arbol'], 'pajaros'),
   alibaba: p([actor('alibaba','babá alí'), actor('campesino','kasim hermano ladrones capitán'), actor('campesina','morgiana esclava mujer')], ['tesoro','cactus'], 'viento-arena'),
   bambi: p([actor('bambi','bambi cervatillo ciervo'), actor('liebre','tambor conejo'), actor('buho','búho'), actor('cierva','madre mamá')], ['arbol','flores'], 'pajaros'),
@@ -37,7 +36,6 @@ export const CLASSIC_DIRECTION = {
   'cigarra-hormiga': p([actor('cigarra','cigarra'), actor('hormiga','hormiga hormigas')], ['arbol','casa'], 'pajaros'),
   'bella-princesa': p([princess, prince, king, witch], ['castillo','ramo'], 'pajaros'),
   sirenita: p([actor('sirena','sirenita sirena'), prince, witch, king, princess], ['caracola','barco'], 'olas'),
-  'caperucita-original': p([actor('caperucita','caperucita niña'), actor('lobo','lobo'), actor('abuelita','abuela abuelita'), mother], ['canasta','casa'], 'pajaros'),
   'leon-raton': p([actor('leon','león'), actor('raton','ratón ratoncillo')], ['arbol'], 'pasos-pasto'),
   'zapatero-magico': p([actor('zapatero','zapatero'), child, mother, actor('duende','duende duendes')], ['zapatos','taller'], 'martillo'),
   heidi: p([actor('heidi','heidi niña'), actor('zapatero','abuelo'), actor('campesina','deta tía'), actor('pastor','pedro'), actor('cabra','cabra cabras')], ['casa','arbol'], 'viento-suave'),

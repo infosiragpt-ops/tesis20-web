@@ -12,7 +12,7 @@ function dispose(root) {
   geometries.forEach(x=>x.dispose());materials.forEach(x=>x.dispose());textures.forEach(x=>x.dispose());
 }
 
-test('los 46 libros usan modelos articulados registrados (no valida fidelidad artística)',()=>{
+test('los 44 libros usan modelos articulados registrados (no valida fidelidad artística)',()=>{
   for(const id of cast) {
     if(id==='concha-caracol')continue; // Empty shell is a prop, not a character.
     const toy=buildToy(id);
@@ -75,4 +75,33 @@ test('el relieve privado del dragón se libera una sola vez al retirar su materi
   let released=0;skin.bumpMap.addEventListener('dispose',()=>released++);
   skin.dispose();skin.dispose();
   assert.equal(released,1,'el relieve no debe retener memoria entre páginas');
+});
+
+function scleraLuminance(toy) {
+  const eye=tagged(toy,'eye')[0];
+  let mesh;
+  eye.traverse(obj=>{if(!mesh&&obj.isMesh)mesh=obj;});
+  const {r,g,b}=mesh.material.color;
+  return r+g+b;
+}
+
+test('sirena es una sirenita articulada amable, no un cono con ojos vacíos',()=>{
+  const toy=buildToy('sirena');
+  assert.equal(tagged(toy,'head').length,1);
+  assert.equal(tagged(toy,'eye').length,2);
+  assert.equal(tagged(toy,'arm').length,2);
+  assert.ok(tagged(toy,'tail').length>=1,'cola articulada para las acciones');
+  assert.ok(scleraLuminance(toy)>1.6,'la esclerótica debe ser clara y amable, no un hueco oscuro');
+  let cones=0;
+  toy.traverse(obj=>{if(obj.geometry?.type==='ConeGeometry')cones++;});
+  assert.equal(cones,0,'la cola no puede ser un cono rígido');
+  dispose(toy);
+});
+
+test('los rostros humanos clásicos comparten ojos claros y amables',()=>{
+  for(const id of ['nino-clasico','campesino','princesa','heidi']) {
+    const toy=buildToy(id);
+    assert.ok(scleraLuminance(toy)>1.6,`${id}: ojos oscuros de aspecto vacío`);
+    dispose(toy);
+  }
 });

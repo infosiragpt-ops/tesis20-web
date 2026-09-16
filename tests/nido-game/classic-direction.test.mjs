@@ -46,8 +46,8 @@ test('story animals retain their species rather than human or sheep substitutes'
   assert.equal(buildToy('gallina').userData.sculpted.species,'hen');
 });
 
-test('all 812 classic pages have real actors, supported acting and actual props', () => {
-  assert.equal(CLASSIC_COLLECTION.reduce((sum, b) => sum + b.pages.length, 0), 812);
+test('all 757 published classic pages have real actors, supported acting and actual props', () => {
+  assert.equal(CLASSIC_COLLECTION.reduce((sum, b) => sum + b.pages.length, 0), 757);
   for (const book of CLASSIC_COLLECTION) for (const [i, page] of book.pages.entries()) {
     assert.ok(page.cast.length > 0 && page.cast.length <= 3, `${book.id}:${i} empty scene`);
     for (const id of [...page.cast, ...page.props.filter(hasToy)]) assert.ok(hasToy(id), id);
