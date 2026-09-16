@@ -3,19 +3,13 @@
 
 import * as THREE from "three";
 import { mat, mesh, cyl, fit } from "./_shared.js";
-import * as abuelita from "./abuelita.js";
 import * as arbol from "./arbol.js";
-import * as ballena from "./ballena.js";
 import * as barco from "./barco.js";
-import * as bufeo from "./bufeo.js";
-import * as buho from "./buho.js";
 import * as cactus from "./cactus.js";
 import * as campana from "./campana.js";
 import * as canasta from "./canasta.js";
-import * as caperucita from "./caperucita.js";
 import * as caracola from "./caracola.js";
 import * as casa from "./casa.js";
-import * as cazador from "./cazador.js";
 import * as cerdito from "./cerdito.js";
 import * as cohete from "./cohete.js";
 import * as cometa from "./cometa.js";
@@ -24,44 +18,33 @@ import * as estrella from "./estrella.js";
 import * as farol from "./farol.js";
 import * as frasco from "./frasco.js";
 import * as gorro from "./gorro.js";
-import * as lobo from "./lobo.js";
 import * as luna from "./luna.js";
 import * as manzana from "./manzana.js";
 import * as olla from "./olla.js";
-import * as oso from "./oso.js";
-import * as oveja from "./oveja.js";
-import * as pajarito from "./pajarito.js";
-import * as pez from "./pez.js";
-import * as picaflor from "./picaflor.js";
 import * as quena from "./quena.js";
 import * as ramo from "./ramo.js";
-import * as rana from "./rana.js";
 import * as tambor from "./tambor.js";
 import * as tren from "./tren.js";
-import * as vicuna from "./vicuna.js";
-import * as zorro from "./zorro.js";
-import * as mariposa from "./mariposa.js";
-import * as pelicano from "./pelicano.js";
-import * as carpintero from "./carpintero.js";
-import * as pulgarcito from "./pulgarcito.js";
-import { father, mother } from "./pulgarcito.js";
-import { caballo, vaca, caracol, concha } from "./pulgarcito-animals.js";
+import { caracol, concha } from "./pulgarcito-animals.js";
 import { nina, nino, nina2, maquinista } from "./personajes.js";
 import { CLASSIC_TOYS } from './classic-toys.js';
 import { CLASSIC_PROPS } from './classic-props.js';
+import { SCULPTED_ANIMALS } from './sculpted-animals.js';
+import { buildDragon } from './sculpted-dragon.js';
+import { SCULPTED_FANTASY } from './sculpted-fantasy.js';
+import { SCULPTED_STORY_PEOPLE } from './sculpted-story-people.js';
 
 const pipo = { id: "pipo", label: "Pipo", build: () => cerdito.build({ hat: true, item: "paja" }) };
 const lolo = { id: "lolo", label: "Lolo", build: () => cerdito.build({ shirt: "#4fa85f", item: "madera" }) };
 const tito = { id: "tito", label: "Tito", build: () => cerdito.build({ plaid: true, item: "badilejo" }) };
-// El lobo metido en la cama de la abuelita lleva su gorro de dormir.
-const loboCama = { id: "lobo-cama", label: "Lobo disfrazado", build: () => lobo.build({ bonnet: true }) };
-const REGISTRY = { abuelita, arbol, ballena, barco, bufeo, buho, cactus, campana, canasta, caperucita, caracola, casa, cazador, cerdito, cohete, cometa, escalera, estrella, farol, frasco, gorro, lobo, luna, manzana, olla, oso, oveja, pajarito, pez, picaflor, quena, ramo, rana, tambor, tren, vicuna, zorro, mariposa, pelicano, carpintero, nina, nino, nina2, maquinista, pipo, lolo, tito, "lobo-cama": loboCama };
+const REGISTRY = { arbol, barco, cactus, campana, canasta, caracola, casa, cerdito, cohete, cometa, escalera, estrella, farol, frasco, gorro, luna, manzana, olla, quena, ramo, tambor, tren, nina, nino, nina2, maquinista, pipo, lolo, tito, caracol, "concha-caracol": concha };
 
 // Tamaño relativo en el diorama: las criaturas pequeñas se ven pequeñas
 // junto a los personajes grandes (1 = altura estándar de figura).
 export const TOY_SCALE = { mariposa: 0.5, picaflor: 0.75, carpintero: 0.75, pajarito: 0.55, rana: 0.85, pez: 0.85, pulgarcito: 0.72, caracol: 0.7, 'concha-caracol': 0.58 };
-Object.assign(REGISTRY, { pulgarcito, caballo, vaca, caracol, "concha-caracol": concha, "papa-pulgarcito": father, "mama-pulgarcito": mother });
 for (const toy of [...CLASSIC_TOYS, ...CLASSIC_PROPS]) REGISTRY[toy.id] = toy;
+for (const toy of [...SCULPTED_ANIMALS, ...SCULPTED_FANTASY, ...SCULPTED_STORY_PEOPLE]) REGISTRY[toy.id] = toy;
+REGISTRY.dragon = { id:'dragon', label:'Dragón', build:buildDragon };
 Object.assign(TOY_SCALE, { gigante: 1.3, raton: .6, hormiga: .55, cigarra: .7, paloma: .7, 'cama-guisante': 1.15, castillo: 1.2, torre: 1.2 });
 
 export function registerToys(modules) {

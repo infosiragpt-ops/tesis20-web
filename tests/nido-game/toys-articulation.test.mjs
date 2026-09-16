@@ -27,7 +27,13 @@ test("cada figura del reparto está articulada: cabeza, ojos que parpadean y tam
     const toy = buildToy(id);
     const box = new THREE.Box3().setFromObject(toy);
     const size = box.getSize(new THREE.Vector3());
-    assert.ok(size.y > 0.26 && size.y < 0.34, `${id}: altura ${size.y.toFixed(3)} fuera de la medida de la repisa.`);
+    // Natural low-bodied species fit their whole silhouette, not an arbitrary
+    // standing-person height that made turtles/insects cover neighboring actors.
+    const minimumHeight = toy.userData.sculpted ? .08 : .26;
+    assert.ok(size.y > minimumHeight && size.y < .34, `${id}: altura ${size.y.toFixed(3)} fuera de la medida de la repisa.`);
+    if (toy.userData.sculpted) {
+      assert.ok(size.x <= .32 && size.z <= .44, `${id}: silueta invade el espacio del otro personaje.`);
+    }
     assert.ok(Math.abs(box.min.y) < 0.002, `${id}: no apoya en el suelo (min y ${box.min.y.toFixed(3)}).`);
     // Una concha vacía es un objeto escénico, no un animal con ojos.
     if (id === 'concha-caracol') continue;

@@ -5,7 +5,8 @@
 // roja, overol azul, badilejo). Cabeza y brazos llevan marcas en userData
 // para que el escenario los anime según la página.
 import * as THREE from "three";
-import { mat, mesh, blob, box, cyl, cone, fit, eyeball } from "./_shared.js";
+import { mat, mesh, blob, box, cyl, cone, fit } from "./_shared.js";
+import { tube, eyePair } from './sculpting.js';
 
 export const id = "cerdito";
 export const label = "Cerdito";
@@ -37,8 +38,8 @@ function plaidTexture() {
 
 export function build({ outfit = "#5aa0d8", hat = false, shirt = null, plaid = false, item = null } = {}) {
   const g = new THREE.Group();
-  const pink = mat("#f7b7c6", { rough: 0.55 , surface: "skin" });
-  const pinkDark = mat("#ec93aa", { rough: 0.55 , surface: "skin" });
+  const pink = mat("#dcb2a8", { rough: 0.79 , surface: "skin" });
+  const pinkDark = mat("#bf8f88", { rough: 0.75 , surface: "skin" });
   const nostril = mat("#b5637e", { rough: 0.4 });
   const mouth = mat("#8e2f3f", { rough: 0.5 });
   const tongue = mat("#e97a92", { rough: 0.5 });
@@ -81,10 +82,11 @@ export function build({ outfit = "#5aa0d8", hat = false, shirt = null, plaid = f
 
   /* -------------------------- patas y pezuñas --------------------------- */
   [-1, 1].forEach((side) => {
-    g.add(cyl(0.021, 0.024, 0.065, pink, { x: side * 0.036, y: 0.04 }, 16));
-    const hoof = blob(0.024, pinkDark, { x: side * 0.036, y: 0.011, z: 0.006 });
+    const leg=new THREE.Group();leg.userData.leg=side;leg.position.set(side*.036,.076,0);g.add(leg);
+    tube(leg,pink,[[0,0,0],[side*.003,-.028,.004],[0,-.060,.004]],[.024,.020,.018],{segments:12,sides:12});
+    const hoof = blob(0.024, pinkDark, { y: -0.065, z: 0.006 });
     hoof.scale.set(1, 0.5, 1.15);
-    g.add(hoof);
+    leg.add(hoof);
   });
 
   /* -------------------------------- cabeza ------------------------------- */
@@ -117,8 +119,8 @@ export function build({ outfit = "#5aa0d8", hat = false, shirt = null, plaid = f
   tng.scale.set(1.2, 0.45, 0.6);
   headGroup.add(tng);
   // Ojos grandes con brillo y cejas
+  eyePair(headGroup,{spread:.04,y:.028,z:.085,radius:.019,iris:'#735439'});
   [-1, 1].forEach((side) => {
-    eyeball(headGroup, { x: side * 0.04, y: 0.028, z: 0.082, r: 0.023 });
     const b = mesh(new THREE.TorusGeometry(0.014, 0.0025, 8, 20, Math.PI * 0.8), brow, { x: side * 0.04, y: 0.056, z: 0.09, rz: side * 0.2 + Math.PI * 0.1 });
     headGroup.add(b);
   });
@@ -204,5 +206,13 @@ export function build({ outfit = "#5aa0d8", hat = false, shirt = null, plaid = f
   tail.userData.sway = 0.4;
   g.add(tail);
 
-  return fit(g, 0.3);
+  // Keep the three familiar outfits and tools, with less infantile head
+  // proportions, smaller eyes and articulated load-bearing legs.
+  headGroup.scale.set(.82,.86,.89);
+  headGroup.position.y=.286;
+  headGroup.traverse(obj=>{if(obj.userData.eye){obj.scale.multiplyScalar(.82);}});
+  tail.userData.tail=1;
+  const holder=fit(g,.30);
+  holder.userData.sculpted={revision:1,family:'fantasy',species:'pig',legs:2};
+  return holder;
 }

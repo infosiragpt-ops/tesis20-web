@@ -303,6 +303,7 @@ export function createStage(canvas, options) {
     if (idx >= 0) toyGroups.splice(idx, 1);
     toyState.delete(holder);
     holder.traverse((obj) => {
+      if (obj.isInstancedMesh) obj.dispose();
       obj.geometry?.dispose();
       const list = Array.isArray(obj.material) ? obj.material : obj.material ? [obj.material] : [];
       list.forEach(m => m.dispose());
@@ -2284,6 +2285,7 @@ export function createStage(canvas, options) {
     window.removeEventListener("blur", onPointerCancel);
     window.removeEventListener("keydown", onKeyDown);
     scene.traverse((obj) => {
+      if (obj.isInstancedMesh) obj.dispose();
       if (obj.geometry) obj.geometry.dispose?.();
       const materials = Array.isArray(obj.material) ? obj.material : obj.material ? [obj.material] : [];
       materials.forEach((m) => {
