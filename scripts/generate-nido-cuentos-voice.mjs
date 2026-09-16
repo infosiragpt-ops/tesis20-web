@@ -338,8 +338,13 @@ function filterJobs(jobs) {
   });
 }
 
-function pagesComplete(book) {
-  return Array.isArray(book?.pages) && book.pages.length > 0 && book.pages.every((page) => page?.src);
+function mergePages(previous = [], incoming = []) {
+  const length = Math.max(previous.length, incoming.length);
+  const pages = [];
+  for (let i = 0; i < length; i += 1) {
+    pages[i] = incoming[i]?.src ? incoming[i] : previous[i] || null;
+  }
+  return pages;
 }
 
 function mergeManifest(existing, incoming) {
@@ -347,7 +352,7 @@ function mergeManifest(existing, incoming) {
   for (const [id, book] of Object.entries(incoming.books || {})) {
     const previous = books[id] || { pages: [], quiz: [] };
     books[id] = {
-      pages: pagesComplete(book) ? book.pages : previous.pages,
+      pages: mergePages(previous.pages, book.pages),
       quiz: book.quiz?.length ? book.quiz : previous.quiz,
     };
   }

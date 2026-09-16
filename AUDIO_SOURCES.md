@@ -93,9 +93,13 @@ juegos, en `public/assets/nido/audio/cuentos/` con el manifiesto
   originales conservan preguntas y opciones del quiz; los clásicos no tienen
   quiz. Hay una locución por palabra distinta del cuerpo. Las repeticiones
   comparten mp3. Si un clip no está, el lector cae a la voz del dispositivo.
-- Recorte posible: si el cupo de ElevenLabs no alcanza el catálogo entero, se
-  prioriza `clasico-tres-deseos` y se fusiona el manifiesto (`NIDO_TTS_BOOKS`,
-  `NIDO_TTS_SKIP_WORDS`, `NIDO_TTS_MERGE`) sin borrar los mp3 ya grabados.
+- Recorte de este lote: las 10 páginas de `clasico-tres-deseos` están grabadas,
+  más las páginas de los demás clásicos salvo 4 de `clasico-habichuelas`
+  (índices 6, 8, 9 y 10) que quedaron a medias por cupo de ElevenLabs
+  (158 500 créditos). Esas páginas y las palabras sueltas nuevas de los
+  clásicos caen a la voz del dispositivo hasta un lote posterior.
+  `NIDO_TTS_BOOKS`, `NIDO_TTS_SKIP_WORDS` y `NIDO_TTS_MERGE` permiten
+  reanudar sin borrar los mp3 ya grabados.
 - Tres perfiles de voz: `narracion` (0,90 de velocidad), `pregunta` (0,92) y
   `palabra` (0,85, más estable). Los ajustes entran en el hash del archivo, así
   que cambiar un perfil regraba solo lo afectado.
