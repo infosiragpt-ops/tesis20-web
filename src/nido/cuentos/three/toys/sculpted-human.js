@@ -56,13 +56,76 @@ function boot(leg, leather, sole, adult) {
   for (let i = 0; i < 3; i++) ell(leg, mat('#d8c7a4', { rough: .7 }), [0, -shaft - .01 - i * .008, .018], [.002, .002, .0016], [0, 0, 0], 6);
 }
 
+function mermaidCostume(root) {
+  const sea = mat('#2f8f8c', { rough: .42, clearcoat: .55 });
+  const seaLite = mat('#5ec4b8', { rough: .38, clearcoat: .65 });
+  const seaDeep = mat('#1f6d72', { rough: .4, clearcoat: .5 });
+  const pearl = mat('#f7f0e4', { rough: .22, clearcoat: .85 });
+  const shell = mat('#f3c4b4', { rough: .48, clearcoat: .4 });
+  garment(root, sea, [
+    [.118, .038, .028],
+    [.148, .036, .027],
+    [.178, .04, .029],
+    [.206, .036, .027],
+    [.224, .02, .02],
+  ], .035);
+  for (const s of [-1, 1]) {
+    ell(root, shell, [s * .015, .198, .03], [.016, .011, .007], [0, 0, s * .55], 12);
+    ell(root, shell, [s * .02, .188, .028], [.012, .008, .005], [.15, 0, s * .7], 10);
+  }
+  for (let i = 0; i < 7; i++) {
+    const a = -.75 + i * 1.5 / 6;
+    ell(root, pearl, [Math.sin(a) * .016, .226, .02 + Math.cos(a) * .004], [.0034, .0034, .003], [0, 0, 0], 8);
+  }
+  const tail = part(root, 'tail', 1, [0, .118, .006]);
+  tube(tail, sea, [
+    [0, 0, 0],
+    [0, -.036, .012],
+    [.006, -.072, .01],
+    [0, -.108, 0],
+  ], [.04, .034, .024, .013], { segments: 20, sides: 12 });
+  const scales = [];
+  for (let i = 0; i < 22; i++) {
+    const t = i / 21, y = -t * .1, r = .036 * (1 - t * .55);
+    for (const s of [-1, 0, 1]) {
+      scales.push({ p: [s * r * .55, y, r * .45 + (s ? 0 : .006)], s: [.007 * (1 - t * .3), .004, .003], c: i % 2 ? '#7ed9cc' : '#3aa39a' });
+    }
+  }
+  details(tail, seaLite, scales);
+  ell(tail, seaDeep, [0, -.04, -.018], [.01, .028, .008], [.3, 0, 0], 10);
+  for (const s of [-1, 1]) {
+    ell(tail, seaLite, [s * .028, -.112, .002], [.034, .01, .022], [0, s * .35, s * .15], 14);
+    ell(tail, seaDeep, [s * .042, -.118, -.004], [.02, .006, .014], [0, s * .5, s * .2], 12);
+  }
+}
+
+function mermaidHair(head, hair) {
+  const locks = [];
+  for (let i = 0; i < 14; i++) {
+    const a = -1.45 + i * 2.9 / 13;
+    locks.push({ p: [Math.sin(a) * .03, .064 + Math.cos(a) * .012, .008 + Math.cos(a) * .012], s: [.01, .016, .008], r: [.45, 0, -a * .22] });
+  }
+  details(head, hair, locks);
+  for (const s of [-1, 1]) {
+    for (let i = 0; i < 4; i++) {
+      tube(head, hair, [
+        [s * (.018 + i * .006), .07, -.006],
+        [s * (.036 + i * .012), .036 - i * .01, -.018 - i * .008],
+        [s * (.05 + i * .01), -.008 - i * .014, -.028 - i * .01],
+        [s * (.04 + i * .008), -.048 - i * .018, -.016 - i * .004],
+      ], [.011, .012, .009, .0035], { segments: 16, sides: 8 });
+    }
+  }
+}
+
 // Keeps the existing decoration coordinate contract while replacing anatomy.
 export function sculptedHuman({ coat, trousers = '#46536b', girl = false, chullo = false, sailor = false, skinTone = '#bc8257', hairColor = '#352522', decorate, adult = false, kind = '' }) {
   const root = new THREE.Group();
   const peasant = kind === 'peasant';
   const kitchen = kind === 'kitchen';
   const fairy = kind === 'fairy';
-  const female = girl || fairy || kitchen;
+  const mermaid = kind === 'mermaid';
+  const female = girl || fairy || kitchen || mermaid;
   const skin = mat(skinTone, { rough: .74, surface: 'skin' });
   const hair = mat(hairColor, { rough: .86, surface: 'fur' });
   const fabric = mat(coat, { rough: .88, surface: 'cloth' });
@@ -96,7 +159,8 @@ export function sculptedHuman({ coat, trousers = '#46536b', girl = false, chullo
   }
 
   const chest = adult && !female ? .05 : .044;
-  garment(root, fabric, [
+  if (mermaid) mermaidCostume(root);
+  else garment(root, fabric, [
     [.112, .032 * hipW, .023],
     [.138, .031 * hipW, .024],
     [.168, female ? .034 : .036, .025],
@@ -104,7 +168,7 @@ export function sculptedHuman({ coat, trousers = '#46536b', girl = false, chullo
     [.218, adult && !female ? .05 : .038, .026],
     [.228, .018, .018],
   ], female ? .04 : .02);
-  if (female && kind !== 'mermaid') {
+  if (female && !mermaid) {
     garment(root, fabric, [
       [.02, .078 * hipW, .05],
       [.055, .07 * hipW, .046],
@@ -140,19 +204,21 @@ export function sculptedHuman({ coat, trousers = '#46536b', girl = false, chullo
       [.16, .028, .022],
     ], .05, 22);
   }
-  if (!peasant && !kitchen) {
+  if (!peasant && !kitchen && !mermaid) {
     tube(root, trim, [[-.03, .214, .019], [0, .199, .03], [.03, .214, .019]], [.004, .003, .004], { segments: 14, sides: 6 });
     for (let i = 0; i < 4; i++) ell(root, metal, [0, .188 - i * .015, .027], [.0025, .0027, .0019], [0, 0, 0], 8);
   } else if (peasant) {
     for (let i = 0; i < 3; i++) ell(root, metal, [0, .196 - i * .016, .03], [.0028, .003, .002], [0, 0, 0], 8);
   }
 
-  const folds = [];
-  for (let i = 0; i < 10; i++) {
-    const a = -1.1 + i * 2.2 / 9;
-    folds.push({ p: [Math.sin(a) * .03, .155 + (i % 3) * .012, .02 + Math.cos(a) * .008], s: [.01, .004, .003], r: [0, a, .2] });
+  if (!mermaid) {
+    const folds = [];
+    for (let i = 0; i < 10; i++) {
+      const a = -1.1 + i * 2.2 / 9;
+      folds.push({ p: [Math.sin(a) * .03, .155 + (i % 3) * .012, .02 + Math.cos(a) * .008], s: [.01, .004, .003], r: [0, a, .2] });
+    }
+    details(root, fabric, folds);
   }
-  details(root, fabric, folds);
   tube(root, skin, [[0, .222, 0], [0, .258, 0]], [adult ? .015 : .014, .012], { segments: 10, sides: 12 });
 
   for (const s of [-1, 1]) {
@@ -178,7 +244,7 @@ export function sculptedHuman({ coat, trousers = '#46536b', girl = false, chullo
   }
   ell(head, skin, [0, .031, .031], [.006, .011, .009]);
   ell(head, skin, [0, .024, .036], [.004, .004, .004], [0, 0, 0], 10);
-  tube(head, lip, [[-.008, .017, .03], [0, female ? .015 : .014, .034], [.008, .017, .03]], [.0011, .0018, .0011], { segments: 10, sides: 6 });
+  tube(head, lip, [[-.008, .019, .03], [0, female ? .013 : .0145, .034], [.008, .019, .03]], [.0011, .0018, .0011], { segments: 10, sides: 6 });
   if (!female && adult) {
     details(head, mat('#4a332c', { rough: .9 }), [
       { p: [-.01, .012, .028], s: [.008, .003, .003] },
@@ -197,14 +263,22 @@ export function sculptedHuman({ coat, trousers = '#46536b', girl = false, chullo
       }
     }
   }
-  eyePair(head, { spread: adult ? .014 : .015, y: .044, z: .027, radius: adult ? .0064 : .0076, iris: peasant || kitchen ? '#5c3d28' : '#795436' });
+  eyePair(head, {
+    spread: adult ? .013 : .014,
+    y: .042,
+    z: .028,
+    radius: adult ? .0048 : mermaid ? .0052 : .0054,
+    iris: mermaid ? '#3f6d72' : peasant || kitchen ? '#5c3d28' : '#6b4630',
+    friendly: true,
+  });
 
   ell(head, hair, [0, .058, -.012], [adult ? .033 : .036, .03, .028]);
   const locks = [];
-  if (female) {
+  if (mermaid) mermaidHair(head, hair);
+  else if (female) {
     for (let i = 0; i < 20; i++) {
       const a = -1.6 + i * 3.2 / 19;
-      locks.push({ p: [Math.sin(a) * .032, .062 + Math.cos(a) * .01, .01 + Math.cos(a) * .014], s: [.009, kitchen ? .014 : .02, .008], r: [.2, 0, -a * .3] });
+      locks.push({ p: [Math.sin(a) * .032, .062 + Math.cos(a) * .01, .01 + Math.cos(a) * .014], s: [.01, kitchen ? .013 : .015, .008], r: [.35, 0, -a * .22] });
     }
     if (kitchen) {
       ell(head, hair, [0, .078, -.018], [.02, .018, .016]);
@@ -212,11 +286,11 @@ export function sculptedHuman({ coat, trousers = '#46536b', girl = false, chullo
     } else {
       for (const s of [-1, 1]) {
         tube(head, hair, [
-          [s * .028, .068, -.01],
-          [s * .04, .03, -.012],
-          [s * .042, -.01, -.016],
-          [s * .032, fairy ? -.06 : -.048, -.012],
-        ], [.014, .014, .011, .004], { segments: 22, sides: 10 });
+          [s * .026, .068, -.008],
+          [s * .042, .028, -.018],
+          [s * .038, -.008, -.022],
+          [s * .028, fairy ? -.062 : -.05, -.012],
+        ], [.012, .013, .01, .0035], { segments: 22, sides: 8 });
       }
     }
   } else {

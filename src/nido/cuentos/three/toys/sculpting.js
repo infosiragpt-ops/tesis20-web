@@ -34,16 +34,17 @@ export function tube(parent, material, points, radii, { segments = 16, sides = 8
   const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3)); geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); geo.setIndex(indices); geo.computeVertexNormals();
   const mesh = new THREE.Mesh(geo, material); mesh.castShadow = true; mesh.receiveShadow = true; parent.add(mesh); return mesh;
 }
-export function eyePair(head, { spread = .08, y = .02, z = .10, radius = .026, iris = '#564229' } = {}) {
-  const wet = mat('#1c2019', { rough: .2, clearcoat: .9 });
-  const irisMat = mat(iris, { rough: .32, clearcoat: .6 });
+export function eyePair(head, { spread = .08, y = .02, z = .10, radius = .026, iris = '#564229', friendly = false } = {}) {
+  const sclera = mat(friendly ? '#fff4e8' : '#1c2019', { rough: friendly ? .38 : .2, clearcoat: friendly ? .42 : .9 });
+  const irisMat = mat(iris, { rough: .32, clearcoat: .55 });
+  const pupil = mat(friendly ? '#2c1b12' : '#1c2019', { rough: .22, clearcoat: .65 });
   const glint = mat('#fff7e6', { rough: .15 });
   for (const s of [-1, 1]) {
     const eye = part(head, 'eye', 1, [s * spread, y, z]);
-    ell(eye, wet, [0, 0, 0], [radius, radius * 1.02, radius * .56]);
-    ell(eye, irisMat, [0, -.001, radius * .46], [radius * .67, radius * .76, radius * .2]);
-    ell(eye, wet, [0, 0, radius * .60], [radius * .36, radius * .52, radius * .18]);
-    ell(eye, glint, [-radius * .25, radius * .28, radius * .72], [radius * .14, radius * .14, radius * .12], [0, 0, 0], 8);
+    ell(eye, sclera, [0, 0, 0], [radius, radius * (friendly ? .86 : 1.02), radius * .56]);
+    ell(eye, irisMat, [0, friendly ? -.0004 : -.001, radius * .46], [radius * (friendly ? .55 : .67), radius * (friendly ? .62 : .76), radius * .2]);
+    ell(eye, pupil, [0, 0, radius * .60], [radius * (friendly ? .22 : .36), radius * (friendly ? .28 : .52), radius * .18]);
+    ell(eye, glint, [-radius * .22, radius * .2, radius * .72], [radius * .12, radius * .12, radius * .1], [0, 0, 0], 8);
   }
 }
 export function finish(root, family, anatomy = {}) {

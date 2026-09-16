@@ -7,11 +7,16 @@ import { CLASSIC_COLLECTION } from '../../src/nido/cuentos/classic-collection.js
 import { paginateStory, pageWindow, searchBooks } from '../../src/nido/cuentos/collection-layout.js';
 import { enumerateCuentosVoicePlan } from '../../src/nido/cuentos/cuentos-voice-plan.js';
 
-test('las 35 ediciones conservan cada palabra del texto autorizado', () => {
-  assert.equal(CLASSIC_COLLECTION.length, 35);
-  assert.equal(BOOKS.length, NARRATED_BOOKS.length + 35);
+test('las 33 ediciones publicadas conservan cada palabra del texto autorizado', () => {
+  assert.equal(CLASSIC_COLLECTION.length, 33);
+  assert.equal(BOOKS.length, NARRATED_BOOKS.length + 33);
   assert.equal(new Set(BOOKS.map(b => b.id)).size, BOOKS.length);
-  assert.equal(new Set(CLASSIC_COLLECTION.map(b => b.source.url)).size, 35);
+  assert.equal(new Set(CLASSIC_COLLECTION.map(b => b.source.url)).size, 33);
+  assert.ok(!CLASSIC_COLLECTION.some(book => book.id === 'clasico-pulgarcito' || book.id === 'clasico-caperucita-original'));
+  assert.equal(BOOKS.filter(book => book.id === 'caperucita' || book.id === 'clasico-caperucita-original').length, 1);
+  assert.equal(BOOKS.filter(book => book.id === 'pulgarcito' || book.id === 'clasico-pulgarcito').length, 1);
+  assert.equal(BOOKS.find(book => book.id === 'caperucita')?.title, 'Caperucita Roja');
+  assert.equal(BOOKS.find(book => book.id === 'pulgarcito')?.title, 'Pulgarcito');
   for (const book of CLASSIC_COLLECTION) {
     assert.equal(createHash('sha256').update(book.pages.map(p => p.x).join(' ')).digest('hex'), book.source.sha256, book.title);
     assert.ok(book.pages.length > 0);
@@ -33,10 +38,12 @@ test('la paginación no pierde palabras ni deja páginas vacías', () => {
   }
 });
 
-test('el buscador ignora acentos y distingue las dos ediciones existentes', () => {
+test('el buscador ignora acentos y no duplica Caperucita ni Pulgarcito', () => {
   assert.equal(searchBooks(BOOKS, 'ALI BABA')[0].id, 'clasico-alibaba');
   assert.equal(searchBooks(BOOKS, 'guisante').length, 1);
-  assert.equal(searchBooks(BOOKS, 'pulgarcito').length, 2);
+  assert.equal(searchBooks(BOOKS, 'pulgarcito').length, 1);
+  assert.equal(searchBooks(BOOKS, 'caperucita').length, 1);
+  assert.equal(searchBooks(BOOKS, 'caperucita')[0].id, 'caperucita');
   assert.equal(searchBooks(BOOKS, 'zz-nunca-zz').length, 0);
   assert.equal(searchBooks(BOOKS, '').length, BOOKS.length);
 });
@@ -61,7 +68,7 @@ test('los clásicos entran en el plan de voz de estudio', () => {
   assert.ok(all.some(job => job.bookId === 'clasico-tres-deseos' && job.kind === 'page'));
   assert.equal(all.filter(job => job.bookId === 'clasico-tres-deseos' && job.kind === 'page').length, 10);
   assert.equal(NARRATED_BOOKS.find(b => b.id === 'pulgarcito').pages.length, 10);
-  assert.equal(CLASSIC_COLLECTION.find(b => b.id === 'clasico-pulgarcito').cover.image, NARRATED_BOOKS.find(b => b.id === 'pulgarcito').cover.image);
+  assert.equal(CLASSIC_COLLECTION.find(b => b.id === 'clasico-pulgarcito'), undefined);
   assert.match(CLASSIC_COLLECTION.find(b => b.id === 'clasico-heidi').tagline, /Capítulo 1/);
 });
 

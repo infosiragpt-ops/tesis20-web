@@ -7,7 +7,7 @@ import { sculptedHuman } from './sculpted-human.js';
 const gold = () => mat('#e9b956', { metal: .35, rough: .32 });
 const module = (id, label, build) => ({ id, label, build });
 function person(id, label, coat, kind = '', girl = false, hairColor = '#674331') {
-  return module(id, label, () => sculptedHuman({ coat, girl, hairColor, kind, adult: !['heidi','nino-clasico','pastor','pinocho','duende'].includes(id), trousers: '#46536b', skinTone: kind === 'genie' ? '#73c7d9' : '#e8b88b',
+  return module(id, label, () => sculptedHuman({ coat, girl, hairColor, kind, adult: !['heidi','nino-clasico','pastor','pinocho','duende','sirena'].includes(id), trousers: '#46536b', skinTone: kind === 'genie' ? '#73c7d9' : '#e8b88b',
     decorate(g, head) {
       const ornament = gold();
       if (['royal', 'queen'].includes(kind)) {
@@ -55,10 +55,10 @@ function person(id, label, coat, kind = '', girl = false, hairColor = '#674331')
         });
       }
       if (kind === 'mermaid') {
-        g.add(cone(.047, .13, mat('#51afaa', { clearcoat: .6 }), { y: .06, rz: Math.PI }));
-        const tail = new THREE.Group(); tail.userData.tail = 1;
-        [-1, 1].forEach(side => tail.add(blob(.033, mat('#79c9bc'), { x: side * .024, y: .007, s: [1, .3, .65] })));
-        g.add(tail);
+        const pearl = mat('#f7f0e4', { rough: .22, clearcoat: .85 });
+        const shell = mat('#f0d0b8', { rough: .45, clearcoat: .45 });
+        head.add(blob(.008, pearl, { y: .082, z: .018 }));
+        [-1, 1].forEach(side => head.add(blob(.01, shell, { x: side * .036, y: .042, z: .008, s: [1.1, .55, .38] })));
       }
     },
   }));
@@ -86,7 +86,7 @@ export const CLASSIC_TOYS = [
   person('blancanieves', 'Blancanieves', '#e3c764', '', true, '#2e2733'),
   person('barba-azul', 'Barba Azul', '#516284', 'bluebeard'),
   person('hada', 'Hada', '#c9b0de', 'fairy', true, '#f0d7b0'),
-  person('sirena', 'Sirenita', '#a8d4c4', 'mermaid', true, '#9c624c'),
+  person('sirena', 'Sirenita', '#4eb8b0', 'mermaid', true, '#d08a52'),
   person('heidi', 'Heidi', '#ac5250', '', true),
   person('zapatero', 'Zapatero', '#956e52', 'sage'),
   person('duende', 'Duende', '#688c70', 'elf'),

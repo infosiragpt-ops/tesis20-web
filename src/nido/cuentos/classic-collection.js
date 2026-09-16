@@ -10,7 +10,14 @@ import { directClassic } from './classic-direction.js';
 // Device speech remains only as a fallback when a clip is missing. These
 // editions still do not promise quizzes/souvenirs.
 
-export const CLASSIC_COLLECTION = [...part1, ...part2, ...part3, ...part4, ...part5].map(item => {
+// Nido already ships illustrated studio editions of these stories
+// (`caperucita` and `pulgarcito` in cuentos-data / PULGARCITO). Publishing
+// the classic JSON twins put two Caperucitas and two Pulgarcitos on the shelf.
+const UNPUBLISHED_CLASSICS = new Set(['pulgarcito', 'caperucita-original']);
+
+export const CLASSIC_COLLECTION = [...part1, ...part2, ...part3, ...part4, ...part5]
+  .filter(item => !UNPUBLISHED_CLASSICS.has(item.id))
+  .map(item => {
   const texts = paginateStory(item.paragraphs);
   return {
     id: `clasico-${item.id}`,
