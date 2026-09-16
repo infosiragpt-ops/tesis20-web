@@ -4,15 +4,14 @@
     "title": "La cigarra y la hormiga",
     "accent": "#496d59",
     "cover": {
-      "image": "/assets/nido/cuentos/collection/cigarra-hormiga.avif",
-      "layout": "heritage",
-      "credit": {
-        "title": "File:The Ant and the Grasshopper - Project Gutenberg etext 19994.jpg",
-        "artist": "Illustrated by Milo Winter (1886-1956)",
-        "license": "Public domain",
-        "url": "https://commons.wikimedia.org/wiki/File:The_Ant_and_the_Grasshopper_-_Project_Gutenberg_etext_19994.jpg",
-        "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/f/f8/The_Ant_and_the_Grasshopper_-_Project_Gutenberg_etext_19994.jpg",
-        "changes": "Redimensionado y convertido a AVIF; imagen completa, sin recortar."
+      "image": "/assets/nido/cuentos/covers/cigarra-hormiga-chatgpt-v2.avif",
+      "titled": true,
+      "preserve": true,
+      "generation": {
+        "tool": "ChatGPT Imágenes (web)",
+        "createdAt": "2026-09-16",
+        "conversation": "https://chatgpt.com/c/6aaabfcb-e584-83e9-819a-b693ba40b73c",
+        "changes": "Portada original generada a petición del usuario; optimizada en AVIF, 840 × 1260, imagen completa y título original sin recorte."
       },
       "ink": "#fff3cf",
       "sub": "#e0c895"
