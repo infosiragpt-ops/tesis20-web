@@ -4,15 +4,14 @@
     "title": "Los tres deseos",
     "accent": "#496d59",
     "cover": {
-      "image": "/assets/nido/cuentos/collection/tres-deseos.avif",
-      "layout": "heritage",
-      "credit": {
-        "title": "File:Page facing 130 illustration from Fairy tales of Charles Perrault (Clarke, 1922).jpg",
-        "artist": "Harry Clarke",
-        "license": "Public domain",
-        "url": "https://commons.wikimedia.org/wiki/File:Page_facing_130_illustration_from_Fairy_tales_of_Charles_Perrault_(Clarke,_1922).jpg",
-        "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/50/Page_facing_130_illustration_from_Fairy_tales_of_Charles_Perrault_%28Clarke%2C_1922%29.jpg/960px-Page_facing_130_illustration_from_Fairy_tales_of_Charles_Perrault_%28Clarke%2C_1922%29.jpg",
-        "changes": "Redimensionado y convertido a AVIF; imagen completa, sin recortar."
+      "image": "/assets/nido/cuentos/covers/tres-deseos-imagegen-v3.avif",
+      "titled": true,
+      "preserve": true,
+      "generation": {
+        "tool": "Generación de imágenes integrada de ChatGPT",
+        "createdAt": "2026-09-16",
+        "prompts": "/assets/nido/cuentos/covers/original-covers-20260916.json",
+        "changes": "Ilustración original generada a petición del usuario; AVIF 840 × 1260, imagen completa y título sin recorte."
       },
       "ink": "#fff3cf",
       "sub": "#e0c895"
@@ -69,15 +68,14 @@
     "title": "La navidad de Papá Noel",
     "accent": "#715682",
     "cover": {
-      "image": "/assets/nido/cuentos/collection/navidad-papa-noel.avif",
-      "layout": "heritage",
-      "credit": {
-        "title": "File:Christmas postcard - DPLA - be24e4167ca21fc7628db185cb698639 (page 1).jpg",
-        "artist": "Published by Heininger, Unger, &amp; Co. (New York)",
-        "license": "Public domain",
-        "url": "https://commons.wikimedia.org/wiki/File:Christmas_postcard_-_DPLA_-_be24e4167ca21fc7628db185cb698639_(page_1).jpg",
-        "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/c2/Christmas_postcard_-_DPLA_-_be24e4167ca21fc7628db185cb698639_%28page_1%29.jpg/960px-Christmas_postcard_-_DPLA_-_be24e4167ca21fc7628db185cb698639_%28page_1%29.jpg",
-        "changes": "Redimensionado y convertido a AVIF; imagen completa, sin recortar."
+      "image": "/assets/nido/cuentos/covers/navidad-papa-noel-imagegen-v3.avif",
+      "titled": true,
+      "preserve": true,
+      "generation": {
+        "tool": "Generación de imágenes integrada de ChatGPT",
+        "createdAt": "2026-09-16",
+        "prompts": "/assets/nido/cuentos/covers/original-covers-20260916.json",
+        "changes": "Ilustración original generada a petición del usuario; AVIF 840 × 1260, imagen completa y título sin recorte."
       },
       "ink": "#fff3cf",
       "sub": "#e0c895"
@@ -154,15 +152,14 @@
     "title": "Los duendes y el zapatero",
     "accent": "#927047",
     "cover": {
-      "image": "/assets/nido/cuentos/collection/duendes-zapatero.avif",
-      "layout": "heritage",
-      "credit": {
-        "title": "File:Otto Ubbelohde - Die Wichtelmänner.jpg",
-        "artist": "Otto Ubbelohde",
-        "license": "Public domain",
-        "url": "https://commons.wikimedia.org/wiki/File:Otto_Ubbelohde_-_Die_Wichtelm%C3%A4nner.jpg",
-        "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/5/57/Otto_Ubbelohde_-_Die_Wichtelm%C3%A4nner.jpg",
-        "changes": "Redimensionado y convertido a AVIF; imagen completa, sin recortar."
+      "image": "/assets/nido/cuentos/covers/duendes-zapatero-imagegen-v3.avif",
+      "titled": true,
+      "preserve": true,
+      "generation": {
+        "tool": "Generación de imágenes integrada de ChatGPT",
+        "createdAt": "2026-09-16",
+        "prompts": "/assets/nido/cuentos/covers/original-covers-20260916.json",
+        "changes": "Ilustración original generada a petición del usuario; AVIF 840 × 1260, imagen completa y título sin recorte."
       },
       "ink": "#fff3cf",
       "sub": "#e0c895"
@@ -227,15 +224,14 @@
     "title": "Que viene el lobo",
     "accent": "#486f7a",
     "cover": {
-      "image": "/assets/nido/cuentos/collection/viene-lobo.avif",
-      "layout": "heritage",
-      "credit": {
-        "title": "The Shepherd Boy and the Wolf",
-        "artist": "Milo Winter (1919)",
-        "license": "Public domain (Estados Unidos)",
-        "url": "https://www.gutenberg.org/ebooks/19994",
-        "imageUrl": "https://www.gutenberg.org/files/19994/19994-h/images/i015_th.jpg",
-        "changes": "Redimensionado y convertido a AVIF; imagen completa, sin recortar."
+      "image": "/assets/nido/cuentos/covers/viene-lobo-imagegen-v3.avif",
+      "titled": true,
+      "preserve": true,
+      "generation": {
+        "tool": "Generación de imágenes integrada de ChatGPT",
+        "createdAt": "2026-09-16",
+        "prompts": "/assets/nido/cuentos/covers/original-covers-20260916.json",
+        "changes": "Ilustración original generada a petición del usuario; AVIF 840 × 1260, imagen completa y título sin recorte."
       },
       "ink": "#fff3cf",
       "sub": "#e0c895"

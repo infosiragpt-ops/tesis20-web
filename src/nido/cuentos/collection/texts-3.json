@@ -4,15 +4,14 @@
     "title": "La cenicienta",
     "accent": "#496d59",
     "cover": {
-      "image": "/assets/nido/cuentos/collection/cenicienta.avif",
-      "layout": "heritage",
-      "credit": {
-        "title": "File:Cinderella-Rackham-008p.jpg",
-        "artist": "Arthur Rackham",
-        "license": "Public domain",
-        "url": "https://commons.wikimedia.org/wiki/File:Cinderella-Rackham-008p.jpg",
-        "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/4b/Cinderella-Rackham-008p.jpg/960px-Cinderella-Rackham-008p.jpg",
-        "changes": "Redimensionado y convertido a AVIF; imagen completa, sin recortar."
+      "image": "/assets/nido/cuentos/covers/cenicienta-imagegen-v3.avif",
+      "titled": true,
+      "preserve": true,
+      "generation": {
+        "tool": "Generación de imágenes integrada de ChatGPT",
+        "createdAt": "2026-09-16",
+        "prompts": "/assets/nido/cuentos/covers/original-covers-20260916.json",
+        "changes": "Ilustración original generada a petición del usuario; AVIF 840 × 1260, imagen completa y título sin recorte."
       },
       "ink": "#fff3cf",
       "sub": "#e0c895"

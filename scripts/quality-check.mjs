@@ -752,7 +752,7 @@ let classicTextBytes = 0;
 let classicCoverBytes = 0;
 let generatedCoverBytes = 0;
 const generatedCoverPaths = new Set(CLASSIC_COLLECTION
-  .filter(book => book.cover.generation?.tool === 'ChatGPT Imágenes (web)')
+  .filter(book => ['ChatGPT Imágenes (web)', 'Generación de imágenes integrada de ChatGPT'].includes(book.cover.generation?.tool))
   .map(book => `dist${book.cover.image}`));
 const isClassicText = file => /dist\/build-assets\/nido-classics-[1-5]-[^/]+\.js$/.test(file);
 const classicCovers = distFiles.filter(file => /^dist\/assets\/nido\/cuentos\/collection\/[^/]+\.avif$/.test(file));
@@ -888,7 +888,7 @@ check(classicCoverBytes <= 2.5 * 1024 * 1024, 'Las 33 portadas de la colección 
 // separado y verificado contra el catálogo. No amplía el límite del motor.
 check(generatedCoverPaths.size <= 33, 'La renovación editorial supera las 33 portadas de clásicos.');
 for (const coverPath of generatedCoverPaths) {
-  check(/^dist\/assets\/nido\/cuentos\/covers\/[a-z0-9-]+-chatgpt-v2\.avif$/.test(coverPath), `Ruta editorial inesperada: ${coverPath}`);
+  check(/^dist\/assets\/nido\/cuentos\/covers\/[a-z0-9-]+-(?:chatgpt-v2|imagegen-v3)\.avif$/.test(coverPath), `Ruta editorial inesperada: ${coverPath}`);
   check(distFiles.includes(coverPath), `Falta la portada editorial ${coverPath}.`);
 }
 check(generatedCoverBytes <= generatedCoverPaths.size * 250 * 1024, 'Las nuevas portadas exceden su presupuesto de 250 KiB por título.');

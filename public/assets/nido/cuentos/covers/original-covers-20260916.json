@@ -1,0 +1,67 @@
+{
+  "createdAt": "2026-09-16",
+  "tool": "ChatGPT built-in image generation",
+  "format": "AVIF 840x1260, complete image without crop",
+  "covers": [
+    {
+      "id": "bambi",
+      "image": "/assets/nido/cuentos/covers/bambi-imagegen-v3.avif",
+      "prompt": "Use case: illustration-story. Asset type: finished front cover texture for a premium Spanish children's storybook, portrait 2:3 (1024x1536). Create an original, beautifully art-directed cover for the classic novel Bambi. Full-bleed cinematic naturalistic 3D illustration, not a physical book mockup: a young European roe deer fawn with anatomically credible slender legs, chestnut fur, white spots, dark moist nose and gentle curious eyes stands in a lush sun-dappled European woodland, his adult doe mother further behind. Rich layered ferns, mossy roots, beech trees and softly glowing morning light; tactile fine fur, leaf veins, convincing depth and graceful animal anatomy. Inviting, calm, premium storybook atmosphere. Large extremely legible refined ivory-gold storybook serif title at the upper quarter, exact text once: \"Bambi\". Image extends to all edges. Keep all faces and title well inside safe margins. No additional text, logo, border, watermark, humans, antlers on the baby, generic teddy bear shapes, cartoon flat vectors, movie-studio character likenesses, fake spine or book thickness. This must work as a full-cover image mapped on a 3D book."
+    },
+    {
+      "id": "bella-bestia",
+      "image": "/assets/nido/cuentos/covers/bella-bestia-imagegen-v3.avif",
+      "prompt": "Use case: illustration-story. A finished original front cover for a premium illustrated Spanish fairy-tale book. Portrait 1024x1536, full bleed, high-detail cinematic storybook illustration with believable anatomy, textured fabric, warm expressive faces and deep atmospheric lighting. Large beautiful highly readable ivory-gold serif title in the upper quarter, generous safe margins. No other writing, watermark, logo, spine, border, book mockup, flat vector, or likeness of movie-studio characters. All people fully clothed in original traditional fairy-tale costumes. Scene: An adult young woman with chestnut hair in an elegant forest-green embroidered dress holds a red rose in a moonlit castle conservatory beside a gentle great lion-like beast with a mane, curved horns and a dignified burgundy coat. Tender respectful scene, clearly different silhouettes, candlelight and climbing roses. Exact title: \"La bella y la bestia\"."
+    },
+    {
+      "id": "cenicienta",
+      "image": "/assets/nido/cuentos/covers/cenicienta-imagegen-v3.avif",
+      "prompt": "Use case: illustration-story. A finished original front cover for a premium illustrated Spanish fairy-tale book. Portrait 1024x1536, full bleed, high-detail cinematic storybook illustration with believable anatomy, textured fabric, warm expressive faces and deep atmospheric lighting. Large beautiful highly readable ivory-gold serif title in the upper quarter, generous safe margins. No other writing, watermark, logo, spine, border, book mockup, flat vector, or likeness of movie-studio characters. All people fully clothed in original traditional fairy-tale costumes. Scene: An adult young woman in a luminous ivory and dusky-lilac ball gown descends a stone palace stair at twilight, one delicate crystal shoe on a step, a glowing pumpkin carriage in the background. Refined realistic cloth embroidery, warm castle lights, starry indigo sky. Exact title: \"La cenicienta\"."
+    },
+    {
+      "id": "heidi",
+      "image": "/assets/nido/cuentos/covers/heidi-imagegen-v3.avif",
+      "prompt": "Use case: illustration-story. Original premium Spanish storybook front-cover artwork, portrait 1024x1536, full-bleed cinematic naturalistic illustration. Beautiful realistic textures, anatomically credible expressive subjects, rich environmental depth and masterful warm lighting. Large perfectly legible ivory-gold serif title near the top with safe margins. Exact title once, no other text, no logo, no watermark, no border or physical book mockup. All humans fully clothed. Original designs, not movie-studio characters. Scene: A cheerful young girl with brown braids, a cream blouse, red wool vest and green skirt walks with two realistic mountain goats across a lush Swiss Alpine meadow. A timber chalet, wildflowers and magnificent snow-capped mountains in clear summer light. Family-friendly naturalistic storybook portrait, full scene. Exact title: \"Heidi\"."
+    },
+    {
+      "id": "duendes-zapatero",
+      "image": "/assets/nido/cuentos/covers/duendes-zapatero-imagegen-v3.avif",
+      "prompt": "Use case: illustration-story. Original premium Spanish storybook front-cover artwork, portrait 1024x1536, full-bleed cinematic naturalistic illustration. Beautiful realistic textures, anatomically credible expressive subjects, rich environmental depth and masterful warm lighting. Large perfectly legible ivory-gold serif title near the top with safe margins. Exact title once, no other text, no logo, no watermark, no border or physical book mockup. All humans fully clothed. Original designs, not movie-studio characters. Scene: Two tiny friendly fantasy cobbler elves in neat traditional green and ochre clothes collaboratively sew a beautiful leather shoe on an old wooden workbench at night. Brass tools, thread spools and candlelight, extraordinary finely textured leather and wood, magical warm miniature workshop. Exact title: \"Los duendes y el zapatero\"."
+    },
+    {
+      "id": "navidad-papa-noel",
+      "image": "/assets/nido/cuentos/covers/navidad-papa-noel-imagegen-v3.avif",
+      "prompt": "Use case: illustration-story. Original premium Spanish storybook front-cover artwork, portrait 1024x1536, full-bleed cinematic naturalistic illustration. Beautiful realistic textures, anatomically credible expressive subjects, rich environmental depth and masterful warm lighting. Large perfectly legible ivory-gold serif title near the top with safe margins. Exact title once, no other text, no logo, no watermark, no border or physical book mockup. All humans fully clothed. Original designs, not movie-studio characters. Scene: A kind elderly Santa Claus with a weathered warm face, thick white beard, red wool coat and knitted scarf beside a realistic reindeer and a wooden sleigh full of wrapped gifts, snowy village under stars. Cozy golden window light, falling snow, tactile wool and leather. Exact title: \"La navidad de Papá Noel\"."
+    },
+    {
+      "id": "viene-lobo",
+      "image": "/assets/nido/cuentos/covers/viene-lobo-imagegen-v3.avif",
+      "prompt": "Use case: illustration-story. Original premium Spanish storybook front-cover artwork, portrait 1024x1536, full-bleed cinematic naturalistic illustration. Beautiful realistic textures, anatomically credible expressive subjects, rich environmental depth and masterful warm lighting. Large perfectly legible ivory-gold serif title near the top with safe margins. Exact title once, no other text, no logo, no watermark, no border or physical book mockup. All humans fully clothed. Original designs, not movie-studio characters. Scene: A young shepherd in a long-sleeved linen shirt, wool waistcoat, trousers and boots holds a crook beside his flock of realistic sheep on a green hill near an old village. A believable grey wolf stands far in the woodland background, alert but not attacking. Warm pastoral evening light, no violence. Exact title: \"Que viene el lobo\"."
+    },
+    {
+      "id": "zapatero-magico",
+      "image": "/assets/nido/cuentos/covers/zapatero-magico-imagegen-v3.avif",
+      "prompt": "Use case: illustration-story. Original premium Spanish storybook front-cover artwork, portrait 1024x1536, full-bleed cinematic naturalistic illustration. Beautiful realistic textures, anatomically credible expressive subjects, rich environmental depth and masterful warm lighting. Large perfectly legible ivory-gold serif title near the top with safe margins. Exact title once, no other text, no logo, no watermark, no border or physical book mockup. All humans fully clothed. Original designs, not movie-studio characters. Scene: A kind elderly cobbler with silver beard and round glasses lovingly stitches a small leather shoe on a rustic workbench in a woodland cottage. Small woodland birds and a squirrel nearby as gentle helpers. Warm window light, realistic worn tools, wood grain, wool clothes and handmade leather. Magical storybook kindness. Exact title: \"El zapatero mágico\"."
+    },
+    {
+      "id": "tres-deseos",
+      "image": "/assets/nido/cuentos/covers/tres-deseos-imagegen-v3.avif",
+      "prompt": "Use case: illustration-story. Original premium Spanish storybook front-cover artwork, portrait 1024x1536, full-bleed cinematic naturalistic illustration. Beautiful realistic textures, anatomically credible expressive subjects, rich environmental depth and masterful warm lighting. Large perfectly legible ivory-gold serif title near the top with safe margins. Exact title once, no other text, no logo, no watermark, no border or physical book mockup. All humans fully clothed. Original designs, not movie-studio characters. Scene: An adult married couple in modest traditional European country clothing stand smiling together in a cozy rustic kitchen. The woman holds an old sealed fairy letter, a string of sausages rests on a wooden kitchen table, subtle magical golden sparkles in the air. Warm hearth light, charming expressive original characters, convincing cloth, stone and wood. Exact title: \"Los tres deseos\"."
+    },
+    {
+      "id": "liebre-tortuga",
+      "image": "/assets/nido/cuentos/covers/liebre-tortuga-imagegen-v3.avif",
+      "prompt": "Use case: illustration-story. Original premium Spanish storybook front-cover artwork, portrait 1024x1536, full-bleed cinematic naturalistic illustration. Beautiful realistic textures, anatomically credible expressive subjects, rich environmental depth and masterful lighting. Large perfectly legible ivory-gold serif title near the top with safe margins. Exact title once, no other text, no logo, no watermark, no border or physical book mockup. Original designs, not movie-studio character designs. A realistic small land tortoise with intricately patterned domed shell confidently walking along a meadow path, with a long-eared brown hare paused behind under a tree. A sunny pastoral racing path, wildflowers and fresh grass, detailed fur and scutes, anatomically accurate paws and feet, friendly warm narrative tone. Exact title: \"La liebre y la tortuga\"."
+    },
+    {
+      "id": "sirenita",
+      "image": "/assets/nido/cuentos/covers/sirenita-imagegen-v3.avif",
+      "prompt": "Use case: illustration-story. Original premium Spanish storybook front-cover artwork, portrait 1024x1536, full-bleed cinematic naturalistic illustration. Beautiful realistic textures, anatomically credible expressive subjects, rich environmental depth and masterful lighting. Large perfectly legible ivory-gold serif title near the top with safe margins. Exact title once, no other text, no logo, no watermark, no border or physical book mockup. Original designs, not movie-studio character designs. An adult mermaid with flowing dark hair, a modest high-neck long-sleeved sea-green scaled tunic and a shimmering turquoise fishtail sits on a tide-washed rock looking toward a distant sailing ship and coastal palace. Luminous underwater coral visible in clear water, sunrise sea mist, natural face, mother-of-pearl scales, evocative classic Andersen fairy-tale atmosphere. Exact title: \"La sirenita\"."
+    },
+    {
+      "id": "bella-princesa",
+      "image": "/assets/nido/cuentos/covers/bella-princesa-imagegen-v3.avif",
+      "prompt": "Use case: illustration-story. Original premium Spanish storybook front-cover artwork, portrait 1024x1536, full-bleed cinematic naturalistic illustration. Beautiful realistic textures, anatomically credible expressive subjects, rich environmental depth and masterful lighting. Large perfectly legible ivory-gold serif title near the top with safe margins. Exact title once, no other text, no logo, no watermark, no border or physical book mockup. Original designs, not movie-studio character designs. An adult young woman in an elegant modest long-sleeved teal and gold embroidered medieval gown looks thoughtfully out of a palace window toward her coastal fishing village. Sea and small fishing boats in warm sunrise, gentle hopeful expression, natural face, beautiful fabric and carved stone detail. A dignified original fairytale portrait about courage and kindness. Exact title: \"La bella princesa\"."
+    }
+  ]
+}
