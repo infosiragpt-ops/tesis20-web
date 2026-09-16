@@ -68,6 +68,11 @@ function make(kind) {
     g.add(box(.28, .012, .2, stone, { y: .006 }));
     for (let i = 0; i < 5; i++) g.add(box(.012, .067, .16 - i * .023, stone, { x: -.12 + i * .055, y: .04, z: i % 2 * .02 }));
     g.add(box(.26, .067, .012, stone, { y: .04, z: -.091 }));
+  } else if (kind === 'carta') {
+    g.add(box(.11, .002, .08, mat('#efe4c8'), { y: .02, rx: .18, rz: .12 }));
+    g.add(box(.108, .001, .078, mat('#f7eeda'), { y: .024, rx: .18, rz: .12 }));
+    for (let i = 0; i < 4; i++) g.add(box(.07, .001, .004, mat('#c9b48a'), { y: .028, z: -.018 + i * .012, rx: .18, rz: .12 }));
+    g.add(blob(.012, gold, { y: .03, z: .02 }));
   } else if (kind === 'taller') {
     [-1, 1].forEach(side => g.add(box(.022, .115, .07, wood, { x: side * .086, y: .058 })));
     g.add(box(.23, .023, .14, wood, { y: .12 }));
@@ -78,4 +83,4 @@ function make(kind) {
   return fit(g, .29);
 }
 
-export const CLASSIC_PROPS = Object.entries({ castillo: 'Castillo', torre: 'Torre de Rapunzel', 'cama-guisante': 'La cama y el guisante', 'lampara-magica': 'Lámpara mágica', tesoro: 'Cofre del tesoro', habichuela: 'Habichuela gigante', zapatos: 'Zapatos', 'rosa-encantada': 'Rosa', perla: 'Perla del dragón', laberinto: 'Laberinto', taller: 'Taller' }).map(([id, label]) => ({ id, label, build: () => make(id) }));
+export const CLASSIC_PROPS = Object.entries({ castillo: 'Castillo', torre: 'Torre de Rapunzel', 'cama-guisante': 'La cama y el guisante', 'lampara-magica': 'Lámpara mágica', tesoro: 'Cofre del tesoro', habichuela: 'Habichuela gigante', zapatos: 'Zapatos', 'rosa-encantada': 'Rosa', perla: 'Perla del dragón', laberinto: 'Laberinto', taller: 'Taller', carta: 'Carta' }).map(([id, label]) => ({ id, label, build: () => make(id) }));

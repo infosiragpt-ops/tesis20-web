@@ -18,6 +18,7 @@ import { BOOKS } from "../src/nido/cuentos/cuentos-data.js";
 import {
   enumerateCuentosVoicePlan,
   estimateWordStarts,
+  wordKey,
   wordStartsFromAlignment,
 } from "../src/nido/cuentos/cuentos-voice-plan.js";
 
@@ -308,9 +309,63 @@ function buildManifest(results) {
   };
 }
 
+function selectedBookIds() {
+  return (process.env.NIDO_TTS_BOOKS || "")
+    .split(",")
+    .map((id) => id.trim())
+    .filter(Boolean);
+}
+
+function filterJobs(jobs) {
+  const books = selectedBookIds();
+  const skipWords = process.env.NIDO_TTS_SKIP_WORDS === "1";
+  const selectedWords = new Set();
+  if (books.length) {
+    for (const job of jobs) {
+      if (job.kind === "page" && books.includes(job.bookId)) {
+        for (const token of job.text.split(/\s+/)) {
+          const key = wordKey(token);
+          if (key) selectedWords.add(key);
+        }
+      }
+    }
+  }
+  return jobs.filter((job) => {
+    if (skipWords && job.kind === "word") return false;
+    if (!books.length) return true;
+    if (job.kind === "word") return selectedWords.has(job.wordKey);
+    return books.includes(job.bookId);
+  });
+}
+
+function mergePages(previous = [], incoming = []) {
+  const length = Math.max(previous.length, incoming.length);
+  const pages = [];
+  for (let i = 0; i < length; i += 1) {
+    pages[i] = incoming[i]?.src ? incoming[i] : previous[i] || null;
+  }
+  return pages;
+}
+
+function mergeManifest(existing, incoming) {
+  const books = { ...(existing?.books || {}) };
+  for (const [id, book] of Object.entries(incoming.books || {})) {
+    const previous = books[id] || { pages: [], quiz: [] };
+    books[id] = {
+      pages: mergePages(previous.pages, book.pages),
+      quiz: book.quiz?.length ? book.quiz : previous.quiz,
+    };
+  }
+  return {
+    ...incoming,
+    books,
+    words: { ...(existing?.words || {}), ...(incoming.words || {}) },
+  };
+}
+
 async function main() {
   await mkdir(OUTPUT_DIR, { recursive: true });
-  const jobs = enumerateCuentosVoicePlan(BOOKS);
+  const jobs = filterJobs(enumerateCuentosVoicePlan(BOOKS));
   // Varias opciones del quiz repiten texto: se graban una vez y comparten mp3.
   const byHash = new Map();
   for (const job of jobs) {
@@ -370,31 +425,49 @@ async function main() {
     CONCURRENCY,
   );
 
-  if (failures.length) {
-    throw new Error(
-      `${failures.length} locuciones no se pudieron generar; el manifiesto no se ha tocado.\n${failures.slice(0, 5).join("\n")}`,
-    );
-  }
+  const merge = Boolean(selectedBookIds().length) || process.env.NIDO_TTS_SKIP_WORDS === "1" || process.env.NIDO_TTS_MERGE === "1" || failures.length > 0;
   if (isRehearsal) {
     console.log(`Ensayo de ${batch.length} locuciones terminado; el manifiesto queda intacto.`);
     return;
   }
 
+  const completeJobs = jobs.filter((job) => outcomes.has(getAudioHash(job)));
+  const missingBooks = [...new Set(jobs.filter((job) => job.kind === "page" && !outcomes.has(getAudioHash(job))).map((job) => job.bookId))];
+  if (!completeJobs.length) {
+    throw new Error(
+      `${failures.length} locuciones no se pudieron generar; el manifiesto no se ha tocado.\n${failures.slice(0, 5).join("\n")}`,
+    );
+  }
+
   const results = [];
-  for (const job of jobs) {
+  for (const job of completeJobs) {
     const outcome = outcomes.get(getAudioHash(job));
     results.push({ job, fileName: outcome.fileName, meta: outcome.meta });
   }
-  const manifest = buildManifest(results);
+  const incoming = buildManifest(results);
+  const existing = merge ? await readJson(MANIFEST_PATH) : null;
+  const manifest = merge && existing ? mergeManifest(existing, incoming) : incoming;
   await writeFile(MANIFEST_PATH, `${JSON.stringify(manifest)}\n`);
 
-  const planned = new Set();
-  for (const item of unique) {
-    planned.add(`${item.hash}.mp3`);
-    planned.add(`${item.hash}.json`);
+  let obsolete = [];
+  if (!merge) {
+    const planned = new Set();
+    for (const item of unique) {
+      planned.add(`${item.hash}.mp3`);
+      planned.add(`${item.hash}.json`);
+    }
+    obsolete = (await readdir(OUTPUT_DIR)).filter((name) => /\.(?:mp3|json|part|raw)$/.test(name) && !planned.has(name));
+    await Promise.all(obsolete.map((name) => unlink(path.join(OUTPUT_DIR, name))));
+  } else {
+    console.log("Modo fusión: se conservan mp3 y locuciones de otros libros.");
   }
-  const obsolete = (await readdir(OUTPUT_DIR)).filter((name) => /\.(?:mp3|json|part|raw)$/.test(name) && !planned.has(name));
-  await Promise.all(obsolete.map((name) => unlink(path.join(OUTPUT_DIR, name))));
+
+  if (failures.length) {
+    console.error(
+      `${failures.length} locuciones no se pudieron generar. Libros de página incompletos: ${missingBooks.join(", ") || "ninguno"}.\n${failures.slice(0, 8).join("\n")}`,
+    );
+    process.exitCode = 1;
+  }
 
   const estimated = results.filter(({ meta }) => meta?.source === "estimated").map(({ job }) => job.key);
   console.log(

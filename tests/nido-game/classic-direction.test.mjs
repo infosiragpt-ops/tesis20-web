@@ -57,6 +57,30 @@ test('all 812 classic pages have real actors, supported acting and actual props'
   }
 });
 
+test('los tres deseos sigue la llegada, la carta, las salchichas y el baile', () => {
+  const pages = CLASSIC_COLLECTION.find(b => b.id === 'clasico-tres-deseos').pages;
+  assert.equal(pages.length, 10);
+  assert.deepEqual(pages[0].cast, ['campesino', 'campesina']);
+  assert.equal(pages[0].light, 'night');
+  assert.equal(pages[0].acts.campesino, 'walk');
+  assert.equal(pages[0].acts.campesina, 'look');
+  assert.equal(pages[0].enter.campesino, 'left');
+  assert.equal(pages[0].enter.campesina, 'none');
+  assert.ok(pages[0].props.includes('carta'));
+  assert.equal(pages[0].cues.llegó.act.campesino, 'walk');
+  assert.equal(pages[0].cues.malhumorado.act.campesino, 'think');
+  assert.deepEqual(pages[1].cast, ['campesina', 'campesino', 'hada']);
+  assert.equal(pages[1].acts.hada, 'fly');
+  assert.ok(pages[4].cast.includes('hada'));
+  assert.equal(pages[4].acts.hada, 'fly');
+  assert.equal(pages[5].acts.campesino, 'shiver');
+  assert.equal(pages[6].acts.campesino, 'shiver');
+  assert.equal(pages[8].acts.hada, 'cheer');
+  assert.equal(pages[9].acts.campesino, 'dance');
+  assert.equal(pages[9].acts.campesina, 'dance');
+  assert.ok(pages[9].cast.includes('hada'));
+});
+
 test('princess screenshot scene has royal characters, not the generic tree', () => {
   const book = CLASSIC_COLLECTION.find(b => b.id === 'clasico-princesa-guisante');
   assert.ok(book.pages[2].cast.some(id => ['principe','princesa'].includes(id)));

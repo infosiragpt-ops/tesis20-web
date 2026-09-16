@@ -18,7 +18,7 @@ test('las 35 ediciones conservan cada palabra del texto autorizado', () => {
     for (const page of book.pages) assert.ok(page.x.split(/\s+/).length <= 65, book.title);
     assert.ok(book.source.permission.includes('autorizada'));
     assert.equal(book.quiz.length, 0);
-    assert.equal(book.narration, 'device');
+    assert.equal(book.narration, undefined);
   }
   assert.equal(TOTAL_STARS, BOOKS.reduce((total, b) => total + b.pages.length, 0));
 });
@@ -41,8 +41,25 @@ test('el buscador ignora acentos y distingue las dos ediciones existentes', () =
   assert.equal(searchBooks(BOOKS, '').length, BOOKS.length);
 });
 
-test('las voces de dispositivo no generan trabajos de narración de pago', () => {
-  assert.deepEqual(enumerateCuentosVoicePlan(BOOKS), enumerateCuentosVoicePlan(NARRATED_BOOKS));
+test('clasico-tres-deseos tiene narración de estudio en las 10 páginas', async () => {
+  const manifest = JSON.parse(await readFile(new URL('../../public/assets/nido/audio/cuentos-manifest.json', import.meta.url), 'utf8'));
+  const book = CLASSIC_COLLECTION.find(b => b.id === 'clasico-tres-deseos');
+  const pages = manifest.books?.['clasico-tres-deseos']?.pages;
+  assert.equal(pages?.length, book.pages.length);
+  for (const [index, page] of book.pages.entries()) {
+    assert.ok(pages[index]?.src, `página ${index + 1} sin audio`);
+    assert.ok(pages[index].duration > 0);
+    assert.ok(Array.isArray(pages[index].words) && pages[index].words.length > 0);
+    await access(new URL(`../../public/assets/nido/audio/cuentos/${pages[index].src}`, import.meta.url));
+  }
+});
+
+test('los clásicos entran en el plan de voz de estudio', () => {
+  const all = enumerateCuentosVoicePlan(BOOKS);
+  const originals = enumerateCuentosVoicePlan(NARRATED_BOOKS);
+  assert.ok(all.length > originals.length);
+  assert.ok(all.some(job => job.bookId === 'clasico-tres-deseos' && job.kind === 'page'));
+  assert.equal(all.filter(job => job.bookId === 'clasico-tres-deseos' && job.kind === 'page').length, 10);
   assert.equal(NARRATED_BOOKS.find(b => b.id === 'pulgarcito').pages.length, 10);
   assert.equal(CLASSIC_COLLECTION.find(b => b.id === 'clasico-pulgarcito').cover.image, NARRATED_BOOKS.find(b => b.id === 'pulgarcito').cover.image);
   assert.match(CLASSIC_COLLECTION.find(b => b.id === 'clasico-heidi').tagline, /Capítulo 1/);
