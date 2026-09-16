@@ -40,6 +40,10 @@ informed instruction; production verification must still follow deployment.
 - Four-legged mammals and reptiles, two-legged birds with layered feathers,
   six-legged insects, vertical fish tail versus horizontal cetacean flukes.
 - Human proportions, cloth folds, fingers, smaller eyes and individual outfits.
+  Classic adults (especially Federico/campesino and Magda/campesina) use a
+  later kitchen/peasant pass: distinct male/female silhouettes, boots, aprons,
+  vests, bun vs short hair, and five-finger hands. Still stylized storybook
+  sculpture, not photoreal film.
 - Original three pigs retain their clothes and tools, with new leg pivots,
   restrained face proportions and grouped blinking eyes.
 - A three-quarter animal presentation exposes the body without changing the

@@ -86,13 +86,16 @@ juegos, en `public/assets/nido/audio/cuentos/` con el manifiesto
 - Proveedor: ElevenLabs, modelo `eleven_multilingual_v2`, la misma voz «Jhenny»
   (`EDitztUwd7lban76PAZs`) que narra los juegos, para que en todo el Nido hable
   una sola maestra.
-- Cobertura: 90 páginas de nueve libros (título + cuerpo, con el segundo en
-  que empieza cada palabra, obtenido del endpoint `with-timestamps`, para el
-  subrayado), 45 preguntas y 135 opciones del quiz (se leen en el orden en que
-  se muestran) y una locución por palabra distinta del cuerpo de las páginas
-  (unas 650, en minúsculas para que no dependan del orden de los libros) para
-  «toca las palabras para escucharlas». En total ~19 000 caracteres por lote
-  completo; las repeticiones comparten mp3.
+- Cobertura: las páginas de los cuentos originales y, desde esta entrega, las
+  ediciones clásicas (texto íntegro) entran en el mismo plan de voz de estudio.
+  Cada página lleva título + cuerpo, con el segundo en que empieza cada
+  palabra, obtenido del endpoint `with-timestamps`, para el subrayado. Los
+  originales conservan preguntas y opciones del quiz; los clásicos no tienen
+  quiz. Hay una locución por palabra distinta del cuerpo. Las repeticiones
+  comparten mp3. Si un clip no está, el lector cae a la voz del dispositivo.
+- Recorte posible: si el cupo de ElevenLabs no alcanza el catálogo entero, se
+  prioriza `clasico-tres-deseos` y se fusiona el manifiesto (`NIDO_TTS_BOOKS`,
+  `NIDO_TTS_SKIP_WORDS`, `NIDO_TTS_MERGE`) sin borrar los mp3 ya grabados.
 - Tres perfiles de voz: `narracion` (0,90 de velocidad), `pregunta` (0,92) y
   `palabra` (0,85, más estable). Los ajustes entran en el hash del archivo, así
   que cambiar un perfil regraba solo lo afectado.

@@ -6,8 +6,9 @@ import part5 from './collection/texts-5.json' with { type: 'json' };
 import { paginateStory } from './collection-layout.js';
 import { directClassic } from './classic-direction.js';
 
-// Authorized full text; free device voice is explicitly distinguished from
-// studio recordings. These editions still do not promise quizzes/souvenirs.
+// Authorized full text with the same studio voice plan as the original books.
+// Device speech remains only as a fallback when a clip is missing. These
+// editions still do not promise quizzes/souvenirs.
 
 export const CLASSIC_COLLECTION = [...part1, ...part2, ...part3, ...part4, ...part5].map(item => {
   const texts = paginateStory(item.paragraphs);
@@ -16,7 +17,6 @@ export const CLASSIC_COLLECTION = [...part1, ...part2, ...part3, ...part4, ...pa
     title: item.title,
     hero: item.title,
     edition: 'Texto de la web',
-    narration: 'device',
     source: item.source,
     warning: item.warning,
     tagline: item.note || 'Texto de la página indicada, sin resumir. Para compartir en familia.',

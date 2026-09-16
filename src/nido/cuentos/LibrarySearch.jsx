@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { searchBooks, resumePage } from './collection-layout.js';
+import { isClassicEdition, searchBooks, resumePage } from './collection-layout.js';
 import { bookStatus } from './cuentos-progress.js';
 
 // La búsqueda sólo monta miniaturas al abrirse; no descarga escenas ni audio.
@@ -57,7 +57,7 @@ export function LibrarySearch({ books, state, onOpen }) {
         <select id="story-filter" value={filter} onChange={event => setFilter(event.target.value)}>
           <option value="all">Todos los cuentos</option>
           <option value="narrated">Voz de estudio</option>
-          <option value="device">Voz del dispositivo</option>
+          <option value="classic">Clásicos · texto íntegro</option>
           <option value="started">Seguir leyendo</option>
         </select>
       </div>
@@ -68,7 +68,7 @@ export function LibrarySearch({ books, state, onOpen }) {
           <img src={book.cover.image} alt="" width="40" height="58" loading="lazy" decoding="async" />
           <span className="cuentos-search-result__copy">
             <strong>{book.title}</strong>
-            <small>{book.narration === 'device' ? 'Voz del dispositivo · texto íntegro' : 'Voz de estudio'} · {book.pages.length} páginas</small>
+            <small>{isClassicEdition(book) ? 'Voz de estudio · texto íntegro' : 'Voz de estudio · souvenirs'} · {book.pages.length} páginas</small>
             {status.started ? <span className="cuentos-search-result__progress">{status.finished ? 'Completado · volver a leer' : `Continuar en la página ${resumePage(book, status) + 1} · ${status.pct}% leído`}</span> : null}
           </span>
         </button></li>;

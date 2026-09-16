@@ -45,9 +45,13 @@ function person(id, label, coat, kind = '', girl = false, hairColor = '#674331')
       }
       if (kind === 'bluebeard') head.add(cone(.032, .06, mat('#304a72', { surface: 'fur' }), { y: .006, z: .025, rz: Math.PI }));
       if (kind === 'fairy') {
+        const film = mat('#d7ecff', { opacity: .62, clearcoat: .85 });
+        const glow = mat('#f7efff', { opacity: .35, clearcoat: .4 });
         [-1, 1].forEach(side => {
-          const wing = new THREE.Group(); wing.position.set(side * .025, .17, -.028); wing.userData.wing = side;
-          wing.add(blob(.054, mat('#cbdfef', { opacity: .75, clearcoat: .6 }), { x: side * .035, s: [.85, 1.35, .12] })); g.add(wing);
+          const wing = new THREE.Group(); wing.position.set(side * .02, .175, -.03); wing.userData.wing = side;
+          wing.add(blob(.05, film, { x: side * .038, y: .012, s: [.78, 1.45, .1] }));
+          wing.add(blob(.036, glow, { x: side * .03, y: -.02, s: [.7, 1.05, .08] }));
+          g.add(wing);
         });
       }
       if (kind === 'mermaid') {
@@ -81,14 +85,14 @@ export const CLASSIC_TOYS = [
   person('cenicienta', 'Cenicienta', '#8cbed6', 'royal', true, '#bc9458'),
   person('blancanieves', 'Blancanieves', '#e3c764', '', true, '#2e2733'),
   person('barba-azul', 'Barba Azul', '#516284', 'bluebeard'),
-  person('hada', 'Hada', '#c4a0d0', 'fairy', true, '#e1caa0'),
+  person('hada', 'Hada', '#c9b0de', 'fairy', true, '#f0d7b0'),
   person('sirena', 'Sirenita', '#a8d4c4', 'mermaid', true, '#9c624c'),
   person('heidi', 'Heidi', '#ac5250', '', true),
   person('zapatero', 'Zapatero', '#956e52', 'sage'),
   person('duende', 'Duende', '#688c70', 'elf'),
   person('papa-noel', 'Papá Noel', '#bc4140', 'santa', false, '#eee7d5'),
-  person('campesino', 'Campesino', '#8d805f'),
-  person('campesina', 'Campesina', '#a06e75', '', true),
+  person('campesino', 'Campesino', '#c4a06a', 'peasant', false, '#3f2a22'),
+  person('campesina', 'Campesina', '#b56d74', 'kitchen', true, '#4a3226'),
   person('pastor', 'Pastor', '#a39166'),
   person('nino-clasico', 'Niño', '#a48156'),
   person('teseo', 'Teseo', '#72928c'),

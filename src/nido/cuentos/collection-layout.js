@@ -30,13 +30,21 @@ export function resumePage(book, entry) {
   return valid(entry?.lastPage) ? entry.lastPage : (pages.at(-1) ?? 0);
 }
 
+export function isClassicEdition(book) {
+  return book?.id?.startsWith('clasico-') || book?.edition === 'Texto de la web';
+}
+
+export function hasStudioNarration(book) {
+  return book?.narration !== 'reading-only' && book?.narration !== 'device';
+}
+
 export function searchBooks(books, query, filter = 'all', entries = {}) {
   const key = value => value.normalize('NFD').replace(/\p{M}/gu, '').toLocaleLowerCase('es');
   const terms = key(query).trim().split(/\s+/).filter(Boolean);
   return books.filter(book => {
     if (!terms.every(term => key(book.title).includes(term))) return false;
-    if (filter === 'narrated') return !['reading-only', 'device'].includes(book.narration);
-    if (filter === 'reading' || filter === 'device') return book.narration === 'device';
+    if (filter === 'narrated') return hasStudioNarration(book);
+    if (filter === 'reading' || filter === 'device' || filter === 'classic') return isClassicEdition(book);
     if (filter === 'started') {
       const pages = new Set((entries[book.id]?.pages || []).filter(i => Number.isInteger(i) && i >= 0 && i < book.pages.length));
       return pages.size > 0 && pages.size < book.pages.length;

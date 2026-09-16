@@ -4,11 +4,12 @@ import { BOOKS, bookPins } from '../../src/nido/cuentos/cuentos-data.js';
 import { normalizeProgress, bookStatus, totals } from '../../src/nido/cuentos/cuentos-progress.js';
 import { resumePage, searchBooks } from '../../src/nido/cuentos/collection-layout.js';
 
-test('los filtros separan las 11 narraciones de las 35 ediciones de lectura', () => {
-  assert.equal(searchBooks(BOOKS, '', 'narrated').length, 11);
+test('los filtros separan la voz de estudio de las 35 ediciones clásicas', () => {
+  assert.equal(searchBooks(BOOKS, '', 'narrated').length, BOOKS.length);
   assert.equal(searchBooks(BOOKS, '', 'reading').length, 35);
+  assert.equal(searchBooks(BOOKS, '', 'classic').length, 35);
   assert.equal(searchBooks(BOOKS, 'pulgarcito', 'reading').length, 1);
-  assert.equal(searchBooks(BOOKS, 'PULGARCITO', 'narrated').length, 1);
+  assert.equal(searchBooks(BOOKS, 'PULGARCITO', 'narrated').length, 2);
   assert.equal(searchBooks(BOOKS, '  ALI  BABA ', 'reading')[0].id, 'clasico-alibaba');
 });
 

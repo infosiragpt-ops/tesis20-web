@@ -33,7 +33,7 @@ import {
   wordTrack,
 } from "./cuentos-audio.js";
 import { wordKey } from "./cuentos-voice-plan.js";
-import { pageWindow, resumePage } from "./collection-layout.js";
+import { isClassicEdition, pageWindow, resumePage } from "./collection-layout.js";
 import { LibrarySearch } from "./LibrarySearch.jsx";
 import { dialogControls, handleDialogKey, readerShortcutsBlocked } from "./dialog-focus.js";
 import { createStage } from "./three/stage.js";
@@ -673,7 +673,7 @@ function DeskPanel({ book, status, ready, onOpen, onBack }) {
         <h2>{book.title}</h2>
         <p className="cuentos-desk__tagline">{book.tagline}</p>
         <p className="cuentos-desk__meta">
-          {book.pages.length} páginas · {status.finished ? "terminado" : `${status.pct}% leído`}{book.narration === 'device' ? ' · voz del dispositivo, sin coste' : ` · ${status.pins.length} de ${bookPins(book).length} souvenirs`}
+          {book.pages.length} páginas · {status.finished ? "terminado" : `${status.pct}% leído`}{isClassicEdition(book) || book.quiz.length === 0 ? ' · Texto íntegro · voz de estudio' : ` · ${status.pins.length} de ${bookPins(book).length} souvenirs`}
         </p>
         {book.source ? <details className="cuentos-source"><summary>Sobre esta edición y su portada</summary>
           <p>{book.warning}</p><a href={book.source.url} target="_blank" rel="noreferrer">Texto: {book.source.publisher}</a>
@@ -1291,7 +1291,7 @@ function Album({ state, stats, onClose, onReset }) {
           <div>
             <p className="cuentos-modal__eyebrow">Tesis20 Nido · búsqueda del tesoro</p>
             <h2>Mis souvenirs</h2>
-            <p className="cuentos-album__lead">Los cuentos con voz de estudio incluyen cinco souvenirs escondidos. Tócalos cuando brillen para guardarlos. Los clásicos con voz del dispositivo conservan tu progreso, sin quiz ni souvenirs.</p>
+            <p className="cuentos-album__lead">Los cuentos originales con voz de estudio esconden cinco souvenirs. Tócalos cuando brillen para guardarlos. Los clásicos también se escuchan con voz de estudio y conservan tu progreso, sin quiz ni souvenirs.</p>
           </div>
           <div className="cuentos-album__totals">
             <span>
@@ -1334,7 +1334,7 @@ function Album({ state, stats, onClose, onReset }) {
                     <i style={{ width: `${status.pct}%`, background: book.accent }} />
                   </span>
                   <small>
-                    {status.finished ? "Terminado" : `${status.pct}% leído`}{book.narration === 'device' ? ' · Texto íntegro · voz del dispositivo' : ` · ${status.pins.length} de ${bookPins(book).length} souvenirs · quiz ${status.quizOk}/${book.quiz.length}`}
+                    {status.finished ? "Terminado" : `${status.pct}% leído`}{isClassicEdition(book) || book.quiz.length === 0 ? ' · Texto íntegro · voz de estudio' : ` · ${status.pins.length} de ${bookPins(book).length} souvenirs · quiz ${status.quizOk}/${book.quiz.length}`}
                   </small>
                 </div>
                 <div className="cuentos-album__pins">
@@ -1379,7 +1379,7 @@ function Album({ state, stats, onClose, onReset }) {
 
 const STEPS = [
   { icon: "📚", title: "Elige un cuento", text: "Busca por título o arrastra la repisa. Toca un libro y abre su tapa hacia la izquierda, o usa «Abrir el libro». Para guardarlo, arrástralo hacia arriba o vuelve a la estantería. Cada ficha indica cuántas páginas tiene; tu última página se guarda en este dispositivo." },
-  { icon: "🔊", title: "Lectura y narración", text: "Toca «Léemelo» para escuchar y seguir las palabras. Los clásicos usan una voz en español de tu dispositivo, sin coste; los otros cuentos conservan su voz de estudio. Las figuras se animan durante la lectura. Usa las flechas, estrellas o selector para cambiar de página." },
+  { icon: "🔊", title: "Lectura y narración", text: "Toca «Léemelo» para escuchar y seguir las palabras. Toda la biblioteca usa la voz de estudio; si falta un audio, se oye la voz en español del dispositivo. Las figuras se animan durante la lectura. Usa las flechas, estrellas o selector para cambiar de página." },
   { icon: "🔍", title: "Busca el souvenir", text: "Los cuentos con voz de estudio esconden cinco souvenirs. Toca los objetos que brillan para guardarlos. Las ediciones clásicas no incluyen souvenirs." },
   { icon: "⭐", title: "Responde el quiz", text: "Los cuentos con voz de estudio ofrecen cinco preguntas al llegar al final. Los clásicos conservan el progreso, sin quiz. Abrir la ayuda o los souvenirs detiene la narración sin cambiar tu página." },
 ];
@@ -1405,7 +1405,7 @@ function Help({ onClose }) {
             </li>
           ))}
         </ul>
-        <p className="cuentos-help__note">La calidad de la voz del dispositivo depende de las voces en español instaladas. No se generan audios de pago. En dispositivos sin marcas de palabra, el resaltado es aproximado. «Léemelo» activa el sonido; «Pausa» detiene la lectura y permite volver a empezarla.</p>
+        <p className="cuentos-help__note">La narración de estudio se descarga como audio local. Si un clip no está, se usa la voz en español del dispositivo como respaldo. En dispositivos sin marcas de palabra, el resaltado es aproximado. «Léemelo» activa el sonido; «Pausa» detiene la lectura y permite volver a empezarla.</p>
         <button type="button" className="cuentos-btn cuentos-btn--read" onClick={onClose}>
           Empezar a leer
         </button>
