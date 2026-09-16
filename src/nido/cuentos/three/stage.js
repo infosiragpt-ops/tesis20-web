@@ -27,6 +27,7 @@ import { mat, blob, box, cyl, cone } from "./toys/_shared.js";
 import { bookIndexAt, bookPositionAt, clamp, clampZoom, dragScale, settleBook, deskDragIntent, dragProgress, shouldCompleteDrag } from "./library-gestures.js";
 import { createToyFeedback } from "./toy-feedback.js";
 import { dioramaLayout } from './diorama-layout.js';
+import { cinemaFitDistance } from './cinema-framing.js';
 
 const SHELF_TOYS = ["buho", "luna", "cometa", "oveja", "arbol", "ballena", "frasco", "barco", "tren", "estrella"];
 
@@ -676,7 +677,7 @@ export function createStage(canvas, options) {
   const cine = {
     yaw: 0, pitch: 0, userUntil: 0, started: 0, seed: 0,
     radius: 0.16, center: new THREE.Vector3(), focus: new THREE.Vector3(),
-    bookCenter: new THREE.Vector3(), bookRadius: 0.5,
+    bookCenter: new THREE.Vector3(), bookPoints: [],
     pos: new THREE.Vector3(), look: new THREE.Vector3(), lastSpeaker: null, cutYaw: 0,
   };
   const tmpQuat = new THREE.Quaternion();
@@ -701,12 +702,18 @@ export function createStage(canvas, options) {
     }
     // El libro abierto entero (las dos hojas y la lámina): la cámara de cine
     // lo encuadra completo, nunca se pega a la lámina.
-    tmpBox.setFromObject(selected.group);
-    if (!tmpBox.isEmpty()) {
-      tmpBox.getCenter(cine.bookCenter);
-      const size = tmpBox.getSize(new THREE.Vector3());
-      cine.bookRadius = Math.max(0.2, Math.hypot(size.x, size.y, size.z) * 0.5);
+    selected.group.updateWorldMatrix(true, true);
+    cine.bookPoints.length = 0;
+    // Actual visible surfaces exclude invisible hit boxes and the turning
+    // leaf. Sample once per page, not on each animation frame.
+    for (const surface of [selected.coverSurface, selected.pageSurface, selected.popup]) {
+      surface.geometry.computeBoundingBox();
+      const { min, max } = surface.geometry.boundingBox;
+      for (const x of [min.x, max.x]) for (const y of [min.y, max.y]) for (const z of [min.z, max.z]) {
+        cine.bookPoints.push(new THREE.Vector3(x, y, z).applyMatrix4(surface.matrixWorld));
+      }
     }
+    tmpBox.setFromPoints(cine.bookPoints).getCenter(cine.bookCenter);
   }
 
   function setCinema(on) {
@@ -723,7 +730,7 @@ export function createStage(canvas, options) {
       measureDiorama();
       cine.pos.copy(camera.position);
       cine.look.copy(camLook);
-      cine.focus.copy(cine.center);
+      cine.focus.copy(camLook);
       tween(cineKey, { intensity: 1.4 }, { duration: 0.9 });
       tween(cineRim, { intensity: 0.9 }, { duration: 0.9 });
       return;
@@ -777,14 +784,6 @@ export function createStage(canvas, options) {
     }
     const yaw = Math.max(-0.7, Math.min(0.7, Math.sin(t * 0.11 + cine.seed) * 0.07 + cine.cutYaw + cine.yaw));
     const pitch = Math.max(-0.2, Math.min(0.45, Math.sin(t * 0.08 + cine.seed) * 0.03 + cine.pitch));
-    // Distancia para que quepa el libro completo con el campo de visión actual.
-    const fovV = (camera.fov * Math.PI) / 180;
-    const fovH = 2 * Math.atan(Math.tan(fovV / 2) * camera.aspect);
-    const fit = cine.bookRadius / Math.sin(Math.min(fovV, fovH) / 2);
-    // La esfera sobreestima (el libro es plano y ancho): 0,6 lo deja entero
-    // en cuadro y grande.
-    const portraitDistance = Math.hypot(...CAM_PORTRAIT.reading.pos.map((value, i) => value - CAM_PORTRAIT.reading.look[i]));
-    const dist = (portrait ? portraitDistance : fit * 0.6 * push) / Math.max(0.5, zoom.value);
     // Dirección base: la de la vista de lectura (el libro visto desde el
     // frente y un poco desde arriba), girada por la deriva y el arrastre.
     const view = viewFor("reading");
@@ -792,6 +791,9 @@ export function createStage(canvas, options) {
     cineDir.applyAxisAngle(WORLD_UP, yaw);
     cineSide.crossVectors(WORLD_UP, cineDir).normalize();
     cineDir.applyAxisAngle(cineSide, -pitch).normalize();
+    const portraitDistance = Math.hypot(...CAM_PORTRAIT.reading.pos.map((value, i) => value - CAM_PORTRAIT.reading.look[i]));
+    const fit = cinemaFitDistance(cine.bookPoints, cineFocusTarget, cineDir, camera.fov, camera.aspect);
+    const dist = (portrait ? portraitDistance : fit * push) / Math.max(0.5, zoom.value);
     cineTarget.copy(cineFocusTarget).addScaledVector(cineDir, dist);
     const smooth = reduceMotion ? 1 : 1 - Math.exp(-dt * 2.4);
     cine.pos.lerp(cineTarget, smooth);
@@ -1945,6 +1947,9 @@ export function createStage(canvas, options) {
       entry.popupPivot.visible = true;
       pageMotion.tween(entry.popupPivot.scale, { y: 1 }, { duration: reduceMotion ? 0.01 : 0.6, easing: ease.outBack });
     });
+    bookMotion.after(d + 0.65, () => {
+      if (cinema && selected === entry) measureDiorama();
+    });
     deskToys.forEach((holder, i) => {
       const [x, z] = DESK_SLOTS[i];
       tween(holder.position, { x: x * 1.25, z: z + 0.12 }, { duration: d, easing: ease.inOut });
@@ -2008,6 +2013,9 @@ export function createStage(canvas, options) {
         pivot.visible = true;
         pageMotion.tween(pivot.scale, { y: 1 }, { duration: reduceMotion ? 0.01 : 0.55, easing: ease.outBack });
       },
+    });
+    pageMotion.after(d + 0.58, () => {
+      if (cinema && selected === entry) measureDiorama();
     });
   }
 
