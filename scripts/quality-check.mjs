@@ -748,6 +748,7 @@ let stylesheetBytes = 0;
 let initialJavascriptBytes = 0;
 let initialStylesheetBytes = 0;
 let deployBytesWithoutAudioAndPdf = 0;
+let cuentosManifestBytes = 0;
 let classicTextBytes = 0;
 let classicCoverBytes = 0;
 let generatedCoverBytes = 0;
@@ -769,6 +770,12 @@ for (const distFile of distFiles) {
   }
   // El directorio se controla por separado con un presupuesto comprimido,
   // que representa mejor su transferencia real que el JSON minificado en disco.
+  // El manifiesto de cuentos es el catálogo de locuciones (tiempos por
+  // palabra). Viaja con los mp3, no con el motor de /nido.
+  if (distFile === "dist/assets/nido/audio/cuentos-manifest.json") {
+    cuentosManifestBytes = bytes;
+    continue;
+  }
   if (!/\.(?:mp3|pdf|docx)$/i.test(distFile) && distFile !== "dist/data/academic-directory.json") {
     deployBytesWithoutAudioAndPdf += bytes;
   }
@@ -935,6 +942,7 @@ check(pulgarcitoCoverBytes <= 70 * 1024, 'La portada aprobada de Pulgarcito supe
 const baseDeployBytes = deployBytesWithoutAudioAndPdf - classicTextBytes - classicCoverBytes - generatedCoverBytes - pulgarcitoCoverBytes;
 // +50 KiB para la dirección y geometría de clásicos; sin audios nuevos.
 check(baseDeployBytes <= 10.55 * 1024 * 1024, `El build sin audios/PDF ni la colección editorial acotada supera 10.55 MiB (${(baseDeployBytes / 1024 / 1024).toFixed(2)} MiB).`);
+check(cuentosManifestBytes > 0 && cuentosManifestBytes <= 400 * 1024, `El manifiesto de voz de los cuentos supera 400 KiB o falta (${Math.ceil(cuentosManifestBytes / 1024)} KiB).`);
 
 for (const htmlFile of distFiles.filter((file) => file.endsWith(".html"))) {
   check((await fileSize(htmlFile)) <= 300 * 1024, `${htmlFile} supera 300 KiB.`);
