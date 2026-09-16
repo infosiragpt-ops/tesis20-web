@@ -59,6 +59,9 @@ export const LIGHTS = {
 // Cada "set" define el terreno del cuento. Los colores se mezclan con la luz
 // de la página para que la misma escenografía sirva de día y de noche.
 export const SETS = {
+  kinabalu: { far: '#94a9a1', mid: '#557b68', near: '#294f3e', tint: '#b5cba8' },
+  'dragon-cave': { far: '#4c5e59', mid: '#33493c', near: '#1e3028', tint: '#879d89' },
+  palace: { far: '#d5c091', mid: '#ac8255', near: '#88623f', tint: '#eee0b8' },
   "andes-night": { far: "#3a4a7d", mid: "#27325c", near: "#1a2244", tint: "#5f77bd" },
   "amazon-river": { far: "#1f5147", mid: "#17403a", near: "#102e2b", tint: "#3f9e88" },
   "highland-day": { far: "#8fb87f", mid: "#6ba063", near: "#4f8250", tint: "#b9d99f" },
@@ -196,7 +199,26 @@ export function Backdrop({ set, light, seed, sky = true }) {
 
       {sky && lit.stars > 0 ? <Stars seed={`${seed}-stars`} opacity={lit.stars} /> : null}
 
-      {set === "ocean-day" ? (
+      {set === 'kinabalu' || set === 'dragon-cave' ? (
+        <>
+          <path d="M-20 410 140 290 245 330 365 147 405 219 462 133 512 212 566 190 690 340 850 258 1020 400V660H-20Z" fill={far} />
+          <path d="M365 147 386 307 405 219 422 329 462 133 480 331 512 212 554 367 566 190 690 400H160Z" fill={mid} opacity=".55" />
+          {[0,1,2].map(i=><path key={i} d={canopy(seeded(`${seed}-jungle-${i}`),385+i*72)} fill={[mid,mix(mid,near,.5),near][i]} />)}
+          <path d="M-20 585 115 533 278 564 402 516 530 551 712 498 864 532 1020 507V660H-20Z" fill={mix(near,'#a99b79',.38)} />
+          <path d="M-20-20H370Q230 72 177 184Q129 273 174 372L83 540-20 600Z" fill={mix(near,'#645e4a',.32)} />
+          <path d="M0 15 156 107 86 258 49 362M62 52 117 148 72 193M-5 490 46 378 22 239" stroke="#acaa88" opacity=".26" strokeWidth="7" fill="none" />
+          {Array.from({length:14},(_,i)=><g key={i} transform={`translate(${(i*89)%1000} ${i<7?25+(i%3)*24:550+(i%3)*25}) rotate(${i*37})`} fill={mix(near,'#89a353',.3)}><ellipse rx="62" ry="12"/><ellipse rx="45" ry="9" transform="rotate(55)"/></g>)}
+          {set==='dragon-cave' ? <path d="M-20-20H1020V660H875L890 326Q830 52 519 63Q211 46 123 340L156 660H-20Z" fill="#172720" opacity=".88"/> : null}
+        </>
+      ) : set === 'palace' ? (
+        <>
+          <rect x="-20" y="0" width="1040" height="640" fill={far}/>
+          {[110,370,630,890].map(x=><g key={x}><path d={`M${x-60} 440V153Q${x} 30 ${x+60} 153V440Z`} fill={mix(mid,'#4b352a',.4)}/><path d={`M${x-73} 465V150Q${x} 7 ${x+73} 150V465`} fill="none" stroke={mix(far,'#ffe8aa',.55)} strokeWidth="19"/></g>)}
+          <path d="M-20 475H1020V660H-20Z" fill={near}/>
+          {[0,1,2,3,4,5].map(i=><path key={i} d={`M${-300+i*320} 660 500 475`} stroke={far} strokeWidth="2" opacity=".4"/>)}
+          <path d="M-20 525H1020M-20 600H1020" stroke={far} opacity=".4" fill="none"/>
+        </>
+      ) : set === "ocean-day" ? (
         <>
           <path d={rollingHill(seeded(`${seed}-a`), horizon - 40, 26)} fill={far} opacity="0.75" />
           <rect x="-20" y={horizon} width={VIEW_W + 40} height={VIEW_H - horizon + 40} fill={`url(#${id}-water)`} />

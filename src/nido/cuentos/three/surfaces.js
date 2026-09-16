@@ -10,6 +10,7 @@ export const SURFACES = {
   cloth: { scale: 0.3, sheen: 0.18, repeat: [7, 7] },
   skin: { scale: 0.14, sheen: 0, repeat: [5, 5] },
   feathers: { scale: 0.4, sheen: 0.25, repeat: [3, 5] },
+  scales: { scale: 0.38, sheen: 0, repeat: [3, 3] },
 };
 
 function hash(x, y, seed) {
@@ -36,6 +37,10 @@ function noise(x, y, freq, seed) {
 
 function heightAt(kind, u, v) {
   switch (kind) {
+    case "scales": {
+      const row = Math.floor(v * 18), x = ((u * 18 + (row % 2) * .5) % 1) - .5, y = (v * 18 % 1) - .5;
+      return Math.max(0, 1 - Math.hypot(x * 1.6, y * 1.2) * 1.65) * .8 + noise(u * 90, v * 90, 90, 37) * .04;
+    }
     case "fur":
       // Hebras alargadas en vertical con variación fina.
       return noise(u * 18, v * 3, 18, 3) * 0.55 + noise(u * 60, v * 9, 60, 5) * 0.3 + noise(u * 120, v * 30, 120, 7) * 0.15;

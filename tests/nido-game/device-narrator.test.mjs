@@ -76,3 +76,38 @@ test('a asynchronously loaded Spanish voice starts once and removes listener', (
   voices.push({ name: 'Paulina', lang: 'es-MX' }); f.listeners.get('voiceschanged')();
   assert.equal(f.utterances.length, 1); assert.equal(f.listeners.size, 0);
 });
+
+test('new narration releases a paused global voice engine before speaking',()=>{
+  const f=fixture(),calls=[];
+  f.synth.paused=true;
+  f.synth.resume=()=>{calls.push('resume');f.synth.paused=false;};
+  const original=f.synth.speak;
+  f.synth.speak=u=>{assert.equal(f.synth.paused,false);calls.push('speak');original(u);};
+  f.start('Una nueva página.');
+  assert.deepEqual(calls,['resume','speak']);
+  f.utterances[0].onstart();f.advance(2000);f.utterances[0].onend();
+  assert.equal(f.ended[0].ok,true);
+});
+
+test('an advertised but unusable Spanish voice retries another Spanish voice without advancing',()=>{
+  const f=fixture({voices:[{name:'Mónica',lang:'es-ES'},{name:'Paulina',lang:'es-MX'},{name:'Samantha',lang:'en-US'}]});
+  f.start('Una página que debe escucharse.');
+  const failed=f.utterances[0];failed.onend();
+  assert.equal(f.utterances.length,2);
+  assert.equal(f.utterances[1].voice.name,'Paulina');
+  assert.equal(f.ended.length,0);
+  failed.onerror({error:'canceled'});
+  const next=f.utterances[1];next.onstart();f.advance(3000);next.onend();
+  assert.deepEqual(f.ended,[{ok:true,source:'device'}]);
+});
+
+test('voice recovery is bounded and never retries an intentional interruption',()=>{
+  const f=fixture({voices:[0,1,2,3].map(i=>({name:`Español ${i}`,lang:'es-ES'}))});
+  f.start('Una página para escuchar.');
+  for(let i=0;i<3;i++)f.utterances[i].onend();
+  assert.equal(f.utterances.length,3);assert.equal(f.ended[0].ok,false);
+  const interrupted=fixture({voices:[{name:'Mónica',lang:'es-ES'},{name:'Paulina',lang:'es-MX'}]});
+  interrupted.start('Una página.');interrupted.utterances[0].onerror({error:'interrupted'});
+  assert.equal(interrupted.utterances.length,1);
+  assert.equal(interrupted.ended[0].reason,'interrupted');
+});

@@ -31,7 +31,9 @@ export function createDeviceNarration(text, {
   const chunks = speechChunks(text);
   let cancelled = false, settled = false, paused = false, current = null;
   let position = 0, timer = null, watchdog = null, estimate = 0, boundary = false;
-  let startedAt = 0, activeMs = 0, voiceListener = null, firstStart = true;
+  let startedAt = 0, activeMs = 0, voiceListener = null, announcedVoice = null;
+  const triedVoices = new Set();
+  const voiceKey = voice => voice.voiceURI || `${voice.lang}:${voice.name}`;
   const clear = () => { timers.clearInterval(timer); timers.clearTimeout(watchdog); timer = watchdog = null; };
   const detach = () => { if (voiceListener) synth?.removeEventListener?.('voiceschanged', voiceListener); voiceListener = null; };
   const live = utterance => !cancelled && !settled && current === utterance;
@@ -52,6 +54,7 @@ export function createDeviceNarration(text, {
   };
   const speakChunk = voice => {
     if (cancelled || settled) return;
+    triedVoices.add(voiceKey(voice));
     const chunk = chunks[position];
     const utterance = new Utterance(chunk.text);
     current = utterance; boundary = false; estimate = 0; startedAt = 0; activeMs = 0;
@@ -60,7 +63,7 @@ export function createDeviceNarration(text, {
     utterance.onstart = () => {
       if (!live(utterance)) return;
       clear(); startedAt = now();
-      if (firstStart) { firstStart = false; onStart?.({ name: voice.name, lang: voice.lang }); }
+      if (announcedVoice !== voiceKey(voice)) { announcedVoice = voiceKey(voice); onStart?.({ name: voice.name, lang: voice.lang }); }
       onWord?.(chunk.wordStart); track();
     };
     utterance.onboundary = event => {
@@ -69,13 +72,24 @@ export function createDeviceNarration(text, {
       const found = chunk.offsets.findLastIndex(offset => offset <= event.charIndex);
       if (found >= 0) onWord?.(chunk.wordStart + found);
     };
-    utterance.onerror = event => { if (live(utterance)) finish({ ok: false, reason: event.error || 'error' }); };
+    // Some systems advertise a voice that cannot actually speak. Retry only
+    // startup failure, only on this page's first chunk, at most two others.
+    // Never substitute English, advance the page or fake native completion.
+    const fail = reason => {
+      if (!live(utterance)) return;
+      const retryable = ['short','synthesis-failed','voice-unavailable','language-unavailable'].includes(reason);
+      const alternative = position === 0 && retryable && triedVoices.size < 3
+        ? spanishVoice(synth.getVoices().filter(v => !triedVoices.has(voiceKey(v)))) : null;
+      if (!alternative) { finish({ ok: false, reason }); return; }
+      clear(); current = null; synth.cancel(); onWord?.(-1); speakChunk(alternative);
+    };
+    utterance.onerror = event => fail(event.error || 'error');
     utterance.onend = () => {
       if (!live(utterance)) return;
       clear();
       const elapsed = activeMs + (startedAt ? now() - startedAt : 0);
       if (elapsed < Math.min(1200, Math.max(250, chunk.offsets.length * 130))) {
-        finish({ ok: false, reason: 'short' }); return;
+        fail('short'); return;
       }
       position += 1;
       if (position === chunks.length) finish({ ok: true, source: 'device' });
@@ -84,7 +98,12 @@ export function createDeviceNarration(text, {
     watchdog = timers.setTimeout(() => {
       finish({ ok: false, reason: 'not-started' }); synth.cancel();
     }, 10000);
-    try { synth.speak(utterance); } catch { finish({ ok: false, reason: 'unavailable' }); }
+    try {
+      // cancel() clears queued speech, but does not clear the global paused
+      // flag. A new page/book must not inherit a previous narration's pause.
+      if (synth.paused) synth.resume();
+      synth.speak(utterance);
+    } catch { finish({ ok: false, reason: 'unavailable' }); }
   };
   const start = () => {
     if (!synth || !Utterance || !chunks.length) { finish({ ok: false, reason: 'unavailable' }); return; }

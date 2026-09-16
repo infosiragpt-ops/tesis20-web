@@ -303,6 +303,7 @@ export function createStage(canvas, options) {
     if (idx >= 0) toyGroups.splice(idx, 1);
     toyState.delete(holder);
     holder.traverse((obj) => {
+      if (obj.isInstancedMesh) obj.dispose();
       obj.geometry?.dispose();
       const list = Array.isArray(obj.material) ? obj.material : obj.material ? [obj.material] : [];
       list.forEach(m => m.dispose());
@@ -542,7 +543,7 @@ export function createStage(canvas, options) {
     if (!holder.userData.eyeParts.length) return;
     const cycle = 3.6 + ((holder.userData.blinkPhase * 13) % 2.4);
     const phase = (t + holder.userData.blinkPhase) % cycle;
-    const closed = phase < 0.13 ? 0.12 : 1;
+    const closed = holder.userData.act === 'sleep' ? 0.06 : !reduceMotion && phase < 0.13 ? 0.12 : 1;
     holder.userData.eyeParts.forEach((part) => { part.scale.y = part.userData.eyeScaleY * closed; });
   }
 
@@ -2142,7 +2143,7 @@ export function createStage(canvas, options) {
         if (part.userData.tail) part.rotation[part.userData.tail === "x" ? "x" : "y"] += Math.sin(clock.t * 2.4 + state.phase) * 0.1;
         if (part.userData.ear && !part.userData.sway) part.rotation.z += Math.sin(clock.t * 1.7 + state.phase + part.userData.ear) * 0.04 * part.userData.ear;
       });
-      if (!reduceMotion) applyBlink(holder, clock.t);
+      applyBlink(holder, clock.t);
       applyGlow(holder, dt);
       // El protagonista del libro enfocado en la repisa se mece un poco más.
       if (holder.userData.heroOf && !reduceMotion) {
@@ -2284,6 +2285,7 @@ export function createStage(canvas, options) {
     window.removeEventListener("blur", onPointerCancel);
     window.removeEventListener("keydown", onKeyDown);
     scene.traverse((obj) => {
+      if (obj.isInstancedMesh) obj.dispose();
       if (obj.geometry) obj.geometry.dispose?.();
       const materials = Array.isArray(obj.material) ? obj.material : obj.material ? [obj.material] : [];
       materials.forEach((m) => {

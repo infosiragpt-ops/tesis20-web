@@ -417,7 +417,8 @@ export function playCue(key, { volume = 0.6 } = {}) {
  * abrir el libro y cambia de pista si cambia el escenario; null lo apaga.
  */
 export function setAmbient(setKey) {
-  ambientWanted = setKey || null;
+  const sceneAmbience = {kinabalu:'cloud-forest', 'dragon-cave':'andes-night', palace:null};
+  ambientWanted = Object.hasOwn(sceneAmbience,setKey) ? sceneAmbience[setKey] : setKey || null;
   if (!canPlayRecordedSound()) return;
   if (!soundManifest) {
     loadCuentosSound().then(() => {
@@ -489,6 +490,7 @@ export const TOY_SOUND_ALIAS = {
   gato: 'pasos-suaves', leon: 'pasos-pasto', raton: 'pasos-suaves', liebre: 'pasos-pasto', tortuga: 'pasos-pasto',
   patito: 'chapoteo-suave', cisne: 'chapoteo-suave', paloma: 'pajaros', hormiga: 'pasos-pasto',
   cigarra: 'noche-grillos', burro: 'pasos-pasto', perro: 'pasos-pasto', gallo: 'pasos-pasto',
+  cierva: 'pasos-pasto', cabra: 'pasos-pasto', gallina: 'pasos-pasto',
   dragon: 'viento-suave', bestia: 'pasos-bosque', minotauro: 'pasos-bosque',
   castillo: 'toc-toc', torre: 'toc-toc', 'cama-guisante': 'toy-ramo', 'lampara-magica': 'luces-magicas',
   tesoro: 'chispas', habichuela: 'arbol-cruje', zapatos: 'pasos-suaves', 'rosa-encantada': 'toy-ramo',
