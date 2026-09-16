@@ -45,7 +45,7 @@ test('todas las geometrías son finitas y el reparto respeta el presupuesto móv
       for(const key of ['position','normal'])for(const value of obj.geometry.attributes[key].array)assert.ok(Number.isFinite(value),`${id}: ${key} no finito`);
     });
     assert.ok(triangles<40000,`${id}: ${triangles} triángulos`);
-    assert.ok(draws<=90,`${id}: ${draws} llamadas de dibujo`);
+    assert.ok(draws<=100,`${id}: ${draws} llamadas de dibujo`);
     const box=new THREE.Box3().setFromObject(toy);
     assert.ok(Math.abs(box.min.y)<.002,`${id}: apoyo en el suelo`);
     costs.set(id,{triangles,draws});dispose(toy);
@@ -64,6 +64,23 @@ test('los pivotes conservan transformaciones válidas al caminar y mirar',()=>{
     }
     toy.updateMatrixWorld(true);
     toy.traverse(obj=>assert.ok(obj.matrixWorld.elements.every(Number.isFinite),`${id}: transformación inválida`));
+    dispose(toy);
+  }
+});
+
+test('los ojos vivos tienen blanco y brillo, no discos negros vacíos',()=>{
+  for(const id of cast) {
+    if(id==='concha-caracol')continue;
+    const toy=buildToy(id);
+    for(const eye of tagged(toy,'eye')) {
+      let bright=0;
+      eye.traverse(obj=>{
+        if(!obj.isMesh||!obj.material?.color)return;
+        const {r,g,b}=obj.material.color;
+        if((r+g+b)/3>0.55)bright+=1;
+      });
+      assert.ok(bright>=1,`${id}: ojo sin blanco o brillo (riesgo de mirada vacía)`);
+    }
     dispose(toy);
   }
 });

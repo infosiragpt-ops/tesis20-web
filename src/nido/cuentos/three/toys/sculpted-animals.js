@@ -27,7 +27,7 @@ export function quadruped(kind, color, { bonnet = false } = {}) {
   const snout = ['wolf','fox','horse','donkey'].includes(kind) ? .15 : kind === 'mouse' ? .11 : .095;
   ell(head, ['deer','horse','vicuna'].includes(kind)?skin:cream, [0,-.048,.105], [.064,.047,snout]);
   ell(head, dark, [0,-.025,.105+snout*.88], [kind==='cow'?.057:.027,.018,.026]);
-  eyePair(head, {spread:slim?.086:.073,y:.032,z:slim?.079:.096,radius:kind==='mouse'?.025:slim?.018:.021,iris:kind==='wolf'?'#b69853':'#694c2d'});
+  eyePair(head, {spread:slim?.086:.073,y:.034,z:slim?.079:.096,radius:kind==='mouse'?.026:kind==='bear'?.024:slim?.02:.023,iris:kind==='wolf'?'#8a6a38':'#6d4d2c'});
   for (const s of [-1,1]) {
     const brow = ell(head, skin, [s*.073,.061,.095],[.037,.012,.027]); brow.rotation.z=s*.08;
     const ear = part(head,'ear',s,[s*.084,.086,-.026]);
@@ -58,10 +58,15 @@ export function quadruped(kind, color, { bonnet = false } = {}) {
   if (kind==='fox') ell(tail,cream,[.19,-.02,-.255],[.037,.035,.065],[0,-.4,0]);
   if (kind==='lion') {
     const mane = mat('#7f5939',{rough:.92,surface:'fur'}), tufts=[];
-    for(let i=0;i<30;i++) {const a=i*Math.PI*2/30;tufts.push({p:[Math.sin(a)*.132,Math.cos(a)*.15,-.052],s:[.045,.07,.073],r:[0,0,-a],c:i%3?'#8e6740':'#745138'});}
+    for(let i=0;i<38;i++) {const a=i*Math.PI*2/38;tufts.push({p:[Math.sin(a)*.138,Math.cos(a)*.16,-.048],s:[.048,.074,.078],r:[0,0,-a],c:i%3?'#8e6740':'#745138'});}
     details(head,mane,tufts); ell(tail,mane,[.23,.018,-.26],[.04,.048,.04]);
   }
-  if(kind==='deer') details(root,cream,Array.from({length:22},(_,i)=>{const side=i%2?-1:1;return {p:[side*(.119-Math.abs((i%11)-5)*.004),.48+Math.sin(i*2.2)*.05,-.24+(i%11)*.041],s:[.007,.009,.011]};}));
+  if(kind==='deer'||kind==='doe') details(root,cream,Array.from({length:28},(_,i)=>{const side=i%2?-1:1;return {p:[side*(.119-Math.abs((i%11)-5)*.004),.48+Math.sin(i*2.2)*.05,-.24+(i%11)*.041],s:[.008,.01,.012]};}));
+  if(kind==='fox') {
+    ell(head,cream,[0,.018,.02],[.055,.04,.05]);
+    for(const s of [-1,1]) ell(head,cream,[s*.084,.12,-.01],[.02,.03,.008]);
+  }
+  if(kind==='cat') for(const s of [-1,1]) for(let i=0;i<3;i++) tube(head,cream,[[s*.04,-.01+i*.012,.16],[s*.12,-.03+i*.02,.15]],[.0016,.0005],{segments:6,sides:5});
   if(kind==='goat') tube(head,cream,[[0,-.085,.08],[0,-.18,.065]],[.037,.002],{segments:10});
   if(kind==='cow') details(root,dark,[{p:[-.14,.46,-.10],s:[.026,.075,.115]},{p:[.14,.48,.04],s:[.03,.08,.085]},{p:[.03,.56,-.13],s:[.077,.022,.084]}]);
   if(kind==='sheep') {
@@ -82,7 +87,7 @@ function bird(kind,color) {
   const head=part(root,'head',1,[0,long?.665:owl?.49:.43,.115]);
   ell(head,feathers,[0,0,0],[owl?.135:.087,owl?.13:.091,.097]);
   if(owl) for(const s of [-1,1]) ell(head,ivory,[s*.065,-.005,.071],[.068,.08,.043]);
-  eyePair(head,{spread:owl?.064:.052,y:.024,z:owl?.110:.075,radius:owl?.032:.019,iris:owl?'#b78b3c':'#55442b'});
+  eyePair(head,{spread:owl?.066:.054,y:.026,z:owl?.108:.076,radius:owl?.03:.021,iris:owl?'#b78b3c':'#55442b'});
   tube(head,bill,[[0,-.022,.07],[0,-.035,.15],[0,-.052,tiny?.30:kind==='pelican'?.31:.20]],[owl?.023:.032,.021,.001],{segments:12,sides:8,flatten:kind==='duck'?.45:.8});
   if(kind==='pelican') ell(head,ivory,[0,-.066,.17],[.029,.055,.124],[.25,0,0]);
   for(const s of [-1,1]) {
@@ -104,7 +109,7 @@ function insect(kind,color) {
   const root=new THREE.Group(), shell=mat(color,{rough:.58,clearcoat:.14}), dark=mat('#4a4233',{rough:.7});
   ell(root,shell,[0,.16,-.19],[.10,.083,.135]); ell(root,shell,[0,.18,-.017],[.075,.07,.095]);
   const head=part(root,'head',1,[0,.19,.13]);ell(head,shell,[0,0,0],[.077,.077,.074]);
-  eyePair(head,{spread:.05,y:.018,z:.047,radius:.025,iris:'#473825'});
+  eyePair(head,{spread:.05,y:.02,z:.048,radius:.024,iris:'#6a5330'});
   for(const s of [-1,1]) {
     tube(head,dark,[[s*.027,.057,.015],[s*.06,.135,.045],[s*.095,.16,.09]],[.007,.006,.003],{segments:12,sides:6});
     for(let n=0;n<3;n++) {
@@ -128,7 +133,7 @@ function turtle() {
   const scutes=[];for(let i=0;i<19;i++){const a=i*2.399,r=.052*Math.sqrt(i);const x=Math.cos(a)*r*.7,z=Math.sin(a)*r*.83;scutes.push({p:[x,.219+.136*Math.sqrt(Math.max(.05,1-(x/.2)**2-(z/.24)**2)),z-.055],s:[.045,.008,.046],c:i%2?'#87915b':'#69794a'});}details(root,lines,scutes);
   for(const s of [-1,1])for(const front of [true,false]){const leg=part(root,'leg',front?s:-s,[s*.13,.15,front?.09:-.19]);tube(leg,skin,[[0,0,0],[s*.10,-.067,.03],[s*.12,-.092,.084]],[.05,.036,.027]);for(let i=-1;i<=1;i++)tube(leg,lines,[[s*.12+i*.017,-.094,.09],[s*.12+i*.017,-.096,.13]],[.007,.001],{segments:6});}
   tube(root,skin,[[0,.18,.12],[0,.22,.26]],[.066,.061]);
-  const head=part(root,'head',1,[0,.24,.29]);ell(head,skin,[0,0,0],[.077,.07,.10]);eyePair(head,{spread:.052,y:.025,z:.06,radius:.018});
+  const head=part(root,'head',1,[0,.24,.29]);ell(head,skin,[0,0,0],[.077,.07,.10]);eyePair(head,{spread:.052,y:.026,z:.062,radius:.02,iris:'#6a5530'});
   const tail=part(root,'tail',1,[0,.13,-.27]);tube(tail,skin,[[0,0,0],[0,-.02,-.09]],[.03,.001]);
   return finish(root,'reptile',{species:'turtle',legs:4});
 }
@@ -139,7 +144,7 @@ function frog() {
   const head=part(root,'head',1,[0,.29,.065]);ell(head,skin,[0,0,0],[.156,.081,.117]);
   for(const s of [-1,1]) {ell(head,skin,[s*.094,.063,.04],[.05,.053,.049]);
     for(const back of [true,false]){const leg=part(root,'leg',back?s:-s,[s*(back?.12:.09),.20,back?-.09:.1]);tube(leg,skin,[[0,0,0],[s*(back?.10:.048),back?-.02:-.04,back?-.05:.014],[s*.08,-.14,.075]],[back?.065:.027,.04,.02]);for(let i=-1;i<=1;i++)tube(leg,skin,[[s*.08,-.143,.075],[s*.08+i*.027,-.15,.15]],[.008,.003],{segments:7});}}
-  eyePair(head,{spread:.094,y:.067,z:.079,radius:.023,iris:'#ae9c4a'});
+  eyePair(head,{spread:.094,y:.068,z:.08,radius:.024,iris:'#ae9c4a'});
   tube(head,mat('#486345'),[[-.11,-.013,.11],[0,-.028,.128],[.11,-.013,.11]],[.003,.004,.003]);
   return finish(root,'amphibian',{legs:4});
 }
@@ -151,7 +156,7 @@ function seaAnimal(kind,color) {
     ell(root,belly,[0,.10,.035],[.060,.055,.155]);
     const head=part(root,'head',1,[0,.21,.16]);
     ell(head,skin,[0,0,0],[.071,.10,.089]);
-    eyePair(head,{spread:.055,y:.026,z:.049,radius:.014});
+    eyePair(head,{spread:.055,y:.028,z:.05,radius:.016,iris:'#4a6a5c'});
     const gills=mat('#506d65',{rough:.68});
     for(const s of [-1,1]) {
       tube(head,gills,[[s*.066,.061,-.013],[s*.071,0,.004],[s*.058,-.065,-.016]],[.002,.003,.002],{segments:12,sides:6});
@@ -167,7 +172,7 @@ function seaAnimal(kind,color) {
   ell(root,skin,[0,.21,0],[.15,.155,.30],[-.24,0,0]);ell(root,belly,[0,.145,.03],[.119,.08,.255]);
   const head=part(root,'head',1,[0,.275,.22]);ell(head,skin,[0,0,0],[.145,.125,.16]);
   if(kind==='dolphin') {ell(head,skin,[0,-.027,.16],[.053,.039,.14]);ell(head,belly,[0,-.057,.14],[.05,.014,.13]);}
-  eyePair(head,{spread:.098,y:.012,z:.089,radius:.018,iris:'#444a45'});
+  eyePair(head,{spread:.098,y:.016,z:.09,radius:.02,iris:'#4a5854'});
   for(const s of [-1,1]) {const fin=part(root,'wing',s,[s*.123,.18,.055]);ell(fin,skin,[s*.095,-.025,-.017],[.13,.027,.068],[.12,s*.4,-s*.25]);}
   const tail=part(root,'tail','x',[0,.145,-.265]);tube(tail,skin,[[0,0,0],[0,.035,-.10],[0,.09,-.22]],[.086,.06,.033]);
   for(const s of [-1,1])ell(tail,skin,[s*.071,.082,-.234],[.098,.018,.065],[0,-s*.35,0]);

@@ -67,6 +67,11 @@ test("cada cuento mueve a sus personajes y suena con la narración", () => {
       }
     }
   }
+  assert.ok(ACT_NAMES.has("hug"), "falta la acción de abrazo");
+  const hugs = BOOKS.flatMap((book) => book.pages.filter((page) =>
+    [...Object.values(page.acts || {}), ...Object.values(page.cues || {}).flatMap((cue) => Object.values(cue.act || {}))].includes("hug"),
+  ));
+  assert.ok(hugs.length >= 4, `sólo ${hugs.length} páginas abrazan con la narración.`);
 });
 
 test("los personajes entran y se desplazan por la escena cuando el texto lo dice", () => {
@@ -78,8 +83,8 @@ test("los personajes entran y se desplazan por la escena cuando el texto lo dice
       moves += Object.values(page.cues || {}).reduce((sum, cue) => sum + Object.keys(cue.move || {}).length, 0);
     }
   }
-  assert.ok(entrances >= 20, `sólo ${entrances} entradas en escena en toda la biblioteca.`);
-  assert.ok(moves >= 12, `sólo ${moves} desplazamientos por palabra en toda la biblioteca.`);
+  assert.ok(entrances >= 28, `sólo ${entrances} entradas en escena en toda la biblioteca.`);
+  assert.ok(moves >= 16, `sólo ${moves} desplazamientos por palabra en toda la biblioteca.`);
 });
 
 test("cada obra tiene piezas con destino y los cerditos construyen sus tres casas", () => {

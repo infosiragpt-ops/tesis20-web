@@ -13,6 +13,7 @@ import { execFileSync, spawnSync } from "node:child_process";
 import { mkdir, readdir, readFile, rename, stat, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
+import { pathToFileURL } from "node:url";
 
 import { BOOKS } from "../src/nido/cuentos/cuentos-data.js";
 import {
@@ -28,7 +29,7 @@ const OUTPUT_DIR = path.join(AUDIO_ROOT, "cuentos");
 const MANIFEST_PATH = path.join(AUDIO_ROOT, "cuentos-manifest.json");
 const PUBLIC_BASE = "/assets/nido/audio/cuentos/";
 const PROVIDER = "elevenlabs";
-const GENERATOR_VERSION = "nido-cuentos-v1";
+const GENERATOR_VERSION = "nido-cuentos-v2";
 const MODEL = process.env.NIDO_TTS_MODEL || "eleven_multilingual_v2";
 // La misma voz que narra los juegos: los niños oyen una sola maestra en todo
 // el Nido.
@@ -45,16 +46,16 @@ const FFPROBE = process.env.NIDO_FFPROBE_BINARY || "ffprobe";
 
 // Los ajustes entran en el hash del archivo: cambiar un perfil regraba solo
 // las locuciones de ese perfil, y nunca deja mp3 viejos dándose por buenos.
-const PROFILES = Object.freeze({
-  // Cuentacuentos: un punto más estable que la maestra de los juegos porque
-  // son párrafos, no consignas, y a 0,9 para que los de tres años sigan el
-  // subrayado.
-  narracion: { speed: 0.9, stability: 0.45, similarityBoost: 0.75, style: 0.4 },
-  pregunta: { speed: 0.92, stability: 0.5, similarityBoost: 0.75, style: 0.35 },
+export const PROFILES = Object.freeze({
+  // Cuentacuentos más vivo: más estilo y menos estabilidad para que suene
+  // entusiasta, a 0,9 para que los de tres años sigan el subrayado.
+  narracion: { speed: 0.9, stability: 0.35, similarityBoost: 0.75, style: 0.7 },
+  pregunta: { speed: 0.92, stability: 0.42, similarityBoost: 0.75, style: 0.55 },
   // Palabra suelta: más lenta y con menos «actuación» para que se entienda
   // cada sílaba.
   palabra: { speed: 0.85, stability: 0.6, similarityBoost: 0.75, style: 0.25 },
 });
+export { GENERATOR_VERSION, VOICE, VOICE_NAME };
 
 function getApiKey() {
   if (process.env.ELEVENLABS_API_KEY) return process.env.ELEVENLABS_API_KEY.trim();
@@ -476,7 +477,9 @@ async function main() {
   );
 }
 
-main().catch((error) => {
-  console.error(error instanceof Error ? error.message : String(error));
-  process.exitCode = 1;
-});
+if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {
+  main().catch((error) => {
+    console.error(error instanceof Error ? error.message : String(error));
+    process.exitCode = 1;
+  });
+}
