@@ -221,15 +221,14 @@
     "title": "Barba Azul",
     "accent": "#927047",
     "cover": {
-      "image": "/assets/nido/cuentos/collection/barba-azul.avif",
-      "layout": "heritage",
-      "credit": {
-        "title": "File:Bluebeard cover.jpg",
-        "artist": "Walter Crane",
-        "license": "Public domain",
-        "url": "https://commons.wikimedia.org/wiki/File:Bluebeard_cover.jpg",
-        "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/f5/Bluebeard_cover.jpg/960px-Bluebeard_cover.jpg",
-        "changes": "Redimensionado y convertido a AVIF; imagen completa, sin recortar."
+      "image": "/assets/nido/cuentos/covers/barba-azul-chatgpt-v2.avif",
+      "titled": true,
+      "preserve": true,
+      "generation": {
+        "tool": "ChatGPT Imágenes (web)",
+        "createdAt": "2026-09-16",
+        "conversation": "https://chatgpt.com/c/6aaab8cc-5918-83e9-a3ee-978310767d7b",
+        "changes": "Portada original generada a petición del usuario; optimizada en AVIF, 840 × 1260, imagen completa y título original sin recorte."
       },
       "ink": "#fff3cf",
       "sub": "#e0c895"
@@ -324,15 +323,14 @@
     "title": "La bella durmiente",
     "accent": "#486f7a",
     "cover": {
-      "image": "/assets/nido/cuentos/collection/bella-durmiente.avif",
-      "layout": "heritage",
-      "credit": {
-        "title": "File:Walter Crane - The sleeping Beauty.jpg",
-        "artist": "Walter Crane",
-        "license": "Public domain",
-        "url": "https://commons.wikimedia.org/wiki/File:Walter_Crane_-_The_sleeping_Beauty.jpg",
-        "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/02/Walter_Crane_-_The_sleeping_Beauty.jpg/960px-Walter_Crane_-_The_sleeping_Beauty.jpg",
-        "changes": "Redimensionado y convertido a AVIF; imagen completa, sin recortar."
+      "image": "/assets/nido/cuentos/covers/bella-durmiente-chatgpt-v2.avif",
+      "titled": true,
+      "preserve": true,
+      "generation": {
+        "tool": "ChatGPT Imágenes (web)",
+        "createdAt": "2026-09-16",
+        "conversation": "https://chatgpt.com/c/6aaab8cd-7578-83e9-b885-d265fef05258",
+        "changes": "Portada original generada a petición del usuario; optimizada en AVIF, 840 × 1260, imagen completa y título original sin recorte."
       },
       "ink": "#fff3cf",
       "sub": "#e0c895"
@@ -459,15 +457,14 @@
     "title": "Los músicos de Bremen",
     "accent": "#406265",
     "cover": {
-      "image": "/assets/nido/cuentos/collection/bremen.avif",
-      "layout": "heritage",
-      "credit": {
-        "title": "File:English Caricaturists, 1893 - The Waits of Bremen and the Borders.png",
-        "artist": "George Cruikshank",
-        "license": "Public domain",
-        "url": "https://commons.wikimedia.org/wiki/File:English_Caricaturists,_1893_-_The_Waits_of_Bremen_and_the_Borders.png",
-        "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/21/English_Caricaturists%2C_1893_-_The_Waits_of_Bremen_and_the_Borders.png/960px-English_Caricaturists%2C_1893_-_The_Waits_of_Bremen_and_the_Borders.png",
-        "changes": "Redimensionado y convertido a AVIF; imagen completa, sin recortar."
+      "image": "/assets/nido/cuentos/covers/bremen-chatgpt-v2.avif",
+      "titled": true,
+      "preserve": true,
+      "generation": {
+        "tool": "ChatGPT Imágenes (web)",
+        "createdAt": "2026-09-16",
+        "conversation": "https://chatgpt.com/c/6aaab8ce-5d90-83e9-942d-bcc9c7a8f039",
+        "changes": "Portada original generada a petición del usuario; optimizada en AVIF, 840 × 1260, imagen completa y título original sin recorte."
       },
       "ink": "#fff3cf",
       "sub": "#e0c895"
@@ -532,15 +529,14 @@
     "title": "El laberinto del Minotauro",
     "accent": "#746340",
     "cover": {
-      "image": "/assets/nido/cuentos/collection/minotauro.avif",
-      "layout": "heritage",
-      "credit": {
-        "title": "File:Athanasius Kircher - Turris Babel - 1679 (page 128 crop).jpg",
-        "artist": "Athanasius Kircher (Turris Babel, 1679)",
-        "license": "Public domain",
-        "url": "https://commons.wikimedia.org/wiki/File:Athanasius_Kircher_-_Turris_Babel_-_1679_(page_128_crop).jpg",
-        "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/52/Athanasius_Kircher_-_Turris_Babel_-_1679_%28page_128_crop%29.jpg/960px-Athanasius_Kircher_-_Turris_Babel_-_1679_%28page_128_crop%29.jpg",
-        "changes": "Redimensionado y convertido a AVIF; imagen completa, sin recortar."
+      "image": "/assets/nido/cuentos/covers/minotauro-chatgpt-v2.avif",
+      "titled": true,
+      "preserve": true,
+      "generation": {
+        "tool": "ChatGPT Imágenes (web)",
+        "createdAt": "2026-09-16",
+        "conversation": "https://chatgpt.com/c/6aaab8cf-72e8-83e9-a17b-c828512bab87",
+        "changes": "Portada original generada a petición del usuario; optimizada en AVIF, 840 × 1260, imagen completa y título original sin recorte."
       },
       "ink": "#fff3cf",
       "sub": "#e0c895"
