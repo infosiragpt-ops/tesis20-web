@@ -96,7 +96,11 @@ juegos, en `public/assets/nido/audio/cuentos/` con el manifiesto
 - Generador `nido-cuentos-v2`: misma voz «Jhenny Cozy» (`EDitztUwd7lban76PAZs`).
   Se subió el estilo y se bajó un poco la estabilidad para una narradora más
   cálida y entusiasta, todavía clara para 3 años. Un cambio de perfil o de
-  versión invalida los hashes y obliga a regrabar.
+  versión invalida los hashes y obliga a regrabar. El lote v2 de páginas no
+  se pudo completar: la cuenta ElevenLabs quedó en 0–14 créditos de 158 500.
+  Las páginas siguen en clips v1; el dispositivo cubre lo que falte
+  (`clasico-habichuelas` 6/8/9/10 y palabras sueltas nuevas). Cuatro
+  respuestas del quiz de `cerditos` sí se regrabaron.
 - `NIDO_TTS_BOOKS`, `NIDO_TTS_SKIP_WORDS` y `NIDO_TTS_MERGE` permiten reanudar
   sin borrar los mp3 ya grabados si el cupo se acaba a mitad de lote.
 - Tres perfiles de voz: `narracion` (velocidad 0,90, estabilidad 0,35, estilo

@@ -55,7 +55,7 @@ export const PROFILES = Object.freeze({
   // cada sílaba.
   palabra: { speed: 0.85, stability: 0.6, similarityBoost: 0.75, style: 0.25 },
 });
-export { GENERATOR_VERSION, VOICE, VOICE_NAME };
+export { GENERATOR_VERSION, VOICE, VOICE_NAME, mergePages, mergeQuiz, mergeManifest };
 
 function getApiKey() {
   if (process.env.ELEVENLABS_API_KEY) return process.env.ELEVENLABS_API_KEY.trim();
@@ -348,13 +348,32 @@ function mergePages(previous = [], incoming = []) {
   return pages;
 }
 
+function mergeQuiz(previous = [], incoming = []) {
+  const length = Math.max(previous.length, incoming.length);
+  const quiz = [];
+  for (let i = 0; i < length; i += 1) {
+    const next = incoming[i] || {};
+    const last = previous[i] || {};
+    const answers = [];
+    const answerLength = Math.max((last.a || []).length, (next.a || []).length);
+    for (let j = 0; j < answerLength; j += 1) {
+      answers[j] = next.a?.[j] || last.a?.[j] || null;
+    }
+    quiz[i] = {
+      q: next.q || last.q || null,
+      a: answers,
+    };
+  }
+  return quiz;
+}
+
 function mergeManifest(existing, incoming) {
   const books = { ...(existing?.books || {}) };
   for (const [id, book] of Object.entries(incoming.books || {})) {
     const previous = books[id] || { pages: [], quiz: [] };
     books[id] = {
       pages: mergePages(previous.pages, book.pages),
-      quiz: book.quiz?.length ? book.quiz : previous.quiz,
+      quiz: mergeQuiz(previous.quiz, book.quiz),
     };
   }
   return {
