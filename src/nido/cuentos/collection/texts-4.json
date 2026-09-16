@@ -243,18 +243,17 @@
     "title": "El león y el ratón",
     "accent": "#935447",
     "cover": {
-      "image": "/assets/nido/cuentos/collection/leon-raton.avif",
-      "layout": "heritage",
-      "credit": {
-        "title": "The Lion and the Mouse",
-        "artist": "Milo Winter (1919)",
-        "license": "Public domain (Estados Unidos)",
-        "url": "https://www.gutenberg.org/ebooks/19994",
-        "imageUrl": "https://www.gutenberg.org/files/19994/19994-h/images/i014_th.jpg",
-        "changes": "Redimensionado y convertido a AVIF; imagen completa, sin recortar."
-      },
+      "image": "/assets/nido/cuentos/covers/leon-raton-chatgpt-v2.avif",
       "ink": "#fff3cf",
-      "sub": "#e0c895"
+      "sub": "#e0c895",
+      "titled": true,
+      "preserve": true,
+      "generation": {
+        "tool": "ChatGPT Imágenes (web)",
+        "createdAt": "2026-09-16",
+        "conversation": "https://chatgpt.com/c/6aaad3ef-e8e8-83e9-af56-6fcf5e8f32c9",
+        "changes": "Portada original generada a petición del usuario; optimizada en AVIF, 840 × 1260, imagen completa y título original sin recorte."
+      }
     },
     "source": {
       "url": "https://www.cuentosinfantiles.net/cuentos-el-leon-y-el-raton/",
