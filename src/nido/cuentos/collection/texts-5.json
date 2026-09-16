@@ -284,18 +284,17 @@
     "title": "La paloma y la hormiga",
     "accent": "#935447",
     "cover": {
-      "image": "/assets/nido/cuentos/collection/paloma-hormiga.avif",
-      "layout": "heritage",
-      "credit": {
-        "title": "The Ant and the Dove",
-        "artist": "Milo Winter (1919)",
-        "license": "Public domain (Estados Unidos)",
-        "url": "https://www.gutenberg.org/ebooks/19994",
-        "imageUrl": "https://www.gutenberg.org/files/19994/19994-h/images/i101_th.jpg",
-        "changes": "Redimensionado y convertido a AVIF; imagen completa, sin recortar."
-      },
+      "image": "/assets/nido/cuentos/covers/paloma-hormiga-chatgpt-v2.avif",
       "ink": "#fff3cf",
-      "sub": "#e0c895"
+      "sub": "#e0c895",
+      "titled": true,
+      "preserve": true,
+      "generation": {
+        "tool": "ChatGPT Imágenes (web)",
+        "createdAt": "2026-09-16",
+        "conversation": "https://chatgpt.com/c/6aaad447-dc8c-83e9-80ad-ab3bbbe68ab4",
+        "changes": "Portada original generada a petición del usuario; optimizada en AVIF, 840 × 1260, imagen completa y título original sin recorte."
+      }
     },
     "source": {
       "url": "https://www.cuentosinfantiles.net/cuentos-la-paloma-y-la-hormiga/",
@@ -341,18 +340,17 @@
     "title": "La perla del Dragón",
     "accent": "#406265",
     "cover": {
-      "image": "/assets/nido/cuentos/collection/perla-dragon.avif",
-      "layout": "heritage",
-      "credit": {
-        "title": "Dragons Playing with the Sacred Pearl",
-        "artist": "Anónimo (China, siglo XIX)",
-        "license": "CC0",
-        "url": "https://www.metmuseum.org/art/collection/search/54911",
-        "imageUrl": "https://images.metmuseum.org/CRDImages/as/original/19_103_4_O_sf.jpg",
-        "changes": "Redimensionado y convertido a AVIF; imagen completa, sin recortar."
-      },
+      "image": "/assets/nido/cuentos/covers/perla-dragon-chatgpt-v2.avif",
       "ink": "#fff3cf",
-      "sub": "#e0c895"
+      "sub": "#e0c895",
+      "titled": true,
+      "preserve": true,
+      "generation": {
+        "tool": "ChatGPT Imágenes (web)",
+        "createdAt": "2026-09-16",
+        "conversation": "https://chatgpt.com/c/6aaad2c5-4888-83e9-b6fa-2fa9884af106",
+        "changes": "Portada original generada a petición del usuario; optimizada en AVIF, 840 × 1260, imagen completa y título original sin recorte."
+      }
     },
     "source": {
       "url": "https://www.cuentosinfantiles.net/cuentos-la-perla-del-dragon/",
@@ -409,18 +407,17 @@
     "title": "Las habichuelas mágicas",
     "accent": "#746340",
     "cover": {
-      "image": "/assets/nido/cuentos/collection/habichuelas.avif",
-      "layout": "heritage",
-      "credit": {
-        "title": "File:Walter Crane15.jpg",
-        "artist": "Walter Crane",
-        "license": "Public domain",
-        "url": "https://commons.wikimedia.org/wiki/File:Walter_Crane15.jpg",
-        "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/e/e8/Walter_Crane15.jpg",
-        "changes": "Redimensionado y convertido a AVIF; imagen completa, sin recortar."
-      },
+      "image": "/assets/nido/cuentos/covers/habichuelas-chatgpt-v2.avif",
       "ink": "#fff3cf",
-      "sub": "#e0c895"
+      "sub": "#e0c895",
+      "titled": true,
+      "preserve": true,
+      "generation": {
+        "tool": "ChatGPT Imágenes (web)",
+        "createdAt": "2026-09-16",
+        "conversation": "https://chatgpt.com/c/6aaad463-eca8-83e9-9a98-3aab8c982f26",
+        "changes": "Portada original generada a petición del usuario; optimizada en AVIF, 840 × 1260, imagen completa y título original sin recorte."
+      }
     },
     "source": {
       "url": "https://www.cuentosinfantiles.net/cuentos-la-habichuelas-magicas/",
