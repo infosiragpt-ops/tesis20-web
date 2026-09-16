@@ -41,6 +41,19 @@ test('el buscador ignora acentos y distingue las dos ediciones existentes', () =
   assert.equal(searchBooks(BOOKS, '').length, BOOKS.length);
 });
 
+test('clasico-tres-deseos tiene narración de estudio en las 10 páginas', async () => {
+  const manifest = JSON.parse(await readFile(new URL('../../public/assets/nido/audio/cuentos-manifest.json', import.meta.url), 'utf8'));
+  const book = CLASSIC_COLLECTION.find(b => b.id === 'clasico-tres-deseos');
+  const pages = manifest.books?.['clasico-tres-deseos']?.pages;
+  assert.equal(pages?.length, book.pages.length);
+  for (const [index, page] of book.pages.entries()) {
+    assert.ok(pages[index]?.src, `página ${index + 1} sin audio`);
+    assert.ok(pages[index].duration > 0);
+    assert.ok(Array.isArray(pages[index].words) && pages[index].words.length > 0);
+    await access(new URL(`../../public/assets/nido/audio/cuentos/${pages[index].src}`, import.meta.url));
+  }
+});
+
 test('los clásicos entran en el plan de voz de estudio', () => {
   const all = enumerateCuentosVoicePlan(BOOKS);
   const originals = enumerateCuentosVoicePlan(NARRATED_BOOKS);
