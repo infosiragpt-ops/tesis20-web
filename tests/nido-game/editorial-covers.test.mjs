@@ -13,8 +13,15 @@ test('las portadas editoriales tienen procedencia, título único y encuadre com
     assert.equal(cover.titled, true, book.id);
     assert.equal(cover.preserve, true, book.id);
     assert.notEqual(cover.layout, 'heritage', book.id);
-    assert.equal(cover.generation.tool, 'ChatGPT Imágenes (web)');
-    assert.match(cover.generation.conversation, /^https:\/\/chatgpt\.com\/c\/[a-z0-9-]+$/);
+    if (cover.generation.tool === 'ChatGPT Imágenes (web)') {
+      assert.match(cover.generation.conversation, /^https:\/\/chatgpt\.com\/c\/[a-z0-9-]+$/);
+    } else {
+      assert.equal(cover.generation.tool, 'Generación de imágenes integrada de ChatGPT');
+      assert.equal(cover.generation.prompts, '/assets/nido/cuentos/covers/original-covers-20260916.json');
+      const manifest = JSON.parse(await readFile(new URL(`../../public${cover.generation.prompts}`, import.meta.url), 'utf8'));
+      const provenance = manifest.covers.find(asset => asset.image === cover.image);
+      assert.ok(provenance?.prompt.includes(book.title), book.id);
+    }
     assert.equal(cover.credit, undefined, 'No atribuir arte nuevo a una ilustración histórica');
     const bytes = await readFile(new URL(`../../public${cover.image}`, import.meta.url));
     assert.ok(bytes.length > 20000 && bytes.length <= 250 * 1024, book.id);

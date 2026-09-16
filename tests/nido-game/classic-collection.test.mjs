@@ -58,3 +58,29 @@ test('las portadas locales nuevas tienen licencia y procedencia verificables', a
     }
   }
 });
+
+test('las portadas originales conservan toda la imagen y su procedencia sin duplicar el título', async () => {
+  const manifestPath = '/assets/nido/cuentos/covers/original-covers-20260916.json';
+  const manifest = JSON.parse(await readFile(new URL(`../../public${manifestPath}`, import.meta.url), 'utf8'));
+  assert.equal(manifest.covers.length, 12);
+  assert.equal(new Set(manifest.covers.map(cover => cover.id)).size, manifest.covers.length);
+  for (const asset of manifest.covers) {
+    const book = CLASSIC_COLLECTION.find(item => item.id === `clasico-${asset.id}`);
+    assert.ok(book, asset.id);
+    assert.equal(book.cover.image, asset.image, book.title);
+    assert.equal(book.cover.titled, true, book.title);
+    assert.equal(book.cover.preserve, true, book.title);
+    assert.equal(book.cover.layout, undefined, book.title);
+    assert.equal(book.cover.generation.prompts, manifestPath, book.title);
+    assert.match(asset.prompt, /illustration-story/);
+    assert.ok(asset.prompt.includes(book.title), book.title);
+    const bytes = await readFile(new URL(`../../public${asset.image}`, import.meta.url));
+    assert.equal(bytes.toString('ascii', 4, 8), 'ftyp');
+    assert.equal(bytes.toString('ascii', 8, 12), 'avif');
+    const dimensions = bytes.indexOf(Buffer.from('ispe'));
+    assert.ok(dimensions > 0, book.title);
+    assert.equal(bytes.readUInt32BE(dimensions + 8), 840, book.title);
+    assert.equal(bytes.readUInt32BE(dimensions + 12), 1260, book.title);
+    assert.ok(bytes.length < 400000, book.title);
+  }
+});

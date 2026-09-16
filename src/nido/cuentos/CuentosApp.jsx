@@ -549,6 +549,7 @@ function ShelfOverlay({ state, focusedId, onFocus, onOpen }) {
   const lastHover = useRef(-1);
   const rowRef = useRef(null);
   const rowPositioned = useRef(false);
+  const pointerFocusedId = useRef(null);
   const dragRef = useRef(null);
   const suppressClick = useRef(false);
 
@@ -560,6 +561,10 @@ function ShelfOverlay({ state, focusedId, onFocus, onOpen }) {
   }, []);
 
   useLayoutEffect(() => {
+    // Preview the scene on hover without moving the card out from under
+    // the pointer between pointerdown and click. Arrows, drag and keyboard
+    // still center the chosen card; returning from a book restores it.
+    if (rowPositioned.current && pointerFocusedId.current === focusedId) return;
     // Restore the shelf before paint. Animating from the first title after
     // every book closes moves the next card out from under a quick tap.
     rowRef.current?.children[focus]?.scrollIntoView({
@@ -568,15 +573,17 @@ function ShelfOverlay({ state, focusedId, onFocus, onOpen }) {
       inline: "center",
     });
     rowPositioned.current = true;
-  }, [focus]);
+  }, [focus, focusedId]);
 
-  const hover = (index, id) => {
+  const hover = (index, id, center = false) => {
     if ((lastHover.current === index && focus === index) || dragRef.current) return;
+    pointerFocusedId.current = center ? null : id;
     lastHover.current = index;
     onFocus(id);
   };
 
   const move = (direction) => {
+    pointerFocusedId.current = null;
     sfx.hover();
     const next = (focus + direction + BOOKS.length) % BOOKS.length;
     lastHover.current = next;
@@ -596,7 +603,7 @@ function ShelfOverlay({ state, focusedId, onFocus, onOpen }) {
       drag.moved = true; suppressClick.current = true;
       rowRef.current.setPointerCapture(event.pointerId);
       const next = Math.max(0, Math.min(BOOKS.length - 1, drag.index - Math.round(dx / 145)));
-      if (next !== drag.next) { drag.next = next; onFocus(BOOKS[next].id); }
+      if (next !== drag.next) { pointerFocusedId.current = null; drag.next = next; onFocus(BOOKS[next].id); }
     }
   };
 
@@ -626,7 +633,7 @@ function ShelfOverlay({ state, focusedId, onFocus, onOpen }) {
                   type="button"
                   onClick={() => onOpen(book.id)}
                   onPointerMove={event => { if (event.pointerType === "mouse" && !event.buttons) hover(index, book.id); }}
-                  onFocus={() => hover(index, book.id)}
+                  onFocus={event => { if (event.currentTarget.matches(':focus-visible')) hover(index, book.id, true); }}
                   aria-label={`Abrir ${book.title}${book.edition ? ` (${book.edition})` : ''}. ${status.pct}% leído.`}
                 >
                   <span className="cuentos-picker__cover" aria-hidden="true">

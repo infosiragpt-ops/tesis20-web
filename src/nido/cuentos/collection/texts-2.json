@@ -133,15 +133,14 @@
     "title": "La liebre y la tortuga",
     "accent": "#715682",
     "cover": {
-      "image": "/assets/nido/cuentos/collection/liebre-tortuga.avif",
-      "layout": "heritage",
-      "credit": {
-        "title": "File:Tortoise and hare rackham.jpg",
-        "artist": "Arthur Rackham",
-        "license": "Public domain",
-        "url": "https://commons.wikimedia.org/wiki/File:Tortoise_and_hare_rackham.jpg",
-        "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/64/Tortoise_and_hare_rackham.jpg/960px-Tortoise_and_hare_rackham.jpg",
-        "changes": "Redimensionado y convertido a AVIF; imagen completa, sin recortar."
+      "image": "/assets/nido/cuentos/covers/liebre-tortuga-imagegen-v3.avif",
+      "titled": true,
+      "preserve": true,
+      "generation": {
+        "tool": "Generación de imágenes integrada de ChatGPT",
+        "createdAt": "2026-09-16",
+        "prompts": "/assets/nido/cuentos/covers/original-covers-20260916.json",
+        "changes": "Ilustración original generada a petición del usuario; AVIF 840 × 1260, imagen completa y título sin recorte."
       },
       "ink": "#fff3cf",
       "sub": "#e0c895"
@@ -305,15 +304,14 @@
     "title": "La bella y la bestia",
     "accent": "#486f7a",
     "cover": {
-      "image": "/assets/nido/cuentos/collection/bella-bestia.avif",
-      "layout": "heritage",
-      "credit": {
-        "title": "File:Beauty and the Beast-1874-0018.jpg",
-        "artist": "Walter Crane",
-        "license": "Public domain",
-        "url": "https://commons.wikimedia.org/wiki/File:Beauty_and_the_Beast-1874-0018.jpg",
-        "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/7f/Beauty_and_the_Beast-1874-0018.jpg/960px-Beauty_and_the_Beast-1874-0018.jpg",
-        "changes": "Redimensionado y convertido a AVIF; imagen completa, sin recortar."
+      "image": "/assets/nido/cuentos/covers/bella-bestia-imagegen-v3.avif",
+      "titled": true,
+      "preserve": true,
+      "generation": {
+        "tool": "Generación de imágenes integrada de ChatGPT",
+        "createdAt": "2026-09-16",
+        "prompts": "/assets/nido/cuentos/covers/original-covers-20260916.json",
+        "changes": "Ilustración original generada a petición del usuario; AVIF 840 × 1260, imagen completa y título sin recorte."
       },
       "ink": "#fff3cf",
       "sub": "#e0c895"
