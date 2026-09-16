@@ -12,7 +12,7 @@ function dispose(root) {
   geometries.forEach(x=>x.dispose());materials.forEach(x=>x.dispose());textures.forEach(x=>x.dispose());
 }
 
-test('los 46 libros usan el reparto esculpido, sin sustitutos animales genéricos',()=>{
+test('los 46 libros usan modelos articulados registrados (no valida fidelidad artística)',()=>{
   for(const id of cast) {
     if(id==='concha-caracol')continue; // Empty shell is a prop, not a character.
     const toy=buildToy(id);

@@ -5,6 +5,46 @@ import { CLASSIC_COLLECTION } from '../../src/nido/cuentos/classic-collection.js
 import { hasToy, buildToy } from '../../src/nido/cuentos/three/toys/index.js';
 import { ACT_NAMES } from '../../src/nido/cuentos/cuentos-acts.js';
 import { dioramaLayout } from '../../src/nido/cuentos/three/diorama-layout.js';
+import { directClassic } from '../../src/nido/cuentos/classic-direction.js';
+
+test('reported nouns do not become swimming, flying or sewing actions', () => {
+  const item={id:'perla-dragon',title:'Prueba'};
+  const plain=directClassic(item,['El dragón vio que nadie estaba en las costas. Volvió a la cueva.']).pages[0];
+  for(const word of ['nadie','costas','volvió']) assert.equal(plain.cues[word],undefined,word);
+  const acting=directClassic(item,['El dragón nadó, voló y cosió.']).pages[0];
+  assert.equal(acting.cues['nadó'].act.dragon,'swim');
+  assert.equal(acting.cues['voló'].act.dragon,'fly');
+  assert.equal(acting.cues['cosió'].act.dragon,'build');
+});
+
+test('dragon edition follows the cave, stolen pearl, voyage and imperial ending', () => {
+  const pages=CLASSIC_COLLECTION.find(b=>b.id==='clasico-perla-dragon').pages;
+  assert.deepEqual(pages[0].cast,['dragon']);
+  assert.deepEqual(pages[0].props,['perla']);
+  assert.equal(pages[0].set,'kinabalu');
+  assert.deepEqual(pages[1].cast,['rey','principe']);
+  assert.deepEqual(pages[3].props,['cometa','farol']);
+  assert.equal(pages[4].acts.dragon,'sleep');
+  assert.equal(pages[4].set,'dragon-cave');
+  assert.equal(pages[5].light,'night');
+  assert.ok(!pages[6].props.includes('perla'),'stolen pearl must not remain in the cave');
+  assert.equal(pages[7].acts.dragon,'swim');
+  assert.equal(pages[7].set,'ocean-day');
+  assert.equal(pages[9].set,'palace');
+  assert.ok(!pages[9].cast.includes('dragon'),'do not show the lost dragon dancing in the ending');
+});
+
+test('story animals retain their species rather than human or sheep substitutes',()=>{
+  const bambi=CLASSIC_COLLECTION.find(b=>b.id==='clasico-bambi');
+  assert.ok(bambi.pages.some(p=>p.cast.includes('cierva')));
+  assert.ok(bambi.pages.every(p=>!p.cast.includes('campesina')));
+  const heidi=CLASSIC_COLLECTION.find(b=>b.id==='clasico-heidi');
+  assert.ok(heidi.pages.some(p=>p.cast.includes('cabra')));
+  assert.ok(heidi.pages.every(p=>!p.cast.includes('oveja')));
+  assert.equal(buildToy('cierva').userData.sculpted.species,'doe');
+  assert.equal(buildToy('cabra').userData.sculpted.species,'goat');
+  assert.equal(buildToy('gallina').userData.sculpted.species,'hen');
+});
 
 test('all 812 classic pages have real actors, supported acting and actual props', () => {
   assert.equal(CLASSIC_COLLECTION.reduce((sum, b) => sum + b.pages.length, 0), 812);

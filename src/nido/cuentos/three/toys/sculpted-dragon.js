@@ -1,111 +1,109 @@
 import * as THREE from 'three';
-import { finish } from './sculpting.js';
+import { ell, tube, part, finish } from './sculpting.js';
 
-// Original dragon anatomy based on the direction approved on 2026-09-16.
-// Animal facing +Z, four weight-bearing legs, separate neck/head/tail pivots.
+// Authored realtime reptile, not a reskinned mammal or a photorealism claim.
+// Low haunches, heavy neck, long jaw, swept horns and a visible coiled tail.
 export function buildDragon() {
-  const root = new THREE.Group();
-  const skin = new THREE.MeshPhysicalMaterial({color:'#557765',roughness:.57,metalness:.08,clearcoat:.12});
-  const belly = new THREE.MeshStandardMaterial({color:'#d6c6a0',roughness:.72});
-  const horn = new THREE.MeshStandardMaterial({color:'#685745',roughness:.64});
-  const ridge = new THREE.MeshStandardMaterial({color:'#8d875a',roughness:.58,metalness:.12});
-  const eye = new THREE.MeshPhysicalMaterial({color:'#b78036',roughness:.14,clearcoat:1});
-  const pupil = new THREE.MeshPhysicalMaterial({color:'#151b13',roughness:.15,clearcoat:1});
-  const crease = new THREE.MeshStandardMaterial({color:'#263d30',roughness:.82});
-  const sharedSphere = new THREE.SphereGeometry(1,16,10);
-  // Fine-scale relief is procedural material detail, not a downloaded image.
+  const root = new THREE.Group(); root.userData.viewYaw = .68;
+  const skin = new THREE.MeshPhysicalMaterial({color:'#496d43',roughness:.78,clearcoat:.05});
+  const belly = new THREE.MeshStandardMaterial({color:'#cbb37c',roughness:.75});
+  const horn = new THREE.MeshStandardMaterial({color:'#796040',roughness:.69});
+  const gold = new THREE.MeshStandardMaterial({color:'#b4a367',roughness:.7});
+  const black = new THREE.MeshStandardMaterial({color:'#1c2c21',roughness:.72});
+  const amber = new THREE.MeshPhysicalMaterial({color:'#c9913f',roughness:.18,clearcoat:1});
+  const pupil = new THREE.MeshPhysicalMaterial({color:'#131b14',roughness:.16,clearcoat:1});
   const pixels=new Uint8Array(256*256*4);
-  for(let y=0;y<256;y++)for(let x=0;x<256;x++){
-    const row=Math.floor(y/16),u=((x+(row%2)*8)%16)/16,v=(y%16)/16;
-    const d=Math.sqrt(((u-.5)*1.7)**2+((v-.5)*1.25)**2);
-    const relief=Math.max(0,1-d*1.65),grain=Math.sin(x*127.1+y*311.7)*.025;
-    const value=Math.round(60+160*Math.max(0,relief+grain)),p=(y*256+x)*4;
-    pixels[p]=pixels[p+1]=pixels[p+2]=value;pixels[p+3]=255;
+  for(let y=0;y<256;y++)for(let x=0;x<256;x++) {
+    const row=Math.floor(y/16),u=((x+(row%2)*8)%16)/16,v=y%16/16;
+    const value=Math.round(55+165*Math.max(0,1-Math.hypot((u-.5)*1.8,(v-.5)*1.3)*1.6));
+    const i=(y*256+x)*4;pixels[i]=pixels[i+1]=pixels[i+2]=value;pixels[i+3]=255;
   }
-  const micro=new THREE.DataTexture(pixels,256,256);micro.wrapS=micro.wrapT=THREE.RepeatWrapping;micro.repeat.set(3,3);micro.needsUpdate=true;
-  skin.bumpMap=micro;skin.bumpScale=.008;skin.roughness=.76;skin.clearcoat=.03;
-  // This relief belongs to this dragon, unlike the shared surface cache.
-  // Release it when the actor leaves the page, including rapid book changes.
-  let reliefReleased=false;
-  skin.addEventListener('dispose',()=>{if(!reliefReleased){reliefReleased=true;micro.dispose();}});
-  const put = (g,m,pos,scale,parent=root)=>{
-    const o=new THREE.Mesh(g,m);o.position.set(...pos);o.scale.set(...scale);o.castShadow=true;o.receiveShadow=true;parent.add(o);return o;
-  };
-  const ellipsoid=(m,p,s,parent)=>put(sharedSphere,m,p,s,parent);
-  function sweep(points,radii,material,parent=root,segments=38,sides=14,ellipticity=1){
-    const curve=new THREE.CatmullRomCurve3(points.map(p=>new THREE.Vector3(...p)));
-    const frames=curve.computeFrenetFrames(segments,false), vertices=[],uv=[],indices=[];
-    for(let i=0;i<=segments;i++){
-      const t=i/segments, at=curve.getPointAt(t), n=frames.normals[i], b=frames.binormals[i];
-      const k=t*(radii.length-1), ix=Math.min(radii.length-2,Math.floor(k)), r=THREE.MathUtils.lerp(radii[ix],radii[ix+1],k-ix);
-      for(let j=0;j<=sides;j++){
-        const a=j/sides*Math.PI*2;
-        const v=at.clone().addScaledVector(n,Math.cos(a)*r).addScaledVector(b,Math.sin(a)*r*ellipticity);
-        vertices.push(v.x,v.y,v.z);uv.push(j/sides,t);
-        if(i<segments&&j<sides){const q=i*(sides+1)+j;indices.push(q,q+1,q+sides+1,q+1,q+sides+2,q+sides+1);}
+  const micro=new THREE.DataTexture(pixels,256,256);micro.wrapS=micro.wrapT=THREE.RepeatWrapping;micro.repeat.set(2,2);micro.needsUpdate=true;
+  skin.bumpMap=micro;skin.bumpScale=.009;
+  let released=false;skin.addEventListener('dispose',()=>{if(!released){released=true;micro.dispose();}});
+
+  // Convex pointed plates, 12 triangles each, instead of spherical beads.
+  const outline=[[-.7,0,-.5],[0,0,-.8],[.7,0,-.5],[.65,0,.2],[0,0,1],[-.65,0,.2]];
+  const positions=[0,.28,0,...outline.flat(),0,-.05,0],indices=[];
+  for(let i=0;i<6;i++)indices.push(0,i+1,(i+1)%6+1,7,(i+1)%6+1,i+1);
+  const scaleGeometry=new THREE.BufferGeometry();scaleGeometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));scaleGeometry.setIndex(indices);scaleGeometry.computeVertexNormals();
+  const plateMaterial=new THREE.MeshStandardMaterial({color:'#ffffff',roughness:.79});
+  const palette=['#597847','#6f854b','#819251','#8f985a','#697a45','#a3965b'];
+  function armour(parent, specs) {
+    const plates=new THREE.InstancedMesh(scaleGeometry,plateMaterial,specs.length),transform=new THREE.Object3D(),up=new THREE.Vector3(0,1,0);
+    specs.forEach((p,i)=>{
+      transform.position.set(...p.at);transform.quaternion.setFromUnitVectors(up,new THREE.Vector3(...p.normal).normalize());
+      transform.scale.set(p.w,p.h||.025,p.l);transform.updateMatrix();plates.setMatrixAt(i,transform.matrix);
+      plates.setColorAt(i,new THREE.Color(palette[(i*7+Math.floor(i/9))%palette.length]));
+    });
+    plates.castShadow=true;plates.receiveShadow=true;parent.add(plates);
+  }
+  function armourEllipsoid(parent, center, size, rows, cols) {
+    const specs=[];
+    for(let r=0;r<rows;r++) {
+      const z=-.84+r/(rows-1)*1.68,t=Math.sqrt(1-z*z);
+      for(let c=0;c<cols;c++) {
+        const phi=-1.64+c/(cols-1)*3.28+(r%2?.04:0),x=Math.sin(phi)*t,y=Math.cos(phi)*t;
+        specs.push({at:[center[0]+x*size[0]*1.02,center[1]+y*size[1]*1.02,center[2]+z*size[2]],normal:[x/size[0],y/size[1],z/size[2]],w:size[0]*.21,l:size[2]*.16,h:.030});
       }
     }
-    // Cap both ends: no visible open tubes at joints or extremities.
-    for(const start of [true,false]){
-      const center=vertices.length/3,p=curve.getPointAt(start?0:1);vertices.push(p.x,p.y,p.z);uv.push(.5,start?0:1);
-      const ring=start?0:segments*(sides+1);for(let j=0;j<sides;j++)indices.push(center,ring+j+(start?1:0),ring+j+(start?0:1));
+    armour(parent,specs);
+  }
+  ell(root,skin,[0,.37,-.20],[.30,.25,.48]);
+  ell(root,belly,[0,.23,-.10],[.255,.11,.40]);
+  armourEllipsoid(root,[0,.37,-.20],[.30,.25,.48],14,15);
+  const neck=part(root,null,null,[0,.39,.12]);
+  tube(neck,skin,[[0,0,0],[0,.23,.02],[0,.47,.08],[0,.65,.22]],[.225,.22,.165,.145],{segments:26,sides:16});
+  const neckScales=[];
+  for(let r=0;r<12;r++)for(let c=0;c<11;c++) {
+    const t=r/11,angle=-Math.PI*.88+c/10*Math.PI*1.76,rad=.22-t*.075,z=.015+t*t*.22;
+    neckScales.push({at:[Math.sin(angle)*rad,t*.64,z-Math.cos(angle)*rad],normal:[Math.sin(angle),.12,-Math.cos(angle)],w:.056,l:.068,h:.032});
+  }
+  armour(neck,neckScales);
+  for(let i=0;i<11;i++) {
+    const t=i/10;
+    ell(neck,belly,[0,.035+t*.59,.205+t*t*.12],[.16-t*.036,.045,.044],[-.23,0,0],12);
+  }
+  const head=part(neck,'head',1,[0,.66,.23]);head.rotation.y=-.12;
+  ell(head,skin,[0,.026,.075],[.207,.165,.237]);
+  ell(head,skin,[0,-.03,.286],[.157,.078,.205]);
+  ell(head,belly,[0,-.094,.253],[.148,.035,.211]);
+  armourEllipsoid(head,[0,.026,.075],[.207,.165,.237],9,11);
+  for(const s of [-1,1]) {
+    const eye=part(head,'eye',1,[s*.179,.055,.170]);
+    ell(eye,black,[0,0,0],[.044,.041,.031]);
+    ell(eye,amber,[s*.005,0,.018],[.034,.031,.022]);
+    ell(eye,pupil,[s*.008,0,.035],[.008,.025,.009]);
+    ell(eye,belly,[s*.004,.012,.043],[.006,.006,.004],undefined,8);
+    tube(head,skin,[[s*.128,.104,.23],[s*.19,.105,.16],[s*.208,.07,.08]],[.034,.036,.016],{segments:12,sides:8});
+    ell(head,black,[s*.092,-.008,.463],[.023,.013,.019],undefined,10);
+    tube(head,black,[[s*.06,-.087,.46],[s*.14,-.084,.35],[s*.183,-.069,.135]],[.003,.004,.002],{segments:16,sides:5});
+    tube(head,horn,[[s*.15,.145,-.035],[s*.235,.26,-.14],[s*.25,.32,-.32],[s*.20,.36,-.41]],[.065,.049,.019,.001],{segments:20,sides:10});
+    tube(head,horn,[[s*.224,.244,-.135],[s*.32,.28,-.20],[s*.36,.32,-.29]],[.035,.025,.001],{segments:12,sides:8});
+    for(let i=0;i<3;i++)tube(head,gold,[[s*.16,.015-i*.042,-.034],[s*(.27+i*.012),.045-i*.04,-.15-i*.04]],[.035,.001],{segments:8,sides:8});
+    for(const front of [true,false]) {
+      const leg=part(root,'leg',front?s:-s,[s*.23,.37,front?.18:-.46]);
+      tube(leg,skin,[[0,0,0],[s*.105,-.07,front?-.07:.055],[s*.09,-.21,.13],[s*.07,-.30,.23]],[front?.10:.16,.105,.057,.053],{segments:18,sides:10});
+      ell(leg,skin,[s*.07,-.31,.255],[.103,.049,.135]);
+      for(let n=-1;n<=1;n++) {
+        const x=s*.07+n*.062,z=.34-Math.abs(n)*.022;
+        tube(leg,skin,[[x,-.32,.26],[x,-.333,z],[x,-.34,z+.065]],[.032,.027,.020],{segments:8,sides:8});
+        tube(leg,horn,[[x,-.339,z+.04],[x,-.35,z+.10]],[.022,.001],{segments:6,sides:8});
+      }
     }
-    const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));geo.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));geo.setIndex(indices);geo.computeVertexNormals();
-    return put(geo,material,[0,0,0],[1,1,1],parent);
   }
-  const body=ellipsoid(skin,[0,.62,-.16],[.29,.32,.61]);
-  ellipsoid(belly,[0,.47,-.06],[.243,.17,.51]);
-  const neck=new THREE.Group();neck.position.set(0,.64,.26);root.add(neck);
-  sweep([[0,0,0],[0,.21,.14],[0,.45,.17],[0,.67,.29]],[.215,.185,.115,.12],skin,neck,36,20,.92);
-  const head=new THREE.Group();head.position.set(0,.67,.29);head.userData.head=1;neck.add(head);
-  ellipsoid(skin,[0,.055,.095],[.153,.145,.195],head);
-  ellipsoid(skin,[0,-.006,.266],[.129,.074,.164],head);
-  ellipsoid(belly,[0,-.068,.252],[.122,.033,.15],head);
-  for(const s of [-1,1]){
-    const eyeball=ellipsoid(eye,[s*.124,.061,.187],[.032,.038,.031],head);
-    ellipsoid(pupil,[s*.135,.063,.209],[.009,.027,.012],head);
-    ellipsoid(crease,[s*.075,.031,.382],[.016,.011,.016],head);
-    const brow=ellipsoid(skin,[s*.119,.101,.173],[.055,.021,.069],head);brow.rotation.z=s*.18;
-    sweep([[s*.115,.139,.023],[s*.165,.232,-.045],[s*.166,.289,-.172]],[.052,.033,.001],horn,head,25,12);
-    sweep([[s*.088,-.044,.392],[s*.13,-.048,.281],[s*.141,-.031,.149]],[.003,.004,.002],crease,head,20,6);
-    for(let i=0;i<4;i++){
-      sweep([[s*.123,.025-i*.035,.015-i*.025],[s*(.185+i*.009),.045-i*.034,-.08-i*.026]],[.025,.001],ridge,head,8,8);
-    }
-    eyeball.userData.eye=1;
+  const tail=part(root,'tail',1,[0,.36,-.60]);
+  const tailPoints=[[0,0,0],[.22,-.12,-.15],[.51,-.20,-.06],[.66,-.23,.30],[.58,-.22,.70],[.25,-.16,.92],[-.015,-.09,.87]];
+  tube(tail,skin,tailPoints,[.19,.17,.135,.105,.068,.038,.002],{segments:42,sides:12});
+  const curve=new THREE.CatmullRomCurve3(tailPoints.map(p=>new THREE.Vector3(...p))),tailScales=[];
+  for(let i=0;i<25;i++) {
+    const t=i/25,p=curve.getPoint(t),radius=.19*(1-t)+.01;
+    for(let j=-2;j<=2;j++) {const a=j*.5;tailScales.push({at:[p.x+Math.sin(a)*radius,p.y+Math.cos(a)*radius,p.z],normal:[Math.sin(a),Math.cos(a),0],w:.035*(1-t)+.012,l:.054,h:.019});}
   }
-  for(const s of [-1,1])for(const front of [true,false]){
-    const leg=new THREE.Group();leg.userData.leg=front?s:-s;leg.position.set(s*.22,.58,front?.23:-.53);root.add(leg);
-    sweep([[0,0,0],[s*.105,-.16,-.015],[s*.07,-.33,.035],[s*.10,-.49,.075]],[front?.10:.14,.09,.051,.048],skin,leg,25,14);
-    const ankle=ellipsoid(skin,[s*.10,-.50,.115],[.08,.05,.123],leg);
-    for(let toe=0;toe<3;toe++){
-      const x=s*.10+(toe-1)*.047,z=.19-Math.abs(toe-1)*.014;
-      ellipsoid(skin,[x,-.515,z],[.028,.031,.075],leg);
-      sweep([[x,-.516,z+.044],[x,-.535,z+.108]],[.020,.001],horn,leg,8,8);
-    }
-    leg.name=(front?'front':'hind')+(s<0?'-left':'-right');
+  armour(tail,tailScales);
+  for(let i=0;i<12;i++) {
+    const z=.20-i*.069,y=.38+Math.sqrt(Math.max(.05,1-((z+.20)/.49)**2))*.26;
+    tube(root,gold,[[0,y,z],[0,y+.125,z-.065],[0,y+.09,z-.12]],[.037,.016,.001],{segments:8,sides:8});
   }
-  const tail=new THREE.Group();tail.userData.tail=1;tail.position.set(0,.64,-.68);root.add(tail);
-  sweep([[0,0,0],[.07,-.18,-.24],[.35,-.38,-.47],[.67,-.35,-.44],[.88,-.19,-.20],[.87,.09,-.11]],[.205,.16,.115,.079,.045,.002],skin,tail,52,18,.88);
-  // Overlapping dorsal scales use one geometry/material/draw call.
-  const scaleGeo=new THREE.SphereGeometry(1,8,5), count=14*13;
-  const scales=new THREE.InstancedMesh(scaleGeo,ridge,count);scales.castShadow=true;scales.receiveShadow=true;
-  const transform=new THREE.Object3D();let n=0;
-  for(let row=0;row<14;row++)for(let col=0;col<13;col++){
-    const z=-.68+row*.076, phi=-1.35+col*.225, taper=Math.sqrt(Math.max(.04,1-((z+.16)/.63)**2));
-    transform.position.set(Math.sin(phi)*.292*taper,.62+Math.cos(phi)*.324*taper,z);
-    transform.rotation.set(0,0,-phi);transform.scale.set(.034,.010,.056);transform.updateMatrix();scales.setMatrixAt(n,transform.matrix);
-    scales.setColorAt(n++,new THREE.Color().setHSL(.18+((row+col)%5)*.02,.22,.32+((row*7+col)%4)*.025));
-  }
-  root.add(scales);
-  // Belly scutes follow the raised throat and remain separate from the face.
-  for(let i=0;i<9;i++){
-    const y=.78+i*.055, z=.40+(i/8)**2*.20;
-    const scute=ellipsoid(belly,[0,y,z+.012],[.152-i*.007,.040,.032]);scute.rotation.x=-.16;
-  }
-  for(let i=0;i<10;i++){
-    const z=.22-i*.10,y=.63+Math.sqrt(Math.max(.02,1-((z+.16)/.65)**2))*.31;
-    sweep([[0,y,z],[0,y+.11,z-.055],[0,y+.10,z-.105]],[.028,.018,.001],ridge,root,8,8);
-  }
-  // Ground alignment derived from geometry, never a hard-coded floating offset.
-  return finish(root,'reptile',{species:'dragon',legs:4});
+  return finish(root,'reptile',{species:'dragon',legs:4,design:'scaled-guardian'});
 }

@@ -54,6 +54,7 @@ const PIN_SPOTS = [
 
 function SceneBody({ book, pageIndex, foundPin, onPin, interactive, showPin = true, showCast = true, sky = true, omit = null }) {
   const page = book.pages[pageIndex];
+  const sceneSet = page.set || book.set;
   const seed = `${book.id}-${pageIndex}`;
   const props = [...(page.props || [])].filter((id) => !omit || !omit.has(id)).sort((a, b) => propLayer(a) - propLayer(b));
   const cast = page.cast || [];
@@ -70,11 +71,11 @@ function SceneBody({ book, pageIndex, foundPin, onPin, interactive, showPin = tr
 
   return (
     <>
-      <Backdrop set={book.set} light={page.light} seed={seed} sky={sky} />
+      <Backdrop set={sceneSet} light={page.light} seed={seed} sky={sky} />
       {props
         .filter((id) => propLayer(id) <= 5)
         .map((id) => (
-          <Prop key={id} id={id} rand={seeded(`${seed}-${id}`)} light={page.light} set={book.set} />
+          <Prop key={id} id={id} rand={seeded(`${seed}-${id}`)} light={page.light} set={sceneSet} />
         ))}
       {showCast && cast.map((who, i) => {
         const entry = CAST[who];
@@ -93,7 +94,7 @@ function SceneBody({ book, pageIndex, foundPin, onPin, interactive, showPin = tr
       {props
         .filter((id) => propLayer(id) > 5)
         .map((id) => (
-          <Prop key={id} id={id} rand={seeded(`${seed}-${id}`)} light={page.light} set={book.set} />
+          <Prop key={id} id={id} rand={seeded(`${seed}-${id}`)} light={page.light} set={sceneSet} />
         ))}
       {page.pin && showPin ? (
         <PinToken

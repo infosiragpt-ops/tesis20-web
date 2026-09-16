@@ -3,7 +3,7 @@
 ## Scope
 
 Local, original Three.js geometry for the characters used by all 46 books.
-78 living character IDs are rebuilt or refined; `concha-caracol` remains an
+81 living character IDs are rebuilt or refined; `concha-caracol` remains an
 empty-shell prop. The dragon follows the visual direction approved by the
 user on 2026-09-16. That direction approval is not represented as individual
 human approval of every model, nor as a room-design pipeline approval.
@@ -13,6 +13,25 @@ text, cover image or stored reader progress is changed by this release.
 This is stylized, more anatomically differentiated WebGL art, not a promise of
 photorealistic film footage. The 17 remaining heritage covers are a separate,
 unfinished art-generation task and are not claimed as replaced here.
+
+## Correction after the production dragon report
+
+The public page was verified to still serve the old teddy-like dragon. The
+local dragon was reshaped again with a heavier reptile body, shorter clawed
+legs, a longer jaw, swept horns and layered pointed scale plates (24,556
+triangles). This is still stylized and does not match the cover's rendered
+fidelity. Functionality tests must not be used to claim that visual match.
+
+The ten-page dragon edition now changes cast, objects, setting and time of day
+according to its actual passages. No sailboat on the mountain opening, no
+pearl remaining after the theft, no flying dragon at the imperial ending.
+Anchored action matching prevents `nadie`, `costas`, and `volvió` from causing
+swimming, sewing and flying. Bambi's mother is a doe; Heidi has goats instead
+of sheep; the ugly-duckling story has a hen rather than a rooster. Sleeping
+figures keep their eyes shut. Page-specific scenery also selects its ambience.
+
+Publication remains pending explicit authorization to send the code to the
+public GitHub repository, after the approval reviewer blocked that upload.
 
 ## Model and runtime contract
 
@@ -30,16 +49,28 @@ unfinished art-generation task and are not claimed as replaced here.
 - Instanced GPU buffers and the dragon's owned relief texture are released
   when actors are removed. Shared material surfaces remain shared.
 
-## Verification
+## Verification and release blockers
 
-- Full catalog geometry/articulation tests include all 922 pages' cast mapping.
-- Browser traversal on the compiled preview: all 46 books opened, offered the
+- Latest local `npm run check`: 171 tests pass; production build passes; the
+  quality and curriculum checks pass. Full catalog geometry/articulation tests
+  include all 922 pages' cast mapping. These checks do not prove visual fidelity
+  or audible narration in a real browser.
+- Earlier browser traversal on the compiled preview: all 46 books opened, offered the
   read-aloud control, selected page 1, advanced to page 2, closed and returned
   to the shelf. No warning/error console entries after this traversal.
-- Desktop visual inspection: original clothes and wolf, quadruped/bird scene,
-  dragon; narration starts, tracks words, advances and pauses.
+- Earlier desktop visual inspection included original clothes and wolf and a
+  quadruped/bird scene. The latest dragon review covered pages 1, 5 and 10,
+  including their different cast, props and backgrounds.
 - 390 × 844 browser viewport: dragon stage remains above the scrollable text,
-  navigation/read-aloud controls fit; changing page during narration works.
+  navigation/read-aloud controls fit.
+- Latest live device-voice attempt FAILS in both the in-app browser and Chrome:
+  native speech ends too early and the page correctly does not advance. Paused
+  engine recovery and bounded Spanish-voice retry are implemented and unit
+  tested, but do not resolve this observed failure. Do not report narration as
+  working based on earlier successful checks or simulated speech events.
+- Publication is not performed. Public production still serves the older art.
+  Public-code upload needs the explicit destination approval requested from
+  the user; no alternative deployment path is used to bypass that block.
 - This is representative rendered review plus exhaustive model/catalog checks,
   not a claim that every frame of all 922 pages was manually reviewed or that
   physical iOS Safari testing was performed.

@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { mat, part, ell, tube, eyePair, finish, details } from './sculpting.js';
 
 const QUADS = {
-  bambi: ['Bambi', 'deer', '#b98152'], liebre: ['Liebre', 'hare', '#a8947c'],
+  bambi: ['Bambi', 'deer', '#b98152'], cierva: ['Cierva', 'doe', '#9e7955'], cabra: ['Cabra', 'goat', '#cbc0a3'], liebre: ['Liebre', 'hare', '#a8947c'],
   gato: ['Gato', 'cat', '#958574'], leon: ['León', 'lion', '#bd965d'],
   raton: ['Ratón', 'mouse', '#9e9589'], burro: ['Burro', 'donkey', '#8e8982'],
   perro: ['Perro', 'dog', '#a7764c'], lobo: ['Lobo', 'wolf', '#6e7780'],
@@ -15,9 +15,9 @@ const QUADS = {
 export function quadruped(kind, color, { bonnet = false } = {}) {
   const root = new THREE.Group(), skin = mat(color, { rough: .85, surface: kind === 'sheep' ? 'wool' : 'fur' });
   const cream = mat('#e3d6ba', { rough: .92, surface: 'fur' }), dark = mat('#3e3b34', { rough: .74 });
-  const pink = mat('#b78b7b', { rough: .9 }), hoofed = ['deer','donkey','horse','cow','vicuna','sheep'].includes(kind);
+  const pink = mat('#b78b7b', { rough: .9 }), hoofed = ['deer','doe','goat','donkey','horse','cow','vicuna','sheep'].includes(kind);
   const short = ['mouse','hare','bear'].includes(kind), crouched=['mouse','hare'].includes(kind);
-  const longNeck = ['vicuna','horse','deer'].includes(kind), slim=['deer','vicuna'].includes(kind);
+  const longNeck = ['vicuna','horse','deer','doe'].includes(kind), slim=['deer','doe','vicuna'].includes(kind);
   const bodyY=crouched?.28:slim?.46:.39, headY=crouched?.50:longNeck?.79:.66;
   ell(root, skin, [0,bodyY,-.03], [slim?.125:.17,crouched?.15:slim?.15:.185,crouched?.23:.31]);
   ell(root, cream, [0,bodyY-.06,.025], [slim?.095:.13,.105,crouched?.18:.235]);
@@ -31,7 +31,7 @@ export function quadruped(kind, color, { bonnet = false } = {}) {
   for (const s of [-1,1]) {
     const brow = ell(head, skin, [s*.073,.061,.095],[.037,.012,.027]); brow.rotation.z=s*.08;
     const ear = part(head,'ear',s,[s*.084,.086,-.026]);
-    const long = ['hare','donkey'].includes(kind), pointed = ['wolf','fox','cat','deer'].includes(kind);
+    const long = ['hare','donkey'].includes(kind), pointed = ['wolf','fox','cat','deer','doe','goat'].includes(kind);
     if (pointed) {
       tube(ear,skin,[[0,0,0],[s*.028,.09,-.01],[s*.018,.147,-.02]],[.055,.035,.001],{segments:10,sides:10,flatten:.43});
       ell(ear,pink,[s*.016,.066,.02],[.025,.051,.008],[0,0,-s*.17]);
@@ -40,6 +40,7 @@ export function quadruped(kind, color, { bonnet = false } = {}) {
       ell(ear,pink,[s*.019,long?.095:.020,.019],[long?.023:.028,long?.083:.027,.007],[0,0,-s*.17]);
     }
     if (kind==='cow') tube(head,cream,[[s*.10,.085,-.025],[s*.155,.155,-.035],[s*.14,.20,-.02]],[.027,.016,.001],{segments:10});
+    if (kind==='goat') tube(head,dark,[[s*.06,.10,-.015],[s*.07,.25,-.09],[s*.06,.29,-.20]],[.028,.020,.001],{segments:14});
     for (const front of [true,false]) {
       const leg=part(root,'leg',front?s:-s,[s*(slim?.09:.12),bodyY+.01,front?.205:crouched?-.17:-.23]);
       if (kind==='bear' && front) leg.userData.arm=s;
@@ -51,7 +52,7 @@ export function quadruped(kind, color, { bonnet = false } = {}) {
     }
   }
   const tail=part(root,'tail',1,[0,bodyY+.05,crouched?-.23:-.30]);
-  const thick=['fox','wolf','cat'].includes(kind), tiny=['hare','deer','bear','sheep'].includes(kind);
+  const thick=['fox','wolf','cat'].includes(kind), tiny=['hare','deer','doe','goat','bear','sheep'].includes(kind);
   if(tiny)ell(tail,kind==='hare'?cream:skin,[0,0,-.028],[kind==='hare'?.052:.025,.037,.053]);
   else tube(tail,skin,[[0,0,0],[.06,-.055,-.10],[.16,-.075,-.22],[.23,.03,-.27]],[thick?.065:.028,thick?.06:.025,.026,.003],{segments:18,sides:10});
   if (kind==='fox') ell(tail,cream,[.19,-.02,-.255],[.037,.035,.065],[0,-.4,0]);
@@ -61,6 +62,7 @@ export function quadruped(kind, color, { bonnet = false } = {}) {
     details(head,mane,tufts); ell(tail,mane,[.23,.018,-.26],[.04,.048,.04]);
   }
   if(kind==='deer') details(root,cream,Array.from({length:22},(_,i)=>{const side=i%2?-1:1;return {p:[side*(.119-Math.abs((i%11)-5)*.004),.48+Math.sin(i*2.2)*.05,-.24+(i%11)*.041],s:[.007,.009,.011]};}));
+  if(kind==='goat') tube(head,cream,[[0,-.085,.08],[0,-.18,.065]],[.037,.002],{segments:10});
   if(kind==='cow') details(root,dark,[{p:[-.14,.46,-.10],s:[.026,.075,.115]},{p:[.14,.48,.04],s:[.03,.08,.085]},{p:[.03,.56,-.13],s:[.077,.022,.084]}]);
   if(kind==='sheep') {
     const wool=[]; for(let i=0;i<55;i++){const a=i*2.399,z=-.27+(i%11)*.049;wool.push({p:[Math.sin(a)*.155,.4+Math.cos(a)*.167,z],s:[.047,.040,.047]});} details(root,skin,wool);
@@ -93,7 +95,7 @@ function bird(kind,color) {
   }
   const tail=part(root,'tail',1,[0,.24,-.19]);
   details(tail,feathers,Array.from({length:7},(_,i)=>({p:[(i-3)*.023,kind==='rooster'?.10:0,-.10],s:[.025,kind==='rooster'?.18:.025,.14],r:[kind==='rooster'?-.9:-.18,(i-3)*.11,0]})));
-  if(kind==='rooster'){const red=mat('#a23e36',{rough:.78});details(head,red,Array.from({length:5},(_,i)=>({p:[0,.08+Math.sin(i*.75)*.035,-.07+i*.038],s:[.026,.043,.031]})));ell(head,red,[0,-.055,.07],[.025,.052,.02]);}
+  if(kind==='rooster'||kind==='hen'){const red=mat('#a23e36',{rough:.78});details(head,red,Array.from({length:5},(_,i)=>({p:[0,.08+Math.sin(i*.75)*.035,-.07+i*.038],s:[.026,kind==='hen'?.024:.043,.031]})));ell(head,red,[0,-.055,.07],[.025,kind==='hen'?.029:.052,.02]);}
   if(kind==='woodpecker') ell(head,mat('#aa4e42'),[0,.076,-.015],[.051,.038,.071]);
   return finish(root,'bird',{species:kind,legs:2,wings:2});
 }
@@ -174,6 +176,7 @@ function seaAnimal(kind,color) {
 }
 
 export const SCULPTED_ANIMALS = [
+  {id:'gallina',label:'Gallina',build:()=>bird('hen','#9e7750')},
   ...Object.entries(QUADS).map(([id,[label,kind,color]])=>({id,label,build:()=>quadruped(kind,color)})),
   {id:'lobo-cama',label:'Lobo disfrazado',build:()=>quadruped('wolf','#6e7780',{bonnet:true})},
   ...[['patito','Patito','duck','#a59e89'],['cisne','Cisne','swan','#e4e1d3'],['paloma','Paloma','dove','#dddccf'],['gallo','Gallo','rooster','#bd8b56'],['buho','Búho','owl','#8e7657'],['pajarito','Pajarito','bird','#9aa57a'],['picaflor','Picaflor','hummingbird','#578b79'],['pelicano','Pelícano','pelican','#d5d0bd'],['carpintero','Carpintero','woodpecker','#676851']].map(([id,label,kind,color])=>({id,label,build:()=>bird(kind,color)})),

@@ -49,7 +49,7 @@ export function eyePair(head, { spread = .08, y = .02, z = .10, radius = .026, i
 export function finish(root, family, anatomy = {}) {
   // Present animal bodies in three-quarter view; the outer holder remains
   // available to the stage for gaze, travel and user-triggered turns.
-  if (['quadruped', 'reptile', 'aquatic'].includes(family)) root.rotation.y = .52;
+  if (['quadruped', 'reptile', 'aquatic'].includes(family)) root.rotation.y = root.userData.viewYaw ?? .52;
   const holder = fit(root, .30);
   // A turtle or butterfly is naturally lower than a standing person. Fit the
   // full silhouette uniformly instead of stretching every species to 30 cm.

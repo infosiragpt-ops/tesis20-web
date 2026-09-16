@@ -103,8 +103,8 @@ export default function CuentosApp() {
     setMusicMood(reading ? "lectura" : "biblioteca");
     // El ambiente del escenario (río, bosque, mar…) solo suena con el libro abierto.
     const book = reading ? BOOKS.find((b) => b.id === selectedId) : null;
-    setAmbient(book ? book.set : null);
-  }, [reading, selectedId]);
+    setAmbient(book ? book.pages[page]?.set || book.set : null);
+  }, [reading, selectedId, page]);
 
   const showToast = useCallback((message, icon) => {
     setToast({ message, icon, id: Date.now() });
@@ -944,7 +944,13 @@ function Reader({ book, page, state, suspended, pinRef, onPage, onClose, onStar,
                   ? 'No hay una voz en español disponible. Instálala en los ajustes de voz de tu dispositivo y vuelve a tocar Léemelo.'
                   : ['interrupted', 'canceled'].includes(result.reason)
                     ? 'La voz del dispositivo se interrumpió. Toca Léemelo para volver a leer esta página.'
-                    : "No se pudo escuchar esta página. Toca ▶ Léemelo para intentarlo otra vez.",
+                    : result.reason === 'short'
+                      ? 'La voz del dispositivo terminó antes de leer el texto. Toca Léemelo para volver a intentarlo.'
+                      : ['not-started','timeout'].includes(result.reason)
+                        ? 'La voz del dispositivo no respondió. Toca Léemelo para reintentarlo o abre el cuento en Safari o Chrome.'
+                        : ['synthesis-failed','voice-unavailable','language-unavailable'].includes(result.reason)
+                          ? 'El dispositivo no pudo usar su voz en español. Revisa las voces instaladas o abre el cuento en Safari o Chrome.'
+                          : "No se pudo escuchar esta página. Toca ▶ Léemelo para intentarlo otra vez.",
             );
             return;
           }
