@@ -890,10 +890,12 @@ function readResult(elapsedMs, expectedMs) {
   return elapsedMs >= Math.min(1200, Math.max(300, expectedMs * 0.5)) ? { ok: true, elapsedMs } : { ok: false, reason: "short", elapsedMs };
 }
 
-function playRecorded(track, { onWord, onEnd }, mySession) {
+// `onTime(currentTime, playing)` alimenta el reloj del cuento (film/story-clock.js)
+// una vez por fotograma; `onSource('studio')` avisa de que suena la voz grabada.
+function playRecorded(track, { onWord, onTime, onSource, onEnd }, mySession) {
   const element = ensureNarrator();
   if (!element) return Promise.reject(new Error("sin reproductor"));
-  if (track.segments?.length) return playSegments(track, { onWord, onEnd }, mySession, element);
+  if (track.segments?.length) return playSegments(track, { onWord, onTime, onSource, onEnd }, mySession, element);
   return fetchClip(track.src).then((url) => {
     if (mySession !== session) return;
     const starts = Array.isArray(track.words) && track.words.length ? track.words : null;
@@ -905,8 +907,10 @@ function playRecorded(track, { onWord, onEnd }, mySession) {
     const startedAt = performance.now();
 
     let index = -1;
+    const ticking = Boolean((starts && onWord) || onTime);
     const tick = () => {
       if (mySession !== session) return;
+      onTime?.(element.currentTime, !element.paused);
       if (starts && onWord) {
         const next = wordIndexAt(starts, element.currentTime + HIGHLIGHT_LEAD);
         if (next !== index) {
@@ -932,13 +936,14 @@ function playRecorded(track, { onWord, onEnd }, mySession) {
     // enganchan después para no acabar la lectura dos veces.
     return Promise.resolve(element.play()).then(() => {
       if (mySession !== session) return;
+      onSource?.("studio");
       element.onended = finished;
       element.onerror = failed;
       if (element.ended) {
         finished();
         return;
       }
-      if (starts && onWord) {
+      if (ticking) {
         resumeTick = tick;
         tick();
       }
@@ -974,7 +979,7 @@ function seekTo(element, start) {
  * de lectura. Todos los clips se descargan antes de empezar, así el cambio
  * de un tramo a otro no espera a la red.
  */
-function playSegments(track, { onWord, onEnd }, mySession, element) {
+function playSegments(track, { onWord, onTime, onSource, onEnd }, mySession, element) {
   const segments = track.segments;
   return Promise.all(segments.map((segment) => fetchClip(segment.src))).then((urls) => {
     if (mySession !== session) return;
@@ -1032,6 +1037,8 @@ function playSegments(track, { onWord, onEnd }, mySession, element) {
       const segment = segments[position];
       if (!switching) {
         const at = element.currentTime;
+        // El reloj del cuento recibe el tiempo de la página, no el del clip.
+        if (at >= segment.start - 0.05) onTime?.(base + Math.max(0, at - segment.start), !element.paused);
         // Un tramo que acaba donde acaba su clip lo cierra `onended`.
         if (!segment.toEnd && at >= segment.end) {
           advance();
@@ -1051,6 +1058,7 @@ function playSegments(track, { onWord, onEnd }, mySession, element) {
     element.onerror = null;
     return load(0).then(() => {
       if (mySession !== session) return;
+      onSource?.("studio");
       element.onended = () => advance();
       element.onerror = failed;
       resumeTick = tick;
@@ -1090,11 +1098,13 @@ export function stopSpeech() {
  * eventos `boundary` cuando el navegador los emite y, si no, con un
  * temporizador calculado por número de sílabas.
  */
-function speakWithBrowser(text, { onWord, onEnd, onStart, rate = 0.86 }, mySession) {
+function speakWithBrowser(text, { onWord, onSource, onEnd, onStart, rate = 0.86 }, mySession) {
   if (!browserSpeechAvailable()) {
     onEnd?.({ ok: false, reason: "unavailable" });
     return;
   }
+  // También cuando un clip de estudio falla y la página sigue con esta voz.
+  onSource?.("device", { rate });
   deviceNarration = createDeviceNarration(text, {
     synth: window.speechSynthesis, Utterance: window.SpeechSynthesisUtterance, rate,
     onWord: index => { if (mySession === session) onWord?.(index); },
@@ -1108,7 +1118,7 @@ function speakWithBrowser(text, { onWord, onEnd, onStart, rate = 0.86 }, mySessi
  * clip de estudio y el subrayado sigue sus marcas de tiempo; sin él, o si el
  * clip falla, habla el navegador. Devuelve una función para detenerlo.
  */
-export function speak(text, { track = null, onWord, onEnd, onStart, rate = 0.86 } = {}) {
+export function speak(text, { track = null, onWord, onTime, onSource, onEnd, onStart, rate = 0.86 } = {}) {
   if (typeof window === "undefined" || muted) {
     onEnd?.({ ok: false, reason: muted ? "muted" : "unavailable" });
     return () => {};
@@ -1116,12 +1126,12 @@ export function speak(text, { track = null, onWord, onEnd, onStart, rate = 0.86 
   stopSpeech();
   const mySession = session;
   if (track?.src && ensureNarrator()) {
-    playRecorded(track, { onWord, onEnd }, mySession).catch(() => {
+    playRecorded(track, { onWord, onTime, onSource, onEnd }, mySession).catch(() => {
       if (mySession !== session) return;
-      speakWithBrowser(text, { onWord, onEnd, onStart, rate }, mySession);
+      speakWithBrowser(text, { onWord, onSource, onEnd, onStart, rate }, mySession);
     });
   } else {
-    speakWithBrowser(text, { onWord, onEnd, onStart, rate }, mySession);
+    speakWithBrowser(text, { onWord, onSource, onEnd, onStart, rate }, mySession);
   }
   return () => {
     if (mySession === session) stopSpeech();

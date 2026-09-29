@@ -29,7 +29,8 @@ test("cada personaje del reparto tiene una figura volumétrica y nombre", () => 
   for (const id of cast) {
     assert.ok(hasToy(id), `Falta figura 3D: ${id}`);
     assert.notEqual(toyLabel(id), "Figura mágica");
-    const toy = buildToy(id); let meshes = 0;
+    // Composición de autor: se cuenta antes del horneado, que funde piezas.
+    const toy = buildToy(id, { bake: false }); let meshes = 0;
     toy.traverse(obj => { if (obj.isMesh) meshes++; });
     assert.ok(meshes >= 4, `${id} debe tener volumen compuesto`);
   }

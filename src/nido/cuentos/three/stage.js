@@ -28,6 +28,11 @@ import { bookIndexAt, bookPositionAt, clamp, clampZoom, dragScale, settleBook, d
 import { createToyFeedback } from "./toy-feedback.js";
 import { dioramaLayout, fitDioramaSlots } from './diorama-layout.js';
 import { cinemaFitDistance } from './cinema-framing.js';
+import { releaseResources, isSharedResource } from "./toys/bake.js";
+import { createWordHighlight } from "./word-highlight.js";
+import { createQualityGovernor, detectStartTier, tierPixelRatio, castsShadowAt, TIERS } from "../film/quality.js";
+import { createCursor } from "../film/timeline.js";
+import { burstEnd } from "../film/act-timing.js";
 
 const SHELF_TOYS = ["buho", "luna", "cometa", "oveja", "arbol", "ballena", "frasco", "barco", "tren", "estrella"];
 
@@ -83,7 +88,7 @@ export function createStage(canvas, options) {
   const {
     books,
     initialBookId,
-    reduceMotion = false,
+    reduceMotion: initialReduceMotion = false,
     onHoverBook = () => {},
     onFocusBook = () => {},
     onZoom = () => {},
@@ -98,14 +103,25 @@ export function createStage(canvas, options) {
     onTravel = () => {},
     // Una pieza de la obra se coloca o se recoge (clave de sonido).
     onWorkSound = () => {},
+    // Efecto de sonido de una palabra del guion de la página (clave de sonido).
+    onCue = () => {},
     onFrame = () => {},
     coverTexture, // (book) => Promise<Texture>
     emblemTexture, // (pinId) => Promise<Texture>
   } = options;
+  // Movimiento reducido: sigue a la preferencia del sistema en vivo (setReduceMotion).
+  let reduceMotion = Boolean(initialReduceMotion);
 
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: "high-performance" });
   const isMobile = window.matchMedia("(max-width: 760px)").matches;
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, isMobile ? 1.6 : 2));
+  // Calidad adaptable (film/quality.js): el escalón inicial depende del
+  // dispositivo (las tabletas ya no reciben el camino de escritorio) y luego
+  // se ajusta según el tiempo real de cada fotograma.
+  let startTier = detectStartTier(window);
+  const governor = createQualityGovernor({ startTier });
+  renderer.setPixelRatio(tierPixelRatio(governor.tier, window.devicePixelRatio));
+  // Los contadores (debug().perf) suman el fotograma entero: sombras y pases.
+  renderer.info.autoReset = false;
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFShadowMap;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -116,9 +132,14 @@ export function createStage(canvas, options) {
   scene.background = new THREE.Color(WALL_THEMES.default.bg);
   // Entorno de habitación precalculado: da reflejos y volumen reales a las
   // tapas brillantes, el vidrio y las figuras sin coste por fotograma.
-  const pmrem = new THREE.PMREMGenerator(renderer);
-  const environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
-  pmrem.dispose();
+  // Se regenera si la GPU pierde el contexto (su contenido vive solo en ella).
+  function roomEnvironment() {
+    const pmrem = new THREE.PMREMGenerator(renderer);
+    const texture = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+    pmrem.dispose();
+    return texture;
+  }
+  let environment = roomEnvironment();
   scene.environment = environment;
   scene.environmentIntensity = 0.42;
 
@@ -140,9 +161,9 @@ export function createStage(canvas, options) {
   let bokehPass = null;
   let composerW = 0;
   let composerH = 0;
-  const postEnabled = !reduceMotion && !isMobile;
+  const postEnabled = () => !reduceMotion && !isMobile;
   function ensureComposer() {
-    if (composer || !postEnabled) return composer;
+    if (composer || !postEnabled()) return composer;
     composer = new EffectComposer(renderer);
     composer.setPixelRatio(renderer.getPixelRatio());
     composer.addPass(new RenderPass(scene, camera));
@@ -157,7 +178,8 @@ export function createStage(canvas, options) {
   const sun = new THREE.DirectionalLight("#fff1d6", 1.95);
   sun.position.set(2.4, 4.2, 3.2);
   sun.castShadow = true;
-  sun.shadow.mapSize.set(isMobile ? 1024 : 2048, isMobile ? 1024 : 2048);
+  const shadowMapSize = TIERS[governor.tier].shadowMapSize;
+  sun.shadow.mapSize.set(shadowMapSize, shadowMapSize);
   sun.shadow.camera.near = 0.5;
   sun.shadow.camera.far = 14;
   sun.shadow.camera.left = -4.5;
@@ -269,6 +291,8 @@ export function createStage(canvas, options) {
     const x = (i - (books.length - 1) / 2) * bookSpacing;
     entry.home = { x, y: 0.89, z: -0.17, rx: -0.035, ry: 0.045 * ((i % 2) * 2 - 1) };
     entry.phase = i * 0.83;
+    // Clase de sombra (film/quality.js): el libro y su lámina pop-up.
+    entry.group.userData.shadowKind = "book";
     entry.group.position.set(x, entry.home.y, entry.home.z);
     entry.group.rotation.set(entry.home.rx, entry.home.ry, 0);
     scene.add(entry.group);
@@ -302,12 +326,18 @@ export function createStage(canvas, options) {
     const idx = toyGroups.indexOf(holder);
     if (idx >= 0) toyGroups.splice(idx, 1);
     toyState.delete(holder);
-    holder.traverse((obj) => {
-      if (obj.isInstancedMesh) obj.dispose();
-      obj.geometry?.dispose();
-      const list = Array.isArray(obj.material) ? obj.material : obj.material ? [obj.material] : [];
-      list.forEach(m => m.dispose());
+    // Geometrías, materiales y texturas propias (p. ej. la camisa a cuadros
+    // de Tito), una sola vez; nunca lo marcado `nidoShared`/`nidoSharedSurface`.
+    releaseResources(holder);
+  }
+
+  // Figuras de la repisa y de la mesa: decorado, sin sombra propia (en
+  // lectura quedan fuera de cuadro y la pasada de sombras las dibujaba igual).
+  function withoutShadows(root) {
+    root.traverse((obj) => {
+      if (obj.isMesh) obj.castShadow = false;
     });
+    return root;
   }
 
   function heroToyFor(book) {
@@ -329,7 +359,9 @@ export function createStage(canvas, options) {
     });
   }
 
-  // Un protagonista por libro, encima de su lomo.
+  // Un protagonista por libro, encima de su lomo. La figura se construye la
+  // primera vez que su libro queda cerca en la repisa (bucle `nearby`), en un
+  // momento libre del navegador: no se construyen 44 figuras al abrir /nido.
   bookEntries.forEach((entry, i) => {
     const toyId = heroToyFor(entry.book);
     if (!toyId) return;
@@ -340,13 +372,35 @@ export function createStage(canvas, options) {
     holder.userData.pinId = toyId;
     holder.userData.heroOf = entry.book.id;
     holder.rotation.y = 0.06 * ((i % 2) * 2 - 1);
-    holder.add(buildToy(toyId));
-    addHitArea(holder);
     scene.add(holder);
     heroHolders.set(entry.book.id, holder);
     toyGroups.push(holder);
     toyState.set(holder, { phase: i * 1.3, hop: 0, wiggle: 0, spin: 0 });
   });
+
+  const heroQueue = [];
+  let heroIdle = 0;
+  const requestIdle = (fn) => (window.requestIdleCallback ? window.requestIdleCallback(fn, { timeout: 250 }) : window.setTimeout(() => fn(null), 16));
+  const cancelIdle = (id) => (window.cancelIdleCallback ? window.cancelIdleCallback(id) : window.clearTimeout(id));
+  function ensureHero(holder) {
+    if (holder.userData.heroBuild) return;
+    holder.userData.heroBuild = "queued";
+    heroQueue.push(holder);
+    if (!heroIdle) heroIdle = requestIdle(buildQueuedHeroes);
+  }
+  function buildQueuedHeroes(deadline) {
+    heroIdle = 0;
+    if (!running) return;
+    // Al menos una figura por turno; más si el navegador tiene tiempo libre.
+    do {
+      const holder = heroQueue.shift();
+      if (!holder) break;
+      holder.add(withoutShadows(buildToy(holder.userData.toyId)));
+      addHitArea(holder);
+      holder.userData.heroBuild = "built";
+    } while (heroQueue.length && deadline && !deadline.didTimeout && deadline.timeRemaining() > 6);
+    if (heroQueue.length) heroIdle = requestIdle(buildQueuedHeroes);
+  }
 
   // Figuras decorativas entre los protagonistas, más pequeñas.
   SHELF_TOYS.forEach((id, i) => {
@@ -372,7 +426,7 @@ export function createStage(canvas, options) {
     const build = (texture) => {
       const toy = buildToy(toyId, { emblemTexture: texture });
       if (ghost) ghostify(toy);
-      holder.add(toy);
+      holder.add(withoutShadows(toy));
       addHitArea(holder);
     };
     if (hasToy(toyId) || !emblemTexture) build(null);
@@ -390,7 +444,9 @@ export function createStage(canvas, options) {
 
   function addHitArea(holder) {
     // Mantiene fácil el toque aunque la figura salte o tenga patas muy finas.
-    const hit = new THREE.Mesh(new THREE.BoxGeometry(0.29, 0.36, 0.27), new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false }));
+    // `visible: false` en el material: el raycast la sigue encontrando (como
+    // la caja del libro, book3d.js) pero no cuesta una llamada de dibujo.
+    const hit = new THREE.Mesh(new THREE.BoxGeometry(0.29, 0.36, 0.27), new THREE.MeshBasicMaterial({ visible: false }));
     hit.position.y = 0.18; hit.userData.hitArea = true; holder.add(hit);
   }
 
@@ -460,23 +516,33 @@ export function createStage(canvas, options) {
    * ilustración. `face` gira cada figura hacia el centro.
    */
 
-  // Narración viva: mientras la voz lee, el protagonista «habla» (un gesto de
-  // cabeza por palabra) y los demás lo miran y se mecen. Sin narración vuelven
-  // al bamboleo tranquilo.
+  // Narración viva: sólo quien dice de verdad una línea de diálogo «habla»
+  // (un gesto por palabra, ver film/dialogue.js) y los demás lo miran. La
+  // narradora no hace hablar a nadie. Sin diálogo vuelven al bamboleo tranquilo.
+  const speaking = new Set();
+  // Primer hablante: la cámara de cine se inclina hacia él.
   let speakingId = null;
+  let speakingLine = null;
   let talkPulse = 0;
-  function setSpeaking(actorId) {
-    speakingId = actorId || null;
+  // Figura nombrada por la voz: los demás la miran un momento.
+  let lookFocus = null;
+  function setSpeaking(actors) {
+    const list = (Array.isArray(actors) ? actors : [actors]).filter(Boolean);
+    speaking.clear();
+    list.forEach((id) => speaking.add(id));
+    speakingId = list[0] || null;
     talkPulse = 0;
   }
   function wordTick() {
-    if (speakingId) talkPulse = 1;
+    if (speaking.size) talkPulse = 1;
   }
 
   // «Pipo» en la voz → la figura de Pipo se ilumina (aro de luz bajo los pies
   // y brillo en su color), da un saltito y toma la palabra: los demás la miran.
   const glowRingGeometry = new THREE.RingGeometry(0.075, 0.13, 40);
-  function nameActor(actorId) {
+  // Compartida por todos los aros: releaseToy no debe liberarla.
+  glowRingGeometry.userData.nidoShared = true;
+  function nameActor(actorId, seconds = 1.5) {
     const holder = pageActorById.get(actorId);
     if (!holder) return false;
     if (!holder.userData.glowRing) {
@@ -495,8 +561,8 @@ export function createStage(canvas, options) {
       holder.userData.emissives = emissives;
     }
     holder.userData.glow = 1;
-    speakingId = actorId;
-    talkPulse = 1;
+    // Nombrar no es hablar: sólo atrae las miradas.
+    lookFocus = { actor: actorId, until: clock.t + seconds };
     const state = toyState.get(holder);
     if (state && !reduceMotion) tween(state, { hop: 0.045 }, { duration: 0.18, easing: ease.out, onComplete: () => tween(state, { hop: 0 }, { duration: 0.4, easing: ease.outBack }) });
     return true;
@@ -606,6 +672,7 @@ export function createStage(canvas, options) {
       holder.userData.baseY = holder.position.y;
       holder.userData.baseRotY = slot.face;
       holder.userData.isCast = index < castIds.length;
+      holder.userData.shadowKind = holder.userData.isCast ? "actor" : "prop";
       holder.userData.phase = index * 1.7 + (page.t || page.x || '').length * 0.03;
       holder.userData.storyActor = id;
       holder.userData.toyId = id;
@@ -616,6 +683,7 @@ export function createStage(canvas, options) {
       holder.userData.pageAct = holder.userData.act;
       holder.userData.slotX = slot.x;
       holder.userData.faceTurn = 0;
+      holder.userData.lookYaw = 0;
       holder.userData.travel = null;
       // `enter`: la figura entra caminando (o volando, nadando…) desde un lado.
       // Sin indicación, cada personaje entra a escena alternando lados, salvo
@@ -657,24 +725,163 @@ export function createStage(canvas, options) {
       spark.userData.baseY = spark.position.y;
       spark.userData.phase = i * 0.9;
       spark.userData.storySpark = true;
+      spark.userData.shadowKind = "prop";
       selected.dioramaRoot.add(spark);
       pageActors.push(spark);
     }
     setupWork(page);
+    // En escalones bajos la utilería nueva nace ya sin sombra.
+    applyShadowCasters(selected.dioramaRoot);
     after(0.75, () => {
       if (cinema) measureDiorama();
     });
   }
 
+  /* ------------------------- reloj del cuento ------------------------- */
+  // Mientras suena la narración, toda acción del cuento sigue un único reloj
+  // derivado del audio (film/story-clock.js): `storyT`, muestreado una vez por
+  // fotograma. El guion compilado de la página (film/timeline.js) dispara sus
+  // eventos cuando `storyT` los alcanza; un tirón largo los dispara todos.
+  let storyClock = null;
+  let storyTimeline = null;
+  let storyCursor = null;
+  let storyT = null;
+  let lastStoryT = null;
+  let filmLog = [];
+
+  function actingBase() {
+    return storyTimeline && storyT !== null ? "story" : "wall";
+  }
+  /** Hora para las acciones: la del cuento si hay guion sonando, si no la del escenario. */
+  function actingNow(base = actingBase()) {
+    return base === "story" ? storyT ?? lastStoryT ?? 0 : clock.t;
+  }
+  function burstNow(burst) {
+    return actingNow(burst.base);
+  }
+
   /**
-   * Acción breve de un actor (soplar, temblar, correr…) disparada desde la
-   * narración; cuando termina vuelve a la acción sostenida de la página.
+   * Ráfaga de una acción (soplar, temblar, correr…). `start` es el instante
+   * en que empieza (en el reloj que la creó, `base`), de modo que su pico cae
+   * en la palabra; termina en un cero del movimiento (film/act-timing.js) y
+   * luego vuelve la acción sostenida de la página.
+   */
+  function startBurst(holder, act, { start, until, base } = {}) {
+    const clockBase = base || actingBase();
+    const from = start ?? actingNow(clockBase);
+    const to = Math.max(from, until ?? from + 1.5);
+    holder.userData.burst = { act, start: from, until: to, end: burstEnd(act, from, to), base: clockBase };
+  }
+
+  /**
+   * Acción breve de un actor disparada desde la narración; cuando termina
+   * vuelve a la acción sostenida de la página.
    */
   function playAct(actorId, act, ms = 1500) {
     const holder = pageActorById.get(actorId);
     if (!holder) return false;
-    holder.userData.burst = { act, until: performance.now() + ms };
+    const start = actingNow();
+    startBurst(holder, act, { start, until: start + ms / 1000 });
     return true;
+  }
+
+  function setStoryClock(nextClock) {
+    storyClock = nextClock || null;
+    if (!storyClock) storyT = null;
+  }
+
+  /** Guion compilado de la página (o null al detener la lectura). */
+  function playTimeline(nextTimeline) {
+    // Las ráfagas en curso pasan al reloj del escenario y terminan solas.
+    const shift = clock.t - (lastStoryT ?? 0);
+    pageActors.forEach((actor) => {
+      const burst = actor.userData.burst;
+      if (burst?.base !== "story") return;
+      burst.start += shift;
+      burst.until += shift;
+      burst.end += shift;
+      burst.base = "wall";
+    });
+    storyTimeline = nextTimeline && Array.isArray(nextTimeline.events) ? nextTimeline : null;
+    storyCursor = storyTimeline ? createCursor(storyTimeline.events) : null;
+    storyT = null;
+    lastStoryT = null;
+    filmLog = [];
+    speakingLine = null;
+    lookFocus = null;
+    setSpeaking(null);
+  }
+
+  function dispatchStoryEvent(event) {
+    if (filmLog.length < 2000) {
+      filmLog.push({ kind: event.kind, actor: event.actor, act: event.act || event.sfx || event.scene || event.to || event.mood || null, word: event.word, t: event.t, fireAt: event.fireAt, at: storyT });
+    }
+    switch (event.kind) {
+      case "act": {
+        const holder = pageActorById.get(event.actor);
+        if (holder) startBurst(holder, event.act, { start: event.fireAt, until: event.until, base: "story" });
+        break;
+      }
+      case "move":
+        travelTo(event.actor, event.to, event.act || "walk", (event.until - event.t) * 1000, { start: event.fireAt, base: "story" });
+        break;
+      case "scene":
+        sceneEvent(event.scene);
+        break;
+      case "name":
+        nameActor(event.actor, Math.max(0.5, (event.until ?? event.t + 1.5) - event.t));
+        break;
+      case "sfx":
+        onCue(event.sfx);
+        break;
+      case "line-start":
+        speakingLine = event.line;
+        setSpeaking(event.speakers || event.actor);
+        break;
+      case "line-end":
+        if (speakingLine === event.line) {
+          speakingLine = null;
+          setSpeaking(null);
+        }
+        break;
+      case "talk":
+        if (speakingLine === event.line) talkPulse = 1;
+        break;
+      default:
+        // `mood` lo usarán las caras (WP6).
+        break;
+    }
+  }
+
+  function updateStoryClock(now) {
+    storyT = storyClock ? storyClock.sample(now) : null;
+    if (storyT === null) return;
+    lastStoryT = storyT;
+    if (!storyCursor) return;
+    if (storyClock.seeked) {
+      storyCursor.seek(storyT);
+      return;
+    }
+    for (const event of storyCursor.advance(storyT)) dispatchStoryEvent(event);
+  }
+
+  /** Movimiento reducido en vivo: al activarlo nada queda a medio camino. */
+  function setReduceMotion(value) {
+    const next = Boolean(value);
+    if (next === reduceMotion) return;
+    reduceMotion = next;
+    feedback.setReduceMotion(next);
+    if (!next) return;
+    pageActors.forEach((actor) => {
+      if (!actor.userData.storyActor) return;
+      landTravel(actor);
+      actor.userData.burst = null;
+      actor.userData.faceTurn = 0;
+      actor.userData.lookYaw = 0;
+      actor.position.x = actor.userData.baseX ?? actor.position.x;
+      actor.position.y = actor.userData.baseY ?? actor.position.y;
+      actor.rotation.set(0, actor.userData.baseRotY || 0, 0);
+    });
   }
 
   /* ------------------------------ cine ------------------------------ */
@@ -850,21 +1057,42 @@ export function createStage(canvas, options) {
    * La figura camina (o corre, vuela, nada…) hasta un punto de la escena:
    * «left», «right», «center» o fuera de escena («away-left»/«away-right»).
    */
-  function travelTo(actorId, where, act = "walk", ms = 0) {
+  function travelTo(actorId, where, act = "walk", ms = 0, { start, base } = {}) {
     const holder = pageActorById.get(actorId);
     if (!holder || !(where in TRAVEL_X)) return false;
     const to = holder.userData.slotX + TRAVEL_X[where];
     holder.userData.travel = { to, act, speed: travelSpeed(act), then: holder.userData.pageAct ?? null, hide: where.startsWith("away") };
-    holder.userData.burst = { act, until: performance.now() + Math.max(ms || 0, (Math.abs(to - holder.userData.baseX) / travelSpeed(act)) * 1000 + 300) };
     holder.visible = true;
     onTravel(actorId, act);
+    if (reduceMotion) {
+      landTravel(holder);
+      return true;
+    }
+    const clockBase = base || actingBase();
+    const from = start ?? actingNow(clockBase);
+    const until = from + Math.max((ms || 0) / 1000, Math.abs(to - holder.userData.baseX) / travelSpeed(act) + 0.3);
+    const current = holder.userData.burst;
+    // Si la zancada ya empezó antes de la palabra (ACT_LEAD), sigue en fase.
+    if (current && current.act === act && current.base === clockBase && current.start <= from) startBurst(holder, act, { start: current.start, until: Math.max(until, current.until), base: clockBase });
+    else startBurst(holder, act, { start: from, until, base: clockBase });
     return true;
+  }
+
+  /** Termina un desplazamiento en su destino al instante (movimiento reducido). */
+  function landTravel(actor) {
+    const travel = actor.userData.travel;
+    if (!travel) return;
+    actor.userData.baseX = travel.to;
+    actor.position.x = travel.to;
+    actor.userData.act = travel.then;
+    actor.userData.travel = null;
+    if (travel.hide) actor.visible = false;
   }
 
   function updateTravel(actor, dt) {
     // Cada personaje que no habla ni actúa da, de vez en cuando, unos pasos
     // cortos por su zona: la escena nunca está congelada.
-    if (!actor.userData.travel && !actor.userData.burst && !actor.userData.working && actor.userData.isCast && actor.userData.storyActor !== speakingId && !reduceMotion) {
+    if (!actor.userData.travel && !actor.userData.burst && !actor.userData.working && actor.userData.isCast && !speaking.has(actor.userData.storyActor) && !reduceMotion) {
       const now = clock.t;
       if (!actor.userData.nextStroll) actor.userData.nextStroll = now + 4 + Math.random() * 6;
       else if (now > actor.userData.nextStroll) {
@@ -927,6 +1155,7 @@ export function createStage(canvas, options) {
     // Delante de la lámina del pop-up (z > 0.02) y detrás de la fila de personajes.
     const root = new THREE.Group();
     root.position.set(0, 0.018, 0.07);
+    root.userData.shadowKind = "prop";
     selected.dioramaRoot.add(root);
     const site = new THREE.Group();
     site.position.set(task.gather ? 0 : WORK_SITE_X, 0, task.gather ? 0.01 : 0);
@@ -961,6 +1190,7 @@ export function createStage(canvas, options) {
     const holder = work.holder;
     holder.userData.travel = { to: x, act, speed: 0.27, then: holder.userData.pageAct, hide: false };
     holder.userData.act = act;
+    if (reduceMotion) landTravel(holder);
   }
 
   /** Hay una figura a medio trabajo (para que la página espere a que termine). */
@@ -998,7 +1228,7 @@ export function createStage(canvas, options) {
     const finish = () => {
       work.phase = "done";
       holder.userData.working = false;
-      holder.userData.burst = { act: "cheer", until: performance.now() + 3000 };
+      startBurst(holder, "cheer", { start: clock.t, until: clock.t + 3, base: "wall" });
     };
     switch (work.phase) {
       case "start":
@@ -1011,7 +1241,7 @@ export function createStage(canvas, options) {
         if (!traveling) {
           work.phase = "pick";
           work.timer = 0.45;
-          holder.userData.burst = { act: "build", until: performance.now() + 450 };
+          startBurst(holder, "build", { start: clock.t, until: clock.t + 0.45, base: "wall" });
           if (work.task.gather) {
             work.carried = [work.pieces[work.placed]];
             carry(work.carried[0], 0);
@@ -1057,7 +1287,7 @@ export function createStage(canvas, options) {
             placeCarried(piece);
             work.placed += 1;
             onWorkSound(work.task.sound);
-            holder.userData.burst = { act: "build", until: performance.now() + 500 };
+            startBurst(holder, "build", { start: clock.t, until: clock.t + 0.5, base: "wall" });
             work.timer = 0.5;
           } else if (work.placed >= work.pieces.length) finish();
           else {
@@ -1125,10 +1355,20 @@ export function createStage(canvas, options) {
   // figura declara en userData (head, arm, wing, flutter, tail, ear, leg,
   // spray). El bucle principal restaura la pose de reposo de esas partes cada
   // fotograma, así que aquí sólo se suman desplazamientos.
-  function applyAct(actor, t) {
-    const burst = actor.userData.burst;
-    if (burst && performance.now() > burst.until) actor.userData.burst = null;
-    const act = actor.userData.burst?.act || actor.userData.act;
+  function applyAct(actor, wallT) {
+    let burst = actor.userData.burst;
+    if (burst && burstNow(burst) >= burst.end) {
+      actor.userData.burst = null;
+      burst = null;
+    }
+    const act = burst?.act || actor.userData.act;
+    // Una ráfaga corre en su propio tiempo (desde su inicio y sin desfase),
+    // así el primer pico cae en la palabra; la acción sostenida sigue al
+    // reloj del escenario con el desfase de cada figura. Si la ráfaga repite
+    // la acción que la figura ya hace, sigue con ese mismo reloj: reiniciarla
+    // daba un salto de pose en un solo cuadro (medio giro al saltar de alegría).
+    const ownTime = Boolean(burst) && burst.act !== actor.userData.act;
+    const t = ownTime ? Math.max(0, burstNow(burst) - burst.start) : wallT;
     const baseX = actor.userData.baseX ?? actor.position.x;
     const baseY = actor.userData.baseY ?? 0;
     actor.position.x = baseX;
@@ -1140,7 +1380,7 @@ export function createStage(canvas, options) {
     const tails = findParts(actor, "tail");
     const ears = findParts(actor, "ear");
     const legs = findParts(actor, "leg");
-    const ph = actor.userData.phase || 0;
+    const ph = ownTime ? 0 : actor.userData.phase || 0;
     const armsUp = (amount, wobble = 0) => arms.forEach((arm) => { arm.rotation.z += arm.userData.arm * amount + Math.sin(t * 6 + ph) * wobble; });
     const flap = (speed, amount) => {
       wings.forEach((wing) => { wing.rotation.z += Math.sin(t * speed + ph) * amount * wing.userData.wing; });
@@ -1929,6 +2169,7 @@ export function createStage(canvas, options) {
     closeBook(true);
     clearPageDiorama();
     entry.setStoryTexture(null);
+    entry.wordHighlight?.setWords([]);
     entry.setPopupTexture(null);
     entry.storyTexture = null;
     selected = null;
@@ -2020,6 +2261,9 @@ export function createStage(canvas, options) {
 
   function showPage(texture) {
     if (!selected || mode !== "reading") return;
+    // Cambio de página: buen momento para aplicar una densidad de píxeles
+    // pendiente del gobernador de calidad (el salto no se nota).
+    flushPixelRatio();
     pageMotion.cancel();
     const entry = selected;
     const pivot = entry.popupPivot;
@@ -2052,13 +2296,34 @@ export function createStage(canvas, options) {
 
   function setStoryPage(texture, page) {
     selected?.setStoryTexture(texture);
-    if (selected) selected.storyTexture = texture;
+    if (selected) {
+      selected.storyTexture = texture;
+      syncWordHighlight(selected, texture);
+    }
     updatePageDiorama(page);
+  }
+
+  // Resaltado de lectura como capa sobre la hoja (word-highlight.js): cambiar
+  // de palabra no vuelve a subir la textura de la página a la GPU.
+  function syncWordHighlight(entry, texture) {
+    const info = texture?.userData?.page;
+    if (!info?.words?.length) {
+      entry.wordHighlight?.setWords([]);
+      return;
+    }
+    // Una textura pintada antes por el camino de respaldo vuelve a estar limpia.
+    if (info.active !== -1) highlightStoryWord(texture, -1);
+    entry.wordHighlight ??= createWordHighlight(entry.storyPage, { reduceMotion: () => reduceMotion });
+    entry.wordHighlight.setWords(info.words, info.canvas.width, info.canvas.height);
   }
 
   /** Resalta en la página del libro la palabra que está sonando (−1 = ninguna). */
   function setStoryWord(index) {
-    if (selected?.storyTexture) highlightStoryWord(selected.storyTexture, index);
+    const texture = selected?.storyTexture;
+    if (!texture) return;
+    if (selected.wordHighlight?.hasWords) selected.wordHighlight.setIndex(index);
+    // Respaldo: una textura sin cajas de palabra se repinta como antes.
+    else highlightStoryWord(texture, index);
   }
 
   const tmpVec = new THREE.Vector3();
@@ -2102,6 +2367,97 @@ export function createStage(canvas, options) {
   let hidden = false;
   const clock = { t: 0 };
 
+  /* ------------------------- calidad adaptable ------------------------- */
+  // film/quality.js decide el escalón; aquí se aplica. Nunca cambia el número
+  // de luces (recompilaría shaders): solo densidad de píxeles, tamaño del mapa
+  // de sombras y qué clases de objeto proyectan sombra.
+  let pendingPixelRatio = null;
+  function applyPixelRatio(value) {
+    pendingPixelRatio = null;
+    if (Math.abs(renderer.getPixelRatio() - value) < 1e-3) return;
+    renderer.setPixelRatio(value);
+    if (composer) {
+      composer.setPixelRatio(value);
+      composerW = 0;
+    }
+  }
+  // La densidad cambia en un cambio de página (o corte de cámara, WP5) o, si
+  // no llega ninguno, a los 3 s: así el salto de nitidez no se ve.
+  function requestPixelRatio(value) {
+    if (Math.abs(renderer.getPixelRatio() - value) < 1e-3) pendingPixelRatio = null;
+    // Pasos seguidos no reinician la espera: vale el último valor pedido.
+    else if (pendingPixelRatio) pendingPixelRatio.value = value;
+    else pendingPixelRatio = { value, since: performance.now() };
+  }
+  function flushPixelRatio() {
+    if (pendingPixelRatio) applyPixelRatio(pendingPixelRatio.value);
+  }
+  function setShadowMapSize(size) {
+    if (sun.shadow.mapSize.x === size) return;
+    sun.shadow.map?.dispose();
+    sun.shadow.map = null;
+    sun.shadow.mapSize.set(size, size);
+  }
+  function shadowKindOf(obj) {
+    for (let node = obj; node; node = node.parent) if (node.userData.shadowKind) return node.userData.shadowKind;
+    return "scenery";
+  }
+  // Recuerda la sombra original de cada malla (`shadowBase`) y la limita a las
+  // clases que proyectan sombra en el escalón vigente.
+  function applyShadowCasters(root = scene) {
+    const tier = governor.tier;
+    const visit = (obj, inherited) => {
+      const kind = obj.userData.shadowKind || inherited;
+      if (obj.isMesh) {
+        obj.userData.shadowBase ??= obj.castShadow;
+        obj.castShadow = obj.userData.shadowBase && castsShadowAt(tier, kind);
+      }
+      obj.children.forEach((child) => visit(child, kind));
+    };
+    visit(root, shadowKindOf(root));
+  }
+  governor.onChange((tier) => {
+    setShadowMapSize(TIERS[tier].shadowMapSize);
+    applyShadowCasters(scene);
+    requestPixelRatio(tierPixelRatio(tier, window.devicePixelRatio));
+  });
+
+  // Últimos 120 fotogramas (ms) y el coste del último, para debug().perf.
+  const frameTimes = new Float32Array(120);
+  let frameCount = 0;
+  const lastFrame = { calls: 0, triangles: 0 };
+  function perfReport() {
+    const count = Math.min(frameCount, frameTimes.length);
+    const times = Array.from(frameTimes.subarray(0, count)).sort((a, b) => a - b);
+    const quantile = (q) => (count ? Number(times[Math.min(count - 1, Math.floor(q * count))].toFixed(2)) : null);
+    const buckets = [["<=8.3", 8.34], ["<=16.7", 16.7], ["<=22", 22], ["<=33.3", 33.4], ["<=50", 50], [">50", Infinity]];
+    const histogram = Object.fromEntries(buckets.map(([label]) => [label, 0]));
+    times.forEach((ms) => {
+      const [label] = buckets.find(([, limit]) => ms <= limit);
+      histogram[label] += 1;
+    });
+    return {
+      calls: lastFrame.calls,
+      triangles: lastFrame.triangles,
+      programs: renderer.info.programs?.length ?? 0,
+      geometries: renderer.info.memory.geometries,
+      textures: renderer.info.memory.textures,
+      frames: { count, mean: count ? Number((times.reduce((a, b) => a + b, 0) / count).toFixed(2)) : null, p50: quantile(0.5), p95: quantile(0.95), max: count ? Number(times[count - 1].toFixed(2)) : null, histogram },
+      tier: governor.tier,
+      startTier,
+      averageMs: governor.averageMs === null ? null : Number(governor.averageMs.toFixed(2)),
+      pixelRatio: renderer.getPixelRatio(),
+      pendingPixelRatio: pendingPixelRatio?.value ?? null,
+      shadowMapSize: sun.shadow.mapSize.x,
+      shadowFrustum: {
+        mode: shadowReading ? "reading" : "room",
+        width: Number((sun.shadow.camera.right - sun.shadow.camera.left).toFixed(2)),
+        height: Number((sun.shadow.camera.top - sun.shadow.camera.bottom).toFixed(2)),
+      },
+      contextLost,
+    };
+  }
+
   function resize() {
     if (deskDrag) endDeskDrag(true);
     const w = canvas.clientWidth || window.innerWidth;
@@ -2111,6 +2467,14 @@ export function createStage(canvas, options) {
     camera.updateProjectionMatrix();
     shelfPan.x = clampPan(shelfPan.x);
     moveCamera(viewFor(mode), 0.4);
+    // La clase de dispositivo puede cambiar (ventana estrecha, giro, otra
+    // pantalla): se reevalúa el escalón inicial y la densidad del dispositivo.
+    const nextStart = detectStartTier(window);
+    if (nextStart !== startTier) {
+      startTier = nextStart;
+      governor.reset(nextStart);
+    }
+    requestPixelRatio(tierPixelRatio(governor.tier, window.devicePixelRatio));
   }
   resize();
   const resizeObserver = new ResizeObserver(resize);
@@ -2125,8 +2489,41 @@ export function createStage(canvas, options) {
   };
   document.addEventListener("visibilitychange", onVisibility);
 
+  /* --------------------- pérdida del contexto de GPU --------------------- */
+  // El sistema puede quitarle la GPU a la pestaña (memoria, suspensión, driver).
+  // Se detiene el bucle y, al recuperarla, se rehace lo que vivía solo en la
+  // GPU: el entorno de reflejos, el mapa de sombras y las texturas de lienzo.
+  let contextLost = false;
+  const onContextLost = (event) => {
+    event.preventDefault();
+    contextLost = true;
+    cancelAnimationFrame(frame);
+  };
+  const onContextRestored = () => {
+    if (!running) return;
+    contextLost = false;
+    // Lo anterior murió con el contexto: se suelta sin liberarlo (liberarlo
+    // intentaría borrar objetos de GL que ya no existen).
+    environment = roomEnvironment();
+    scene.environment = environment;
+    sun.shadow.map = null;
+    scene.traverse((obj) => {
+      const materials = Array.isArray(obj.material) ? obj.material : obj.material ? [obj.material] : [];
+      materials.forEach((material) => {
+        Object.values(material).forEach((value) => {
+          if (value?.isTexture && !value.isRenderTargetTexture && value.image) value.needsUpdate = true;
+        });
+      });
+    });
+    resize();
+    last = performance.now();
+    loop();
+  };
+  canvas.addEventListener("webglcontextlost", onContextLost);
+  canvas.addEventListener("webglcontextrestored", onContextRestored);
+
   function loop() {
-    if (!running || hidden) return;
+    if (!running || hidden || contextLost) return;
     frame = requestAnimationFrame(loop);
     const now = performance.now();
     const dt = Math.min(0.1, (now - last) / 1000);
@@ -2134,9 +2531,14 @@ export function createStage(canvas, options) {
     clock.t += dt;
     updateTweens(now / 1000);
     pick();
+    // Una sola muestra del reloj del cuento por fotograma; dt sólo mueve el
+    // render y el vaivén.
+    updateStoryClock(now);
 
     // Vaivén de las figuras y salto/wiggle al pasar el cursor.
     toyGroups.forEach((holder) => {
+      // Sin trabajo para lo que no se ve; al leer, solo el reparto de la página.
+      if (!holder.visible || (mode === "reading" && !holder.userData.storyActor)) return;
       const state = toyState.get(holder);
       if (!state) return;
       const toy = holder.children[0];
@@ -2180,6 +2582,10 @@ export function createStage(canvas, options) {
     });
 
     updateWork(dt);
+    talkPulse = Math.max(0, talkPulse - dt * 4.5);
+    if (lookFocus && (lookFocus.until <= clock.t || !pageActorById.has(lookFocus.actor))) lookFocus = null;
+    // Hacia dónde miran los que no hablan: la figura recién nombrada o quien habla.
+    const focusId = lookFocus?.actor || speakingId;
     pageActors.forEach((actor) => {
       if (reduceMotion) return;
       const phase = actor.userData.phase || 0;
@@ -2193,23 +2599,36 @@ export function createStage(canvas, options) {
       updateTravel(actor, dt);
       const faceTurn = actor.userData.faceTurn || 0;
       const baseRotY = actor.userData.baseRotY || 0;
-      const isSpeaker = speakingId && actor.userData.storyActor === speakingId;
-      const listening = speakingId && !isSpeaker && actor.userData.isCast;
+      const isSpeaker = speaking.has(actor.userData.storyActor);
+      const listening = Boolean(focusId) && !isSpeaker && focusId !== actor.userData.storyActor && actor.userData.isCast;
+      // El giro hacia quien habla (o acaba de ser nombrado) se suaviza aparte,
+      // en lookYaw, y nunca a partir de rotation.y: esa trae el extra que
+      // applyAct sumó el cuadro anterior, así que el giro se acumulaba hasta
+      // casi una vuelta y al terminar la figura volvía de golpe.
+      const focusActor = listening ? pageActorById.get(focusId) : null;
+      const toward = focusActor ? Math.atan2(focusActor.position.x - actor.position.x, 0.3) * 0.6 : 0;
+      const prevLook = actor.userData.lookYaw || 0;
+      const lookYaw = prevLook + (toward - prevLook) * Math.min(1, dt * 3);
+      actor.userData.lookYaw = lookYaw;
+      const yaw = baseRotY + faceTurn + lookYaw;
       actor.position.y = baseY + Math.sin(clock.t * 1.8 + phase) * 0.009;
+      actor.rotation.x = 0;
+      let talkHop = 0;
+      let talkNod = 0;
       // Respiración: el cuerpo entero se hincha apenas.
       const body = actor.children[0];
       if (body) body.scale.y = 1 + Math.sin(clock.t * 1.4 + phase) * 0.012;
       const head = findPart(actor, "head");
       if (isSpeaker) {
         // Habla: pequeño salto y cabeceo por palabra, que se apaga solo, y
-        // las manos acompañan (gesticula) mientras dura la frase.
-        talkPulse = Math.max(0, talkPulse - dt * 4.5);
-        actor.position.y += talkPulse * 0.014;
-        actor.rotation.y = baseRotY + faceTurn + Math.sin(clock.t * 2.2 + phase) * 0.08;
+        // las manos acompañan (gesticula) mientras dura la frase. El salto y
+        // el cabeceo se suman después de la acción (applyAct fija la pose).
+        talkHop = talkPulse * 0.014;
+        talkNod = -talkPulse * 0.12;
+        actor.rotation.y = yaw + Math.sin(clock.t * 2.2 + phase) * 0.08;
         actor.rotation.z = Math.sin(clock.t * 1.25 + phase) * 0.025 + talkPulse * 0.06;
-        actor.rotation.x = -talkPulse * 0.12;
         if (head) {
-          head.scale.setScalar(1 + talkPulse * 0.09);
+          head.scale.multiplyScalar(1 + talkPulse * 0.04);
           head.rotation.y += Math.sin(clock.t * 1.7 + phase) * 0.08;
           head.rotation.z += talkPulse * 0.05;
         }
@@ -2219,17 +2638,21 @@ export function createStage(canvas, options) {
           arm.rotation.x -= talkPulse * 0.3 + Math.max(0, Math.sin(clock.t * 1.9 + phase - side)) * 0.12;
         });
       } else if (listening) {
-        // Los demás se giran hacia quien habla (la cabeza va primero) y se mecen despacio.
-        const speaker = pageActorById.get(speakingId);
-        const toward = speaker ? Math.atan2(speaker.position.x - actor.position.x, 0.3) * 0.6 : 0;
-        actor.rotation.y += (toward + faceTurn - actor.rotation.y) * Math.min(1, dt * 3);
+        // Los demás se giran hacia quien habla o acaba de ser nombrado (la
+        // cabeza va primero) y se mecen despacio.
+        actor.rotation.y = yaw;
         actor.rotation.z = Math.sin(clock.t * 1.6 + phase) * 0.04;
-        if (head) head.rotation.y += toward * 0.45;
       } else {
-        actor.rotation.y = baseRotY + faceTurn + Math.sin(clock.t * 0.85 + phase) * 0.16;
+        actor.rotation.y = yaw + Math.sin(clock.t * 0.85 + phase) * 0.16;
         actor.rotation.z = Math.sin(clock.t * 1.25 + phase) * 0.025;
       }
+      // La cabeza acompaña el giro suavizado, también mientras se desgira.
+      if (head && lookYaw) head.rotation.y += lookYaw * 0.45;
       applyAct(actor, clock.t);
+      if (isSpeaker) {
+        actor.position.y += talkHop;
+        actor.rotation.x += talkNod;
+      }
     });
 
     // Los libros respiran apenas en la repisa; el seleccionado conserva la
@@ -2248,14 +2671,15 @@ export function createStage(canvas, options) {
     const panX = mode === "shelf" ? shelfPan.x : 0;
     deskDressing.position.x = panX;
     lampLight.position.x = -1.72 + panX;
-    sun.position.x = 2.4 + panX;
-    sun.target.position.x = panX;
-    sun.target.updateMatrixWorld();
+    updateSunFrame(panX);
     bookEntries.forEach(entry => {
       const nearby = Math.abs(entry.home.x - panX) < 4.5;
       entry.group.visible = entry === selected || nearby;
       const hero = heroHolders.get(entry.book.id);
-      if (hero) hero.visible = nearby;
+      if (hero) {
+        hero.visible = nearby;
+        if (nearby) ensureHero(hero);
+      }
       if (nearby || entry === selected) loadCover(entry);
     });
     zoom.value += (zoomTarget - zoom.value) * (reduceMotion ? 1 : 1 - Math.exp(-dt * 12));
@@ -2272,7 +2696,9 @@ export function createStage(canvas, options) {
     camera.updateProjectionMatrix();
 
     feedback.update(dt);
-    if (cinema && mode === "reading" && ensureComposer()) {
+    selected?.wordHighlight?.update();
+    renderer.info.reset();
+    if (cinema && mode === "reading" && postEnabled() && ensureComposer()) {
       if (composerW !== canvas.clientWidth || composerH !== canvas.clientHeight) {
         composerW = canvas.clientWidth;
         composerH = canvas.clientHeight;
@@ -2283,7 +2709,101 @@ export function createStage(canvas, options) {
     } else {
       renderer.render(scene, camera);
     }
+    trackFrame(now);
     onFrame();
+  }
+
+  function simulateContextLoss(restoreAfterMs) {
+    const extension = renderer.getContext().getExtension("WEBGL_lose_context");
+    if (!extension) return false;
+    extension.loseContext();
+    window.setTimeout(() => extension.restoreContext(), restoreAfterMs);
+    return true;
+  }
+
+  // Mide el fotograma (debug().perf) y alimenta al gobernador de calidad.
+  let perfLast = performance.now();
+  function trackFrame(now) {
+    const frameMs = now - perfLast;
+    perfLast = now;
+    lastFrame.calls = renderer.info.render.calls;
+    lastFrame.triangles = renderer.info.render.triangles;
+    frameTimes[frameCount % frameTimes.length] = frameMs;
+    frameCount += 1;
+    governor.frame(frameMs);
+    if (pendingPixelRatio && now - pendingPixelRatio.since >= 3000) flushPixelRatio();
+  }
+
+  // Sol: misma dirección siempre (la luz no cambia). En lectura la cámara de
+  // sombras se ciñe al libro abierto y a lo que ve la cámara de lectura (la
+  // mesa y la franja de pared bajo la repisa, que recibe su sombra), en vez
+  // de cubrir la sala entera (9 × 6): de 6 a 9 veces más texels por unidad de
+  // superficie donde se mira. Al salir de la lectura vuelve a cubrir la sala.
+  let shadowReading = null;
+  let shadowFitKey = null;
+  const sunFocus = new THREE.Vector3();
+  const SUN_OFFSET = new THREE.Vector3(2.4, 4.2, 3.2);
+  const ROOM_SHADOW = { left: -4.5, right: 4.5, top: 4, bottom: -2 };
+  const fitLight = new THREE.OrthographicCamera();
+  const fitView = new THREE.PerspectiveCamera();
+  const fitBox = new THREE.Box3();
+  const fitPoint = new THREE.Vector3();
+  const fitRay = new THREE.Ray();
+  const DESK_PLANE = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+  const WALL_PLANE = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0.44);
+  const fitHitA = new THREE.Vector3();
+  const fitHitB = new THREE.Vector3();
+  function readingShadowBounds() {
+    fitLight.position.copy(sun.position);
+    fitLight.lookAt(sunFocus);
+    fitLight.updateMatrixWorld(true);
+    fitBox.makeEmpty();
+    // El libro abierto con su lámina y los personajes de pie sobre ella.
+    for (const dx of [-0.8, 0.8]) for (const dy of [-0.05, 0.75]) for (const dz of [-0.65, 0.65]) {
+      fitBox.expandByPoint(fitPoint.set(sunFocus.x + dx, sunFocus.y + dy, sunFocus.z + dz).applyMatrix4(fitLight.matrixWorldInverse));
+    }
+    // Lo que ve la vista de lectura (con el zoom mínimo de 80 %): mesa y pared.
+    const view = viewFor("reading");
+    fitView.fov = camera.fov;
+    fitView.aspect = camera.aspect;
+    fitView.updateProjectionMatrix();
+    fitView.position.fromArray(view.pos);
+    fitView.lookAt(fitPoint.fromArray(view.look));
+    fitView.updateMatrixWorld(true);
+    for (let i = 0; i <= 8; i += 1) for (let j = 0; j <= 8; j += 1) {
+      fitPoint.set(-1.25 + i * 0.3125, -1.25 + j * 0.3125, 0.5).unproject(fitView);
+      fitRay.set(fitView.position, fitPoint.sub(fitView.position).normalize());
+      const desk = fitRay.intersectPlane(DESK_PLANE, fitHitA);
+      const wall = fitRay.intersectPlane(WALL_PLANE, fitHitB);
+      const onWall = wall && wall.y >= 0 && wall.y <= 1.8 ? wall : null;
+      const onDesk = desk && desk.z >= -0.44 ? desk : null;
+      const hit = onWall && onDesk ? (onWall.distanceTo(fitView.position) < onDesk.distanceTo(fitView.position) ? onWall : onDesk) : onWall || onDesk;
+      if (hit) fitBox.expandByPoint(hit.applyMatrix4(fitLight.matrixWorldInverse));
+    }
+    fitBox.expandByScalar(0.2);
+    return {
+      left: Math.max(ROOM_SHADOW.left, fitBox.min.x),
+      right: Math.min(ROOM_SHADOW.right, fitBox.max.x),
+      bottom: Math.max(ROOM_SHADOW.bottom, fitBox.min.y),
+      top: Math.min(ROOM_SHADOW.top, fitBox.max.y),
+    };
+  }
+  function updateSunFrame(panX) {
+    const reading = mode === "reading" && Boolean(selected);
+    // Centro del libro abierto: el lomo (book3d.js: origen al pie del libro).
+    if (reading) sunFocus.set(-BOOK_W / 2, BOOK_H / 2, BOOK_T / 2).applyMatrix4(selected.group.matrixWorld);
+    else sunFocus.set(panX, 0, 0);
+    sun.position.copy(sunFocus).add(SUN_OFFSET);
+    sun.target.position.copy(sunFocus);
+    sun.target.updateMatrixWorld();
+    // Se reencuadra al entrar o salir de la lectura y si cambia la forma de
+    // la pantalla, nunca en cada fotograma (las sombras no «nadan»).
+    const key = reading ? Math.round(camera.aspect * 100) * 4 + (selected.book.source ? 2 : 0) + (window.innerWidth / window.innerHeight < 0.85 ? 1 : 0) : -1;
+    if (reading === shadowReading && key === shadowFitKey) return;
+    shadowReading = reading;
+    shadowFitKey = key;
+    Object.assign(sun.shadow.camera, reading ? readingShadowBounds() : ROOM_SHADOW);
+    sun.shadow.camera.updateProjectionMatrix();
   }
   activateBook(bookEntries.find(entry => entry.book.id === initialBookId) || bookEntries[0]);
   loop();
@@ -2295,6 +2815,10 @@ export function createStage(canvas, options) {
     environment.dispose();
     running = false;
     cancelAnimationFrame(frame);
+    if (heroIdle) cancelIdle(heroIdle);
+    heroIdle = 0;
+    canvas.removeEventListener("webglcontextlost", onContextLost);
+    canvas.removeEventListener("webglcontextrestored", onContextRestored);
     cancelAllTweens();
     clearPageDiorama();
     feedback.dispose();
@@ -2315,7 +2839,7 @@ export function createStage(canvas, options) {
       if (obj.geometry) obj.geometry.dispose?.();
       const materials = Array.isArray(obj.material) ? obj.material : obj.material ? [obj.material] : [];
       materials.forEach((m) => {
-        m.map?.dispose?.();
+        if (!isSharedResource(m.map)) m.map?.dispose?.();
         m.dispose?.();
       });
     });
@@ -2339,6 +2863,9 @@ export function createStage(canvas, options) {
     setSpeaking,
     wordTick,
     nameActor,
+    setStoryClock,
+    playTimeline,
+    setReduceMotion,
     projectPopup,
     projectCorner,
     /** La app no pudo abrir el cuento: la tapa vuelve a cerrarse. */
@@ -2372,10 +2899,31 @@ export function createStage(canvas, options) {
         label: feedback.label,
         actors: toyGroups.filter(holder => holder.visible).map(holder => {
           const p = new THREE.Vector3(); holder.getWorldPosition(p); p.y += 0.13; p.project(camera);
+          const burst = holder.userData.burst;
           return { id: holder.userData.toyId, story: Boolean(holder.userData.storyActor), spin: toyState.get(holder)?.spin || 0,
             x: canvas.getBoundingClientRect().left + (p.x + 1) / 2 * canvas.clientWidth,
-            y: canvas.getBoundingClientRect().top + (1 - p.y) / 2 * canvas.clientHeight };
+            y: canvas.getBoundingClientRect().top + (1 - p.y) / 2 * canvas.clientHeight,
+            ...(holder.userData.storyActor ? {
+              act: burst?.act || holder.userData.act || null,
+              burst: burst ? { act: burst.act, start: burst.start, end: burst.end, base: burst.base } : null,
+              speaking: speaking.has(holder.userData.storyActor),
+              pose: { rx: holder.rotation.x, ry: holder.rotation.y - (holder.userData.baseRotY || 0), y: holder.position.y - (holder.userData.baseY ?? 0), x: holder.position.x },
+            } : {}) };
         }),
+        // Reloj y guion del cuento: lo disparado frente a lo compilado.
+        film: {
+          t: storyT,
+          clock: storyClock?.mode || null,
+          source: storyTimeline?.source || null,
+          events: storyTimeline?.events.length || 0,
+          dispatched: filmLog.length,
+          pending: storyCursor?.remaining ?? 0,
+          dropped: storyCursor?.dropped.length || 0,
+          speaking: [...speaking],
+          look: lookFocus?.actor || null,
+          reduceMotion,
+          log: filmLog.slice(),
+        },
         selected: selected?.book.id || null,
         book: selected ? { p: selected.group.position.toArray(), r: selected.group.rotation.toArray().slice(0, 3), s: selected.group.scale.x } : null,
         open: openT,
@@ -2393,6 +2941,11 @@ export function createStage(canvas, options) {
           : null,
         busy: isBusy(),
         cam: [camPos.toArray(), camLook.toArray(), shelfPan.x],
+        // Coste real del último fotograma (con sombras y pases), tiempos de los
+        // últimos 120 fotogramas y escalón de calidad vigente.
+        perf: perfReport(),
+        // Solo en desarrollo: simula que la GPU se pierde y vuelve.
+        ...(import.meta.env?.DEV ? { loseContext: (restoreAfterMs = 600) => simulateContextLoss(restoreAfterMs) } : {}),
       };
     },
   };

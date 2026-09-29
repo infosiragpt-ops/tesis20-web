@@ -6,7 +6,7 @@
 // para que el escenario los anime según la página.
 import * as THREE from "three";
 import { mat, mesh, blob, box, cyl, cone, fit } from "./_shared.js";
-import { tube, eyePair } from './sculpting.js';
+import { tube, eyePair, RIG_REVISION } from './sculpting.js';
 
 export const id = "cerdito";
 export const label = "Cerdito";
@@ -213,6 +213,6 @@ export function build({ outfit = "#5aa0d8", hat = false, shirt = null, plaid = f
   headGroup.traverse(obj=>{if(obj.userData.eye){obj.scale.multiplyScalar(.9);}});
   tail.userData.tail=1;
   const holder=fit(g,.30);
-  holder.userData.sculpted={revision:1,family:'fantasy',species:'pig',legs:2};
+  holder.userData.sculpted={revision:RIG_REVISION,family:'fantasy',species:'pig',legs:2};
   return holder;
 }

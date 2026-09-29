@@ -138,6 +138,9 @@ export function createBook3D(book, { coverTexture, spineTexture, edgeTexture, pa
     popupW,
     popupH,
     coverMat,
+    // Hoja de texto (cara interior de la tapa): el resaltado de lectura
+    // (word-highlight.js) se dibuja encima sin repintar su textura.
+    storyPage,
     // Superficies para el gesto de arrastre: la tapa (abrir/cerrar) y el bloque
     // de páginas (devolver a la repisa desde la lectura).
     coverSurface: front,

@@ -884,14 +884,18 @@ check(
 // 2026-09-15: +40 KiB acotados para los repartos de 35 clásicos, geometría
 // articulada y lectura del dispositivo. Todo sigue diferido a /nido; no cambia
 // ningún límite inicial ni por chunk. Medición de esta entrega: ~1406 KiB.
+// 2026-09-29: 1440 → 1480 KiB (aprobado por el dueño) para Nido Película.
+// Medido con `npm run build`: main 1404,4 KiB; con WP2 (figuras horneadas,
+// resaltado sin recargas, calidad adaptable) 1421,9 KiB; con WP1 + WP2
+// 1437,8 KiB, a 2 KiB del tope. Las entregas WP3–WP7 suman código y WP5 retira
+// el postprocesado Bokeh (~17 KiB). Todo sigue diferido a /nido: no cambia el
+// JS inicial (450 KiB) ni el tope por chunk (250 KiB; CuentosApp baja a 246 KiB).
 // 2026-09-29: quiz y souvenirs de los 33 clásicos (165 preguntas, 157 objetos
 // ubicados por una frase del texto) van en su propio chunk editorial, como
-// los textos, con tope propio de 60 KiB. El motor queda en ~1424 KiB con el
-// reparto por frases, la voz por tramos, los emblemas nuevos y el ajuste de
-// figuras del desplegable; el límite no cambia.
+// los textos, con tope propio de 60 KiB, y no cuentan contra este límite.
 check(
-  javascriptBytes - classicTextBytes - classicExtraBytes <= 1440 * 1024,
-  `El JavaScript de aplicación sin los textos de la colección no debe superar 1440 KiB (${Math.ceil((javascriptBytes - classicTextBytes - classicExtraBytes) / 1024)} KiB).`,
+  javascriptBytes - classicTextBytes - classicExtraBytes <= 1480 * 1024,
+  `El JavaScript de aplicación sin los textos de la colección no debe superar 1480 KiB (${Math.ceil((javascriptBytes - classicTextBytes - classicExtraBytes) / 1024)} KiB).`,
 );
 check(classicExtraBytes > 0 && classicExtraBytes <= 60 * 1024, `El quiz y los souvenirs de los clásicos superan 60 KiB o faltan en el build (${Math.ceil(classicExtraBytes / 1024)} KiB).`);
 // 2026-09-12: 35 textos autorizados y 33 ilustraciones históricas. Se acotan
