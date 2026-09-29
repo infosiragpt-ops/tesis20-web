@@ -6,6 +6,7 @@ import { wordKey } from "../../src/nido/cuentos/cuentos-voice-plan.js";
 import { ACT_LEAD, ACT_PERIOD, burstEnd } from "../../src/nido/cuentos/film/act-timing.js";
 import { compilePageTimeline, createCursor, deviceTrack, SFX_LEAD } from "../../src/nido/cuentos/film/timeline.js";
 import { ACT_NAMES } from "../../src/nido/cuentos/cuentos-acts.js";
+import { composeTrack } from "../../src/nido/cuentos/cuentos-audio.js";
 
 const MANIFEST_URL = new URL("../../public/assets/nido/audio/cuentos-manifest.json", import.meta.url);
 const manifest = JSON.parse(await readFile(MANIFEST_URL, "utf8"));
@@ -19,12 +20,16 @@ function rng(seed) {
 }
 
 // Every page as the Reader compiles it: studio marks when the manifest has
-// them, the device estimate otherwise (clasico-habichuelas 6, 8, 9 and 10).
+// them, the device estimate otherwise (the clasico-habichuelas pages that
+// touch its four unrecorded clips). Classic pages (`page.voice`) sound as
+// trimmed segments of the clips recorded with the old 65-word layout.
+const TOTAL_PAGES = BOOKS.reduce((sum, book) => sum + book.pages.length, 0);
 function allTimelines() {
   const list = [];
   for (const book of BOOKS) {
+    const clips = manifest.books?.[book.id]?.pages;
     book.pages.forEach((page, index) => {
-      const track = manifest.books?.[book.id]?.pages?.[index] || null;
+      const track = page.voice ? composeTrack(clips, page.voice) : clips?.[index] || null;
       const timed = Array.isArray(track?.words) && track.words.length > 0;
       const timeline = compilePageTimeline(page, {
         starts: timed ? track.words : null,
@@ -64,10 +69,11 @@ function compiledCues(timeline) {
     .sort();
 }
 
-test("all 44 books and 867 pages compile with finite, sorted times", () => {
+test("all 44 books and every page compile with finite, sorted times", () => {
   assert.equal(BOOKS.length, 44);
-  assert.equal(TIMELINES.length, 867);
-  assert.equal(TIMELINES.filter((entry) => !entry.timed).length, 4);
+  assert.equal(TIMELINES.length, TOTAL_PAGES);
+  assert.equal(TOTAL_PAGES, 800);
+  assert.equal(TIMELINES.filter((entry) => !entry.timed).length, TOTAL_PAGES - 795);
   for (const { book, index, timeline } of TIMELINES) {
     const where = `${book.id}:${index}`;
     assert.ok(Number.isFinite(timeline.duration) && timeline.duration > 0, where);
@@ -90,7 +96,7 @@ test("all 44 books and 867 pages compile with finite, sorted times", () => {
   }
 });
 
-test("title words plus body words match the studio marks on all 863 timed pages", () => {
+test("title words plus body words match the studio marks on every timed page", () => {
   let timed = 0;
   for (const { book, index, page, track, timeline } of TIMELINES.filter((entry) => entry.timed)) {
     timed += 1;
@@ -103,7 +109,7 @@ test("title words plus body words match the studio marks on all 863 timed pages"
     assert.equal(timeline.words.at(-1).t0, track.words.at(-1));
     assert.ok(timeline.words.at(-1).t1 <= track.duration - 0.05 + 1e-9);
   }
-  assert.equal(timed, 863);
+  assert.equal(timed, 795);
 });
 
 test("the untimed pages use the device-voice estimate", () => {

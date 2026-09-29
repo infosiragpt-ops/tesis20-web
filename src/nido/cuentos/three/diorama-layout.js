@@ -11,3 +11,43 @@ export function dioramaLayout(castCount, propCount) {
   if (propCount >= 2) slots.push({ x, z: .045, scale: propScale, face: -.35 });
   return slots;
 }
+
+/**
+ * Ajusta las ranuras a lo que mide cada figura (ancho a escala 1, en el
+ * orden de las ranuras): los objetos grandes (el laberinto, la carta, la
+ * lámpara) se achican y todos se corren hacia fuera hasta no tocar a los
+ * personajes, sin salirse del desplegable (±limit).
+ */
+export function fitDioramaSlots(slots, widths, castCount, { propMax = 0.15, propMin = 0.07, gap = 0.012, limit = 0.235 } = {}) {
+  const fitted = slots.map((slot) => ({ ...slot }));
+  const width = (i) => (widths[i] || 0) * fitted[i].scale;
+  // Personajes: el más ancho de cada par que se pisa se achica hasta tocar.
+  const cast = fitted.slice(0, castCount).map((slot, i) => i).sort((a, b) => fitted[a].x - fitted[b].x);
+  for (let k = 1; k < cast.length; k += 1) {
+    const [a, b] = [cast[k - 1], cast[k]];
+    const room = fitted[b].x - fitted[a].x - gap;
+    const overlap = (width(a) + width(b)) / 2 - room;
+    if (overlap <= 0) continue;
+    const wider = width(a) >= width(b) ? a : b;
+    const other = wider === a ? b : a;
+    fitted[wider].scale = Math.max(0.5 * fitted[wider].scale, (2 * room - width(other)) / widths[wider]);
+  }
+  let left = 0;
+  let right = 0;
+  for (let i = 0; i < castCount; i += 1) {
+    left = Math.min(left, fitted[i].x - width(i) / 2);
+    right = Math.max(right, fitted[i].x + width(i) / 2);
+  }
+  for (let i = castCount; i < fitted.length; i += 1) {
+    const slot = fitted[i];
+    if (!widths[i]) continue;
+    const side = slot.x < 0 ? -1 : 1;
+    const edge = side < 0 ? -left : right;
+    const room = limit - edge - gap;
+    const target = Math.min(propMax, width(i), Math.max(propMin, room));
+    slot.scale = target / widths[i];
+    const half = target / 2;
+    slot.x = side * Math.max(edge + gap + half, Math.min(Math.abs(slot.x), limit - half));
+  }
+  return fitted;
+}

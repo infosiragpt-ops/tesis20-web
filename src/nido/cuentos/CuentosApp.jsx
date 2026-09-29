@@ -3,6 +3,7 @@ import { BOOKS, PIN_LABELS, TOTAL_PINS, TOTAL_QUIZ, TOTAL_STARS, bookPins } from
 import { BookCover, Scene, Souvenir, pinSpot } from "./cuentos-scene.jsx";
 import { seeded } from "./cuentos-art-base.jsx";
 import { emblemFor } from "./cuentos-art-props.jsx";
+import { pinArt } from "./classic-souvenirs.js";
 import { CAST } from "./cuentos-art-cast.jsx";
 import { MEDALS, bookStatus, totals, useProgress } from "./cuentos-progress.js";
 import {
@@ -32,6 +33,7 @@ import {
   warmUpVoices,
   wordTrack,
 } from "./cuentos-audio.js";
+import { optionSpeechText, pageSpeechText, titleWordCount } from "./cuentos-voice-plan.js";
 import { createStoryClock } from "./film/story-clock.js";
 import { compilePageTimeline } from "./film/timeline.js";
 import { isClassicEdition, pageWindow, resumePage } from "./collection-layout.js";
@@ -138,7 +140,7 @@ export default function CuentosApp() {
       coverTexture: (book) => coverArtTexture(book),
       emblemTexture: (pinId) => {
         const emblem = emblemFor(pinId);
-        const Art = CAST[pinId]?.Art;
+        const Art = CAST[pinArt(pinId)]?.Art;
         return svgElementToTexture(
           `emblem-${pinId}`,
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="-50 -50 100 100">
@@ -682,7 +684,7 @@ function DeskPanel({ book, status, ready, onOpen, onBack }) {
         <h2>{book.title}</h2>
         <p className="cuentos-desk__tagline">{book.tagline}</p>
         <p className="cuentos-desk__meta">
-          {book.pages.length} páginas · {status.finished ? "terminado" : `${status.pct}% leído`}{isClassicEdition(book) || book.quiz.length === 0 ? ' · Texto íntegro · voz de estudio' : ` · ${status.pins.length} de ${bookPins(book).length} souvenirs`}
+          {book.pages.length} páginas · {status.finished ? "terminado" : `${status.pct}% leído`}{isClassicEdition(book) ? ' · Texto íntegro' : ''}{bookPins(book).length ? ` · ${status.pins.length} de ${bookPins(book).length} souvenirs` : ' · voz de estudio'}
         </p>
         {book.source ? <details className="cuentos-source"><summary>Sobre esta edición y su portada</summary>
           <p>{book.warning}</p><a href={book.source.url} target="_blank" rel="noreferrer">Texto: {book.source.publisher}</a>
@@ -833,7 +835,7 @@ function Reader({ book, page, state, suspended, pinRef, onPage, onClose, onStar,
     if (!hasNarration || deviceVoice) return undefined;
     loadCuentosVoices().then(() => {
       if (cancelled) return;
-      prefetchTracks([pageTrack(book.id, page), pageTrack(book.id, page + 1)]);
+      prefetchTracks([pageTrack(book.id, page, book.pages[page]?.voice), pageTrack(book.id, page + 1, book.pages[page + 1]?.voice)]);
     });
     return () => {
       cancelled = true;
@@ -909,12 +911,12 @@ function Reader({ book, page, state, suspended, pinRef, onPage, onClose, onStar,
     // que la primera página no salga con la voz del navegador por una carrera.
     const begin = () => {
       if (generation !== readGeneration.current || pageRef.current !== page || !autoRef.current) return;
-      const track = deviceVoice ? null : pageTrack(book.id, page);
-      const titleWordCount = pageData.t.split(/\s+/).filter(Boolean).length;
+      const track = deviceVoice ? null : pageTrack(book.id, page, pageData.voice);
+      const leadWords = titleWordCount(pageData);
       const compile = (source, rate) => compilePageTimeline(pageData, {
         starts: source === "studio" ? track?.words || null : null,
         duration: source === "studio" ? track?.duration : undefined,
-        titleWordCount,
+        titleWordCount: leadWords,
         names: book.names || {},
         source,
         rate,
@@ -923,7 +925,7 @@ function Reader({ book, page, state, suspended, pinRef, onPage, onClose, onStar,
       // Con clip de estudio el guion usa sus marcas; sin él lo prepara onSource.
       clock.reset(track?.src ? "studio" : null);
       if (track?.src) onTimelineRef.current?.(compile("studio"), clock);
-      speak(`${pageData.t}. ${pageData.x}`, {
+      speak(pageSpeechText(pageData), {
         track,
         onStart: voice => { setVoiceName(voice.name); setSpeaking(true); },
         onTime: clock.pushAudioTime,
@@ -938,9 +940,8 @@ function Reader({ book, page, state, suspended, pinRef, onPage, onClose, onStar,
           }
         },
         onWord: (index) => {
-          const titleWords = pageData.t.split(/\s+/).filter(Boolean).length;
-          setActiveWord(index < 0 ? -1 : index - titleWords);
-          onStoryWord?.(index < 0 ? -1 : index - titleWords);
+          setActiveWord(index < 0 ? -1 : index - leadWords);
+          onStoryWord?.(index < 0 ? -1 : index - leadWords);
           if (index >= 0) clock.pushWord(index);
         },
         onEnd: (result) => {
@@ -1065,7 +1066,7 @@ function Reader({ book, page, state, suspended, pinRef, onPage, onClose, onStar,
         <p className="cuentos-card__eyebrow">
           Página {page + 1} de {book.pages.length}
         </p>
-        <h2 className="cuentos-card__title">{pageData.t}</h2>
+        {pageData.t ? <h2 className="cuentos-card__title">{pageData.t}</h2> : null}
         <p className="cuentos-card__text">
           {words.map((token, i) => {
             if (/^\s+$/.test(token) || token === "") return <span key={i}>{token}</span>;
@@ -1182,8 +1183,12 @@ function Quiz({ book, entry, onAnswer, onClose }) {
   // La pregunta y sus opciones se leen en el orden en que se ven: los peques
   // de tres años no leen todavía, pero sí eligen lo que escuchan.
   const readQuestion = useCallback(() => {
-    return speakSequence(quizTracks(book.id, index, options.map((option) => option.index)));
-  }, [book.id, index, options]);
+    const tracks = quizTracks(book.id, index, options.map((option) => option.index));
+    if (tracks.length) return speakSequence(tracks);
+    // Sin grabación de estudio (el quiz de los clásicos aún no pasó por el
+    // generador): la voz del dispositivo lee la pregunta y las opciones.
+    return speak([question.q, ...options.map((option) => optionSpeechText(option.text))].join(" "), { rate: 0.86 });
+  }, [book.id, index, options, question.q]);
 
   useEffect(() => {
     if (done) return undefined;
@@ -1300,7 +1305,7 @@ function Album({ state, stats, onClose, onReset }) {
           <div>
             <p className="cuentos-modal__eyebrow">Tesis20 Nido · búsqueda del tesoro</p>
             <h2>Mis souvenirs</h2>
-            <p className="cuentos-album__lead">Los cuentos originales con voz de estudio esconden cinco souvenirs. Tócalos cuando brillen para guardarlos. Los clásicos también se escuchan con voz de estudio y conservan tu progreso, sin quiz ni souvenirs.</p>
+            <p className="cuentos-album__lead">Cada cuento esconde hasta cinco souvenirs. Tócalos cuando brillen para guardarlos. Los clásicos de texto íntegro también tienen souvenirs y quiz.</p>
           </div>
           <div className="cuentos-album__totals">
             <span>
@@ -1343,7 +1348,7 @@ function Album({ state, stats, onClose, onReset }) {
                     <i style={{ width: `${status.pct}%`, background: book.accent }} />
                   </span>
                   <small>
-                    {status.finished ? "Terminado" : `${status.pct}% leído`}{isClassicEdition(book) || book.quiz.length === 0 ? ' · Texto íntegro · voz de estudio' : ` · ${status.pins.length} de ${bookPins(book).length} souvenirs · quiz ${status.quizOk}/${book.quiz.length}`}
+                    {status.finished ? "Terminado" : `${status.pct}% leído`}{isClassicEdition(book) ? ' · Texto íntegro' : ''}{bookPins(book).length ? ` · ${status.pins.length} de ${bookPins(book).length} souvenirs` : ''}{book.quiz.length ? ` · quiz ${status.quizOk}/${book.quiz.length}` : ''}
                   </small>
                 </div>
                 <div className="cuentos-album__pins">
@@ -1389,8 +1394,8 @@ function Album({ state, stats, onClose, onReset }) {
 const STEPS = [
   { icon: "📚", title: "Elige un cuento", text: "Busca por título o arrastra la repisa. Toca un libro y abre su tapa hacia la izquierda, o usa «Abrir el libro». Para guardarlo, arrástralo hacia arriba o vuelve a la estantería. Cada ficha indica cuántas páginas tiene; tu última página se guarda en este dispositivo." },
   { icon: "🔊", title: "Lectura y narración", text: "Toca «Léemelo» para escuchar y seguir las palabras. Toda la biblioteca usa la voz de estudio; si falta un audio, se oye la voz en español del dispositivo. Las figuras se animan durante la lectura. Usa las flechas, estrellas o selector para cambiar de página." },
-  { icon: "🔍", title: "Busca el souvenir", text: "Los cuentos con voz de estudio esconden cinco souvenirs. Toca los objetos que brillan para guardarlos. Las ediciones clásicas no incluyen souvenirs." },
-  { icon: "⭐", title: "Responde el quiz", text: "Los cuentos con voz de estudio ofrecen cinco preguntas al llegar al final. Los clásicos conservan el progreso, sin quiz. Abrir la ayuda o los souvenirs detiene la narración sin cambiar tu página." },
+  { icon: "🔍", title: "Busca el souvenir", text: "Cada cuento esconde hasta cinco souvenirs, también los clásicos. Toca los objetos que brillan para guardarlos." },
+  { icon: "⭐", title: "Responde el quiz", text: "Al llegar a la última página aparecen cinco preguntas sobre el cuento. Abrir la ayuda o los souvenirs detiene la narración sin cambiar tu página." },
 ];
 
 function Help({ onClose }) {

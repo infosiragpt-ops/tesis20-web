@@ -344,7 +344,7 @@ const routeDefinitions = [
       {
         question: "¿Qué hay en cada cuento?",
         answer:
-          "Diez páginas ilustradas, cinco souvenirs escondidos que se coleccionan en una repisa y un quiz final de cinco preguntas sobre la historia.",
+          "Los cuentos originales traen diez páginas ilustradas y los clásicos, el texto íntegro. Todos esconden souvenirs que se coleccionan en una repisa y terminan con un quiz de cinco preguntas sobre la historia.",
       },
     ],
     content: `

@@ -750,16 +750,19 @@ let initialStylesheetBytes = 0;
 let deployBytesWithoutAudioAndPdf = 0;
 let cuentosManifestBytes = 0;
 let classicTextBytes = 0;
+let classicExtraBytes = 0;
 let classicCoverBytes = 0;
 let generatedCoverBytes = 0;
 const generatedCoverPaths = new Set(CLASSIC_COLLECTION
   .filter(book => ['ChatGPT Imágenes (web)', 'Generación de imágenes integrada de ChatGPT'].includes(book.cover.generation?.tool))
   .map(book => `dist${book.cover.image}`));
 const isClassicText = file => /dist\/build-assets\/nido-classics-[1-5]-[^/]+\.js$/.test(file);
+const isClassicExtra = file => /dist\/build-assets\/nido-classics-extras-[^/]+\.js$/.test(file);
 const classicCovers = distFiles.filter(file => /^dist\/assets\/nido\/cuentos\/collection\/[^/]+\.avif$/.test(file));
 for (const distFile of distFiles) {
   const bytes = await fileSize(distFile);
   if (isClassicText(distFile)) classicTextBytes += bytes;
+  if (isClassicExtra(distFile)) classicExtraBytes += bytes;
   if (classicCovers.includes(distFile)) {
     classicCoverBytes += bytes;
     check(bytes <= 160 * 1024, `${distFile} supera 160 KiB para una portada diferida.`);
@@ -887,10 +890,14 @@ check(
 // 1437,8 KiB, a 2 KiB del tope. Las entregas WP3–WP7 suman código y WP5 retira
 // el postprocesado Bokeh (~17 KiB). Todo sigue diferido a /nido: no cambia el
 // JS inicial (450 KiB) ni el tope por chunk (250 KiB; CuentosApp baja a 246 KiB).
+// 2026-09-29: quiz y souvenirs de los 33 clásicos (165 preguntas, 157 objetos
+// ubicados por una frase del texto) van en su propio chunk editorial, como
+// los textos, con tope propio de 60 KiB, y no cuentan contra este límite.
 check(
-  javascriptBytes - classicTextBytes <= 1480 * 1024,
-  `El JavaScript de aplicación sin los textos de la colección no debe superar 1480 KiB (${Math.ceil((javascriptBytes - classicTextBytes) / 1024)} KiB).`,
+  javascriptBytes - classicTextBytes - classicExtraBytes <= 1480 * 1024,
+  `El JavaScript de aplicación sin los textos de la colección no debe superar 1480 KiB (${Math.ceil((javascriptBytes - classicTextBytes - classicExtraBytes) / 1024)} KiB).`,
 );
+check(classicExtraBytes > 0 && classicExtraBytes <= 60 * 1024, `El quiz y los souvenirs de los clásicos superan 60 KiB o faltan en el build (${Math.ceil(classicExtraBytes / 1024)} KiB).`);
 // 2026-09-12: 35 textos autorizados y 33 ilustraciones históricas. Se acotan
 // aparte los datos editoriales, sin aumentar el presupuesto del motor ni de
 // la carga inicial. Las portadas se solicitan según proximidad en la estantería.

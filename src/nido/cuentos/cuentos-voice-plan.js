@@ -8,7 +8,21 @@
 
 /** Texto que se narra al abrir una página: título y cuerpo, como en el lector. */
 export function pageSpeechText(page) {
-  return `${page.t}. ${page.x}`;
+  return page.t ? `${page.t}. ${page.x}` : page.x;
+}
+
+/** Palabras del rótulo de la página, que la voz dice antes del cuerpo. */
+export function titleWordCount(page) {
+  return page.t ? page.t.split(/\s+/).filter(Boolean).length : 0;
+}
+
+/**
+ * Páginas tal como se grabaron. Los clásicos se leen con un reparto por
+ * frases pero suenan con los clips del reparto anterior (`page.voice`), así
+ * que el plan sigue enumerando esas páginas grabadas y no pide regrabar nada.
+ */
+export function recordedPages(book) {
+  return book.voicePages || book.pages;
 }
 
 /**
@@ -69,7 +83,7 @@ export function enumerateCuentosVoicePlan(books) {
   for (const book of books) {
     // Device narration must never enqueue paid voice generation jobs.
     if (book.narration === 'reading-only' || book.narration === 'device') continue;
-    book.pages.forEach((page, index) => {
+    recordedPages(book).forEach((page, index) => {
       jobs.push({
         kind: "page",
         key: `page:${book.id}:${index}`,
