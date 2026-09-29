@@ -28,6 +28,8 @@ import { bookIndexAt, bookPositionAt, clamp, clampZoom, dragScale, settleBook, d
 import { createToyFeedback } from "./toy-feedback.js";
 import { dioramaLayout } from './diorama-layout.js';
 import { cinemaFitDistance } from './cinema-framing.js';
+import { createCursor } from "../film/timeline.js";
+import { burstEnd } from "../film/act-timing.js";
 
 const SHELF_TOYS = ["buho", "luna", "cometa", "oveja", "arbol", "ballena", "frasco", "barco", "tren", "estrella"];
 
@@ -83,7 +85,7 @@ export function createStage(canvas, options) {
   const {
     books,
     initialBookId,
-    reduceMotion = false,
+    reduceMotion: initialReduceMotion = false,
     onHoverBook = () => {},
     onFocusBook = () => {},
     onZoom = () => {},
@@ -98,10 +100,14 @@ export function createStage(canvas, options) {
     onTravel = () => {},
     // Una pieza de la obra se coloca o se recoge (clave de sonido).
     onWorkSound = () => {},
+    // Efecto de sonido de una palabra del guion de la página (clave de sonido).
+    onCue = () => {},
     onFrame = () => {},
     coverTexture, // (book) => Promise<Texture>
     emblemTexture, // (pinId) => Promise<Texture>
   } = options;
+  // Movimiento reducido: sigue a la preferencia del sistema en vivo (setReduceMotion).
+  let reduceMotion = Boolean(initialReduceMotion);
 
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: "high-performance" });
   const isMobile = window.matchMedia("(max-width: 760px)").matches;
@@ -140,9 +146,9 @@ export function createStage(canvas, options) {
   let bokehPass = null;
   let composerW = 0;
   let composerH = 0;
-  const postEnabled = !reduceMotion && !isMobile;
+  const postEnabled = () => !reduceMotion && !isMobile;
   function ensureComposer() {
-    if (composer || !postEnabled) return composer;
+    if (composer || !postEnabled()) return composer;
     composer = new EffectComposer(renderer);
     composer.setPixelRatio(renderer.getPixelRatio());
     composer.addPass(new RenderPass(scene, camera));
@@ -460,23 +466,31 @@ export function createStage(canvas, options) {
    * ilustración. `face` gira cada figura hacia el centro.
    */
 
-  // Narración viva: mientras la voz lee, el protagonista «habla» (un gesto de
-  // cabeza por palabra) y los demás lo miran y se mecen. Sin narración vuelven
-  // al bamboleo tranquilo.
+  // Narración viva: sólo quien dice de verdad una línea de diálogo «habla»
+  // (un gesto por palabra, ver film/dialogue.js) y los demás lo miran. La
+  // narradora no hace hablar a nadie. Sin diálogo vuelven al bamboleo tranquilo.
+  const speaking = new Set();
+  // Primer hablante: la cámara de cine se inclina hacia él.
   let speakingId = null;
+  let speakingLine = null;
   let talkPulse = 0;
-  function setSpeaking(actorId) {
-    speakingId = actorId || null;
+  // Figura nombrada por la voz: los demás la miran un momento.
+  let lookFocus = null;
+  function setSpeaking(actors) {
+    const list = (Array.isArray(actors) ? actors : [actors]).filter(Boolean);
+    speaking.clear();
+    list.forEach((id) => speaking.add(id));
+    speakingId = list[0] || null;
     talkPulse = 0;
   }
   function wordTick() {
-    if (speakingId) talkPulse = 1;
+    if (speaking.size) talkPulse = 1;
   }
 
   // «Pipo» en la voz → la figura de Pipo se ilumina (aro de luz bajo los pies
   // y brillo en su color), da un saltito y toma la palabra: los demás la miran.
   const glowRingGeometry = new THREE.RingGeometry(0.075, 0.13, 40);
-  function nameActor(actorId) {
+  function nameActor(actorId, seconds = 1.5) {
     const holder = pageActorById.get(actorId);
     if (!holder) return false;
     if (!holder.userData.glowRing) {
@@ -495,8 +509,8 @@ export function createStage(canvas, options) {
       holder.userData.emissives = emissives;
     }
     holder.userData.glow = 1;
-    speakingId = actorId;
-    talkPulse = 1;
+    // Nombrar no es hablar: sólo atrae las miradas.
+    lookFocus = { actor: actorId, until: clock.t + seconds };
     const state = toyState.get(holder);
     if (state && !reduceMotion) tween(state, { hop: 0.045 }, { duration: 0.18, easing: ease.out, onComplete: () => tween(state, { hop: 0 }, { duration: 0.4, easing: ease.outBack }) });
     return true;
@@ -609,6 +623,7 @@ export function createStage(canvas, options) {
       holder.userData.pageAct = holder.userData.act;
       holder.userData.slotX = slot.x;
       holder.userData.faceTurn = 0;
+      holder.userData.lookYaw = 0;
       holder.userData.travel = null;
       // `enter`: la figura entra caminando (o volando, nadando…) desde un lado.
       // Sin indicación, cada personaje entra a escena alternando lados, salvo
@@ -656,15 +671,151 @@ export function createStage(canvas, options) {
     });
   }
 
+  /* ------------------------- reloj del cuento ------------------------- */
+  // Mientras suena la narración, toda acción del cuento sigue un único reloj
+  // derivado del audio (film/story-clock.js): `storyT`, muestreado una vez por
+  // fotograma. El guion compilado de la página (film/timeline.js) dispara sus
+  // eventos cuando `storyT` los alcanza; un tirón largo los dispara todos.
+  let storyClock = null;
+  let storyTimeline = null;
+  let storyCursor = null;
+  let storyT = null;
+  let lastStoryT = null;
+  let filmLog = [];
+
+  function actingBase() {
+    return storyTimeline && storyT !== null ? "story" : "wall";
+  }
+  /** Hora para las acciones: la del cuento si hay guion sonando, si no la del escenario. */
+  function actingNow(base = actingBase()) {
+    return base === "story" ? storyT ?? lastStoryT ?? 0 : clock.t;
+  }
+  function burstNow(burst) {
+    return actingNow(burst.base);
+  }
+
   /**
-   * Acción breve de un actor (soplar, temblar, correr…) disparada desde la
-   * narración; cuando termina vuelve a la acción sostenida de la página.
+   * Ráfaga de una acción (soplar, temblar, correr…). `start` es el instante
+   * en que empieza (en el reloj que la creó, `base`), de modo que su pico cae
+   * en la palabra; termina en un cero del movimiento (film/act-timing.js) y
+   * luego vuelve la acción sostenida de la página.
+   */
+  function startBurst(holder, act, { start, until, base } = {}) {
+    const clockBase = base || actingBase();
+    const from = start ?? actingNow(clockBase);
+    const to = Math.max(from, until ?? from + 1.5);
+    holder.userData.burst = { act, start: from, until: to, end: burstEnd(act, from, to), base: clockBase };
+  }
+
+  /**
+   * Acción breve de un actor disparada desde la narración; cuando termina
+   * vuelve a la acción sostenida de la página.
    */
   function playAct(actorId, act, ms = 1500) {
     const holder = pageActorById.get(actorId);
     if (!holder) return false;
-    holder.userData.burst = { act, until: performance.now() + ms };
+    const start = actingNow();
+    startBurst(holder, act, { start, until: start + ms / 1000 });
     return true;
+  }
+
+  function setStoryClock(nextClock) {
+    storyClock = nextClock || null;
+    if (!storyClock) storyT = null;
+  }
+
+  /** Guion compilado de la página (o null al detener la lectura). */
+  function playTimeline(nextTimeline) {
+    // Las ráfagas en curso pasan al reloj del escenario y terminan solas.
+    const shift = clock.t - (lastStoryT ?? 0);
+    pageActors.forEach((actor) => {
+      const burst = actor.userData.burst;
+      if (burst?.base !== "story") return;
+      burst.start += shift;
+      burst.until += shift;
+      burst.end += shift;
+      burst.base = "wall";
+    });
+    storyTimeline = nextTimeline && Array.isArray(nextTimeline.events) ? nextTimeline : null;
+    storyCursor = storyTimeline ? createCursor(storyTimeline.events) : null;
+    storyT = null;
+    lastStoryT = null;
+    filmLog = [];
+    speakingLine = null;
+    lookFocus = null;
+    setSpeaking(null);
+  }
+
+  function dispatchStoryEvent(event) {
+    if (filmLog.length < 2000) {
+      filmLog.push({ kind: event.kind, actor: event.actor, act: event.act || event.sfx || event.scene || event.to || event.mood || null, word: event.word, t: event.t, fireAt: event.fireAt, at: storyT });
+    }
+    switch (event.kind) {
+      case "act": {
+        const holder = pageActorById.get(event.actor);
+        if (holder) startBurst(holder, event.act, { start: event.fireAt, until: event.until, base: "story" });
+        break;
+      }
+      case "move":
+        travelTo(event.actor, event.to, event.act || "walk", (event.until - event.t) * 1000, { start: event.fireAt, base: "story" });
+        break;
+      case "scene":
+        sceneEvent(event.scene);
+        break;
+      case "name":
+        nameActor(event.actor, Math.max(0.5, (event.until ?? event.t + 1.5) - event.t));
+        break;
+      case "sfx":
+        onCue(event.sfx);
+        break;
+      case "line-start":
+        speakingLine = event.line;
+        setSpeaking(event.speakers || event.actor);
+        break;
+      case "line-end":
+        if (speakingLine === event.line) {
+          speakingLine = null;
+          setSpeaking(null);
+        }
+        break;
+      case "talk":
+        if (speakingLine === event.line) talkPulse = 1;
+        break;
+      default:
+        // `mood` lo usarán las caras (WP6).
+        break;
+    }
+  }
+
+  function updateStoryClock(now) {
+    storyT = storyClock ? storyClock.sample(now) : null;
+    if (storyT === null) return;
+    lastStoryT = storyT;
+    if (!storyCursor) return;
+    if (storyClock.seeked) {
+      storyCursor.seek(storyT);
+      return;
+    }
+    for (const event of storyCursor.advance(storyT)) dispatchStoryEvent(event);
+  }
+
+  /** Movimiento reducido en vivo: al activarlo nada queda a medio camino. */
+  function setReduceMotion(value) {
+    const next = Boolean(value);
+    if (next === reduceMotion) return;
+    reduceMotion = next;
+    feedback.setReduceMotion(next);
+    if (!next) return;
+    pageActors.forEach((actor) => {
+      if (!actor.userData.storyActor) return;
+      landTravel(actor);
+      actor.userData.burst = null;
+      actor.userData.faceTurn = 0;
+      actor.userData.lookYaw = 0;
+      actor.position.x = actor.userData.baseX ?? actor.position.x;
+      actor.position.y = actor.userData.baseY ?? actor.position.y;
+      actor.rotation.set(0, actor.userData.baseRotY || 0, 0);
+    });
   }
 
   /* ------------------------------ cine ------------------------------ */
@@ -839,21 +990,42 @@ export function createStage(canvas, options) {
    * La figura camina (o corre, vuela, nada…) hasta un punto de la escena:
    * «left», «right», «center» o fuera de escena («away-left»/«away-right»).
    */
-  function travelTo(actorId, where, act = "walk", ms = 0) {
+  function travelTo(actorId, where, act = "walk", ms = 0, { start, base } = {}) {
     const holder = pageActorById.get(actorId);
     if (!holder || !(where in TRAVEL_X)) return false;
     const to = holder.userData.slotX + TRAVEL_X[where];
     holder.userData.travel = { to, act, speed: travelSpeed(act), then: holder.userData.pageAct ?? null, hide: where.startsWith("away") };
-    holder.userData.burst = { act, until: performance.now() + Math.max(ms || 0, (Math.abs(to - holder.userData.baseX) / travelSpeed(act)) * 1000 + 300) };
     holder.visible = true;
     onTravel(actorId, act);
+    if (reduceMotion) {
+      landTravel(holder);
+      return true;
+    }
+    const clockBase = base || actingBase();
+    const from = start ?? actingNow(clockBase);
+    const until = from + Math.max((ms || 0) / 1000, Math.abs(to - holder.userData.baseX) / travelSpeed(act) + 0.3);
+    const current = holder.userData.burst;
+    // Si la zancada ya empezó antes de la palabra (ACT_LEAD), sigue en fase.
+    if (current && current.act === act && current.base === clockBase && current.start <= from) startBurst(holder, act, { start: current.start, until: Math.max(until, current.until), base: clockBase });
+    else startBurst(holder, act, { start: from, until, base: clockBase });
     return true;
+  }
+
+  /** Termina un desplazamiento en su destino al instante (movimiento reducido). */
+  function landTravel(actor) {
+    const travel = actor.userData.travel;
+    if (!travel) return;
+    actor.userData.baseX = travel.to;
+    actor.position.x = travel.to;
+    actor.userData.act = travel.then;
+    actor.userData.travel = null;
+    if (travel.hide) actor.visible = false;
   }
 
   function updateTravel(actor, dt) {
     // Cada personaje que no habla ni actúa da, de vez en cuando, unos pasos
     // cortos por su zona: la escena nunca está congelada.
-    if (!actor.userData.travel && !actor.userData.burst && !actor.userData.working && actor.userData.isCast && actor.userData.storyActor !== speakingId && !reduceMotion) {
+    if (!actor.userData.travel && !actor.userData.burst && !actor.userData.working && actor.userData.isCast && !speaking.has(actor.userData.storyActor) && !reduceMotion) {
       const now = clock.t;
       if (!actor.userData.nextStroll) actor.userData.nextStroll = now + 4 + Math.random() * 6;
       else if (now > actor.userData.nextStroll) {
@@ -950,6 +1122,7 @@ export function createStage(canvas, options) {
     const holder = work.holder;
     holder.userData.travel = { to: x, act, speed: 0.27, then: holder.userData.pageAct, hide: false };
     holder.userData.act = act;
+    if (reduceMotion) landTravel(holder);
   }
 
   /** Hay una figura a medio trabajo (para que la página espere a que termine). */
@@ -987,7 +1160,7 @@ export function createStage(canvas, options) {
     const finish = () => {
       work.phase = "done";
       holder.userData.working = false;
-      holder.userData.burst = { act: "cheer", until: performance.now() + 3000 };
+      startBurst(holder, "cheer", { start: clock.t, until: clock.t + 3, base: "wall" });
     };
     switch (work.phase) {
       case "start":
@@ -1000,7 +1173,7 @@ export function createStage(canvas, options) {
         if (!traveling) {
           work.phase = "pick";
           work.timer = 0.45;
-          holder.userData.burst = { act: "build", until: performance.now() + 450 };
+          startBurst(holder, "build", { start: clock.t, until: clock.t + 0.45, base: "wall" });
           if (work.task.gather) {
             work.carried = [work.pieces[work.placed]];
             carry(work.carried[0], 0);
@@ -1046,7 +1219,7 @@ export function createStage(canvas, options) {
             placeCarried(piece);
             work.placed += 1;
             onWorkSound(work.task.sound);
-            holder.userData.burst = { act: "build", until: performance.now() + 500 };
+            startBurst(holder, "build", { start: clock.t, until: clock.t + 0.5, base: "wall" });
             work.timer = 0.5;
           } else if (work.placed >= work.pieces.length) finish();
           else {
@@ -1114,10 +1287,20 @@ export function createStage(canvas, options) {
   // figura declara en userData (head, arm, wing, flutter, tail, ear, leg,
   // spray). El bucle principal restaura la pose de reposo de esas partes cada
   // fotograma, así que aquí sólo se suman desplazamientos.
-  function applyAct(actor, t) {
-    const burst = actor.userData.burst;
-    if (burst && performance.now() > burst.until) actor.userData.burst = null;
-    const act = actor.userData.burst?.act || actor.userData.act;
+  function applyAct(actor, wallT) {
+    let burst = actor.userData.burst;
+    if (burst && burstNow(burst) >= burst.end) {
+      actor.userData.burst = null;
+      burst = null;
+    }
+    const act = burst?.act || actor.userData.act;
+    // Una ráfaga corre en su propio tiempo (desde su inicio y sin desfase),
+    // así el primer pico cae en la palabra; la acción sostenida sigue al
+    // reloj del escenario con el desfase de cada figura. Si la ráfaga repite
+    // la acción que la figura ya hace, sigue con ese mismo reloj: reiniciarla
+    // daba un salto de pose en un solo cuadro (medio giro al saltar de alegría).
+    const ownTime = Boolean(burst) && burst.act !== actor.userData.act;
+    const t = ownTime ? Math.max(0, burstNow(burst) - burst.start) : wallT;
     const baseX = actor.userData.baseX ?? actor.position.x;
     const baseY = actor.userData.baseY ?? 0;
     actor.position.x = baseX;
@@ -1129,7 +1312,7 @@ export function createStage(canvas, options) {
     const tails = findParts(actor, "tail");
     const ears = findParts(actor, "ear");
     const legs = findParts(actor, "leg");
-    const ph = actor.userData.phase || 0;
+    const ph = ownTime ? 0 : actor.userData.phase || 0;
     const armsUp = (amount, wobble = 0) => arms.forEach((arm) => { arm.rotation.z += arm.userData.arm * amount + Math.sin(t * 6 + ph) * wobble; });
     const flap = (speed, amount) => {
       wings.forEach((wing) => { wing.rotation.z += Math.sin(t * speed + ph) * amount * wing.userData.wing; });
@@ -2123,6 +2306,9 @@ export function createStage(canvas, options) {
     clock.t += dt;
     updateTweens(now / 1000);
     pick();
+    // Una sola muestra del reloj del cuento por fotograma; dt sólo mueve el
+    // render y el vaivén.
+    updateStoryClock(now);
 
     // Vaivén de las figuras y salto/wiggle al pasar el cursor.
     toyGroups.forEach((holder) => {
@@ -2169,6 +2355,10 @@ export function createStage(canvas, options) {
     });
 
     updateWork(dt);
+    talkPulse = Math.max(0, talkPulse - dt * 4.5);
+    if (lookFocus && (lookFocus.until <= clock.t || !pageActorById.has(lookFocus.actor))) lookFocus = null;
+    // Hacia dónde miran los que no hablan: la figura recién nombrada o quien habla.
+    const focusId = lookFocus?.actor || speakingId;
     pageActors.forEach((actor) => {
       if (reduceMotion) return;
       const phase = actor.userData.phase || 0;
@@ -2182,23 +2372,36 @@ export function createStage(canvas, options) {
       updateTravel(actor, dt);
       const faceTurn = actor.userData.faceTurn || 0;
       const baseRotY = actor.userData.baseRotY || 0;
-      const isSpeaker = speakingId && actor.userData.storyActor === speakingId;
-      const listening = speakingId && !isSpeaker && actor.userData.isCast;
+      const isSpeaker = speaking.has(actor.userData.storyActor);
+      const listening = Boolean(focusId) && !isSpeaker && focusId !== actor.userData.storyActor && actor.userData.isCast;
+      // El giro hacia quien habla (o acaba de ser nombrado) se suaviza aparte,
+      // en lookYaw, y nunca a partir de rotation.y: esa trae el extra que
+      // applyAct sumó el cuadro anterior, así que el giro se acumulaba hasta
+      // casi una vuelta y al terminar la figura volvía de golpe.
+      const focusActor = listening ? pageActorById.get(focusId) : null;
+      const toward = focusActor ? Math.atan2(focusActor.position.x - actor.position.x, 0.3) * 0.6 : 0;
+      const prevLook = actor.userData.lookYaw || 0;
+      const lookYaw = prevLook + (toward - prevLook) * Math.min(1, dt * 3);
+      actor.userData.lookYaw = lookYaw;
+      const yaw = baseRotY + faceTurn + lookYaw;
       actor.position.y = baseY + Math.sin(clock.t * 1.8 + phase) * 0.009;
+      actor.rotation.x = 0;
+      let talkHop = 0;
+      let talkNod = 0;
       // Respiración: el cuerpo entero se hincha apenas.
       const body = actor.children[0];
       if (body) body.scale.y = 1 + Math.sin(clock.t * 1.4 + phase) * 0.012;
       const head = findPart(actor, "head");
       if (isSpeaker) {
         // Habla: pequeño salto y cabeceo por palabra, que se apaga solo, y
-        // las manos acompañan (gesticula) mientras dura la frase.
-        talkPulse = Math.max(0, talkPulse - dt * 4.5);
-        actor.position.y += talkPulse * 0.014;
-        actor.rotation.y = baseRotY + faceTurn + Math.sin(clock.t * 2.2 + phase) * 0.08;
+        // las manos acompañan (gesticula) mientras dura la frase. El salto y
+        // el cabeceo se suman después de la acción (applyAct fija la pose).
+        talkHop = talkPulse * 0.014;
+        talkNod = -talkPulse * 0.12;
+        actor.rotation.y = yaw + Math.sin(clock.t * 2.2 + phase) * 0.08;
         actor.rotation.z = Math.sin(clock.t * 1.25 + phase) * 0.025 + talkPulse * 0.06;
-        actor.rotation.x = -talkPulse * 0.12;
         if (head) {
-          head.scale.setScalar(1 + talkPulse * 0.09);
+          head.scale.multiplyScalar(1 + talkPulse * 0.04);
           head.rotation.y += Math.sin(clock.t * 1.7 + phase) * 0.08;
           head.rotation.z += talkPulse * 0.05;
         }
@@ -2208,17 +2411,21 @@ export function createStage(canvas, options) {
           arm.rotation.x -= talkPulse * 0.3 + Math.max(0, Math.sin(clock.t * 1.9 + phase - side)) * 0.12;
         });
       } else if (listening) {
-        // Los demás se giran hacia quien habla (la cabeza va primero) y se mecen despacio.
-        const speaker = pageActorById.get(speakingId);
-        const toward = speaker ? Math.atan2(speaker.position.x - actor.position.x, 0.3) * 0.6 : 0;
-        actor.rotation.y += (toward + faceTurn - actor.rotation.y) * Math.min(1, dt * 3);
+        // Los demás se giran hacia quien habla o acaba de ser nombrado (la
+        // cabeza va primero) y se mecen despacio.
+        actor.rotation.y = yaw;
         actor.rotation.z = Math.sin(clock.t * 1.6 + phase) * 0.04;
-        if (head) head.rotation.y += toward * 0.45;
       } else {
-        actor.rotation.y = baseRotY + faceTurn + Math.sin(clock.t * 0.85 + phase) * 0.16;
+        actor.rotation.y = yaw + Math.sin(clock.t * 0.85 + phase) * 0.16;
         actor.rotation.z = Math.sin(clock.t * 1.25 + phase) * 0.025;
       }
+      // La cabeza acompaña el giro suavizado, también mientras se desgira.
+      if (head && lookYaw) head.rotation.y += lookYaw * 0.45;
       applyAct(actor, clock.t);
+      if (isSpeaker) {
+        actor.position.y += talkHop;
+        actor.rotation.x += talkNod;
+      }
     });
 
     // Los libros respiran apenas en la repisa; el seleccionado conserva la
@@ -2261,7 +2468,7 @@ export function createStage(canvas, options) {
     camera.updateProjectionMatrix();
 
     feedback.update(dt);
-    if (cinema && mode === "reading" && ensureComposer()) {
+    if (cinema && mode === "reading" && postEnabled() && ensureComposer()) {
       if (composerW !== canvas.clientWidth || composerH !== canvas.clientHeight) {
         composerW = canvas.clientWidth;
         composerH = canvas.clientHeight;
@@ -2328,6 +2535,9 @@ export function createStage(canvas, options) {
     setSpeaking,
     wordTick,
     nameActor,
+    setStoryClock,
+    playTimeline,
+    setReduceMotion,
     projectPopup,
     projectCorner,
     /** La app no pudo abrir el cuento: la tapa vuelve a cerrarse. */
@@ -2361,10 +2571,31 @@ export function createStage(canvas, options) {
         label: feedback.label,
         actors: toyGroups.filter(holder => holder.visible).map(holder => {
           const p = new THREE.Vector3(); holder.getWorldPosition(p); p.y += 0.13; p.project(camera);
+          const burst = holder.userData.burst;
           return { id: holder.userData.toyId, story: Boolean(holder.userData.storyActor), spin: toyState.get(holder)?.spin || 0,
             x: canvas.getBoundingClientRect().left + (p.x + 1) / 2 * canvas.clientWidth,
-            y: canvas.getBoundingClientRect().top + (1 - p.y) / 2 * canvas.clientHeight };
+            y: canvas.getBoundingClientRect().top + (1 - p.y) / 2 * canvas.clientHeight,
+            ...(holder.userData.storyActor ? {
+              act: burst?.act || holder.userData.act || null,
+              burst: burst ? { act: burst.act, start: burst.start, end: burst.end, base: burst.base } : null,
+              speaking: speaking.has(holder.userData.storyActor),
+              pose: { rx: holder.rotation.x, ry: holder.rotation.y - (holder.userData.baseRotY || 0), y: holder.position.y - (holder.userData.baseY ?? 0), x: holder.position.x },
+            } : {}) };
         }),
+        // Reloj y guion del cuento: lo disparado frente a lo compilado.
+        film: {
+          t: storyT,
+          clock: storyClock?.mode || null,
+          source: storyTimeline?.source || null,
+          events: storyTimeline?.events.length || 0,
+          dispatched: filmLog.length,
+          pending: storyCursor?.remaining ?? 0,
+          dropped: storyCursor?.dropped.length || 0,
+          speaking: [...speaking],
+          look: lookFocus?.actor || null,
+          reduceMotion,
+          log: filmLog.slice(),
+        },
         selected: selected?.book.id || null,
         book: selected ? { p: selected.group.position.toArray(), r: selected.group.rotation.toArray().slice(0, 3), s: selected.group.scale.x } : null,
         open: openT,

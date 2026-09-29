@@ -114,6 +114,10 @@ export default defineConfig({
           const collectionPart = id.match(/\/src\/nido\/cuentos\/collection\/texts-(\d+)\.json$/);
           if (collectionPart) return `nido-classics-${collectionPart[1]}`;
           if (/\/src\/nido\/cuentos\/(cuentos-data|pulgarcito-data|classic-collection|collection-layout)\.js$/.test(id)) return 'nido-story-data';
+          // Reloj y guion de película de los cuentos (Nido Película): código
+          // puro que sólo importa three, cuentos-acts y cuentos-voice-plan.
+          // Chunk propio para que CuentosApp no crezca con cada entrega.
+          if (id.includes("/src/nido/cuentos/film/")) return "nido-film";
           if (id.includes("node_modules/react/") || id.includes("node_modules/react-dom/") || id.includes("node_modules/scheduler/")) {
             return "vendor-react";
           }
