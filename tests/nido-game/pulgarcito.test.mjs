@@ -43,7 +43,10 @@ test("las aventuras de Pulgarcito tienen figuras 3D con dimensiones finitas", ()
     assert.ok(hasToy(id), id); assert.notEqual(toyLabel(id), "Figura mágica");
     const toy = buildToy(id), size = new THREE.Box3().setFromObject(toy).getSize(new THREE.Vector3());
     assert.ok(size.toArray().every(n => Number.isFinite(n) && n > 0), id);
-    let meshes = 0; toy.traverse(obj => { if (obj.isMesh) { meshes++; obj.geometry.dispose(); const materials = Array.isArray(obj.material) ? obj.material : [obj.material]; materials.forEach(material => material.dispose()); } });
+    // Composición de autor: se cuenta antes del horneado, que funde piezas.
+    const authored = buildToy(id, { bake: false });
+    let meshes = 0; authored.traverse(obj => { if (obj.isMesh) meshes++; });
+    toy.traverse(obj => { if (obj.isMesh) { obj.geometry.dispose(); const materials = Array.isArray(obj.material) ? obj.material : [obj.material]; materials.forEach(material => material.dispose()); } });
     assert.ok(meshes >= 4, id);
   }
 });

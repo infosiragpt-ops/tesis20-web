@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import { BOOKS } from '../../src/nido/cuentos/cuentos-data.js';
 import { buildToy } from '../../src/nido/cuentos/three/toys/index.js';
+import { RIG_REVISION } from '../../src/nido/cuentos/three/toys/sculpting.js';
 
 const cast=[...new Set(BOOKS.flatMap(book=>book.pages.flatMap(page=>page.cast||[])))];
 function tagged(root,key) { const result=[];root.traverse(obj=>{if(obj.userData[key])result.push(obj);});return result; }
@@ -16,7 +17,7 @@ test('los 44 libros usan modelos articulados registrados (no valida fidelidad ar
   for(const id of cast) {
     if(id==='concha-caracol')continue; // Empty shell is a prop, not a character.
     const toy=buildToy(id);
-    assert.equal(toy.userData.sculpted?.revision,1,`${id}: falta el modelo revisado`);
+    assert.equal(toy.userData.sculpted?.revision,RIG_REVISION,`${id}: falta el modelo revisado`);
     assert.equal(tagged(toy,'head').length,1,`${id}: una cabeza articulada`);
     assert.equal(tagged(toy,'eye').length,2,`${id}: dos pivotes de parpadeo, no duplicados`);
     dispose(toy);
@@ -45,7 +46,8 @@ test('todas las geometrías son finitas y el reparto respeta el presupuesto móv
       for(const key of ['position','normal'])for(const value of obj.geometry.attributes[key].array)assert.ok(Number.isFinite(value),`${id}: ${key} no finito`);
     });
     assert.ok(triangles<40000,`${id}: ${triangles} triángulos`);
-    assert.ok(draws<=100,`${id}: ${draws} llamadas de dibujo`);
+    // WP2: el horneado por pivote (toys/bake.js) baja el tope de 100 a 60.
+    assert.ok(draws<=60,`${id}: ${draws} llamadas de dibujo`);
     const box=new THREE.Box3().setFromObject(toy);
     assert.ok(Math.abs(box.min.y)<.002,`${id}: apoyo en el suelo`);
     costs.set(id,{triangles,draws});dispose(toy);
