@@ -48,12 +48,17 @@ export const CLASSIC_DIRECTION = {
   habichuelas: p([actor('nino-clasico','periquín juan niño'), mother, actor('vaca','vaca'), actor('gigante','gigante')], ['habichuela','casa'], 'pajaros'),
 };
 
+// Whole-word verb forms only: «camino» (noun), «entre», «entregó», «nada»
+// (nothing), «salto» (noun), «levantaba», «dormitorio» and «cantidad» are
+// not actions. Direction data only; the licensed text is never touched.
 const verbs = [
-  [/^(corr|huy|huí|escap)/, 'run'], [/^(camin|anduv|lleg|entr|salió|march)/, 'walk'],
+  [/^(corr|huy|huí|escap)/, 'run'],
+  [/^(camin(a|an|aba|aban|ó|aron|ando|ar)|anduv[a-z]*|lleg(a|an|ó|aron|aba|aban|ando|ar)|entr(a|an|ó|aron|aba|aban|ando|ar)|salió|salieron|march(a|ó|aron|aba|aban|ando|ar))$/, 'walk'],
   [/^(vol(?:ar|ando|aba[ns]?|aron|ó|áis|aremos|arán|aría[ns]?)|vuel(?:a[ns]?|o|en))$/, 'fly'],
-  [/^(nad(?:ar|ando|aba[ns]?|aron|ó|o|as?|amos|áis|an|aremos|arán)|sumerg(?:irse|ió|ía[ns]?|ieron))$/, 'swim'], [/^(salt|brinc|levant)/, 'jump'],
-  [/^(durm|dorm|ronc)/, 'sleep'], [/^(tembl|tirita|llor|solloz)/, 'shiver'],
-  [/^(cant)/, 'sing'], [/^(bail|danz)/, 'dance'], [/^(mir|observ|contempl|leyó|leí)/, 'look'],
+  [/^(nad(ar|ando|aba|aban|aron|ó|amos|an|aremos|arán)|sumerg(irse|ió|ía|ían|ieron))$/, 'swim'],
+  [/^(salt(a|an|ó|aron|aba|aban|ando|ar)|brinc[a-záéíóú]*)$/, 'jump'],
+  [/^(durm[a-záéíóú]*|dorm(ir|ía|ían|ido|imos)|ronc[a-záéíóú]*)$/, 'sleep'], [/^(tembl|tirita|llor|solloz)/, 'shiver'],
+  [/^cant(a|an|ó|aron|aba|aban|ando|ar)$/, 'sing'], [/^(bail|danz)/, 'dance'], [/^(mir|observ|contempl|leyó|leí)/, 'look'],
   [/^(escuch|oyó)/, 'listen'], [/^(pens|pregunt|malhumor|refunfuñ)/, 'think'], [/^(salud)/, 'wave'],
   [/^(trabaj(?:ar|ando|aba[ns]?|ó|aron|a[ns]?)|cos(?:er|iendo|ía[ns]?|ió|ieron|e[ns]?)|constru(?:ir|yendo|ía[ns]?|yó|yeron|ye[ns]?)|remend(?:ar|ando|aba[ns]?|ó|aron)|tiraron)$/, 'build'],
   [/^(abraz)/, 'hug'],
@@ -245,9 +250,12 @@ export function directClassic(item, texts) {
     const acts = Object.fromEntries(cast.map((id, i) => [id, i ? 'listen' : 'look']));
     const cues = {};
     let subject = cast[0];
+    let previousNamed = null;
     words.forEach(word => {
       const named = direction.cast.find(a => cast.includes(a.id) && a.words.includes(word));
-      if (named) { subject = named.id; cues[word] = { act: { [subject]: 'nod' }, hold: 1200 }; }
+      // «Barba Azul», «Alí Babá»: one nod per name, not one per word of it.
+      if (named && named.id !== previousNamed) { subject = named.id; cues[word] = { act: { [subject]: 'nod' }, hold: 1200 }; }
+      previousNamed = named ? named.id : null;
       const verb = verbs.find(([pattern]) => pattern.test(word));
       if (verb) {
         const act = verb[1];

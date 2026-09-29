@@ -80,6 +80,11 @@ export function createToyFeedback(scene, camera, reduced) {
       geometry.attributes.position.needsUpdate = true;
     }
   }
-  return { show, update, clear() { hold = 0; show(null); }, get label() { return sprite.visible ? label : null; },
+  // Movimiento reducido en vivo: sin destellos ni pulso desde el siguiente fotograma.
+  function setReduceMotion(value) {
+    reduced = Boolean(value);
+    if (reduced) { life = 0; material.opacity = 0; }
+  }
+  return { show, update, setReduceMotion, clear() { hold = 0; show(null); }, get label() { return sprite.visible ? label : null; },
     dispose() { scene.remove(sprite, sparks); textures.forEach(t => t.dispose()); sprite.material.dispose(); geometry.dispose(); material.map.dispose(); material.dispose(); } };
 }

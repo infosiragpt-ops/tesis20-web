@@ -19,6 +19,39 @@ test('reported nouns do not become swimming, flying or sewing actions', () => {
   assert.equal(hugging.cues['abrazó'].act.principe,'hug');
 });
 
+test('nouns and look-alike words no longer trigger actions; real verbs keep theirs', () => {
+  const item={id:'perla-dragon',title:'Prueba'};
+  const quiet=directClassic(item,['El dragón no dijo nada entre los árboles del camino y entregó la perla. La cantidad de oro era grande. Se levantaba temprano en su dormitorio.']).pages[0];
+  for(const word of ['nada','entre','camino','entregó','levantaba','dormitorio','cantidad']) assert.equal(quiet.cues[word],undefined,word);
+  const acting=directClassic(item,['El dragón nadó, voló y cosió. Luego caminó, saltó, cantaba y durmió.']).pages[0];
+  assert.equal(acting.cues['nadó'].act.dragon,'swim');
+  assert.equal(acting.cues['voló'].act.dragon,'fly');
+  assert.equal(acting.cues['cosió'].act.dragon,'build');
+  assert.equal(acting.cues['caminó'].act.dragon,'walk');
+  assert.equal(acting.cues['saltó'].act.dragon,'jump');
+  assert.equal(acting.cues['cantaba'].act.dragon,'sing');
+  assert.equal(acting.cues['durmió'].act.dragon,'sleep');
+  const hugging=directClassic(item,['El príncipe abrazó al dragón.']).pages[0];
+  assert.equal(hugging.cues['abrazó'].act.principe,'hug');
+});
+
+test('a two-word name («Barba Azul») nods once', () => {
+  const page=directClassic({id:'barba-azul',title:'Prueba'},['Había una vez un hombre muy rico al que todos llamaban Barba Azul por el color de su barba.']).pages[0];
+  const nods=Object.entries(page.cues).filter(([,cue])=>cue.act?.['barba-azul']==='nod');
+  assert.deepEqual(nods.map(([word])=>word),['barba']);
+  assert.equal(page.cues.azul,undefined);
+});
+
+test('no published classic page swims on «nada»', () => {
+  let nada=0;
+  for (const book of CLASSIC_COLLECTION) for (const page of book.pages) {
+    if (!/\bnada\b/i.test(page.x)) continue;
+    nada += 1;
+    assert.equal(page.cues.nada,undefined,`${book.id}: «nada» still acts`);
+  }
+  assert.ok(nada >= 20, `expected the «nada» pages, found ${nada}`);
+});
+
 test('dragon edition follows the cave, stolen pearl, voyage and imperial ending', () => {
   const pages=CLASSIC_COLLECTION.find(b=>b.id==='clasico-perla-dragon').pages;
   assert.deepEqual(pages[0].cast,['dragon']);
