@@ -106,3 +106,37 @@ test('props are in front of the opaque popup, never behind the story image', () 
     for (const slot of slots.slice(cast)) assert.ok(slot.z >= .04, `hidden prop with ${cast} actors`);
   }
 });
+
+test('las figuras del desplegable no se pisan: los objetos grandes se achican y se apartan', async () => {
+  const THREE = await import('three');
+  const { TOY_SCALE } = await import('../../src/nido/cuentos/three/toys/index.js');
+  const { fitDioramaSlots } = await import('../../src/nido/cuentos/three/diorama-layout.js');
+  const { BOOKS } = await import('../../src/nido/cuentos/cuentos-data.js');
+  const box = new THREE.Box3();
+  const size = new THREE.Vector3();
+  const cache = new Map();
+  const width = id => {
+    if (!cache.has(id)) {
+      const toy = buildToy(id);
+      toy.updateMatrixWorld(true);
+      cache.set(id, box.setFromObject(toy).getSize(size).x * (TOY_SCALE[id] || 1));
+    }
+    return cache.get(id);
+  };
+  const toyFor = { paja: 'casa', madera: 'casa', ladrillos: 'casa', cuarto: 'farol' };
+  const sky = new Set(['luna', 'estrellas', 'estrella', 'sol', 'nubes', 'niebla', 'viento', 'nieve']);
+  for (const book of BOOKS) for (const [index, page] of book.pages.entries()) {
+    const cast = (page.cast || []).map(id => hasToy(id) ? id : toyFor[id]).filter((id, i, list) => id && hasToy(id) && list.indexOf(id) === i).slice(0, 3);
+    const props = [...(page.props || [])].sort((a, b) => Number(sky.has(a)) - Number(sky.has(b)))
+      .map(id => hasToy(id) ? id : toyFor[id]).filter((id, i, list) => id && hasToy(id) && !cast.includes(id) && list.indexOf(id) === i)
+      .slice(0, cast.length >= 3 ? 1 : 2);
+    const ids = [...cast, ...props];
+    const widths = ids.map(width);
+    const slots = fitDioramaSlots(dioramaLayout(cast.length, props.length), widths, cast.length);
+    const spans = slots.map((slot, i) => [slot.x - widths[i] * slot.scale / 2, slot.x + widths[i] * slot.scale / 2, ids[i]]).sort((a, b) => a[0] - b[0]);
+    for (let i = 1; i < spans.length; i++) {
+      assert.ok(spans[i][0] >= spans[i - 1][1] - 1e-9, `${book.id} p${index + 1}: ${spans[i - 1][2]} pisa a ${spans[i][2]}`);
+    }
+    for (const [i, slot] of slots.entries()) if (i >= cast.length) assert.ok(widths[i] * slot.scale <= 0.15 + 1e-9, `${book.id} p${index + 1}: ${ids[i]} demasiado grande`);
+  }
+});

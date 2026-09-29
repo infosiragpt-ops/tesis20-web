@@ -22,11 +22,11 @@ import {
   flatTexture,
 } from "./textures.js";
 import { createBook3D, BOOK_W, BOOK_H, BOOK_T } from "./book3d.js";
-import { buildToy, ghostify, PIN_TOY, hasToy } from "./toys/index.js";
+import { buildToy, ghostify, hasToy, pinToy } from "./toys/index.js";
 import { mat, blob, box, cyl, cone } from "./toys/_shared.js";
 import { bookIndexAt, bookPositionAt, clamp, clampZoom, dragScale, settleBook, deskDragIntent, dragProgress, shouldCompleteDrag } from "./library-gestures.js";
 import { createToyFeedback } from "./toy-feedback.js";
-import { dioramaLayout } from './diorama-layout.js';
+import { dioramaLayout, fitDioramaSlots } from './diorama-layout.js';
 import { cinemaFitDistance } from './cinema-framing.js';
 
 const SHELF_TOYS = ["buho", "luna", "cometa", "oveja", "arbol", "ballena", "frasco", "barco", "tren", "estrella"];
@@ -42,7 +42,7 @@ const CAM_PORTRAIT = {
   shelf: { pos: [0, 1.56, 3.45], look: [0, 1.42, 0] },
   desk: { pos: [0, 2.8, 4.2], look: [0, 0.2, 0.72] },
   // En vertical el escenario ocupa su propia zona y el texto va debajo.
-  reading: { pos: [0.18, 1.6, 2.1], look: [0.18, 0.26, 0.65] },
+  reading: { pos: [0.18, 1.2, 1.4], look: [0.18, 0.42, 0.55] },
 };
 
 const DESK_BOOK = { x: 0.06, z: 1.24, scale: 1.42 };
@@ -406,7 +406,7 @@ export function createStage(canvas, options) {
       const holder = new THREE.Group();
       const [x, z] = DESK_SLOTS[i];
       holder.position.set(x, 1.4, z);
-      holder.userData.toyId = PIN_TOY[pinId] || pinId;
+      holder.userData.toyId = pinToy(pinId);
       holder.userData.pinId = pinId;
       holder.rotation.y = (i % 2 ? -1 : 1) * 0.35;
       scene.add(holder);
@@ -414,7 +414,7 @@ export function createStage(canvas, options) {
       deskToys.push(holder);
       toyState.set(holder, { phase: i * 0.9, hop: 0, wiggle: 0 });
       holder.scale.setScalar(1.05);
-      mountToy(holder, PIN_TOY[pinId] || pinId, { ghost: !ownedPins.includes(pinId) });
+      mountToy(holder, pinToy(pinId), { ghost: !ownedPins.includes(pinId) });
       tween(holder.position, { y: 0 }, { duration: reduceMotion ? 0.01 : 0.9, delay: 0.25 + i * 0.12, easing: ease.outBounce });
     });
   }
@@ -585,11 +585,18 @@ export function createStage(canvas, options) {
     selected.dioramaRoot.add(platform);
     pageActors.push(platform);
 
-    const layout = dioramaLayout(castIds.length, propIds.length);
+    // Cada figura se mide antes de colocarla: un laberinto o una carta miden
+    // varias veces lo que un personaje y, en la ranura fija, lo tapaban.
+    const actors = candidates.map((id) => buildToy(id));
+    const widths = actors.map((actor, index) => {
+      actor.updateMatrixWorld(true);
+      return tmpBox.setFromObject(actor).getSize(tmpSize).x * (TOY_SCALE[candidates[index]] || 1);
+    });
+    const layout = fitDioramaSlots(dioramaLayout(castIds.length, propIds.length), widths, castIds.length);
     let enteredSound = false;
     candidates.forEach((id, index) => {
       const holder = new THREE.Group();
-      const actor = buildToy(id);
+      const actor = actors[index];
       const slot = layout[index];
       // Las criaturas pequeñas (mariposa, picaflor…) no miden lo que un cerdito.
       const target = slot.scale * (TOY_SCALE[id] || 1);
@@ -613,7 +620,10 @@ export function createStage(canvas, options) {
       // `enter`: la figura entra caminando (o volando, nadando…) desde un lado.
       // Sin indicación, cada personaje entra a escena alternando lados, salvo
       // si duerme; `enter: "none"` lo deja quieto desde el principio.
-      const enter = page.enter?.[id] ?? (holder.userData.isCast && holder.userData.pageAct !== "sleep" && !reduceMotion ? (index % 2 ? "right" : "left") : null);
+      // Con movimiento reducido el bucle de animación no mueve figuras: una
+      // entrada la dejaría varada fuera del desplegable, así que aparece ya
+      // en su sitio.
+      const enter = reduceMotion ? null : page.enter?.[id] ?? (holder.userData.isCast && holder.userData.pageAct !== "sleep" ? (index % 2 ? "right" : "left") : null);
       if (enter === "left" || enter === "right") {
         const act = ["fly", "swim", "run", "jump"].includes(holder.userData.act) ? holder.userData.act : "walk";
         holder.userData.baseX = slot.x + (enter === "right" ? 0.3 : -0.3);
@@ -683,6 +693,7 @@ export function createStage(canvas, options) {
   };
   const tmpQuat = new THREE.Quaternion();
   const tmpBox = new THREE.Box3();
+  const tmpSize = new THREE.Vector3();
   const cineFront = new THREE.Vector3();
   const cineUp = new THREE.Vector3();
   const cineRight = new THREE.Vector3();
