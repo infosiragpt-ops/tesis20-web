@@ -3,6 +3,7 @@ import { BOOKS, PIN_LABELS, TOTAL_PINS, TOTAL_QUIZ, TOTAL_STARS, bookPins } from
 import { BookCover, Scene, Souvenir, pinSpot } from "./cuentos-scene.jsx";
 import { seeded } from "./cuentos-art-base.jsx";
 import { emblemFor } from "./cuentos-art-props.jsx";
+import { pinArt } from "./classic-souvenirs.js";
 import { CAST } from "./cuentos-art-cast.jsx";
 import { MEDALS, bookStatus, totals, useProgress } from "./cuentos-progress.js";
 import {
@@ -32,7 +33,7 @@ import {
   warmUpVoices,
   wordTrack,
 } from "./cuentos-audio.js";
-import { pageSpeechText, titleWordCount, wordKey } from "./cuentos-voice-plan.js";
+import { optionSpeechText, pageSpeechText, titleWordCount, wordKey } from "./cuentos-voice-plan.js";
 import { isClassicEdition, pageWindow, resumePage } from "./collection-layout.js";
 import { LibrarySearch } from "./LibrarySearch.jsx";
 import { dialogControls, handleDialogKey, readerShortcutsBlocked } from "./dialog-focus.js";
@@ -137,7 +138,7 @@ export default function CuentosApp() {
       coverTexture: (book) => coverArtTexture(book),
       emblemTexture: (pinId) => {
         const emblem = emblemFor(pinId);
-        const Art = CAST[pinId]?.Art;
+        const Art = CAST[pinArt(pinId)]?.Art;
         return svgElementToTexture(
           `emblem-${pinId}`,
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="-50 -50 100 100">
@@ -673,7 +674,7 @@ function DeskPanel({ book, status, ready, onOpen, onBack }) {
         <h2>{book.title}</h2>
         <p className="cuentos-desk__tagline">{book.tagline}</p>
         <p className="cuentos-desk__meta">
-          {book.pages.length} páginas · {status.finished ? "terminado" : `${status.pct}% leído`}{isClassicEdition(book) || book.quiz.length === 0 ? ' · Texto íntegro · voz de estudio' : ` · ${status.pins.length} de ${bookPins(book).length} souvenirs`}
+          {book.pages.length} páginas · {status.finished ? "terminado" : `${status.pct}% leído`}{isClassicEdition(book) ? ' · Texto íntegro' : ''}{bookPins(book).length ? ` · ${status.pins.length} de ${bookPins(book).length} souvenirs` : ' · voz de estudio'}
         </p>
         {book.source ? <details className="cuentos-source"><summary>Sobre esta edición y su portada</summary>
           <p>{book.warning}</p><a href={book.source.url} target="_blank" rel="noreferrer">Texto: {book.source.publisher}</a>
@@ -1173,8 +1174,12 @@ function Quiz({ book, entry, onAnswer, onClose }) {
   // La pregunta y sus opciones se leen en el orden en que se ven: los peques
   // de tres años no leen todavía, pero sí eligen lo que escuchan.
   const readQuestion = useCallback(() => {
-    return speakSequence(quizTracks(book.id, index, options.map((option) => option.index)));
-  }, [book.id, index, options]);
+    const tracks = quizTracks(book.id, index, options.map((option) => option.index));
+    if (tracks.length) return speakSequence(tracks);
+    // Sin grabación de estudio (el quiz de los clásicos aún no pasó por el
+    // generador): la voz del dispositivo lee la pregunta y las opciones.
+    return speak([question.q, ...options.map((option) => optionSpeechText(option.text))].join(" "), { rate: 0.86 });
+  }, [book.id, index, options, question.q]);
 
   useEffect(() => {
     if (done) return undefined;
@@ -1291,7 +1296,7 @@ function Album({ state, stats, onClose, onReset }) {
           <div>
             <p className="cuentos-modal__eyebrow">Tesis20 Nido · búsqueda del tesoro</p>
             <h2>Mis souvenirs</h2>
-            <p className="cuentos-album__lead">Los cuentos originales con voz de estudio esconden cinco souvenirs. Tócalos cuando brillen para guardarlos. Los clásicos también se escuchan con voz de estudio y conservan tu progreso, sin quiz ni souvenirs.</p>
+            <p className="cuentos-album__lead">Cada cuento esconde hasta cinco souvenirs. Tócalos cuando brillen para guardarlos. Los clásicos de texto íntegro también tienen souvenirs y quiz.</p>
           </div>
           <div className="cuentos-album__totals">
             <span>
@@ -1334,7 +1339,7 @@ function Album({ state, stats, onClose, onReset }) {
                     <i style={{ width: `${status.pct}%`, background: book.accent }} />
                   </span>
                   <small>
-                    {status.finished ? "Terminado" : `${status.pct}% leído`}{isClassicEdition(book) || book.quiz.length === 0 ? ' · Texto íntegro · voz de estudio' : ` · ${status.pins.length} de ${bookPins(book).length} souvenirs · quiz ${status.quizOk}/${book.quiz.length}`}
+                    {status.finished ? "Terminado" : `${status.pct}% leído`}{isClassicEdition(book) ? ' · Texto íntegro' : ''}{bookPins(book).length ? ` · ${status.pins.length} de ${bookPins(book).length} souvenirs` : ''}{book.quiz.length ? ` · quiz ${status.quizOk}/${book.quiz.length}` : ''}
                   </small>
                 </div>
                 <div className="cuentos-album__pins">
@@ -1380,8 +1385,8 @@ function Album({ state, stats, onClose, onReset }) {
 const STEPS = [
   { icon: "📚", title: "Elige un cuento", text: "Busca por título o arrastra la repisa. Toca un libro y abre su tapa hacia la izquierda, o usa «Abrir el libro». Para guardarlo, arrástralo hacia arriba o vuelve a la estantería. Cada ficha indica cuántas páginas tiene; tu última página se guarda en este dispositivo." },
   { icon: "🔊", title: "Lectura y narración", text: "Toca «Léemelo» para escuchar y seguir las palabras. Toda la biblioteca usa la voz de estudio; si falta un audio, se oye la voz en español del dispositivo. Las figuras se animan durante la lectura. Usa las flechas, estrellas o selector para cambiar de página." },
-  { icon: "🔍", title: "Busca el souvenir", text: "Los cuentos con voz de estudio esconden cinco souvenirs. Toca los objetos que brillan para guardarlos. Las ediciones clásicas no incluyen souvenirs." },
-  { icon: "⭐", title: "Responde el quiz", text: "Los cuentos con voz de estudio ofrecen cinco preguntas al llegar al final. Los clásicos conservan el progreso, sin quiz. Abrir la ayuda o los souvenirs detiene la narración sin cambiar tu página." },
+  { icon: "🔍", title: "Busca el souvenir", text: "Cada cuento esconde hasta cinco souvenirs, también los clásicos. Toca los objetos que brillan para guardarlos." },
+  { icon: "⭐", title: "Responde el quiz", text: "Al llegar a la última página aparecen cinco preguntas sobre el cuento. Abrir la ayuda o los souvenirs detiene la narración sin cambiar tu página." },
 ];
 
 function Help({ onClose }) {

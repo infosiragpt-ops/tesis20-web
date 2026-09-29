@@ -5,10 +5,11 @@ import part4 from './collection/texts-4.json' with { type: 'json' };
 import part5 from './collection/texts-5.json' with { type: 'json' };
 import { fixedRanges, sentenceRanges, storyTokens } from './collection-layout.js';
 import { directClassic } from './classic-direction.js';
+import { classicQuiz, placeClassicPins } from './classic-souvenirs.js';
 
 // Authorized full text with the same studio voice plan as the original books.
-// Device speech remains only as a fallback when a clip is missing. These
-// editions still do not promise quizzes/souvenirs.
+// Device speech remains only as a fallback when a clip is missing. Quiz and
+// souvenirs come from classic-souvenirs.js (collection/extras.json).
 
 // Nido already ships illustrated studio editions of these stories
 // (`caperucita` and `pulgarcito` in cuentos-data / PULGARCITO). Publishing
@@ -49,7 +50,9 @@ export const CLASSIC_COLLECTION = [...part1, ...part2, ...part3, ...part4, ...pa
   const text = ([start, end]) => tokens.slice(start, end).join(' ');
   const voicePages = recorded.map((range, index) => ({ t: recordedTitle(item, index), x: text(range) }));
   const leads = voicePages.map(page => page.t.split(/\s+/).length);
-  const direction = directClassic(item, ranges.map(text));
+  const texts = ranges.map(text);
+  const direction = directClassic(item, texts);
+  const pins = placeClassicPins(item.id, texts);
   return {
     id: `clasico-${item.id}`,
     title: item.title,
@@ -64,11 +67,15 @@ export const CLASSIC_COLLECTION = [...part1, ...part2, ...part3, ...part4, ...pa
     cover: item.cover,
     cameo: item.cameo,
     names: direction.names,
-    pages: direction.pages.map((page, index) => ({ ...page, voice: voiceSegments(ranges[index], recorded, leads) })),
+    pages: direction.pages.map((page, index) => ({
+      ...page,
+      voice: voiceSegments(ranges[index], recorded, leads),
+      ...(pins.has(index) ? { pin: pins.get(index) } : {}),
+    })),
     // Páginas tal como se grabaron (plan de voz) y a qué hoja nueva lleva cada
     // una, para que el progreso guardado con el reparto anterior no se pierda.
     voicePages,
     legacyPageMap: recorded.map(([start]) => ranges.findIndex(([from, to]) => start >= from && start < to)),
-    quiz: [],
+    quiz: classicQuiz(item.id),
   };
 });

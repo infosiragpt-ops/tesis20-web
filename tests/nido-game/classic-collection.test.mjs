@@ -24,7 +24,7 @@ test('las 33 ediciones publicadas conservan cada palabra del texto autorizado', 
     for (const page of recordedPages(book)) assert.ok(page.x.split(/\s+/).length <= 65, book.title);
     assert.equal(recordedPages(book).map(p => p.x).join(' '), book.pages.map(p => p.x).join(' '), book.title);
     assert.ok(book.source.permission.includes('autorizada'));
-    assert.equal(book.quiz.length, 0);
+    assert.equal(book.quiz.length, 5, book.title);
     assert.equal(book.narration, undefined);
   }
   assert.equal(TOTAL_STARS, BOOKS.reduce((total, b) => total + b.pages.length, 0));
@@ -38,6 +38,39 @@ test('la paginación no pierde palabras ni deja páginas vacías', () => {
     assert.equal(window.length, 7); assert.ok(window.includes(page));
     assert.ok(window.every(i => i >= 0 && i < 72));
   }
+});
+
+test('cada clásico trae quiz y souvenirs nombrados en su propio texto, con dibujo y figura', async () => {
+  const { CLASSIC_PINS, pinArt } = await import('../../src/nido/cuentos/classic-souvenirs.js');
+  const { PIN_LABELS, bookPins } = await import('../../src/nido/cuentos/cuentos-data.js');
+  const source = async file => readFile(new URL(`../../src/nido/cuentos/${file}`, import.meta.url), 'utf8');
+  const keys = (text, from) => new Set([...text.slice(text.indexOf(from)).matchAll(/^ {2}"?([a-z-]+)"?: [(<{]/gm)].map(m => m[1]));
+  const drawn = new Set([
+    ...keys(await source('cuentos-art-props.jsx'), 'const EMBLEMS = {'),
+    ...keys(await source('cuentos-art-props.jsx'), 'const PULGARCITO_EMBLEMS = {'),
+    ...keys(await source('cuentos-art-classic-emblems.jsx'), 'export const CLASSIC_EMBLEMS = {'),
+    ...keys(await source('cuentos-art-cast.jsx'), 'export const CAST = {'),
+  ]);
+  let pins = 0;
+  for (const book of CLASSIC_COLLECTION) {
+    const id = book.id.replace('clasico-', '');
+    const placed = bookPins(book);
+    assert.equal(placed.length, CLASSIC_PINS[id].length, `${book.title}: un souvenir no encontró su frase`);
+    assert.ok(placed.length >= 2 && placed.length <= 5, book.title);
+    assert.equal(new Set(placed.map(pin => pin.page)).size, placed.length, book.title);
+    for (const pin of placed) {
+      assert.ok(PIN_LABELS[pin.id], pin.id);
+      assert.ok(drawn.has(pinArt(pin.id)), `${pin.id}: sin dibujo «${pinArt(pin.id)}»`);
+    }
+    for (const question of book.quiz) {
+      assert.match(question.q, /^¿.+\?$/);
+      assert.equal(question.a.length, 3);
+      assert.equal(new Set(question.a).size, 3);
+    }
+    pins += placed.length;
+  }
+  assert.equal(new Set(CLASSIC_COLLECTION.flatMap(book => bookPins(book).map(pin => pin.id))).size, pins);
+  assert.ok(pins >= 150, `${pins} souvenirs`);
 });
 
 test('los clásicos se reparten por frases, sin hojas sueltas de dos palabras', () => {

@@ -4,6 +4,7 @@
 import { Backdrop, seeded, VIEW_W, VIEW_H } from "./cuentos-art-base.jsx";
 import { CAST } from "./cuentos-art-cast.jsx";
 import { Prop, propLayer, emblemFor } from "./cuentos-art-props.jsx";
+import { pinArt } from "./classic-souvenirs.js";
 
 const PLACE = {
   oso: { s: 1.15, y: 566 },
@@ -137,7 +138,7 @@ export function pinSpot(book, pageIndex) {
 
 function PinToken({ id, x, y, found, onPin, interactive }) {
   const emblem = emblemFor(id);
-  const fallback = CAST[id];
+  const fallback = CAST[pinArt(id)];
   const Art = fallback ? fallback.Art : null;
 
   return (
@@ -174,7 +175,7 @@ function PinToken({ id, x, y, found, onPin, interactive }) {
 /** Emblema aislado para el álbum y la repisa de souvenirs. */
 export function Souvenir({ id, size = 54, locked = false }) {
   const emblem = emblemFor(id);
-  const fallback = CAST[id];
+  const fallback = CAST[pinArt(id)];
   const Art = fallback ? fallback.Art : null;
   return (
     <svg
