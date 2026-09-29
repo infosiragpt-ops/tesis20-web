@@ -57,7 +57,7 @@ const verbs = [
   [/^(vol(?:ar|ando|aba[ns]?|aron|ó|áis|aremos|arán|aría[ns]?)|vuel(?:a[ns]?|o|en))$/, 'fly'],
   [/^(nad(ar|ando|aba|aban|aron|ó|amos|an|aremos|arán)|sumerg(irse|ió|ía|ían|ieron))$/, 'swim'],
   [/^(salt(a|an|ó|aron|aba|aban|ando|ar)|brinc[a-záéíóú]*)$/, 'jump'],
-  [/^(durm[a-záéíóú]*|dorm(ir|ía|ían|ido|imos)|ronc[a-záéíóú]*)$/, 'sleep'], [/^(tembl|tirita|llor|solloz)/, 'shiver'],
+  [/^(durm[a-záéíóú]*|dorm(ir|irse|iré|ía|ían|ido|ida|idos|idas|imos|ita|itaba|itaban|itó|itando)|ronc[a-záéíóú]*)$/, 'sleep'], [/^(tembl|tirita|llor|solloz)/, 'shiver'],
   [/^cant(a|an|ó|aron|aba|aban|ando|ar)$/, 'sing'], [/^(bail|danz)/, 'dance'], [/^(mir|observ|contempl|leyó|leí)/, 'look'],
   [/^(escuch|oyó)/, 'listen'], [/^(pens|pregunt|malhumor|refunfuñ)/, 'think'], [/^(salud)/, 'wave'],
   [/^(trabaj(?:ar|ando|aba[ns]?|ó|aron|a[ns]?)|cos(?:er|iendo|ía[ns]?|ió|ieron|e[ns]?)|constru(?:ir|yendo|ía[ns]?|yó|yeron|ye[ns]?)|remend(?:ar|ando|aba[ns]?|ó|aron)|tiraron)$/, 'build'],

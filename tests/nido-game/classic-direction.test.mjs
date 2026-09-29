@@ -35,6 +35,18 @@ test('nouns and look-alike words no longer trigger actions; real verbs keep thei
   assert.equal(hugging.cues['abrazó'].act.principe,'hug');
 });
 
+test('every sleeping form keeps its sleep act; only «dormitorio» is a room', () => {
+  const item={id:'perla-dragon',title:'Prueba'};
+  for (const word of ['dormida','dormidos','dormidas','dormitaba','dormirse','dormiré','dormía','durmió']) {
+    const page=directClassic(item,[`El dragón ${word} bajo el árbol.`]).pages[0];
+    assert.equal(page.cues[word]?.act?.dragon,'sleep',word);
+  }
+  for (const word of ['dormitorio','dormitorios']) {
+    const page=directClassic(item,[`El dragón entró al ${word} grande.`]).pages[0];
+    assert.equal(page.cues[word],undefined,word);
+  }
+});
+
 test('a two-word name («Barba Azul») nods once', () => {
   const page=directClassic({id:'barba-azul',title:'Prueba'},['Había una vez un hombre muy rico al que todos llamaban Barba Azul por el color de su barba.']).pages[0];
   const nods=Object.entries(page.cues).filter(([,cue])=>cue.act?.['barba-azul']==='nod');

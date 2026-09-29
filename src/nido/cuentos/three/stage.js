@@ -623,6 +623,7 @@ export function createStage(canvas, options) {
       holder.userData.pageAct = holder.userData.act;
       holder.userData.slotX = slot.x;
       holder.userData.faceTurn = 0;
+      holder.userData.lookYaw = 0;
       holder.userData.travel = null;
       // `enter`: la figura entra caminando (o volando, nadando…) desde un lado.
       // Sin indicación, cada personaje entra a escena alternando lados, salvo
@@ -810,6 +811,7 @@ export function createStage(canvas, options) {
       landTravel(actor);
       actor.userData.burst = null;
       actor.userData.faceTurn = 0;
+      actor.userData.lookYaw = 0;
       actor.position.x = actor.userData.baseX ?? actor.position.x;
       actor.position.y = actor.userData.baseY ?? actor.position.y;
       actor.rotation.set(0, actor.userData.baseRotY || 0, 0);
@@ -1294,8 +1296,11 @@ export function createStage(canvas, options) {
     const act = burst?.act || actor.userData.act;
     // Una ráfaga corre en su propio tiempo (desde su inicio y sin desfase),
     // así el primer pico cae en la palabra; la acción sostenida sigue al
-    // reloj del escenario con el desfase de cada figura.
-    const t = burst ? Math.max(0, burstNow(burst) - burst.start) : wallT;
+    // reloj del escenario con el desfase de cada figura. Si la ráfaga repite
+    // la acción que la figura ya hace, sigue con ese mismo reloj: reiniciarla
+    // daba un salto de pose en un solo cuadro (medio giro al saltar de alegría).
+    const ownTime = Boolean(burst) && burst.act !== actor.userData.act;
+    const t = ownTime ? Math.max(0, burstNow(burst) - burst.start) : wallT;
     const baseX = actor.userData.baseX ?? actor.position.x;
     const baseY = actor.userData.baseY ?? 0;
     actor.position.x = baseX;
@@ -1307,7 +1312,7 @@ export function createStage(canvas, options) {
     const tails = findParts(actor, "tail");
     const ears = findParts(actor, "ear");
     const legs = findParts(actor, "leg");
-    const ph = burst ? 0 : actor.userData.phase || 0;
+    const ph = ownTime ? 0 : actor.userData.phase || 0;
     const armsUp = (amount, wobble = 0) => arms.forEach((arm) => { arm.rotation.z += arm.userData.arm * amount + Math.sin(t * 6 + ph) * wobble; });
     const flap = (speed, amount) => {
       wings.forEach((wing) => { wing.rotation.z += Math.sin(t * speed + ph) * amount * wing.userData.wing; });
@@ -2369,6 +2374,16 @@ export function createStage(canvas, options) {
       const baseRotY = actor.userData.baseRotY || 0;
       const isSpeaker = speaking.has(actor.userData.storyActor);
       const listening = Boolean(focusId) && !isSpeaker && focusId !== actor.userData.storyActor && actor.userData.isCast;
+      // El giro hacia quien habla (o acaba de ser nombrado) se suaviza aparte,
+      // en lookYaw, y nunca a partir de rotation.y: esa trae el extra que
+      // applyAct sumó el cuadro anterior, así que el giro se acumulaba hasta
+      // casi una vuelta y al terminar la figura volvía de golpe.
+      const focusActor = listening ? pageActorById.get(focusId) : null;
+      const toward = focusActor ? Math.atan2(focusActor.position.x - actor.position.x, 0.3) * 0.6 : 0;
+      const prevLook = actor.userData.lookYaw || 0;
+      const lookYaw = prevLook + (toward - prevLook) * Math.min(1, dt * 3);
+      actor.userData.lookYaw = lookYaw;
+      const yaw = baseRotY + faceTurn + lookYaw;
       actor.position.y = baseY + Math.sin(clock.t * 1.8 + phase) * 0.009;
       actor.rotation.x = 0;
       let talkHop = 0;
@@ -2383,7 +2398,7 @@ export function createStage(canvas, options) {
         // el cabeceo se suman después de la acción (applyAct fija la pose).
         talkHop = talkPulse * 0.014;
         talkNod = -talkPulse * 0.12;
-        actor.rotation.y = baseRotY + faceTurn + Math.sin(clock.t * 2.2 + phase) * 0.08;
+        actor.rotation.y = yaw + Math.sin(clock.t * 2.2 + phase) * 0.08;
         actor.rotation.z = Math.sin(clock.t * 1.25 + phase) * 0.025 + talkPulse * 0.06;
         if (head) {
           head.scale.multiplyScalar(1 + talkPulse * 0.04);
@@ -2398,15 +2413,14 @@ export function createStage(canvas, options) {
       } else if (listening) {
         // Los demás se giran hacia quien habla o acaba de ser nombrado (la
         // cabeza va primero) y se mecen despacio.
-        const speaker = pageActorById.get(focusId);
-        const toward = speaker ? Math.atan2(speaker.position.x - actor.position.x, 0.3) * 0.6 : 0;
-        actor.rotation.y += (toward + faceTurn - actor.rotation.y) * Math.min(1, dt * 3);
+        actor.rotation.y = yaw;
         actor.rotation.z = Math.sin(clock.t * 1.6 + phase) * 0.04;
-        if (head) head.rotation.y += toward * 0.45;
       } else {
-        actor.rotation.y = baseRotY + faceTurn + Math.sin(clock.t * 0.85 + phase) * 0.16;
+        actor.rotation.y = yaw + Math.sin(clock.t * 0.85 + phase) * 0.16;
         actor.rotation.z = Math.sin(clock.t * 1.25 + phase) * 0.025;
       }
+      // La cabeza acompaña el giro suavizado, también mientras se desgira.
+      if (head && lookYaw) head.rotation.y += lookYaw * 0.45;
       applyAct(actor, clock.t);
       if (isSpeaker) {
         actor.position.y += talkHop;
@@ -2565,7 +2579,7 @@ export function createStage(canvas, options) {
               act: burst?.act || holder.userData.act || null,
               burst: burst ? { act: burst.act, start: burst.start, end: burst.end, base: burst.base } : null,
               speaking: speaking.has(holder.userData.storyActor),
-              pose: { rx: holder.rotation.x, y: holder.position.y - (holder.userData.baseY ?? 0), x: holder.position.x },
+              pose: { rx: holder.rotation.x, ry: holder.rotation.y - (holder.userData.baseRotY || 0), y: holder.position.y - (holder.userData.baseY ?? 0), x: holder.position.x },
             } : {}) };
         }),
         // Reloj y guion del cuento: lo disparado frente a lo compilado.
