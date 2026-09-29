@@ -33,6 +33,7 @@ import { SCULPTED_ANIMALS } from './sculpted-animals.js';
 import { buildDragon } from './sculpted-dragon.js';
 import { SCULPTED_FANTASY } from './sculpted-fantasy.js';
 import { SCULPTED_STORY_PEOPLE } from './sculpted-story-people.js';
+import { bakeToy } from './bake.js';
 
 const pipo = { id: "pipo", label: "Pipo", build: () => cerdito.build({ hat: true, item: "paja" }) };
 const lolo = { id: "lolo", label: "Lolo", build: () => cerdito.build({ shirt: "#4fa85f", item: "madera" }) };
@@ -119,10 +120,18 @@ export function badgeToy(texture, accent = "#d9a95a") {
   return fit(g, 0.29);
 }
 
-export function buildToy(id, { emblemTexture } = {}) {
+/**
+ * Construye la figura `id` y la hornea (bake.js): materiales repetidos y
+ * piezas estáticas de un mismo pivote pasan a ser una sola llamada de dibujo.
+ * Se hornea aquí y no en `finish()` porque algunos constructores terminan en
+ * `fit()` (cerditos, animales de Pulgarcito). `bake: false` es para pruebas.
+ */
+export function buildToy(id, { emblemTexture, bake = true } = {}) {
   const module = REGISTRY[id];
-  if (module) return module.build();
-  return badgeToy(emblemTexture || null);
+  if (!module) return badgeToy(emblemTexture || null);
+  const toy = module.build();
+  if (bake) bakeToy(toy);
+  return toy;
 }
 
 /** Versión "fantasma" (souvenir todavía no encontrado): gris y translúcida. */

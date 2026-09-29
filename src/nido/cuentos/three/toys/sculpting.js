@@ -3,6 +3,9 @@ import * as THREE from 'three';
 import { mat, fit } from './_shared.js';
 
 export { mat };
+// Versión del esqueleto de las figuras (userData.sculpted.revision). Sube cuando
+// cambian los pivotes articulados que el escenario anima.
+export const RIG_REVISION = 1;
 export function part(parent, key, value, position) {
   const g = new THREE.Group(); g.position.set(...position);
   if (key) g.userData[key] = value;
@@ -71,7 +74,7 @@ export function finish(root, family, anatomy = {}) {
   const size = new THREE.Box3().setFromObject(holder).getSize(new THREE.Vector3());
   const envelope = Math.min(1, .31 / size.x, .38 / size.z);
   holder.scale.setScalar(envelope);
-  holder.userData.sculpted = { revision: 1, family, ...anatomy };
+  holder.userData.sculpted = { revision: RIG_REVISION, family, ...anatomy };
   return holder;
 }
 

@@ -98,6 +98,8 @@ export function surfaceNormalMap(kind) {
   tex.wrapT = THREE.RepeatWrapping;
   tex.repeat.set(...SURFACES[kind].repeat);
   tex.needsUpdate = true;
+  // Compartida por todas las figuras: al retirar una figura no se libera.
+  tex.userData.nidoSharedSurface = true;
   cache.set(kind, tex);
   return tex;
 }

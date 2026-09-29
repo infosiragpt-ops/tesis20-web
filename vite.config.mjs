@@ -114,6 +114,9 @@ export default defineConfig({
           const collectionPart = id.match(/\/src\/nido\/cuentos\/collection\/texts-(\d+)\.json$/);
           if (collectionPart) return `nido-classics-${collectionPart[1]}`;
           if (/\/src\/nido\/cuentos\/(cuentos-data|pulgarcito-data|classic-collection|collection-layout)\.js$/.test(id)) return 'nido-story-data';
+          // Figuras 3D del reparto (y sus superficies): solo importan three, así
+          // que el chunk no depende de vuelta de CuentosApp (WP2).
+          if (/\/src\/nido\/cuentos\/three\/(toys\/[^/]+|surfaces)\.js$/.test(id)) return 'nido-cast';
           // Reloj y guion de película de los cuentos (Nido Película): código
           // puro que sólo importa three, cuentos-acts y cuentos-voice-plan.
           // Chunk propio para que CuentosApp no crezca con cada entrega.
