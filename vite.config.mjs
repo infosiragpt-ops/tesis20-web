@@ -117,6 +117,10 @@ export default defineConfig({
           // Figuras 3D del reparto (y sus superficies): solo importan three, así
           // que el chunk no depende de vuelta de CuentosApp (WP2).
           if (/\/src\/nido\/cuentos\/three\/(toys\/[^/]+|surfaces)\.js$/.test(id)) return 'nido-cast';
+          // Reloj y guion de película de los cuentos (Nido Película): código
+          // puro que sólo importa three, cuentos-acts y cuentos-voice-plan.
+          // Chunk propio para que CuentosApp no crezca con cada entrega.
+          if (id.includes("/src/nido/cuentos/film/")) return "nido-film";
           if (id.includes("node_modules/react/") || id.includes("node_modules/react-dom/") || id.includes("node_modules/scheduler/")) {
             return "vendor-react";
           }

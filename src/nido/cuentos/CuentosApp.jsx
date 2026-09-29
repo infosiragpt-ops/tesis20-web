@@ -32,7 +32,8 @@ import {
   warmUpVoices,
   wordTrack,
 } from "./cuentos-audio.js";
-import { wordKey } from "./cuentos-voice-plan.js";
+import { createStoryClock } from "./film/story-clock.js";
+import { compilePageTimeline } from "./film/timeline.js";
 import { isClassicEdition, pageWindow, resumePage } from "./collection-layout.js";
 import { LibrarySearch } from "./LibrarySearch.jsx";
 import { dialogControls, handleDialogKey, readerShortcutsBlocked } from "./dialog-focus.js";
@@ -169,6 +170,8 @@ export default function CuentosApp() {
       },
       onTravel: (actor, act) => latest.current.travelSound?.(actor, act),
       onWorkSound: (key) => playCue(key, { volume: 0.45 }),
+      // Efecto de una palabra del guion («sopló» → soplido), en su instante.
+      onCue: (key) => playCue(key),
       onFrame: () => {
         const hint = dragHintRef.current;
         if (hint) {
@@ -201,7 +204,15 @@ export default function CuentosApp() {
     stageRef.current = stage;
     stage.setCollected(latest.current.allPins);
     setStageReady(true);
+    // Si el sistema activa o quita «reducir movimiento» con la biblioteca
+    // abierta, el escenario cambia sin recargar.
+    const motionQuery = window.matchMedia?.("(prefers-reduced-motion: reduce)");
+    const onMotionChange = (event) => stage.setReduceMotion(event.matches);
+    if (motionQuery?.addEventListener) motionQuery.addEventListener("change", onMotionChange);
+    else motionQuery?.addListener?.(onMotionChange);
     return () => {
+      if (motionQuery?.removeEventListener) motionQuery.removeEventListener("change", onMotionChange);
+      else motionQuery?.removeListener?.(onMotionChange);
       flowRequest.current += 1;
       window.clearTimeout(readyTimer.current);
       stage.dispose();
@@ -440,14 +451,12 @@ export default function CuentosApp() {
             }
           }}
           onQuiz={answerQuiz}
-          onAct={(actor, act, hold) => stageRef.current?.playAct(actor, act, hold)}
-          onSpeaking={(actor) => stageRef.current?.setSpeaking(actor)}
-          onWordTick={() => stageRef.current?.wordTick()}
-          onName={(actor) => stageRef.current?.nameActor(actor)}
+          onTimeline={(timeline, clock) => {
+            stageRef.current?.setStoryClock(timeline ? clock : null);
+            stageRef.current?.playTimeline(timeline || null);
+          }}
           onStoryWord={(index) => stageRef.current?.setStoryWord(index)}
-          onScene={(kind) => stageRef.current?.sceneEvent(kind)}
           isWorking={() => Boolean(stageRef.current?.isWorking?.())}
-          onMove={(actor, where, act, hold) => stageRef.current?.travelTo(actor, where, act, hold)}
           onCinema={(on) => {
             setCinemaOn(on);
             stageRef.current?.setCinema(on);
@@ -719,7 +728,7 @@ export function stepsKeyFor(book, page, act) {
   return page?.steps || STEPS_BY_SET[book.set] || "pasos-suaves";
 }
 
-function Reader({ book, page, state, suspended, pinRef, onPage, onClose, onStar, onPin, onQuiz, onAct, onSpeaking, onWordTick, onName, onMove, onCinema, onStoryWord, onScene, isWorking }) {
+function Reader({ book, page, state, suspended, pinRef, onPage, onClose, onStar, onPin, onQuiz, onTimeline, onCinema, onStoryWord, isWorking }) {
   const hasNarration = book.narration !== 'reading-only';
   const deviceVoice = book.narration === 'device';
   const [voiceName, setVoiceName] = useState('');
@@ -833,9 +842,7 @@ function Reader({ book, page, state, suspended, pinRef, onPage, onClose, onStar,
 
   // Efectos de la página: los de apertura suenan al mostrarla; los de las
   // palabras se descargan ya para dispararse en el instante justo.
-  const firedCues = useRef(new Set());
   useEffect(() => {
-    firedCues.current = new Set();
     let cancelled = false;
     const timer = window.setTimeout(() => {
       loadCuentosSound().then(() => {
@@ -854,59 +861,39 @@ function Reader({ book, page, state, suspended, pinRef, onPage, onClose, onStar,
     };
   }, [book.id, page, pageData, book.pages]);
 
-  // Una palabra narrada puede disparar un efecto y una acción del escenario
-  // («sopló» → soplido del lobo). Cada palabra dispara una sola vez por lectura.
-  const bodyWords = useMemo(() => pageData.x.split(/\s+/).filter(Boolean), [pageData.x]);
-  // Palabra → figura: si la voz nombra a un personaje presente en la página,
-  // su figura se ilumina y toma la palabra (los demás la miran).
-  const nameIndex = useMemo(() => {
-    const index = new Map();
-    const cast = new Set(pageData.cast || []);
-    Object.entries(book.names || {}).forEach(([actor, words]) => {
-      if (!cast.has(actor)) return;
-      words.forEach((word) => index.set(wordKey(word), actor));
-    });
-    return index;
-  }, [book.names, pageData.cast]);
-
-  const fireCue = useCallback(
-    (bodyIndex) => {
-      if (bodyIndex < 0) return;
-      const key = wordKey(bodyWords[bodyIndex]);
-      const named = key ? nameIndex.get(key) : null;
-      if (named) onName?.(named);
-      const cues = pageData.cues;
-      const cue = cues && key ? cues[key] : null;
-      if (!cue || firedCues.current.has(bodyIndex)) return;
-      firedCues.current.add(bodyIndex);
-      if (cue.sfx) playCue(cue.sfx);
-      if (cue.act) Object.entries(cue.act).forEach(([actor, act]) => onAct?.(actor, act, cue.hold));
-      // «corrió» → la figura se desplaza de verdad hasta el punto indicado.
-      if (cue.move) Object.entries(cue.move).forEach(([actor, where]) => onMove?.(actor, where, cue.act?.[actor] || "walk", cue.hold));
-      // «voló» → la casa de paja sale volando; «cayó» → la de madera se derrumba.
-      if (cue.scene) onScene?.(cue.scene);
-    },
-    [pageData.cues, bodyWords, onAct, onName, onMove, onScene, nameIndex],
-  );
+  // Reloj del cuento de este lector: sigue a la voz (grabada o del
+  // dispositivo) y el escenario ejecuta con él el guion compilado de la
+  // página (film/timeline.js): cada efecto y acción cae en su palabra y sólo
+  // gesticula quien dice de verdad una línea de diálogo.
+  const storyClock = useRef(null);
+  if (!storyClock.current) storyClock.current = createStoryClock();
+  const onTimelineRef = useRef(onTimeline);
+  onTimelineRef.current = onTimeline;
+  const releaseTimeline = useCallback(() => {
+    storyClock.current?.reset(null);
+    onTimelineRef.current?.(null);
+  }, []);
 
   useEffect(() => () => {
     autoRef.current = false;
     readGeneration.current += 1;
     stopSpeech();
-  }, []);
+    releaseTimeline();
+  }, [releaseTimeline]);
 
   const turnTo = useCallback(
     (next) => {
       if (next < 0 || next > book.pages.length - 1) return;
       readGeneration.current += 1;
       stopSpeech();
+      releaseTimeline();
       setSpeaking(false);
       setActiveWord(-1);
       onStoryWord?.(-1);
       sfx.page();
       onPage(next);
     },
-    [book.pages.length, onPage],
+    [book.pages.length, onPage, releaseTimeline],
   );
 
   const readAloud = useCallback(() => {
@@ -922,22 +909,45 @@ function Reader({ book, page, state, suspended, pinRef, onPage, onClose, onStar,
     // que la primera página no salga con la voz del navegador por una carrera.
     const begin = () => {
       if (generation !== readGeneration.current || pageRef.current !== page || !autoRef.current) return;
-      onSpeaking?.(pageData.cast?.[0] || null);
+      const track = deviceVoice ? null : pageTrack(book.id, page);
+      const titleWordCount = pageData.t.split(/\s+/).filter(Boolean).length;
+      const compile = (source, rate) => compilePageTimeline(pageData, {
+        starts: source === "studio" ? track?.words || null : null,
+        duration: source === "studio" ? track?.duration : undefined,
+        titleWordCount,
+        names: book.names || {},
+        source,
+        rate,
+      });
+      const clock = storyClock.current;
+      // Con clip de estudio el guion usa sus marcas; sin él lo prepara onSource.
+      clock.reset(track?.src ? "studio" : null);
+      if (track?.src) onTimelineRef.current?.(compile("studio"), clock);
       speak(`${pageData.t}. ${pageData.x}`, {
-        track: deviceVoice ? null : pageTrack(book.id, page),
+        track,
         onStart: voice => { setVoiceName(voice.name); setSpeaking(true); },
+        onTime: clock.pushAudioTime,
+        // La voz del dispositivo (o un clip que falla y cae en ella) no trae
+        // marcas: el guion se recompila con los tiempos estimados.
+        onSource: (source, info) => {
+          if (generation !== readGeneration.current) return;
+          if (source === "device") {
+            const timeline = compile("device", info?.rate);
+            clock.reset("device", { starts: timeline.trackStarts, duration: timeline.duration });
+            onTimelineRef.current?.(timeline, clock);
+          }
+        },
         onWord: (index) => {
           const titleWords = pageData.t.split(/\s+/).filter(Boolean).length;
           setActiveWord(index < 0 ? -1 : index - titleWords);
           onStoryWord?.(index < 0 ? -1 : index - titleWords);
-          if (index >= titleWords) fireCue(index - titleWords);
-          if (index >= 0) onWordTick?.();
+          if (index >= 0) clock.pushWord(index);
         },
         onEnd: (result) => {
+          releaseTimeline();
           setSpeaking(false);
           setActiveWord(-1);
           onStoryWord?.(-1);
-          onSpeaking?.(null);
           // Si la página no llegó a escucharse (sonido silenciado, clip que
           // falla, voz del sistema que corta) no se pasa sola: se avisa y se
           // espera a que el lector vuelva a tocar «Léemelo».
@@ -984,18 +994,17 @@ function Reader({ book, page, state, suspended, pinRef, onPage, onClose, onStar,
     // Keep the first device utterance in the actual click/touch gesture (iOS).
     if (deviceVoice) begin();
     else loadCuentosVoices().then(begin);
-  }, [pageData, page, book.id, book.pages.length, deviceVoice, turnTo, fireCue, isWorking]);
+  }, [pageData, page, book.id, book.names, book.pages.length, deviceVoice, turnTo, isWorking, releaseTimeline]);
 
   useEffect(() => {
     autoRef.current = autoRead;
-    if (autoRead) firedCues.current = new Set();
     if (autoRead) setReadNotice(null);
     if (!autoRead) {
       readGeneration.current += 1;
       stopSpeech();
+      releaseTimeline();
       setSpeaking(false);
       setActiveWord(-1);
-      onSpeaking?.(null);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoRead]);
@@ -1104,7 +1113,7 @@ function Reader({ book, page, state, suspended, pinRef, onPage, onClose, onStar,
             <button type="button" className={`cuentos-btn cuentos-btn--read ${autoRead ? "is-on" : ""}`} onClick={() => {
               if (autoRef.current) { autoRef.current = false; stopSpeech(); setAutoRead(false); return; }
               setMuted(false); unlockAudio(); setReadNotice(null);
-              firedCues.current = new Set(); autoRef.current = true; setAutoRead(true); readAloud();
+              autoRef.current = true; setAutoRead(true); readAloud();
             }}>
               {autoRead ? (speaking ? "⏸ Pausa" : "⏸ Preparando voz…") : "▶ Léemelo"}
             </button>
