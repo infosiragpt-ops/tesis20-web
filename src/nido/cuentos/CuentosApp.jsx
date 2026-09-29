@@ -32,7 +32,7 @@ import {
   warmUpVoices,
   wordTrack,
 } from "./cuentos-audio.js";
-import { wordKey } from "./cuentos-voice-plan.js";
+import { pageSpeechText, titleWordCount, wordKey } from "./cuentos-voice-plan.js";
 import { isClassicEdition, pageWindow, resumePage } from "./collection-layout.js";
 import { LibrarySearch } from "./LibrarySearch.jsx";
 import { dialogControls, handleDialogKey, readerShortcutsBlocked } from "./dialog-focus.js";
@@ -824,7 +824,7 @@ function Reader({ book, page, state, suspended, pinRef, onPage, onClose, onStar,
     if (!hasNarration || deviceVoice) return undefined;
     loadCuentosVoices().then(() => {
       if (cancelled) return;
-      prefetchTracks([pageTrack(book.id, page), pageTrack(book.id, page + 1)]);
+      prefetchTracks([pageTrack(book.id, page, book.pages[page]?.voice), pageTrack(book.id, page + 1, book.pages[page + 1]?.voice)]);
     });
     return () => {
       cancelled = true;
@@ -923,11 +923,11 @@ function Reader({ book, page, state, suspended, pinRef, onPage, onClose, onStar,
     const begin = () => {
       if (generation !== readGeneration.current || pageRef.current !== page || !autoRef.current) return;
       onSpeaking?.(pageData.cast?.[0] || null);
-      speak(`${pageData.t}. ${pageData.x}`, {
-        track: deviceVoice ? null : pageTrack(book.id, page),
+      speak(pageSpeechText(pageData), {
+        track: deviceVoice ? null : pageTrack(book.id, page, pageData.voice),
         onStart: voice => { setVoiceName(voice.name); setSpeaking(true); },
         onWord: (index) => {
-          const titleWords = pageData.t.split(/\s+/).filter(Boolean).length;
+          const titleWords = titleWordCount(pageData);
           setActiveWord(index < 0 ? -1 : index - titleWords);
           onStoryWord?.(index < 0 ? -1 : index - titleWords);
           if (index >= titleWords) fireCue(index - titleWords);
@@ -1056,7 +1056,7 @@ function Reader({ book, page, state, suspended, pinRef, onPage, onClose, onStar,
         <p className="cuentos-card__eyebrow">
           Página {page + 1} de {book.pages.length}
         </p>
-        <h2 className="cuentos-card__title">{pageData.t}</h2>
+        {pageData.t ? <h2 className="cuentos-card__title">{pageData.t}</h2> : null}
         <p className="cuentos-card__text">
           {words.map((token, i) => {
             if (/^\s+$/.test(token) || token === "") return <span key={i}>{token}</span>;

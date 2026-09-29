@@ -119,7 +119,7 @@ export function Scene({ book, pageIndex, foundPin, onPin, interactive = true, sh
       viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
       preserveAspectRatio="xMidYMid slice"
       role="img"
-      aria-label={`Ilustración: ${page.t}`}
+      aria-label={`Ilustración: ${page.t || book.title}`}
     >
       <SceneBody book={book} pageIndex={pageIndex} foundPin={foundPin} onPin={onPin} interactive={interactive} showPin={showPin} showCast={showCast} sky={sky} omit={omit} />
     </svg>

@@ -267,7 +267,9 @@ export function directClassic(item, texts) {
     if (directed?.cues) Object.assign(cues, directed.cues);
     const light = directed?.light || (/\bnoche\b|oscuridad|anochecer/i.test(x) ? 'night' : item.light || 'day');
     const enter = directed?.enter || Object.fromEntries(cast.map((id, i) => [id, acts[id] === 'sleep' ? 'none' : i % 2 ? 'right' : 'left']));
-    return { t: index === 0 ? item.title : `Parte ${index + 1}`, x, light, cast, props, acts, cues,
+    // Sólo la primera hoja lleva rótulo (el título); «Parte N» no decía nada
+    // que el «Página N de M» de la hoja no dijera ya.
+    return { t: index === 0 ? item.title : '', x, light, cast, props, acts, cues,
       ...(directed?.set ? {set:directed.set} : {}),
       enter,
       sfx: [directed?.sfx || (light === 'night' && direction.sound === 'pajaros' ? 'noche-grillos' : direction.sound)],

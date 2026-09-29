@@ -702,11 +702,46 @@ function trackUrl(fileName) {
   return fileName ? `${manifest?.base || ""}${fileName}` : null;
 }
 
-/** Clip de una página, con los tiempos de sus palabras. */
-export function pageTrack(bookId, pageIndex) {
-  const page = manifest?.books?.[bookId]?.pages?.[pageIndex];
-  if (!page?.src) return null;
-  return { src: trackUrl(page.src), words: Array.isArray(page.words) ? page.words : null, duration: page.duration };
+/**
+ * Clip de una página, con los tiempos de sus palabras. Con `voice` (páginas
+ * de los clásicos, ver classic-collection.js) la página suena como tramos de
+ * uno o varios clips grabados con otro reparto: cada tramo va de la marca de
+ * `from` a la de `to` y las marcas se reescriben sobre la línea de tiempo
+ * continua de la página, así el subrayado sigue igual que con un solo clip.
+ */
+export function pageTrack(bookId, pageIndex, voice = null) {
+  const pages = manifest?.books?.[bookId]?.pages;
+  if (!Array.isArray(voice) || !voice.length) {
+    const page = pages?.[pageIndex];
+    if (!page?.src) return null;
+    return { src: trackUrl(page.src), words: Array.isArray(page.words) ? page.words : null, duration: page.duration };
+  }
+  return composeTrack(pages, voice, trackUrl);
+}
+
+// Márgenes de corte: el tramo arranca un poco antes de su primera palabra y
+// termina un poco antes de la siguiente del clip. Los cortes caen en la pausa
+// entre frases, así no se pierde el ataque ni se escapa una sílaba ajena.
+const SEGMENT_LEAD = 0.02;
+const SEGMENT_TAIL = 0.04;
+
+export function composeTrack(pages, voice, toUrl = (name) => name) {
+  const segments = [];
+  const words = [];
+  let offset = 0;
+  for (const part of voice) {
+    const clip = pages?.[part.clip];
+    const marks = clip?.words;
+    if (!clip?.src || !Array.isArray(marks) || !(part.from >= 0) || !(part.to > part.from) || part.to > marks.length) return null;
+    const start = part.from ? Math.max(marks[part.from - 1], marks[part.from] - SEGMENT_LEAD) : 0;
+    const gap = part.to < marks.length ? marks[part.to] - marks[part.to - 1] : 0;
+    const end = part.to < marks.length ? marks[part.to] - Math.min(SEGMENT_TAIL, gap / 2) : clip.duration;
+    if (!(end > start)) return null;
+    for (let i = part.from; i < part.to; i += 1) words.push(offset + Math.max(0, marks[i] - start));
+    segments.push({ src: toUrl(clip.src), start, end, toEnd: part.to >= marks.length });
+    offset += end - start;
+  }
+  return { src: segments[0].src, segments, words, duration: offset };
 }
 
 /** Clip de una palabra suelta tocada en la página. */
@@ -834,7 +869,9 @@ function fetchClip(src) {
 export function prefetchTracks(tracks) {
   if (typeof fetch !== "function") return;
   for (const track of tracks || []) {
-    if (track?.src) fetchClip(track.src).catch(() => {});
+    for (const src of track?.segments ? track.segments.map((segment) => segment.src) : [track?.src]) {
+      if (src) fetchClip(src).catch(() => {});
+    }
   }
 }
 
@@ -856,6 +893,7 @@ function readResult(elapsedMs, expectedMs) {
 function playRecorded(track, { onWord, onEnd }, mySession) {
   const element = ensureNarrator();
   if (!element) return Promise.reject(new Error("sin reproductor"));
+  if (track.segments?.length) return playSegments(track, { onWord, onEnd }, mySession, element);
   return fetchClip(track.src).then((url) => {
     if (mySession !== session) return;
     const starts = Array.isArray(track.words) && track.words.length ? track.words : null;
@@ -904,6 +942,119 @@ function playRecorded(track, { onWord, onEnd }, mySession) {
         resumeTick = tick;
         tick();
       }
+    });
+  });
+}
+
+// Coloca el reproductor en `start` segundos del clip recién asignado. Si aún
+// no hay metadatos, el navegador guarda la posición y la aplica al cargar;
+// se repite en `loadedmetadata` por los que la descartan.
+function seekTo(element, start) {
+  if (!start) return;
+  try {
+    element.currentTime = start;
+  } catch {
+    // Sin metadatos todavía: lo resuelve el manejador de abajo.
+  }
+  if (element.readyState >= 1) return;
+  element.addEventListener("loadedmetadata", () => {
+    if (element.currentTime < start - 0.05) {
+      try {
+        element.currentTime = start;
+      } catch {
+        // Clip ilegible: onerror termina la lectura.
+      }
+    }
+  }, { once: true });
+}
+
+/**
+ * Reproduce una página hecha de tramos (ver composeTrack): suena cada tramo
+ * desde su inicio hasta su final y encadena el siguiente sin avisar un fin
+ * de lectura. Todos los clips se descargan antes de empezar, así el cambio
+ * de un tramo a otro no espera a la red.
+ */
+function playSegments(track, { onWord, onEnd }, mySession, element) {
+  const segments = track.segments;
+  return Promise.all(segments.map((segment) => fetchClip(segment.src))).then((urls) => {
+    if (mySession !== session) return;
+    const startedAt = performance.now();
+    let position = 0;
+    let base = 0;
+    let index = -1;
+    let switching = false;
+
+    const finish = (result) => {
+      if (mySession !== session) return;
+      stopFrameLoop();
+      element.onended = null;
+      element.onerror = null;
+      onWord?.(-1);
+      onEnd?.(result);
+    };
+    const failed = () => finish({ ok: false, reason: "error" });
+
+    const load = (at) => {
+      const segment = segments[at];
+      element.src = urls[at];
+      element.playbackRate = 1;
+      seekTo(element, segment.start);
+      return Promise.resolve(element.play());
+    };
+
+    const advance = () => {
+      if (mySession !== session || switching) return;
+      const segment = segments[position];
+      base += segment.end - segment.start;
+      position += 1;
+      if (position >= segments.length) {
+        element.pause();
+        finish(readResult(performance.now() - startedAt, (track.duration || 0) * 1000));
+        return;
+      }
+      switching = true;
+      load(position)
+        .then(() => {
+          switching = false;
+          if (mySession === session && !frameTimer) tick();
+        })
+        .catch((error) => {
+          switching = false;
+          // Una pausa (pestaña oculta, ayuda abierta) mientras cambia de
+          // tramo no es un fallo: resumeSpeech() lo retoma donde quedó.
+          if (error?.name !== "AbortError") failed();
+        });
+    };
+
+    function tick() {
+      if (mySession !== session) return;
+      frameTimer = 0;
+      const segment = segments[position];
+      if (!switching) {
+        const at = element.currentTime;
+        // Un tramo que acaba donde acaba su clip lo cierra `onended`.
+        if (!segment.toEnd && at >= segment.end) {
+          advance();
+          if (mySession !== session || position >= segments.length) return;
+        } else if (onWord && at >= segment.start - 0.05) {
+          const next = wordIndexAt(track.words, base + at - segment.start + HIGHLIGHT_LEAD);
+          if (next !== index) {
+            index = next;
+            onWord(next);
+          }
+        }
+      }
+      frameTimer = window.requestAnimationFrame(tick);
+    }
+
+    element.onended = null;
+    element.onerror = null;
+    return load(0).then(() => {
+      if (mySession !== session) return;
+      element.onended = () => advance();
+      element.onerror = failed;
+      resumeTick = tick;
+      tick();
     });
   });
 }

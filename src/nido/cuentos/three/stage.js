@@ -599,7 +599,7 @@ export function createStage(canvas, options) {
       holder.userData.baseY = holder.position.y;
       holder.userData.baseRotY = slot.face;
       holder.userData.isCast = index < castIds.length;
-      holder.userData.phase = index * 1.7 + page.t.length * 0.03;
+      holder.userData.phase = index * 1.7 + (page.t || page.x || '').length * 0.03;
       holder.userData.storyActor = id;
       holder.userData.toyId = id;
       holder.userData.pinId = id;

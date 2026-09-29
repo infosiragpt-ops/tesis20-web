@@ -10,22 +10,34 @@ function emptyBook() {
   return { pages: [], pins: [], quiz: [], quizOk: 0, opened: false, lastPage: null };
 }
 
+// v2: los clásicos se reparten por frases. El progreso v1 guardaba índices
+// del reparto fijo de 65 palabras; `legacyPageMap` los lleva a la hoja nueva
+// donde empieza ese mismo texto.
+const VERSION = 2;
+
 function emptyState() {
   const books = {};
   BOOKS.forEach((book) => {
     books[book.id] = emptyBook();
   });
-  return { v: 1, books, lastBook: null };
+  return { v: VERSION, books, lastBook: null };
+}
+
+function migratePage(book, index, version) {
+  if (version >= VERSION || !Array.isArray(book.legacyPageMap)) return index;
+  return Number.isInteger(index) ? book.legacyPageMap[index] ?? -1 : index;
 }
 
 export function normalizeProgress(raw) {
   const base = emptyState();
   if (!raw || typeof raw !== "object") return base;
+  const version = Number.isInteger(raw.v) ? raw.v : 1;
   BOOKS.forEach((book) => {
     const stored = raw.books?.[book.id];
     if (!stored) return;
     const validPage = n => Number.isInteger(n) && n >= 0 && n < book.pages.length;
-    const pages = [...new Set(Array.isArray(stored.pages) ? stored.pages.filter(validPage) : [])];
+    const pages = [...new Set(Array.isArray(stored.pages) ? stored.pages.map(n => migratePage(book, n, version)).filter(validPage) : [])];
+    const lastPage = migratePage(book, stored.lastPage, version);
     const allowedPins = new Set(bookPins(book).map(pin => pin.id));
     const quiz = [...new Set(Array.isArray(stored.quiz) ? stored.quiz.filter(n => Number.isInteger(n) && n >= 0 && n < book.quiz.length) : [])];
     base.books[book.id] = {
@@ -34,7 +46,7 @@ export function normalizeProgress(raw) {
       quiz,
       quizOk: Number.isInteger(stored.quizOk) ? Math.max(0, Math.min(stored.quizOk, quiz.length)) : 0,
       opened: Boolean(stored.opened),
-      lastPage: validPage(stored.lastPage) ? stored.lastPage : (pages.at(-1) ?? null),
+      lastPage: validPage(lastPage) ? lastPage : (pages.at(-1) ?? null),
     };
   });
   base.lastBook = BOOKS.some(book => book.id === raw.lastBook) ? raw.lastBook : null;
