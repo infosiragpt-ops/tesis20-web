@@ -241,6 +241,22 @@ const evidenceGroups = [
       },
     ],
   },
+  {
+    id: "caso-099",
+    phone: "+51 *** *** 099",
+    phoneSuffix: "099",
+    publicationAuthorized: true,
+    images: [
+      {
+        src: "/assets/evidence/case-099-reported-result-full.jpg",
+        thumbnail: "/assets/thumbnails/evidence/case-099-reported-result-full.jpg",
+        alt: "Captura completa y anonimizada de un chat grupal donde la estudiante comparte los lineamientos de su docente y reporta una nota de 16 en el parcial",
+        label: "Resultado reportado",
+        width: 2000,
+        height: 1215,
+      },
+    ],
+  },
 ];
 
 const publishedEvidenceGroups = evidenceGroups.filter(
