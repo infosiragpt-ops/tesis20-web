@@ -405,6 +405,10 @@ const routeDefinitions = [
           <h3>Caso terminado en 267</h3>
           <p>Una evidencia anonimizada de calificación compartida por el estudiante.</p>
         </article>
+        <article>
+          <h3>Caso terminado en 099</h3>
+          <p>Una evidencia anonimizada de un chat grupal: la estudiante comparte los lineamientos de su docente y reporta una nota de 16 en el parcial.</p>
+        </article>
       </section>
       <section aria-labelledby="static-evidence-privacy-title">
         <h2 id="static-evidence-privacy-title">Privacidad responsable</h2>

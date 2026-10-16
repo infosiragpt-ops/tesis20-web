@@ -947,7 +947,8 @@ const pulgarcitoCoverBytes = await fileSize('dist/assets/nido/cuentos/covers/pul
 check(pulgarcitoCoverBytes <= 70 * 1024, 'La portada aprobada de Pulgarcito supera 70 KiB.');
 const baseDeployBytes = deployBytesWithoutAudioAndPdf - classicTextBytes - classicCoverBytes - generatedCoverBytes - pulgarcitoCoverBytes;
 // +50 KiB para la dirección y geometría de clásicos; sin audios nuevos.
-check(baseDeployBytes <= 10.55 * 1024 * 1024, `El build sin audios/PDF ni la colección editorial acotada supera 10.55 MiB (${(baseDeployBytes / 1024 / 1024).toFixed(2)} MiB).`);
+// +0.2 MiB para la evidencia del caso 099 (captura 164 KiB + miniatura 50 KiB).
+check(baseDeployBytes <= 10.75 * 1024 * 1024, `El build sin audios/PDF ni la colección editorial acotada supera 10.75 MiB (${(baseDeployBytes / 1024 / 1024).toFixed(2)} MiB).`);
 check(cuentosManifestBytes > 0 && cuentosManifestBytes <= 400 * 1024, `El manifiesto de voz de los cuentos supera 400 KiB o falta (${Math.ceil(cuentosManifestBytes / 1024)} KiB).`);
 
 for (const htmlFile of distFiles.filter((file) => file.endsWith(".html"))) {
