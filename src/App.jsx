@@ -257,6 +257,22 @@ const evidenceGroups = [
       },
     ],
   },
+  {
+    id: "caso-468",
+    phone: "+51 *** *** 468",
+    phoneSuffix: "468",
+    publicationAuthorized: true,
+    images: [
+      {
+        src: "/assets/evidence/case-468-reported-result-full.jpg",
+        thumbnail: "/assets/thumbnails/evidence/case-468-reported-result-full.jpg",
+        alt: "Captura completa y anonimizada de un chat donde la estudiante comparte la guía y el título de su tesis (ocultos) y reporta una nota de 19 en el parcial",
+        label: "Resultado reportado",
+        width: 2000,
+        height: 1737,
+      },
+    ],
+  },
 ];
 
 const publishedEvidenceGroups = evidenceGroups.filter(
