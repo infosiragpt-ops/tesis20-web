@@ -3,7 +3,7 @@
   position: relative;
   overflow: hidden;
   padding: clamp(56px, 7vw, 84px) 0;
-  background: linear-gradient(135deg, #f9cf6f 0%, var(--yellow) 55%, var(--yellow-deep) 100%);
+  background: var(--hero-surface);
 }
 
 .page-hero::after {
@@ -120,11 +120,13 @@
 }
 
 .page-hero__card h2 {
+  font-family: var(--heading);
+  font-weight: 800;
+  letter-spacing: -0.028em;
+  text-transform: none;
   margin-top: 8px;
-  font-family: var(--display);
-  font-size: 28px;
+  font-size: 22px;
   line-height: 1.1;
-  text-transform: uppercase;
 }
 
 .page-hero__steps {
@@ -230,4 +232,19 @@
   .page-hero__card--stat strong {
     font-size: 52px;
   }
+}
+
+.page-hero__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.page-hero__eyebrow::before {
+  width: 22px;
+  height: 2px;
+  flex: none;
+  border-radius: 2px;
+  background: currentColor;
+  content: "";
 }

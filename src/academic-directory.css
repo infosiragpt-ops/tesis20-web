@@ -26,10 +26,13 @@
 }
 
 .directory-search__heading h2 {
+  font-family: var(--heading);
+  font-weight: 800;
+  letter-spacing: -0.028em;
+  text-transform: none;
   margin-top: 8px;
-  font: 600 clamp(30px, 3.4vw, 40px) / 1.05 var(--display);
-  letter-spacing: -0.01em;
-  text-transform: uppercase;
+  font-size: clamp(28px, 2.8vw, 38px);
+  line-height: 1.1;
 }
 
 .directory-search__heading > span {
@@ -159,8 +162,12 @@
 }
 
 .career-area-card h2 {
-  font: 600 22px / 1.1 var(--display);
-  text-transform: uppercase;
+  font-family: var(--heading);
+  font-weight: 800;
+  letter-spacing: -0.028em;
+  text-transform: none;
+  font-size: 18px;
+  line-height: 1.1;
 }
 
 .career-area-card header p {
@@ -223,9 +230,13 @@
 }
 
 .directory-empty h2 {
+  font-family: var(--heading);
+  font-weight: 800;
+  letter-spacing: -0.028em;
+  text-transform: none;
   margin-top: 8px;
-  font: 600 28px / 1 var(--display);
-  text-transform: uppercase;
+  font-size: 22px;
+  line-height: 1.1;
 }
 
 .directory-empty p {
@@ -291,7 +302,7 @@
   }
 
   .career-area-card h2 {
-    font-size: 20px;
+    font-size: 17px;
   }
 
   .career-area-card ul {

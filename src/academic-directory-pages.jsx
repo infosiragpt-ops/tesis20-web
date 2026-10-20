@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { ArrowRight } from "@phosphor-icons/react/ArrowRight";
 import { CheckCircle } from "@phosphor-icons/react/CheckCircle";
+import { Breadcrumb } from "./site-core.jsx";
 import { CAREER_AREAS, CAREER_COUNT } from "./data/academic-directory.js";
 import "./page-hero.css";
 import "./academic-directory.css";
@@ -59,6 +60,7 @@ export function CareersPage() {
       <section className="page-hero" aria-labelledby="directory-page-title">
         <div className="page-hero__inner">
           <div className="page-hero__copy">
+            <Breadcrumb current="Carreras" />
             <p className="page-hero__eyebrow">Explorador académico</p>
             <h1 id="directory-page-title">Encuentra tu carrera por área de conocimiento</h1>
             <p className="page-hero__intro">

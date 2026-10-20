@@ -623,7 +623,7 @@ export function QuickFacts({ servicesCount, casesCount, stagesCount }) {
   );
 }
 
-export function FaqSection({ eyebrow = "Preguntas frecuentes", title, items, id = "preguntas" }) {
+export function FaqSection({ eyebrow = "Preguntas frecuentes", title, items, id = "preguntas", aside = null }) {
   return (
     <section className="faq-section" id={id} aria-labelledby={`${id}-title`}>
       <div className="section-shell faq-section__inner">
@@ -631,6 +631,7 @@ export function FaqSection({ eyebrow = "Preguntas frecuentes", title, items, id 
           <p>{eyebrow}</p>
           <h2 id={`${id}-title`}>{title}</h2>
           <span>Resolvemos las dudas más habituales antes de comenzar.</span>
+          {aside}
         </div>
         <div className="faq-list">
           {items.map((item, index) => (

@@ -1,4 +1,4 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { CAREER_AREAS, CAREER_COUNT } from "../src/data/academic-directory.js";
 import { ACTIVE_THESIS_REPOSITORIES } from "../src/data/thesis-repositories.js";
@@ -771,7 +771,7 @@ function createStructuredData(route) {
   })}</script>`;
 }
 
-function renderRoute(template, route) {
+function renderRoute(template, route, routeAssets = {}) {
   const isNotFound = !route.path;
   const canonicalUrl = isNotFound ? null : getCanonicalUrl(route);
   const shareImage = route.image || SHARE_IMAGE;
@@ -783,6 +783,20 @@ function renderRoute(template, route) {
   const shareImageType =
     route.imageType || (shareImage.endsWith(".jpg") ? "image/jpeg" : "image/png");
   let html = template;
+
+  // Páginas con chunk propio (p. ej. /contrato): su JS y CSS se descargan en
+  // paralelo con el bundle principal, en vez de esperar a que este se ejecute.
+  const extraAssets = routeAssets[route.path] || [];
+  if (extraAssets.length) {
+    const tags = extraAssets
+      .map((asset) =>
+        asset.endsWith(".css")
+          ? `    <link rel="stylesheet" crossorigin href="${asset}">`
+          : `    <link rel="modulepreload" crossorigin href="${asset}">`,
+      )
+      .join("\n");
+    html = html.replace("</head>", `${tags}\n  </head>`);
+  }
 
   html = html.replace(/<title>[^<]*<\/title>/i, `<title>${route.title}</title>`);
   html = upsertMeta(html, "name", "description", route.description);
@@ -852,8 +866,17 @@ async function generateStaticRoutes() {
     throw new Error("No se encontraron los assets generados por Vite en dist/index.html.");
   }
 
+  const builtAssets = await readdir(resolve(DIST_DIRECTORY, "build-assets"));
+  const chunkAssets = (prefix) =>
+    builtAssets
+      .filter((file) => file.startsWith(`${prefix}-`) && /\.(?:js|css)$/.test(file))
+      .map((file) => `/build-assets/${file}`);
+  const routeAssets = {
+    "/contrato": chunkAssets("contract-page"),
+  };
+
   for (const route of [...routeDefinitions, notFoundDefinition]) {
-    const rendered = renderRoute(template, route);
+    const rendered = renderRoute(template, route, routeAssets);
     for (const asset of assetReferences) {
       if (!rendered.includes(asset)) {
         throw new Error(`La salida ${route.output} perdió el asset ${asset}.`);

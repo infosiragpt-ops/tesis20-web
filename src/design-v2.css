@@ -1,0 +1,444 @@
+/* ==========================================================================
+   Tesis20 · Sistema visual v2 (capa global sobre styles.css)
+   - Titulares de sección en sans pesada (Oswald queda para H1, precios y cifras).
+   - Texturas de marca (grano + retícula de puntos) en los heroes.
+   - Botones con brillo, cabecera de cristal, foco y selección de marca.
+   - Aparición al hacer scroll ([data-reveal]), migas de pan, FAQ y pie.
+   ========================================================================== */
+
+:root {
+  --heading: "Tesis Roboto", Arial, sans-serif;
+  --ink-900: #131517;
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .1 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  --dots: radial-gradient(rgba(30, 32, 34, 0.085) 1px, transparent 1.5px);
+  --hero-surface: var(--grain) 0 0 / 180px 180px, var(--dots) 0 0 / 22px 22px,
+    linear-gradient(135deg, #fbd67e 0%, #f6c24b 52%, #f2b538 100%);
+}
+
+::selection {
+  background: rgba(245, 189, 66, 0.55);
+  color: var(--ink);
+}
+
+h2,
+h3 {
+  text-wrap: balance;
+}
+
+/* Eyebrow con raya de marca: reemplaza la marca roja bajo cada titular.
+   Se aplica a todos los antetítulos del sitio para que hablen igual. */
+.section-eyebrow {
+  margin-bottom: 14px;
+  font-size: 12.5px;
+  letter-spacing: 0.12em;
+}
+
+.section-eyebrow,
+.faq-section__heading > p,
+.diagnostic-section__intro > p,
+.services-catalog__heading > p,
+.evidence-catalog__heading > p,
+.services-hero__eyebrow,
+.evidence-hero__copy > p {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.faq-section__heading > p::before,
+.diagnostic-section__intro > p::before,
+.services-catalog__heading > p::before,
+.evidence-catalog__heading > p::before,
+.services-hero__eyebrow::before,
+.evidence-hero__copy > p::before,
+.section-eyebrow::before {
+  width: 22px;
+  height: 2px;
+  flex: none;
+  border-radius: 2px;
+  background: currentColor;
+  content: "";
+}
+
+.section-heading__mark {
+  display: none;
+}
+
+/* Encabezado de sección v2: título a la izquierda, bajada a la derecha. */
+.section-head {
+  margin-bottom: 40px;
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+  align-items: end;
+  gap: 18px 56px;
+}
+
+.section-head h2 {
+  max-width: 640px;
+  font-family: var(--heading);
+  font-size: clamp(30px, 2.9vw, 42px);
+  font-weight: 800;
+  letter-spacing: -0.028em;
+  line-height: 1.08;
+}
+
+.section-head__lead {
+  max-width: 520px;
+  color: var(--muted);
+  font-size: 16.5px;
+  line-height: 1.65;
+}
+
+.section-head--center {
+  grid-template-columns: 1fr;
+  justify-items: center;
+  text-align: center;
+}
+
+.section-head--center h2 {
+  max-width: 760px;
+}
+
+.section-head--center .section-head__lead {
+  max-width: 600px;
+}
+
+.section-foot {
+  margin-top: 34px;
+  display: flex;
+  justify-content: center;
+}
+
+/* Botones: brillo al pasar, flecha que avanza, variantes claras y de contorno. */
+.whatsapp-button,
+.service-card__cta,
+.button-light {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+
+.whatsapp-button::after,
+.service-card__cta::after,
+.button-light::after {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(110deg, transparent 25%, rgba(255, 255, 255, 0.24) 45%, transparent 65%);
+  content: "";
+  transform: translateX(-110%);
+  transition: transform 700ms var(--ease-out);
+}
+
+.whatsapp-button:hover::after,
+.service-card__cta:hover::after,
+.button-light:hover::after {
+  transform: translateX(110%);
+}
+
+.button-outline,
+.button-ghost,
+.button-light {
+  min-height: 50px;
+  padding: 12px 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border-radius: 999px;
+  font-size: 14.5px;
+  font-weight: 800;
+  text-decoration: none;
+  transition: background 200ms ease, color 200ms ease, border-color 200ms ease, transform 200ms ease;
+}
+
+.button-outline svg,
+.button-ghost svg,
+.button-light svg,
+.text-link svg {
+  transition: transform 200ms var(--ease-out);
+}
+
+.button-outline:hover svg,
+.button-ghost:hover svg,
+.button-light:hover svg {
+  transform: translateX(3px);
+}
+
+.button-outline {
+  border: 1.5px solid var(--ink);
+  color: var(--ink);
+}
+
+.button-outline:hover {
+  background: var(--ink);
+  color: var(--yellow);
+  transform: translateY(-1px);
+}
+
+.button-ghost {
+  border: 1.5px solid rgba(255, 255, 255, 0.32);
+  color: var(--white);
+}
+
+.button-ghost:hover {
+  border-color: rgba(255, 255, 255, 0.6);
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.button-light {
+  border: 1px solid var(--yellow);
+  border-radius: var(--radius-sm);
+  background: var(--yellow);
+  color: var(--ink);
+}
+
+.button-light:hover {
+  background: #ffd36f;
+  transform: translateY(-1px);
+}
+
+/* Cabecera de cristal al hacer scroll. */
+.site-header {
+  transition: background-color 250ms ease, box-shadow 250ms ease, border-color 250ms ease;
+}
+
+.site-header--scrolled {
+  border-bottom-color: rgba(30, 32, 34, 0.1);
+  background: rgba(245, 189, 66, 0.86);
+  box-shadow: 0 10px 30px rgba(30, 32, 34, 0.08);
+  -webkit-backdrop-filter: saturate(1.4) blur(14px);
+  backdrop-filter: saturate(1.4) blur(14px);
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .site-header--scrolled {
+    background: var(--yellow);
+  }
+}
+
+/* Heroes interiores: misma superficie con grano y retícula de puntos. */
+.services-hero,
+.evidence-hero,
+.contract-hero {
+  background: var(--hero-surface);
+}
+
+/* Migas de pan */
+.breadcrumb ol {
+  margin: 0 0 18px;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  list-style: none;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.breadcrumb li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: rgba(30, 32, 34, 0.62);
+}
+
+.breadcrumb a {
+  color: rgba(30, 32, 34, 0.78);
+  text-decoration: none;
+}
+
+.breadcrumb a:hover {
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.breadcrumb [aria-current="page"] {
+  color: var(--ink);
+}
+
+.breadcrumb svg {
+  opacity: 0.55;
+}
+
+/* Aparición al hacer scroll. Solo con JS activo y sin «reducir movimiento»;
+   `backwards` no deja la transformación fijada tras animar (los :hover siguen). */
+.js-reveal [data-reveal]:not(.is-revealed) {
+  opacity: 0;
+}
+
+.js-reveal [data-reveal].is-revealed {
+  animation: reveal-up 760ms var(--ease-out) backwards;
+  animation-delay: var(--reveal-delay, 0ms);
+}
+
+@keyframes reveal-up {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 24px, 0);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Preguntas frecuentes */
+.faq-section {
+  padding: var(--section-space) 0;
+}
+
+.faq-section__inner {
+  gap: clamp(36px, 5vw, 80px);
+}
+
+.faq-section__heading {
+  position: sticky;
+  top: calc(var(--header-height) + 28px);
+}
+
+.faq-list {
+  display: grid;
+  gap: 12px;
+}
+
+.faq-list details {
+  border-color: var(--line);
+  border-radius: var(--radius-lg);
+  box-shadow: none;
+  transition: border-color 200ms ease, box-shadow 200ms ease;
+}
+
+.faq-list details:hover {
+  border-color: rgba(30, 32, 34, 0.24);
+}
+
+.faq-list details[open] {
+  border-color: rgba(30, 32, 34, 0.28);
+  box-shadow: var(--shadow-sm);
+}
+
+.faq-list summary {
+  min-height: 68px;
+  padding: 18px 20px;
+  font-size: 15.5px;
+  font-weight: 700;
+}
+
+.faq-list details[open] .faq-list__icon {
+  background: var(--ink);
+  color: var(--yellow);
+  transform: rotate(45deg);
+}
+
+.faq-audio {
+  margin-top: 28px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--white);
+  box-shadow: var(--shadow-sm);
+}
+
+.faq-audio > p {
+  color: var(--coral);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.faq-audio > strong {
+  display: block;
+  margin: 4px 0 12px;
+  font-size: 16px;
+}
+
+/* Pie: titulares como etiquetas y wordmark gigante de cierre. */
+.site-footer {
+  position: relative;
+  overflow: hidden;
+  background: var(--ink-900);
+}
+
+.footer-column h2 {
+  font-family: var(--heading);
+  color: #8f9599;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+}
+
+.footer-bottom {
+  border-top-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Con puntero fino no hace falta el alto táctil de 44 px entre enlaces. */
+@media (pointer: fine) and (min-width: 931px) {
+  .footer-column {
+    gap: 4px;
+  }
+
+  .footer-column > a,
+  .footer-contact > a {
+    min-height: 34px;
+  }
+}
+
+.faq-audio .audio-player__heading {
+  display: none;
+}
+
+.footer-wordmark {
+  margin-top: 6px;
+  color: transparent;
+  font-family: var(--display);
+  font-size: clamp(96px, 21vw, 320px);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 0.78;
+  text-align: center;
+  text-transform: uppercase;
+  background: linear-gradient(180deg, rgba(245, 189, 66, 0.2), rgba(245, 189, 66, 0) 78%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  transform: translateY(16%);
+  pointer-events: none;
+  user-select: none;
+}
+
+/* En superficies oscuras el foco se ve en amarillo. */
+.site-footer :focus-visible,
+.portal :focus-visible,
+.cta-final__card :focus-visible {
+  outline-color: var(--yellow);
+}
+
+@media (max-width: 860px) {
+  .section-head {
+    margin-bottom: 28px;
+    grid-template-columns: 1fr;
+  }
+
+  .faq-section__heading {
+    position: static;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .whatsapp-button::after,
+  .service-card__cta::after,
+  .button-light::after {
+    display: none;
+  }
+}
+
+@media print {
+  .js-reveal [data-reveal] {
+    opacity: 1 !important;
+    animation: none !important;
+  }
+}

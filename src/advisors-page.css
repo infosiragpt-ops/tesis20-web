@@ -27,11 +27,13 @@
 }
 
 .advisor-request__heading h2 {
+  font-family: var(--heading);
+  font-weight: 800;
+  letter-spacing: -0.028em;
+  text-transform: none;
   margin-top: 10px;
-  font-family: var(--display);
-  font-size: clamp(28px, 3vw, 36px);
+  font-size: clamp(24px, 2.6vw, 32px);
   line-height: 1.06;
-  text-transform: uppercase;
   text-wrap: balance;
 }
 
@@ -175,10 +177,12 @@
 }
 
 .advisor-area__header h3 {
-  font-family: var(--display);
-  font-size: 21px;
+  font-family: var(--heading);
+  font-weight: 800;
+  letter-spacing: -0.028em;
+  text-transform: none;
+  font-size: 18px;
   line-height: 1.1;
-  text-transform: uppercase;
 }
 
 .advisor-area__header p {
@@ -268,10 +272,12 @@
 }
 
 .advisor-coverage__copy h2 {
-  font-family: var(--display);
-  font-size: clamp(30px, 3.2vw, 40px);
+  font-family: var(--heading);
+  font-weight: 800;
+  letter-spacing: -0.028em;
+  text-transform: none;
+  font-size: clamp(28px, 2.8vw, 38px);
   line-height: 1.05;
-  text-transform: uppercase;
   text-wrap: balance;
 }
 

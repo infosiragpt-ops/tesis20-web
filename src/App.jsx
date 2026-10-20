@@ -8,6 +8,8 @@ import {
   useState,
 } from "react";
 import { ArrowRight } from "@phosphor-icons/react/ArrowRight";
+import { Pause } from "@phosphor-icons/react/Pause";
+import { Play } from "@phosphor-icons/react/Play";
 import { ArrowSquareOut } from "@phosphor-icons/react/ArrowSquareOut";
 import { CaretRight } from "@phosphor-icons/react/CaretRight";
 import { ChatCircleText } from "@phosphor-icons/react/ChatCircleText";
@@ -50,7 +52,23 @@ import {
 } from "./platform-enhancements.jsx";
 import { AudioPlayer } from "./audio-player.jsx";
 import { DiagnosticWizard } from "./diagnostic-wizard.jsx";
-import contractTemplate from "./data/contract-template.json";
+import { loadContractPage, loadedRouteModules } from "./route-modules.js";
+import {
+  FinalCta,
+  HeroFloats,
+  PortalShowcase,
+  ProcessSection,
+  ServicesPreview,
+  UniversityStrip,
+  WhyBento,
+} from "./home-sections.jsx";
+import {
+  Breadcrumb,
+  buildWhatsappHref,
+  PORTAL_URL,
+  WhatsappButton,
+  whatsappMessages,
+} from "./site-core.jsx";
 import presentationTranscript from "../audio-scripts/presentacion.txt?raw";
 import articleTranscript from "../audio-scripts/articulo-cientifico.txt?raw";
 import thesisOneTranscript from "../audio-scripts/tesis-i-proyecto.txt?raw";
@@ -67,22 +85,10 @@ const CareersPage = lazy(() =>
 const AdvisorsPage = lazy(() =>
   import("./advisors-page.jsx").then((module) => ({ default: module.AdvisorsPage })),
 );
-
-const whatsappPhone = "51918714054";
-
-function buildWhatsappHref(message) {
-  return `https://api.whatsapp.com/send?phone=${whatsappPhone}&text=${encodeURIComponent(message)}`;
-}
-
-const whatsappMessages = {
-  home: "¡Hola! Deseo orientación para avanzar con mi propia tesis o proyecto junto a Tesis20.",
-  services: "¡Hola! Deseo orientación para elegir el servicio adecuado para mi investigación.",
-  evidence: "¡Hola! Revisé los resultados reportados por estudiantes y deseo información sobre el acompañamiento de Tesis20.",
-  contract: "¡Hola! Revisé el contrato general de Tesis20 y deseo orientación antes de comenzar.",
-  resources: "¡Hola! Revisé los recursos y el repositorio de tesis y deseo orientación para mi investigación.",
-  careers: "¡Hola! Revisé el catálogo de carreras de Tesis20 y deseo ayuda para ubicar mi especialidad.",
-  teachers: "¡Hola! Busco un asesor para mi tesis según mi carrera y mi tema. ¿Me orientan?",
-};
+// Contrato: chunk propio (CSS + JSON del modelo) precargado por main.jsx en /contrato.
+const LazyContractPage = lazy(() =>
+  loadContractPage().then((module) => ({ default: module.ContractPage })),
+);
 
 function getPageFromPathname(pathname = window.location.pathname) {
   const normalizedPath = pathname.length > 1 ? pathname.replace(/\/+$/, "") : pathname;
@@ -172,10 +178,6 @@ const nidoLink = {
   href: "/nido",
 };
 
-const contractDocxHref = "/downloads/contrato-general-asesoria-academica-tesis20.docx";
-const contractPdfHref = "/downloads/contrato-general-asesoria-academica-tesis20.pdf";
-const contractDocxFilename = "contrato-general-asesoria-academica-tesis20.docx";
-const contractPdfFilename = "contrato-general-asesoria-academica-tesis20.pdf";
 
 const evidenceGroups = [
   {
@@ -493,70 +495,6 @@ const gradeLightboxItems = gradeResults.map((result, index) => ({
   alt: `Resultado ${index + 1}: promedio ${result.average}, examen parcial ${result.partial} y examen final ${result.final}`,
 }));
 
-const trustItems = [
-  {
-    title: "Confidencialidad responsable",
-    body: "Tratamos tu información con medidas de privacidad.",
-    Icon: ShieldCheck,
-  },
-  {
-    title: "Asesoría personalizada",
-    body: "Un asesor te acompaña según tu tema y etapa.",
-    Icon: User,
-  },
-  {
-    title: "Clases en vivo",
-    body: "Sesiones directas con especialistas.",
-    Icon: VideoCamera,
-  },
-  {
-    title: "Calidad cuidada",
-    body: "Revisamos cada entrega según el alcance acordado.",
-    Icon: SealCheck,
-  },
-];
-
-const journeySteps = [
-  {
-    title: "Diagnóstico inicial",
-    body: "Revisamos tu tema, requisitos y avance para identificar lo que necesitas.",
-    Icon: MagnifyingGlass,
-  },
-  {
-    title: "Plan de trabajo",
-    body: "Diseñamos una ruta clara con etapas, entregables y un cronograma realista.",
-    Icon: ClipboardText,
-  },
-  {
-    title: "Acompañamiento por etapas",
-    body: "Te orientamos con asesoría, clases en vivo y revisiones para que desarrolles y sustentes tu propio trabajo.",
-    Icon: UserFocus,
-  },
-];
-
-const commitmentItems = [
-  {
-    title: "Originalidad",
-    body: "Promovemos investigación propia y buenas prácticas de citación.",
-    Icon: FileText,
-  },
-  {
-    title: "Confianza",
-    body: "Tu información se trata con cuidado y confidencialidad.",
-    Icon: LockKey,
-  },
-  {
-    title: "Seguimiento continuo",
-    body: "Sesiones y revisiones de acuerdo con el servicio contratado.",
-    Icon: Clock,
-  },
-  {
-    title: "Calidad",
-    body: "Revisamos claridad, coherencia y formato según el alcance acordado.",
-    Icon: Star,
-  },
-];
-
 const homeFaqs = [
   {
     question: "¿Cómo sé qué tipo de asesoría necesito?",
@@ -627,31 +565,6 @@ const nidoFaqs = [
 ];
 
 const noFaqs = [];
-
-function WhatsappButton({ children, className = "", dark = false, message, location }) {
-  const page = getPageFromPathname();
-  const href = buildWhatsappHref(message || whatsappMessages[page] || whatsappMessages.home);
-
-  return (
-    <a
-      className={`whatsapp-button ${dark ? "whatsapp-button--dark" : ""} ${className}`}
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      referrerPolicy="no-referrer"
-      aria-label={`${children} por WhatsApp (se abre en una pestaña nueva)`}
-      onClick={() =>
-        trackInteraction("whatsapp_click", {
-          location: location || className || "content",
-          page,
-        })
-      }
-    >
-      <WhatsappLogo size={24} weight="fill" aria-hidden="true" />
-      <span>{children}</span>
-    </a>
-  );
-}
 
 function getNavigationHref(item, currentPage) {
   if (currentPage !== "home" && item.servicesHref) return item.servicesHref;
@@ -844,92 +757,40 @@ function SectionHeading({ eyebrow, children, align = "center", id }) {
 }
 
 function Hero() {
-  const heroRef = useRef(null);
-
-  useEffect(() => {
-    const hero = heroRef.current;
-    const finePointer = window.matchMedia("(pointer: fine)");
-    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
-
-    if (!hero || !finePointer.matches || reducedMotion.matches) return undefined;
-
-    let frameId = 0;
-
-    const handlePointerMove = (event) => {
-      if (frameId) return;
-
-      const { clientX, clientY } = event;
-      frameId = window.requestAnimationFrame(() => {
-        const rect = hero.getBoundingClientRect();
-        const x = ((clientX - rect.left) / rect.width - 0.5) * 2;
-        const y = ((clientY - rect.top) / rect.height - 0.5) * 2;
-
-        hero.style.setProperty("--hero-shift-x", `${x * 18}px`);
-        hero.style.setProperty("--hero-shift-y", `${y * 12}px`);
-        frameId = 0;
-      });
-    };
-
-    const resetPointer = () => {
-      if (frameId) window.cancelAnimationFrame(frameId);
-      frameId = 0;
-      hero.style.setProperty("--hero-shift-x", "0px");
-      hero.style.setProperty("--hero-shift-y", "0px");
-    };
-
-    const handleWindowPointerMove = (event) => {
-      if (!hero.contains(event.target)) resetPointer();
-    };
-
-    hero.addEventListener("pointermove", handlePointerMove, { passive: true });
-    hero.addEventListener("pointerleave", resetPointer);
-    window.addEventListener("pointermove", handleWindowPointerMove, { passive: true });
-    window.addEventListener("scroll", resetPointer, { passive: true });
-    window.addEventListener("blur", resetPointer);
-
-    return () => {
-      hero.removeEventListener("pointermove", handlePointerMove);
-      hero.removeEventListener("pointerleave", resetPointer);
-      window.removeEventListener("pointermove", handleWindowPointerMove);
-      window.removeEventListener("scroll", resetPointer);
-      window.removeEventListener("blur", resetPointer);
-      if (frameId) window.cancelAnimationFrame(frameId);
-    };
-  }, []);
-
   return (
-    <section className="hero" id="inicio" ref={heroRef} aria-labelledby="hero-title">
+    <section className="hero" id="inicio" aria-labelledby="hero-title">
       <div className="hero-inner">
         <div className="hero-copy">
-          <p className="hero-eyebrow">Bienvenido a Tesis20</p>
+          <p className="hero-eyebrow">
+            <span className="live-dot" aria-hidden="true" />
+            Asesoría de tesis · Lima y todo el Perú
+          </p>
           <h1 id="hero-title">
-            <span>Asesoría y acompañamiento</span>
-            {" "}
-            <span>para tu tesis</span>
+            Asesoría y acompañamiento para <mark>tu tesis</mark>
           </h1>
           <p className="hero-intro">
             Te guiamos paso a paso para que desarrolles tu investigación con una ruta
             clara, manteniendo tu autoría y responsabilidad académica.
           </p>
           <div className="hero-actions">
-            <WhatsappButton>Quiero orientación</WhatsappButton>
-            <a className="text-link" href="#metodo">
-              <span>Conoce cómo funciona</span>
+            <WhatsappButton location="hero">Quiero orientación</WhatsappButton>
+            <a className="text-link" href="#servicios-destacados">
+              <span>Ver servicios y precios</span>
               <ArrowRight size={19} aria-hidden="true" />
             </a>
           </div>
-          <ul className="hero-proof-points" aria-label="Beneficios del acompañamiento">
+          <ul className="hero-proof-points" aria-label="Lo que incluye el acompañamiento">
             <li>
               <CheckCircle size={18} weight="fill" aria-hidden="true" />
               <span>Diagnóstico inicial</span>
             </li>
             <li>
               <CheckCircle size={18} weight="fill" aria-hidden="true" />
-              <span>Plan por etapas</span>
+              <span>Contrato por escrito</span>
             </li>
             <li>
               <CheckCircle size={18} weight="fill" aria-hidden="true" />
-              <span>Seguimiento continuo</span>
+              <span>Autoría del estudiante</span>
             </li>
           </ul>
         </div>
@@ -939,6 +800,7 @@ function Hero() {
           role="group"
           aria-label="Estudiantes avanzando con apoyo de Tesis20"
         >
+          <div className="hero-stage" aria-hidden="true" />
           <SafeImage
             className="hero-students"
             src="/assets/hero-students.png"
@@ -951,89 +813,30 @@ function Hero() {
             sizes="(max-width: 930px) 92vw, 46vw"
             draggable="false"
           />
-          <div className="hero-journey" role="list" aria-label="Ruta de acompañamiento">
-            <div className="hero-journey__item" role="listitem">
-              <span className="hero-journey__number">1</span>
-              <MagnifyingGlass size={29} aria-hidden="true" />
-              <div>
-                <strong>Diagnóstico</strong>
-                <span>Entendemos tu tema y objetivos.</span>
-              </div>
-            </div>
-            <div className="hero-journey__item" role="listitem">
-              <span className="hero-journey__number">2</span>
-              <ClipboardText size={29} aria-hidden="true" />
-              <div>
-                <strong>Plan</strong>
-                <span>Trazamos tu ruta y cronograma.</span>
-              </div>
-            </div>
-            <div className="hero-journey__item" role="listitem">
-              <span className="hero-journey__number">3</span>
-              <UserFocus size={29} aria-hidden="true" />
-              <div>
-                <strong>Acompañamiento</strong>
-                <span>Te preparamos para sustentar tu propio trabajo.</span>
-              </div>
-            </div>
-          </div>
+          <HeroFloats />
         </div>
       </div>
     </section>
   );
 }
 
-function TrustStrip() {
+function GradeCaption({ result }) {
   return (
-    <section className="trust-strip" aria-label="Compromisos principales">
-      <div className="trust-strip__inner">
-        {trustItems.map(({ title, body, Icon }) => (
-          <article className="trust-item" key={title}>
-            <Icon size={38} weight="light" aria-hidden="true" />
-            <div>
-              <h2>{title}</h2>
-              <p>{body}</p>
-            </div>
-          </article>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function MethodSection() {
-  return (
-    <section className="method-section" id="metodo" aria-labelledby="metodo-title">
-      <div className="section-shell">
-        <SectionHeading eyebrow="Ruta clara en tres etapas" id="metodo-title">
-          Así avanzamos contigo
-        </SectionHeading>
-        <div className="journey-grid" role="list" aria-label="Tres etapas del acompañamiento">
-          {journeySteps.map(({ title, body, Icon }, index) => (
-            <div className="journey-grid__group" key={title} role="listitem">
-              <article className="journey-step">
-                <span className="journey-step__number">{index + 1}</span>
-                <span className="journey-step__icon">
-                  <Icon size={58} weight="light" aria-hidden="true" />
-                </span>
-                <h3>{title}</h3>
-                <p>{body}</p>
-              </article>
-              {index < journeySteps.length - 1 ? (
-                <span className="journey-arrow" aria-hidden="true">
-                  <ArrowRight size={34} weight="light" />
-                </span>
-              ) : null}
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
+    <span className="grade-card__caption">
+      <strong>{result.average}</strong>
+      <span>
+        Promedio
+        <small>
+          Parcial {result.partial} · Final {result.final}
+        </small>
+      </span>
+    </span>
   );
 }
 
 function ProofSection() {
   const [selectedResult, setSelectedResult] = useState(null);
+  const [paused, setPaused] = useState(false);
   const resultTriggerRef = useRef(null);
   const closeResult = useCallback(() => setSelectedResult(null), []);
 
@@ -1042,10 +845,9 @@ function ProofSection() {
       <section className="proof-section" id="resultados" aria-labelledby="resultados-title">
         <div className="proof-section__inner">
           <div className="results-proof">
-            <div className="results-proof__header">
+            <div className="results-proof__header" data-reveal="">
               <p className="section-eyebrow">Calificaciones compartidas</p>
               <h2 id="resultados-title">Resultados reportados por estudiantes</h2>
-              <span className="section-heading__mark" aria-hidden="true" />
               <p className="results-proof__disclaimer">
                 Galería de {GRADE_GALLERY_SIZE} imágenes organizada con 5 capturas anonimizadas de
                 casos individuales. Los resultados fueron reportados por estudiantes y no
@@ -1053,6 +855,12 @@ function ProofSection() {
                 desempeño y participación.
               </p>
             </div>
+          </div>
+        </div>
+
+        {/* Carrusel continuo: la lista accesible va primero; la copia solo cierra el bucle. */}
+        <div className={`grade-marquee${paused ? " is-paused" : ""}`}>
+          <div className="grade-marquee__track">
             <div
               className="results-grid"
               role="list"
@@ -1060,14 +868,14 @@ function ProofSection() {
             >
               {gradeResults.map((result, index) => (
                 <figure
-                  className="result-photo"
+                  className="grade-card"
                   key={result.id}
                   role="listitem"
                   aria-posinset={index + 1}
                   aria-setsize={GRADE_GALLERY_SIZE}
                 >
                   <button
-                    className="result-photo__button"
+                    className="grade-card__frame"
                     type="button"
                     aria-haspopup="dialog"
                     aria-label={`Ampliar imagen ${index + 1} de ${GRADE_GALLERY_SIZE}, captura ${result.captureNumber}: promedio ${result.average}, examen parcial ${result.partial} y examen final ${result.final}`}
@@ -1084,9 +892,10 @@ function ProofSection() {
                       height={result.height}
                       loading="lazy"
                       decoding="async"
-                      sizes="(max-width: 720px) 92vw, 46vw"
+                      sizes="360px"
                       draggable="false"
                     />
+                    <GradeCaption result={result} />
                   </button>
                   <figcaption className="sr-only">
                     Imagen {index + 1} de {GRADE_GALLERY_SIZE}, correspondiente a la captura{" "}
@@ -1096,12 +905,51 @@ function ProofSection() {
                 </figure>
               ))}
             </div>
-            <div className="results-proof__footer">
-              <a className="text-link" href="/evidencias">
-                Ver los casos completos en Evidencias <ArrowRight size={18} aria-hidden="true" />
-              </a>
+            <div className="results-grid results-grid--clone" aria-hidden="true">
+              {gradeResults.map((result) => (
+                <div className="grade-card" key={`${result.id}-copia`}>
+                  <span className="grade-card__frame">
+                    <img
+                      src={result.thumbnail}
+                      alt=""
+                      width={result.width}
+                      height={result.height}
+                      loading="lazy"
+                      decoding="async"
+                      draggable="false"
+                    />
+                    <GradeCaption result={result} />
+                  </span>
+                </div>
+              ))}
             </div>
           </div>
+        </div>
+
+        <div className="proof-section__inner">
+          <div className="results-proof__footer">
+            <button
+              type="button"
+              className="marquee-toggle"
+              aria-pressed={paused}
+              onClick={() => setPaused((current) => !current)}
+            >
+              {paused ? (
+                <Play size={15} weight="fill" aria-hidden="true" />
+              ) : (
+                <Pause size={15} weight="fill" aria-hidden="true" />
+              )}
+              {paused ? "Reanudar galería" : "Pausar galería"}
+            </button>
+            <a className="text-link" href="/evidencias">
+              Ver los casos completos en Evidencias <ArrowRight size={18} aria-hidden="true" />
+            </a>
+          </div>
+          <QuickFacts
+            servicesCount={services.length}
+            casesCount={publishedEvidenceGroups.length}
+            stagesCount={3}
+          />
         </div>
       </section>
 
@@ -1119,111 +967,19 @@ function ProofSection() {
   );
 }
 
-function AudioIntroduction() {
+/** Presentación en audio: ahora acompaña a las preguntas frecuentes de Inicio. */
+function HomeAudio() {
   return (
-    <section className="audio-introduction" aria-labelledby="audio-introduction-title">
-      <div className="section-shell audio-introduction__inner">
-        <div className="audio-introduction__copy">
-          <p>Presentación en audio</p>
-          <h2 id="audio-introduction-title">Escucha cómo te acompañamos</h2>
-          <span>
-            Conoce el enfoque de Tesis20 y la orientación que brindamos durante tu
-            proceso académico.
-          </span>
-        </div>
-        <AudioPlayer
-          src="/assets/audio/tesis20-presentacion.mp3"
-          title="Presentación de Tesis20"
-          variant="featured"
-          durationHint={60.3}
-          transcript={presentationTranscript}
-        />
-      </div>
-    </section>
-  );
-}
-
-function SupportSection() {
-  return (
-    <section className="support-section" id="clases" aria-labelledby="support-title">
-      <div className="section-shell support-grid">
-        <div className="support-photo-wrap">
-          <SafeImage
-            className="support-photo"
-            src="/assets/support-session.jpg"
-            alt="Estudiante recibiendo asesoría personalizada para su tesis"
-            width="1511"
-            height="1041"
-            loading="lazy"
-            decoding="async"
-            sizes="(max-width: 760px) 92vw, 48vw"
-            draggable="false"
-          />
-        </div>
-        <div className="support-copy">
-          <SectionHeading align="left" eyebrow="Acompañamiento humano" id="support-title">
-            Clases en vivo y feedback constante
-          </SectionHeading>
-          <p>
-            No estás solo. Nuestro equipo te acompaña con clases en directo, revisión de avances
-            y retroalimentación clara para que sigas progresando con seguridad.
-          </p>
-          <ul>
-            <li>
-              <CheckCircle size={22} weight="fill" aria-hidden="true" />
-              <span>Sesiones en vivo con profesores especialistas.</span>
-            </li>
-            <li>
-              <CheckCircle size={22} weight="fill" aria-hidden="true" />
-              <span>Retroalimentación personalizada en cada etapa.</span>
-            </li>
-            <li>
-              <CheckCircle size={22} weight="fill" aria-hidden="true" />
-              <span>Resolución de dudas de forma directa y oportuna.</span>
-            </li>
-          </ul>
-          <WhatsappButton className="support-copy__cta" dark>
-            Consultar mi caso
-          </WhatsappButton>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function CommitmentSection() {
-  return (
-    <section className="commitment-section" aria-labelledby="commitment-title">
-      <div className="section-shell">
-        <SectionHeading id="commitment-title">Nuestro compromiso contigo</SectionHeading>
-        <div className="commitment-grid">
-          {commitmentItems.map(({ title, body, Icon }) => (
-            <article className="commitment-item" key={title}>
-              <span className="commitment-item__icon">
-                <Icon size={40} weight="light" aria-hidden="true" />
-              </span>
-              <h3>{title}</h3>
-              <p>{body}</p>
-            </article>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function FinalCta() {
-  return (
-    <section className="final-cta" aria-labelledby="final-cta-title">
-      <div className="final-cta__inner">
-        <GraduationCap size={74} weight="light" aria-hidden="true" />
-        <div className="final-cta__title">
-          <h2 id="final-cta-title">¿Listo para avanzar con tu propia investigación?</h2>
-        </div>
-        <p>Cuéntanos en qué etapa estás y recibe orientación personalizada por WhatsApp.</p>
-        <WhatsappButton>Quiero orientación</WhatsappButton>
-      </div>
-    </section>
+    <div className="faq-audio">
+      <p>¿Prefieres escucharlo?</p>
+      <strong>Presentación de Tesis20 · 1 min</strong>
+      <AudioPlayer
+        src="/assets/audio/tesis20-presentacion.mp3"
+        title="Presentación de Tesis20"
+        durationHint={60.3}
+        transcript={presentationTranscript}
+      />
+    </div>
   );
 }
 
@@ -1521,6 +1277,7 @@ function EvidencePage() {
       <section className="evidence-hero" aria-labelledby="evidence-page-title">
         <div className="evidence-hero__inner">
           <div className="evidence-hero__copy">
+            <Breadcrumb current="Evidencias" />
             <p>Casos compartidos por estudiantes</p>
             <h1 id="evidence-page-title">Evidencias y resultados reportados</h1>
             <span>
@@ -1778,6 +1535,7 @@ function ServicesPage() {
       <section className="services-hero" id="servicios-inicio" aria-labelledby="services-page-title">
         <div className="services-hero__inner">
           <div className="services-hero__copy">
+            <Breadcrumb current="Servicios" />
             <p className="services-hero__eyebrow">Servicios académicos</p>
             <h1 id="services-page-title">Elige el acompañamiento que necesitas</h1>
             <p>
@@ -1961,202 +1719,13 @@ function ServicesPage() {
         </div>
       </section>
 
-      <TrustStrip />
+      <UniversityStrip />
       <FaqSection
         id="preguntas-servicios"
         title="Todo claro antes de elegir"
         items={servicesFaqs}
       />
       <FinalCta />
-    </main>
-  );
-}
-
-function ContractPage() {
-  const handlePrint = () => {
-    trackInteraction("contract_print", { location: "contract_page" });
-    window.print();
-  };
-
-  return (
-    <main className="contract-page" id="main-content" tabIndex="-1">
-      <section className="contract-hero" aria-labelledby="contract-page-title">
-        <div className="contract-hero__inner">
-          <div className="contract-hero__copy">
-            <h1 id="contract-page-title">Contrato general de asesoría académica</h1>
-            <p>
-              Conoce por anticipado el alcance, las responsabilidades, los pagos y la
-              protección de tu información. Puedes leer el modelo completo aquí o descargarlo
-              en Word editable para completar tus datos, o en PDF para revisarlo con calma.
-            </p>
-            <div className="contract-hero__actions">
-              <a
-                className="contract-button contract-button--primary"
-                href={contractDocxHref}
-                download={contractDocxFilename}
-                onClick={() => trackInteraction("contract_download", { location: "hero", format: "docx" })}
-              >
-                <DownloadSimple size={22} weight="bold" aria-hidden="true" />
-                <span>Descargar contrato en Word</span>
-              </a>
-              <a
-                className="contract-button contract-button--outline"
-                href={contractPdfHref}
-                download={contractPdfFilename}
-                onClick={() => trackInteraction("contract_download", { location: "hero", format: "pdf" })}
-              >
-                <FileText size={21} weight="bold" aria-hidden="true" />
-                <span>Descargar PDF</span>
-              </a>
-              <button className="contract-button contract-button--secondary" type="button" onClick={handlePrint}>
-                <Printer size={21} weight="bold" aria-hidden="true" />
-                <span>Imprimir o guardar</span>
-              </button>
-            </div>
-          </div>
-
-          <aside className="contract-summary" aria-label="Resumen del contrato">
-            <span className="contract-summary__icon" aria-hidden="true">
-              <FileText size={42} weight="light" />
-            </span>
-            <p>Modelo general para Perú</p>
-            <h2>Word editable, listo para completar</h2>
-            <ul>
-              <li><CheckCircle size={18} weight="fill" aria-hidden="true" /> 12 cláusulas generales</li>
-              <li><CheckCircle size={18} weight="fill" aria-hidden="true" /> Campos para ambas partes</li>
-              <li><CheckCircle size={18} weight="fill" aria-hidden="true" /> Autoría e integridad académica</li>
-            </ul>
-          </aside>
-        </div>
-      </section>
-
-      <section className="contract-reader" aria-labelledby="contract-reader-title">
-        <div className="contract-reader__inner">
-          <aside className="contract-guide">
-            <div className="contract-guide__heading">
-              <ShieldCheck size={28} weight="light" aria-hidden="true" />
-              <h2>Antes de firmar</h2>
-            </div>
-            <ol>
-              <li>Completa los datos del prestador y del cliente.</li>
-              <li>Adjunta la cotización con alcance, entregables, precio y fechas.</li>
-              <li>Revisa cada cláusula y conserva una copia firmada.</li>
-            </ol>
-            <p>{contractTemplate.notice}</p>
-            <div className="contract-guide__actions">
-              <a
-                className="contract-guide__download contract-guide__download--primary"
-                href={contractDocxHref}
-                download={contractDocxFilename}
-                onClick={() => trackInteraction("contract_download", { location: "reader_guide", format: "docx" })}
-              >
-                <DownloadSimple size={19} weight="bold" aria-hidden="true" />
-                Descargar contrato en Word
-              </a>
-              <a
-                className="contract-guide__download contract-guide__download--outline"
-                href={contractPdfHref}
-                download={contractPdfFilename}
-                onClick={() => trackInteraction("contract_download", { location: "reader_guide", format: "pdf" })}
-              >
-                <FileText size={18} weight="bold" aria-hidden="true" />
-                Descargar PDF
-              </a>
-            </div>
-          </aside>
-
-          <article className="contract-document">
-            <header className="contract-document__header">
-              <span>Tesis20 · Documento preestablecido</span>
-              <h2 id="contract-reader-title">{contractTemplate.title}</h2>
-              <p>{contractTemplate.version}</p>
-            </header>
-
-            <p className="contract-document__intro">{contractTemplate.intro}</p>
-
-            <div className="contract-fields" aria-label="Datos que deben completar las partes">
-              {contractTemplate.fields.map((field) => (
-                <p key={field}>{field}</p>
-              ))}
-            </div>
-
-            <div className="contract-clauses">
-              {contractTemplate.clauses.map((clause) => (
-                <section className="contract-clause" key={clause.title}>
-                  <h3>{clause.title}</h3>
-                  {clause.paragraphs.map((paragraph) => (
-                    <p key={paragraph}>{paragraph}</p>
-                  ))}
-                </section>
-              ))}
-            </div>
-
-            <div className="contract-signatures" aria-label="Firmas del contrato">
-              {contractTemplate.signatures.map((signature) => (
-                <div key={signature}>
-                  {signature.split("\n").map((line) => <p key={line}>{line}</p>)}
-                </div>
-              ))}
-            </div>
-
-            <section className="contract-sources" aria-labelledby="contract-sources-title">
-              <h3 id="contract-sources-title">Marco legal referencial</h3>
-              <p>
-                Estas fuentes oficiales sirven como referencia general para el modelo. La
-                aplicación concreta depende de los datos y del servicio acordado.
-              </p>
-              <ul>
-                {contractTemplate.legalSources.map((source) => (
-                  <li key={source.url}>
-                    <a
-                      href={source.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      referrerPolicy="no-referrer"
-                      aria-label={`${source.label} (se abre en una pestaña nueva)`}
-                    >
-                      <span>{source.label}</span>
-                      <ArrowSquareOut size={15} aria-hidden="true" />
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </section>
-
-            <p className="contract-document__notice">
-              <strong>Importante:</strong> {contractTemplate.notice}
-            </p>
-          </article>
-        </div>
-      </section>
-
-      <section className="contract-download" aria-labelledby="contract-download-title">
-        <div>
-          <FileText size={42} weight="light" aria-hidden="true" />
-          <p>¿Listo para revisarlo fuera de la web?</p>
-          <h2 id="contract-download-title">Descarga el modelo completo en Word editable</h2>
-          <div className="contract-download__actions">
-            <a
-              className="contract-download__primary"
-              href={contractDocxHref}
-              download={contractDocxFilename}
-              onClick={() => trackInteraction("contract_download", { location: "bottom_cta", format: "docx" })}
-            >
-              <DownloadSimple size={21} weight="bold" aria-hidden="true" />
-              Descargar contrato en Word
-            </a>
-            <a
-              className="contract-download__outline"
-              href={contractPdfHref}
-              download={contractPdfFilename}
-              onClick={() => trackInteraction("contract_download", { location: "bottom_cta", format: "pdf" })}
-            >
-              <FileText size={20} weight="bold" aria-hidden="true" />
-              Descargar PDF
-            </a>
-          </div>
-        </div>
-      </section>
     </main>
   );
 }
@@ -2255,6 +1824,9 @@ function Footer() {
         </details>
       </div>
       <div className="footer-bottom">© {currentYear} Tesis20. Todos los derechos reservados.</div>
+      <div className="footer-wordmark" aria-hidden="true">
+        Tesis20
+      </div>
     </footer>
   );
 }
@@ -2280,6 +1852,7 @@ function NotFoundPage() {
 }
 
 export function App() {
+  const PreloadedContractPage = loadedRouteModules["/contrato"]?.ContractPage;
   const [menuOpen, setMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const currentPage = getPageFromPathname();
@@ -2345,6 +1918,55 @@ export function App() {
       window.removeEventListener("scroll", updateHeader);
       window.removeEventListener("resize", closeDesktopMenu);
       if (frame) window.cancelAnimationFrame(frame);
+    };
+  }, []);
+
+  // Aparición suave al hacer scroll para todo [data-reveal]. Sin JS, sin
+  // IntersectionObserver o con «reducir movimiento», el contenido se ve igual.
+  useEffect(() => {
+    const root = document.documentElement;
+    if (
+      !("IntersectionObserver" in window) ||
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    ) {
+      return undefined;
+    }
+    root.classList.add("js-reveal");
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+          entry.target.classList.add("is-revealed");
+          observer.unobserve(entry.target);
+        });
+      },
+      { rootMargin: "0px 0px -6% 0px", threshold: 0.08 },
+    );
+    let frame = 0;
+    const observeNew = () => {
+      frame = 0;
+      document
+        .querySelectorAll("[data-reveal]:not(.is-revealed)")
+        .forEach((element) => observer.observe(element));
+    };
+    observeNew();
+    // Las páginas diferidas montan después: se observan al aparecer.
+    const mutations = new MutationObserver(() => {
+      if (!frame) frame = window.requestAnimationFrame(observeNew);
+    });
+    mutations.observe(document.getElementById("root") || document.body, {
+      childList: true,
+      subtree: true,
+    });
+    const revealAll = () =>
+      document.querySelectorAll("[data-reveal]").forEach((element) => element.classList.add("is-revealed"));
+    window.addEventListener("beforeprint", revealAll);
+    return () => {
+      observer.disconnect();
+      mutations.disconnect();
+      if (frame) window.cancelAnimationFrame(frame);
+      window.removeEventListener("beforeprint", revealAll);
+      root.classList.remove("js-reveal");
     };
   }, []);
 
@@ -2424,7 +2046,13 @@ export function App() {
       ) : currentPage === "evidence" ? (
         <EvidencePage />
       ) : currentPage === "contract" ? (
-        <ContractPage />
+        PreloadedContractPage ? (
+          <PreloadedContractPage />
+        ) : (
+          <Suspense fallback={<main id="main-content" tabIndex="-1">Preparando contrato…</main>}>
+            <LazyContractPage />
+          </Suspense>
+        )
       ) : currentPage === "resources" ? (
         <Suspense fallback={<main id="main-content" tabIndex="-1">Preparando recursos…</main>}>
           <ResourcesPage />
@@ -2442,19 +2070,18 @@ export function App() {
       ) : (
         <main id="main-content" tabIndex="-1">
           <Hero />
-          <TrustStrip />
-          <DiagnosticWizard />
+          <UniversityStrip />
+          <ServicesPreview services={services} />
+          <ProcessSection />
+          <WhyBento />
+          <PortalShowcase />
           <ProofSection />
-          <QuickFacts
-            servicesCount={services.length}
-            casesCount={publishedEvidenceGroups.length}
-            stagesCount={3}
+          <DiagnosticWizard />
+          <FaqSection
+            title="Respuestas antes de comenzar"
+            items={homeFaqs}
+            aside={<HomeAudio />}
           />
-          <AudioIntroduction />
-          <MethodSection />
-          <SupportSection />
-          <CommitmentSection />
-          <FaqSection title="Respuestas antes de comenzar" items={homeFaqs} />
           <FinalCta />
         </main>
       )}
