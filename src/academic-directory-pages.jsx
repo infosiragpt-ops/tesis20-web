@@ -1,29 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
-import { trackInteraction } from "./platform-enhancements.jsx";
-import { createTeacherSearchIndex, searchTeacherIndex } from "./teacher-search.js";
-import { CAREER_AREAS, CAREER_COUNT, TEACHERS } from "./data/academic-directory.js";
-import { assignTeacherPortraits, teacherMediaMarkup } from "./teacher-portrait.js";
-
-const WHATSAPP_PHONE = "51918714054";
-const TEACHER_PAGE_SIZE = 24;
-const ACADEMIC_DIRECTORY = {
-  careerAreas: CAREER_AREAS,
-  careerCount: CAREER_COUNT,
-  teachers: TEACHERS,
-};
-
-function useAcademicDirectory() {
-  useEffect(() => {
-    if (!document.querySelector('link[href="/assets/academic-directory-v1.css?v=20260802-syntheticphotosv2"]')) {
-      const stylesheet = document.createElement("link");
-      stylesheet.rel = "stylesheet";
-      stylesheet.href = "/assets/academic-directory-v1.css?v=20260802-syntheticphotosv2";
-      document.head.appendChild(stylesheet);
-    }
-  }, []);
-
-  return { directory: ACADEMIC_DIRECTORY, failed: false };
-}
+import { useMemo, useState } from "react";
+import { ArrowRight } from "@phosphor-icons/react/ArrowRight";
+import { CheckCircle } from "@phosphor-icons/react/CheckCircle";
+import { CAREER_AREAS, CAREER_COUNT } from "./data/academic-directory.js";
+import "./page-hero.css";
+import "./academic-directory.css";
 
 function normalizeSearchText(value) {
   return value
@@ -47,69 +27,19 @@ function careerCardsMarkup(areas) {
   </article>`).join("");
 }
 
-function teacherCardsMarkup(teachers) {
-  return assignTeacherPortraits(teachers).map(({ teacher, portraitIndex }) => `<article class="teacher-card">
-    ${teacherMediaMarkup(teacher, portraitIndex)}
-    <div class="teacher-card__body"><div class="teacher-card__title"><div><p>Perfil de referencia · no es una persona real</p><h2>${escapeHtml(teacher.name)}</h2></div><span>${escapeHtml(teacher.country)}</span></div>
-    <p class="teacher-card__description">${escapeHtml(teacher.description)}</p>
-    <dl><div><dt>Experiencia simulada</dt><dd>${teacher.experienceYears} años de trayectoria referencial · ${escapeHtml(teacher.profileCode)}</dd></div><div><dt>Especialidades</dt><dd><ul class="teacher-card__tags">${(teacher.specialties || []).map((specialty) => `<li>${escapeHtml(specialty)}</li>`).join("")}</ul></dd></div><div><dt>Carreras</dt><dd>${teacher.careers.map(escapeHtml).join(" · ")}</dd></div><div><dt>Universidad</dt><dd>${teacher.universities.map(escapeHtml).join(" · ")}</dd></div></dl>
-    <div class="teacher-card__footer"><p><small>Precio referencial por hora</small><strong>S/ ${teacher.price}</strong></p>
-    <a href="${escapeHtml(buildTeacherWhatsappHref(teacher))}" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer" data-teacher="${escapeHtml(teacher.id)}" aria-label="Solicitar a Tesis20 un asesor real similar al perfil demostrativo de ${escapeHtml(teacher.name)}">Solicitar asesor real similar</a></div></div>
-  </article>`).join("");
-}
-
-function buildTeacherWhatsappHref(teacher) {
-  const message = [
-    "¡Hola, Tesis20! Quiero consultar por un asesor con un perfil similar a esta referencia demostrativa:",
-    "",
-    `Código del perfil: ${teacher.profileCode}`,
-    `Nombre: ${teacher.name}`,
-    `Especialidades: ${(teacher.specialties || []).join(", ")}`,
-    `Carrera(s): ${teacher.careers.join(", ")}`,
-    `Universidad donde enseña: ${teacher.universities.join(", ")}`,
-    `País: ${teacher.country}`,
-    `Precio referencial por hora: S/ ${teacher.price}`,
-    `Trayectoria referencial simulada: ${teacher.experienceYears} años`,
-    `Perfil: ${teacher.description}`,
-    "",
-    "Este perfil es demostrativo. Tesis20 confirmará identidad, experiencia, disponibilidad y tarifa.",
-    "",
-    "Por favor, confirmen su disponibilidad y el precio final para mi tema.",
-  ].join("\n");
-
-  return `https://api.whatsapp.com/send?phone=${WHATSAPP_PHONE}&text=${encodeURIComponent(message)}`;
-}
-
-function DirectoryHero({ eyebrow, title, description, stat, statLabel, children }) {
-  return (
-    <section className="directory-hero" aria-labelledby="directory-page-title">
-      <div className="directory-shell directory-hero__inner">
-        <div className="directory-hero__copy">
-          <p>{eyebrow}</p>
-          <h1 id="directory-page-title">{title}</h1>
-          <span>{description}</span>
-          {children}
-        </div>
-        <div className="directory-hero__stat" aria-label={`${stat} ${statLabel}`}>
-          <strong>{stat}</strong>
-          <span>{statLabel}</span>
-          <i aria-hidden="true">T20</i>
-        </div>
-      </div>
-    </section>
-  );
-}
-
+/**
+ * Catálogo orientativo de carreras por área de conocimiento. Las 234 carreras
+ * se filtran en el navegador (sin red); el enlace de cada búsqueda lleva a la
+ * solicitud de asesor con la carrera ya elegida.
+ */
 export function CareersPage() {
   const [query, setQuery] = useState("");
   const [areaId, setAreaId] = useState("");
-  const { directory, failed } = useAcademicDirectory();
-  const careerAreas = directory?.careerAreas || [];
 
   const visibleAreas = useMemo(() => {
     const normalizedQuery = normalizeSearchText(query.trim());
 
-    return careerAreas.map((area) => ({
+    return CAREER_AREAS.map((area) => ({
       ...area,
       careers: area.careers.filter((career) => {
         const matchesArea = !areaId || area.id === areaId;
@@ -118,32 +48,58 @@ export function CareersPage() {
         return matchesArea && matchesQuery;
       }),
     })).filter((area) => area.careers.length > 0);
-  }, [areaId, careerAreas, query]);
+  }, [areaId, query]);
 
-  const resultCount = visibleAreas.reduce(
-    (total, area) => total + area.careers.length,
-    0,
-  );
+  const resultCount = visibleAreas.reduce((total, area) => total + area.careers.length, 0);
   const hasFilters = Boolean(query || areaId);
   const careerCards = useMemo(() => careerCardsMarkup(visibleAreas), [visibleAreas]);
 
   return (
     <main className="directory-page" id="main-content" tabIndex="-1">
-      <DirectoryHero
-        eyebrow="Explorador académico internacional"
-        title="Encuentra tu carrera por área de conocimiento"
-        description="Consulta un mapa amplio de carreras universitarias y campos emergentes. Los nombres y especialidades pueden variar según cada país y universidad."
-        stat={directory?.careerCount ?? "…"}
-        statLabel="carreras orientativas"
-      >
-        <a className="directory-hero__link" href="/docentes">
-          Buscar docentes por carrera
-          <span aria-hidden="true">→</span>
-        </a>
-      </DirectoryHero>
+      <section className="page-hero" aria-labelledby="directory-page-title">
+        <div className="page-hero__inner">
+          <div className="page-hero__copy">
+            <p className="page-hero__eyebrow">Explorador académico</p>
+            <h1 id="directory-page-title">Encuentra tu carrera por área de conocimiento</h1>
+            <p className="page-hero__intro">
+              Un mapa orientativo de {CAREER_COUNT} carreras universitarias y campos emergentes,
+              organizado en {CAREER_AREAS.length} áreas. Los nombres pueden variar según el país y
+              la universidad; si no encuentras el tuyo, ubicamos el área equivalente.
+            </p>
+            <div className="page-hero__actions">
+              <a className="whatsapp-button whatsapp-button--dark" href="/docentes">
+                <ArrowRight size={20} weight="bold" aria-hidden="true" />
+                <span>Solicitar un asesor para mi carrera</span>
+              </a>
+              <a className="text-link" href="#catalogo">
+                Ver el catálogo <ArrowRight size={18} aria-hidden="true" />
+              </a>
+            </div>
+            <ul className="page-hero__highlights" aria-label="Qué incluye el catálogo">
+              <li>
+                <CheckCircle size={18} weight="fill" aria-hidden="true" />
+                {CAREER_AREAS.length} áreas de conocimiento
+              </li>
+              <li>
+                <CheckCircle size={18} weight="fill" aria-hidden="true" />
+                Búsqueda por nombre o área
+              </li>
+              <li>
+                <CheckCircle size={18} weight="fill" aria-hidden="true" />
+                Asesor según tu especialidad
+              </li>
+            </ul>
+          </div>
+          <aside className="page-hero__card page-hero__card--stat" aria-label={`${CAREER_COUNT} carreras orientativas`}>
+            <strong>{CAREER_COUNT}</strong>
+            <span>carreras orientativas</span>
+            <small>en {CAREER_AREAS.length} áreas de conocimiento</small>
+          </aside>
+        </div>
+      </section>
 
-      <section className="directory-search" aria-labelledby="career-search-title">
-        <div className="directory-shell">
+      <section className="directory-search" id="catalogo" aria-labelledby="career-search-title">
+        <div className="section-shell">
           <div className="directory-search__heading">
             <div>
               <p>Busca y compara</p>
@@ -171,8 +127,10 @@ export function CareersPage() {
               <span className="directory-field">
                 <select value={areaId} onChange={(event) => setAreaId(event.target.value)}>
                   <option value="">Todas las áreas</option>
-                  {careerAreas.map((area) => (
-                    <option value={area.id} key={area.id}>{area.name}</option>
+                  {CAREER_AREAS.map((area) => (
+                    <option value={area.id} key={area.id}>
+                      {area.name}
+                    </option>
                   ))}
                 </select>
               </span>
@@ -190,20 +148,20 @@ export function CareersPage() {
             </button>
           </div>
 
-          {!directory && !failed ? (
-            <div className="directory-empty" role="status">
-              <span aria-hidden="true">•••</span>
-              <h2>Cargando carreras</h2>
-              <p>Estamos preparando el catálogo académico.</p>
-            </div>
-          ) : visibleAreas.length ? (
+          {visibleAreas.length ? (
             <div className="career-area-grid" dangerouslySetInnerHTML={{ __html: careerCards }} />
           ) : (
             <div className="directory-empty">
               <span aria-hidden="true">⌕</span>
               <h2>No encontramos esa carrera</h2>
               <p>Prueba con otra palabra o revisa todas las áreas disponibles.</p>
-              <button type="button" onClick={() => { setQuery(""); setAreaId(""); }}>
+              <button
+                type="button"
+                onClick={() => {
+                  setQuery("");
+                  setAreaId("");
+                }}
+              >
                 Mostrar todo el catálogo
               </button>
             </div>
@@ -213,242 +171,10 @@ export function CareersPage() {
             <strong>Catálogo internacional orientativo</strong>
             <p>
               La denominación de una carrera cambia entre países y universidades. Si no
-              encuentras el nombre exacto, Tesis20 puede ayudarte a ubicar el área equivalente.
+              encuentras el nombre exacto, Tesis20 puede ayudarte a ubicar el área equivalente y
+              el asesor adecuado.
             </p>
           </aside>
-        </div>
-      </section>
-    </main>
-  );
-}
-
-export function TeachersPage() {
-  const [needQuery, setNeedQuery] = useState("");
-  const [career, setCareer] = useState("");
-  const [university, setUniversity] = useState("");
-  const [appliedFilters, setAppliedFilters] = useState({
-    query: "",
-    career: "",
-    university: "",
-  });
-  const [currentPage, setCurrentPage] = useState(0);
-  const { directory, failed } = useAcademicDirectory();
-  const teachers = directory?.teachers || [];
-  const teacherCareerOptions = useMemo(
-    () => [...new Set(teachers.flatMap((teacher) => teacher.careers))].sort((a, b) => a.localeCompare(b, "es")),
-    [teachers],
-  );
-  const teacherUniversityOptions = useMemo(
-    () => [...new Set(teachers.flatMap((teacher) => teacher.universities))].sort((a, b) => a.localeCompare(b, "es")),
-    [teachers],
-  );
-  const teacherSearchIndex = useMemo(() => createTeacherSearchIndex(teachers), [teachers]);
-
-  const matchingTeachers = useMemo(
-    () => searchTeacherIndex(teacherSearchIndex, appliedFilters),
-    [appliedFilters, teacherSearchIndex],
-  );
-  const pageStart = currentPage * TEACHER_PAGE_SIZE;
-  const visibleTeachers = matchingTeachers.slice(pageStart, pageStart + TEACHER_PAGE_SIZE);
-
-  const hasFilters = Boolean(
-    needQuery ||
-    career ||
-    university ||
-    appliedFilters.query ||
-    appliedFilters.career ||
-    appliedFilters.university
-  );
-  const teacherCards = useMemo(() => teacherCardsMarkup(visibleTeachers), [visibleTeachers]);
-
-  const applySearch = (event) => {
-    event.preventDefault();
-    setCurrentPage(0);
-    setAppliedFilters({ query: needQuery.trim(), career, university });
-    trackInteraction("teacher_search_submit", {
-      hasQuery: Boolean(needQuery.trim()),
-      hasCareer: Boolean(career),
-      hasUniversity: Boolean(university),
-    });
-  };
-
-  const clearSearch = () => {
-    setNeedQuery("");
-    setCareer("");
-    setUniversity("");
-    setAppliedFilters({ query: "", career: "", university: "" });
-    setCurrentPage(0);
-  };
-
-  const changePage = (nextPage) => {
-    setCurrentPage(nextPage);
-    window.requestAnimationFrame(() => {
-      const results = document.getElementById("teacher-results");
-      if (!results) return;
-      const top = results.getBoundingClientRect().top + window.scrollY - 105;
-      const previousScrollBehavior = document.documentElement.style.scrollBehavior;
-      document.documentElement.style.scrollBehavior = "auto";
-      window.scrollTo(0, top);
-      document.documentElement.style.scrollBehavior = previousScrollBehavior;
-      results.focus({ preventScroll: true });
-    });
-  };
-
-  return (
-    <main className="directory-page" id="main-content" tabIndex="-1">
-      <DirectoryHero
-        eyebrow="Red académica Tesis20"
-        title="Encuentra un docente para tu tema"
-        description="Describe lo que necesitas —por ejemplo, derecho penal, metodología cualitativa o SPSS— y encuentra docentes por especialidad, carrera y universidad."
-        stat={directory?.teachers.length ?? "…"}
-        statLabel="perfiles demostrativos"
-      >
-        <a className="directory-hero__link" href="/carreras">
-          Explorar todas las carreras
-          <span aria-hidden="true">→</span>
-        </a>
-      </DirectoryHero>
-
-      <section className="directory-search teacher-directory" aria-labelledby="teacher-search-title">
-        <div className="directory-shell">
-          <div className="directory-search__heading">
-            <div>
-              <p>Directorio académico</p>
-              <h2 id="teacher-search-title">Perfiles docentes demostrativos</h2>
-            </div>
-            <span aria-live="polite">
-              {matchingTeachers.length} {matchingTeachers.length === 1 ? "perfil encontrado" : "perfiles encontrados"}
-            </span>
-          </div>
-
-          <form
-            className="directory-filters directory-filters--teachers"
-            role="search"
-            aria-label="Buscar docentes por necesidad"
-            onSubmit={applySearch}
-          >
-            <label className="directory-need-field">
-              <span>¿Qué asesoría necesitas?</span>
-              <span className="directory-field">
-                <input
-                  type="search"
-                  value={needQuery}
-                  placeholder="Ej.: derecho penal, SPSS, tesis cualitativa…"
-                  autoComplete="off"
-                  onChange={(event) => setNeedQuery(event.target.value)}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter") applySearch(event);
-                  }}
-                />
-              </span>
-              <small className="directory-field-hint">
-                Busca por tema, especialidad, metodología, software o nombre del docente.
-              </small>
-            </label>
-            <label>
-              <span>Carrera</span>
-              <span className="directory-field">
-                <select value={career} onChange={(event) => setCareer(event.target.value)}>
-                  <option value="">Todas las carreras</option>
-                  {teacherCareerOptions.map((option) => (
-                    <option value={option} key={option}>{option}</option>
-                  ))}
-                </select>
-              </span>
-            </label>
-            <label>
-              <span>Universidad donde enseña</span>
-              <span className="directory-field">
-                <select value={university} onChange={(event) => setUniversity(event.target.value)}>
-                  <option value="">Todas las universidades</option>
-                  {teacherUniversityOptions.map((option) => (
-                    <option value={option} key={option}>{option}</option>
-                  ))}
-                </select>
-              </span>
-            </label>
-            <div className="directory-actions">
-              <button
-                type="submit"
-                className="directory-search-button"
-                aria-controls="teacher-results"
-              >
-                Buscar docentes
-              </button>
-              <button
-                type="button"
-                className="directory-clear"
-                disabled={!hasFilters}
-                onClick={clearSearch}
-              >
-                Limpiar
-              </button>
-            </div>
-          </form>
-
-          <aside className="directory-note directory-note--warning">
-            <strong>Directorio demostrativo</strong>
-            <p>
-              Estos 4,000 perfiles, sus nombres, imágenes sintéticas generadas con IA,
-              universidades, experiencia y precios son referencias simuladas: no corresponden
-              a profesionales disponibles ni a personas reales. Tesis20 confirmará la identidad,
-              experiencia, disponibilidad y tarifa de un asesor real antes de coordinar.
-            </p>
-          </aside>
-
-          {!directory && !failed ? (
-            <div className="directory-empty" role="status">
-              <span aria-hidden="true">•••</span>
-              <h2>Cargando docentes</h2>
-              <p>Estamos preparando los perfiles académicos.</p>
-            </div>
-          ) : visibleTeachers.length ? (
-            <div
-              id="teacher-results"
-              className="teacher-grid"
-              tabIndex="-1"
-              dangerouslySetInnerHTML={{ __html: teacherCards }}
-              onClick={(event) => {
-                const link = event.target.closest("[data-teacher]");
-                if (link) trackInteraction("teacher_whatsapp_click", {
-                  teacher: link.dataset.teacher,
-                  location: "teacher_card",
-                });
-              }}
-            />
-          ) : (
-            <div className="directory-empty">
-              <span aria-hidden="true">⌕</span>
-              <h2>No encontramos perfiles con esos filtros</h2>
-              <p>Prueba otra necesidad, especialidad, carrera o universidad.</p>
-              <button type="button" onClick={clearSearch}>
-                Limpiar búsqueda
-              </button>
-            </div>
-          )}
-
-          {matchingTeachers.length > TEACHER_PAGE_SIZE ? (
-            <nav className="directory-results-more" aria-label="Paginación de docentes">
-              <button
-                type="button"
-                disabled={currentPage === 0}
-                onClick={() => changePage(Math.max(0, currentPage - 1))}
-              >
-                ← Anterior
-              </button>
-              <span aria-live="polite">
-                Mostrando {pageStart + 1}–{pageStart + visibleTeachers.length} de {matchingTeachers.length} perfiles
-              </span>
-              <button
-                type="button"
-                disabled={pageStart + visibleTeachers.length >= matchingTeachers.length}
-                onClick={() => changePage(currentPage + 1)}
-              >
-                Siguiente →
-              </button>
-            </nav>
-          ) : null}
-
         </div>
       </section>
     </main>

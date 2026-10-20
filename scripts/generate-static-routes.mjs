@@ -1,62 +1,12 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
-import { CAREER_AREAS, CAREER_COUNT, TEACHERS } from "../src/data/academic-directory.js";
+import { CAREER_AREAS, CAREER_COUNT } from "../src/data/academic-directory.js";
 import { ACTIVE_THESIS_REPOSITORIES } from "../src/data/thesis-repositories.js";
-import { assignTeacherPortraits, teacherMediaMarkup } from "../src/teacher-portrait.js";
 
 const DIST_DIRECTORY = resolve(process.cwd(), "dist");
 const INDEX_PATH = resolve(DIST_DIRECTORY, "index.html");
 const SITE_ORIGIN = "https://www.tesis20.com";
 const SHARE_IMAGE = `${SITE_ORIGIN}/assets/hero-students.png`;
-const TEACHER_PAGE_SIZE = 24;
-
-function buildTeacherWhatsAppUrl(teacher) {
-  const message = [
-    "¡Hola, Tesis20! Quiero consultar por un asesor con un perfil similar a esta referencia demostrativa:",
-    "",
-    `Código del perfil: ${teacher.profileCode}`,
-    `Nombre: ${teacher.name}`,
-    `Especialidades: ${(teacher.specialties || []).join(", ")}`,
-    `Carrera(s): ${teacher.careers.join(", ")}`,
-    `Universidad donde enseña: ${teacher.universities.join(", ")}`,
-    `País: ${teacher.country}`,
-    `Precio referencial por hora: S/ ${teacher.price}`,
-    `Trayectoria referencial simulada: ${teacher.experienceYears} años`,
-    `Perfil: ${teacher.description}`,
-    "",
-    "Este perfil es demostrativo. Tesis20 confirmará identidad, experiencia, disponibilidad y tarifa.",
-    "",
-    "Por favor, confirmen su disponibilidad y el precio final para mi tema.",
-  ].join("\n");
-
-  return `https://api.whatsapp.com/send?phone=51918714054&text=${encodeURIComponent(message)}`;
-}
-
-function teacherSearchCorpus(teacher) {
-  return [
-    teacher.name,
-    teacher.country,
-    teacher.description,
-    ...(teacher.specialties || []),
-    ...(teacher.searchTerms || []),
-    ...teacher.careers,
-    ...teacher.universities,
-  ].join(" ");
-}
-
-function teacherCardMarkup(teacher, portraitIndex) {
-  const specialties = (teacher.specialties || [])
-    .map((specialty) => `<li>${escapeAttribute(specialty)}</li>`)
-    .join("");
-
-  return `<article class="teacher-card" data-teacher-card data-name="${escapeAttribute(teacher.name)}" data-search="${escapeAttribute(teacherSearchCorpus(teacher))}" data-careers="${escapeAttribute(teacher.careers.join("|"))}" data-universities="${escapeAttribute(teacher.universities.join("|"))}">
-    ${teacherMediaMarkup(teacher, portraitIndex)}
-    <div class="teacher-card__body"><div class="teacher-card__title"><div><p>Perfil de referencia · no es una persona real</p><h2>${escapeAttribute(teacher.name)}</h2></div><span>${escapeAttribute(teacher.country)}</span></div>
-    <p class="teacher-card__description">${escapeAttribute(teacher.description)}</p>
-    <dl><div><dt>Experiencia simulada</dt><dd>${teacher.experienceYears} años de trayectoria referencial · ${escapeAttribute(teacher.profileCode)}</dd></div><div><dt>Especialidades</dt><dd><ul class="teacher-card__tags">${specialties}</ul></dd></div><div><dt>Carreras</dt><dd>${teacher.careers.map(escapeAttribute).join(" · ")}</dd></div><div><dt>Universidad</dt><dd>${teacher.universities.map(escapeAttribute).join(" · ")}</dd></div></dl>
-    <div class="teacher-card__footer"><p><small>Precio referencial por hora</small><strong>S/ ${teacher.price}</strong></p><a href="${escapeAttribute(buildTeacherWhatsAppUrl(teacher))}" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer" aria-label="Solicitar a Tesis20 un asesor real similar al perfil demostrativo de ${escapeAttribute(teacher.name)}">Solicitar asesor real similar</a></div></div>
-  </article>`;
-}
 
 const services = [
   {
@@ -231,92 +181,78 @@ const routeDefinitions = [
   {
     output: "carreras.html",
     path: "/carreras",
-    directory: "careers",
     title: "Carreras universitarias por áreas | Tesis20",
     description:
       "Explora un catálogo internacional de carreras organizado por ingeniería, negocios, salud, ciencias, humanidades y otras áreas de conocimiento.",
     heading: "Encuentra tu carrera por área de conocimiento",
     schemaType: "CollectionPage",
     content: `
-      <div class="directory-page" data-academic-directory="careers">
-        <section class="directory-hero" aria-labelledby="directory-page-title">
-          <div class="directory-shell directory-hero__inner">
-            <div class="directory-hero__copy">
-              <p>Explorador académico internacional</p>
-              <h1 id="directory-page-title">Encuentra tu carrera por área de conocimiento</h1>
-              <span>Consulta un mapa amplio de carreras universitarias y campos emergentes. Los nombres y especialidades pueden variar según cada país y universidad.</span>
-              <a class="directory-hero__link" href="/docentes">Buscar docentes por carrera <span aria-hidden="true">→</span></a>
-            </div>
-            <div class="directory-hero__stat" aria-label="${CAREER_COUNT} carreras orientativas"><strong>${CAREER_COUNT}</strong><span>carreras orientativas</span><i aria-hidden="true">T20</i></div>
-          </div>
-        </section>
-        <section class="directory-search" aria-labelledby="career-search-title">
-          <div class="directory-shell">
-            <div class="directory-search__heading"><div><p>Busca y compara</p><h2 id="career-search-title">Catálogo de carreras</h2></div><span data-directory-count aria-live="polite">${CAREER_COUNT} carreras encontradas</span></div>
-            <div class="directory-filters" role="search">
-              <label><span>Nombre de la carrera</span><span class="directory-field"><input id="career-query" type="search" placeholder="Ej.: Ingeniería, Psicología, Marketing…"></span></label>
-              <label><span>Área de conocimiento</span><span class="directory-field"><select id="career-area"><option value="">Todas las áreas</option>${CAREER_AREAS.map((area) => `<option value="${area.id}">${area.name}</option>`).join("")}</select></span></label>
-              <button type="button" class="directory-clear" data-directory-clear disabled>Limpiar</button>
-            </div>
-            <div class="career-area-grid">
-              ${CAREER_AREAS.map((area) => `<article class="career-area-card" data-career-area="${area.id}">
-                <header><span aria-hidden="true">T20</span><div><h2>${area.name}</h2><p>${area.description}</p></div><strong>${area.careers.length}</strong></header>
-                <ul>${area.careers.map((career) => `<li><span>${career}</span></li>`).join("")}</ul>
-              </article>`).join("\n")}
-            </div>
-            <div class="directory-empty" data-directory-empty hidden><span aria-hidden="true">⌕</span><h2>No encontramos esa carrera</h2><p>Prueba con otra palabra o revisa todas las áreas disponibles.</p></div>
-            <aside class="directory-note"><strong>Catálogo internacional orientativo</strong><p>La denominación de una carrera cambia entre países y universidades. Si no encuentras el nombre exacto, Tesis20 puede ayudarte a ubicar el área equivalente.</p></aside>
-          </div>
-        </section>
-      </div>`,
+      <section aria-labelledby="static-careers-title">
+        <p>Explorador académico</p>
+        <h1 id="static-careers-title">Encuentra tu carrera por área de conocimiento</h1>
+        <p>Un mapa orientativo de ${CAREER_COUNT} carreras universitarias y campos emergentes, organizado en ${CAREER_AREAS.length} áreas de conocimiento. Los nombres pueden variar según el país y la universidad.</p>
+        <p><a href="/docentes">Solicitar un asesor para mi carrera</a></p>
+      </section>
+      <section aria-labelledby="static-careers-catalog-title">
+        <h2 id="static-careers-catalog-title">Catálogo de carreras</h2>
+        ${CAREER_AREAS.map((area) => `<article><h3>${area.name}</h3><p>${area.description}</p><ul>${area.careers.map((career) => `<li>${career}</li>`).join("")}</ul></article>`).join("\n")}
+        <p><strong>Catálogo internacional orientativo.</strong> La denominación de una carrera cambia entre países y universidades. Si no encuentras el nombre exacto, Tesis20 puede ayudarte a ubicar el área equivalente.</p>
+      </section>`,
   },
   {
     output: "docentes.html",
     path: "/docentes",
-    directory: "teachers",
-    title: "Docentes y asesores por carrera | Tesis20",
+    title: "Asesores de tesis por carrera y especialidad | Tesis20",
     description:
-      "Busca docentes por necesidad, especialidad, carrera o universidad, revisa su perfil y solicita orientación mediante el WhatsApp oficial de Tesis20.",
-    heading: "Encuentra un docente para tu tema",
+      "Describe tu carrera y tu tema y Tesis20 te propone un asesor por área de conocimiento: metodología, SPSS, artículos científicos y sustentación.",
+    heading: "Un asesor para tu carrera y tu tema",
     schemaType: "CollectionPage",
-    image: `${SITE_ORIGIN}/assets/docentes/docentes-grid-v1.jpg`,
-    imageAlt: "Directorio ilustrativo de docentes asesores de Tesis20",
-    imageType: "image/jpeg",
-    imageWidth: 1672,
-    imageHeight: 941,
-    noindex: true,
+    faqItems: [
+      {
+        question: "¿Puedo elegir el perfil de mi asesor?",
+        answer:
+          "Sí. Cuéntanos tu carrera, tu tema y la metodología que exige tu universidad; con eso proponemos al especialista adecuado y lo confirmas antes de comenzar.",
+      },
+      {
+        question: "¿Qué pasa si mi carrera no aparece en el listado?",
+        answer:
+          "El catálogo es orientativo y los nombres cambian entre universidades. Escríbenos con el nombre exacto de tu carrera y ubicamos el área equivalente.",
+      },
+      {
+        question: "¿El asesor hace la tesis por mí?",
+        answer:
+          "No. Tesis20 orienta y acompaña: tú desarrollas y sustentas tu propio trabajo. La autoría y la responsabilidad académica son siempre del estudiante, como indica el contrato.",
+      },
+      {
+        question: "¿Cómo se define el precio?",
+        answer:
+          "Depende del servicio y del alcance. Cada servicio tiene un precio referencial publicado; el monto final se confirma por escrito tras revisar tu avance.",
+      },
+    ],
     content: `
-      <div class="directory-page" data-academic-directory="teachers">
-        <section class="directory-hero" aria-labelledby="directory-page-title">
-          <div class="directory-shell directory-hero__inner">
-            <div class="directory-hero__copy">
-              <p>Red académica Tesis20</p>
-              <h1 id="directory-page-title">Encuentra un docente para tu tema</h1>
-              <span>Describe lo que necesitas —por ejemplo, derecho penal, metodología cualitativa o SPSS— y encuentra docentes por especialidad, carrera y universidad.</span>
-              <a class="directory-hero__link" href="/carreras">Explorar todas las carreras <span aria-hidden="true">→</span></a>
-            </div>
-            <div class="directory-hero__stat" aria-label="${TEACHERS.length} perfiles demostrativos"><strong>${TEACHERS.length}</strong><span>perfiles demostrativos</span><i aria-hidden="true">T20</i></div>
-          </div>
-        </section>
-        <section class="directory-search teacher-directory" aria-labelledby="teacher-search-title">
-          <div class="directory-shell">
-            <div class="directory-search__heading"><div><p>Directorio académico</p><h2 id="teacher-search-title">Perfiles docentes demostrativos</h2></div><span data-directory-count aria-live="polite">${TEACHERS.length} perfiles encontrados</span></div>
-            <form class="directory-filters directory-filters--teachers" role="search" aria-label="Buscar docentes por necesidad" data-directory-teacher-form>
-              <label class="directory-need-field"><span>¿Qué asesoría necesitas?</span><span class="directory-field"><input id="teacher-need" type="search" placeholder="Ej.: derecho penal, SPSS, tesis cualitativa…" autocomplete="off"></span><small class="directory-field-hint">Busca por tema, especialidad, metodología, software o nombre del docente.</small></label>
-              <label><span>Carrera</span><span class="directory-field"><select id="teacher-career"><option value="">Todas las carreras</option>${[...new Set(TEACHERS.flatMap((teacher) => teacher.careers))].sort((a, b) => a.localeCompare(b, "es")).map((career) => `<option value="${escapeAttribute(career)}">${career}</option>`).join("")}</select></span></label>
-              <label><span>Universidad donde enseña</span><span class="directory-field"><select id="teacher-university"><option value="">Todas las universidades</option>${[...new Set(TEACHERS.flatMap((teacher) => teacher.universities))].sort((a, b) => a.localeCompare(b, "es")).map((university) => `<option value="${escapeAttribute(university)}">${university}</option>`).join("")}</select></span></label>
-              <div class="directory-actions"><button type="submit" class="directory-search-button" aria-controls="teacher-results">Buscar docentes</button><button type="button" class="directory-clear" data-directory-clear disabled>Limpiar</button></div>
-            </form>
-            <aside class="directory-note directory-note--warning"><strong>Directorio demostrativo</strong><p>Estos 4,000 perfiles, sus nombres, imágenes sintéticas generadas con IA, universidades, experiencia y precios son referencias simuladas: no corresponden a profesionales disponibles ni a personas reales. Tesis20 confirmará la identidad, experiencia, disponibilidad y tarifa de un asesor real antes de coordinar.</p></aside>
-            <div class="directory-note directory-note--warning" data-directory-load-warning hidden role="status"><strong>Catálogo temporalmente incompleto</strong><p>No pudimos cargar todos los perfiles. Reintenta en unos momentos para buscar en el directorio completo.</p></div>
-            <div class="teacher-grid" id="teacher-results" data-teacher-results tabindex="-1">
-              ${assignTeacherPortraits(TEACHERS.slice(0, TEACHER_PAGE_SIZE)).map(({ teacher, portraitIndex }) => teacherCardMarkup(teacher, portraitIndex)).join("\n")}
-            </div>
-            <div class="directory-empty" data-directory-empty hidden><span aria-hidden="true">⌕</span><h2>No encontramos perfiles con esos filtros</h2><p>Prueba otra necesidad, especialidad, carrera o universidad.</p></div>
-            <nav class="directory-results-more" data-directory-pagination${TEACHERS.length <= TEACHER_PAGE_SIZE ? " hidden" : ""} aria-label="Paginación de docentes"><button type="button" data-directory-previous disabled>← Anterior</button><span data-directory-range aria-live="polite">Mostrando 1–${Math.min(TEACHERS.length, TEACHER_PAGE_SIZE)} de ${TEACHERS.length} perfiles</span><button type="button" data-directory-next disabled>Siguiente →</button></nav>
-          </div>
-        </section>
-      </div>`,
+      <section aria-labelledby="static-advisors-title">
+        <p>Red de asesores Tesis20</p>
+        <h1 id="static-advisors-title">Un asesor para tu carrera y tu tema</h1>
+        <p>Asignamos a cada estudiante un especialista según su área de conocimiento, la metodología que exige su universidad y la etapa en la que está. Cuéntanos tu tema y te proponemos el perfil adecuado.</p>
+        <p><a href="https://api.whatsapp.com/send?phone=51918714054">Solicitar asesor por WhatsApp</a> <a href="/carreras">Ver el catálogo de carreras</a></p>
+      </section>
+      <section aria-labelledby="static-advisors-areas-title">
+        <h2 id="static-advisors-areas-title">Asesores por área de conocimiento</h2>
+        ${CAREER_AREAS.map((area) => `<article><h3>${area.name}</h3><p>${area.description}</p><p>${area.careers.slice(0, 6).join(" · ")}${area.careers.length > 6 ? ` y ${area.careers.length - 6} carreras más` : ""}</p></article>`).join("\n")}
+      </section>
+      <section aria-labelledby="static-advisors-coverage-title">
+        <h2 id="static-advisors-coverage-title">Del planteamiento a la sustentación</h2>
+        <ul>
+          <li>Planteamiento del problema, objetivos e hipótesis</li>
+          <li>Matriz de consistencia y operacionalización de variables</li>
+          <li>Metodología cuantitativa, cualitativa y mixta</li>
+          <li>Diseño y validación de instrumentos</li>
+          <li>Procesamiento e interpretación de datos en IBM SPSS</li>
+          <li>Revisión sistemática y artículos bajo el modelo PRISMA</li>
+          <li>Redacción académica, citas y referencias en APA 7</li>
+          <li>Simulación de sustentación y preguntas del jurado</li>
+        </ul>
+      </section>`,
   },
   {
     output: "nido.html",
@@ -581,25 +517,8 @@ function createNavigation(route) {
       </header>`;
   }
 
-  if (route.directory) {
-    return `
-      <header class="site-header" data-seo-header>
-        <div class="header-inner">
-          <a class="brand" href="/" aria-label="Tesis20, inicio"><img src="/assets/tesis20-logo.png" alt="Tesis20" width="74" height="83"></a>
-          <nav class="desktop-navigation" aria-label="Navegación principal">
-            <a class="nav-link" href="/">Inicio</a>
-            <a class="nav-link" href="/servicios">Servicios</a>
-            <a class="nav-link${route.path === "/carreras" ? " nav-link--active" : ""}" href="/carreras"${route.path === "/carreras" ? ' aria-current="page"' : ""}>Carreras</a>
-            <a class="nav-link${route.path === "/docentes" ? " nav-link--active" : ""}" href="/docentes"${route.path === "/docentes" ? ' aria-current="page"' : ""}>Docentes</a>
-            <a class="nav-link" href="/evidencias">Evidencias</a>
-            <a class="nav-link" href="/contrato">Contrato</a>
-            <a class="nav-link" href="/recursos">Recursos y repositorio</a>
-          </nav>
-          <a class="whatsapp-button header-cta" href="https://api.whatsapp.com/send?phone=51918714054">Quiero orientación</a>
-        </div>
-      </header>`;
-  }
-
+  // Misma navegación en todas las páginas: React monta la cabecera real
+  // (menú móvil, Login, CTA) sobre este esqueleto indexable.
   return `
     <header data-seo-header>
       <a href="/" aria-label="Tesis20, inicio">Tesis20</a>
@@ -607,10 +526,11 @@ function createNavigation(route) {
         <a href="/">Inicio</a>
         <a href="/servicios">Servicios</a>
         <a href="/carreras">Carreras</a>
-        <a href="/docentes">Docentes</a>
+        <a href="/docentes">Asesores</a>
         <a href="/evidencias">Evidencias</a>
         <a href="/contrato">Contrato</a>
-        <a href="/recursos">Recursos y repositorio</a>
+        <a href="/recursos">Recursos</a>
+        <a href="https://www.gestion.tesis20.com">Login</a>
       </nav>
     </header>`;
 }
@@ -622,15 +542,10 @@ function createStaticMarkup(route) {
           <p><strong>Tesis20 Nido</strong> · Aprendizaje creativo en una experiencia local de demostración.</p>
           <p><a href="/">Volver a la plataforma Tesis de Tesis20.com</a></p>
         </footer>`
-      : route.directory
-        ? `<footer data-static-directory-footer>
-            <div><strong>Tesis20</strong><span>Asesoría y acompañamiento académico</span><nav aria-label="Enlaces del pie"><a href="/carreras">Carreras</a><a href="/docentes">Docentes</a><a href="/contrato">Contrato</a><a href="/recursos">Recursos y repositorio</a></nav></div>
-            <p><a href="/nido">Nido20</a> · plataforma infantil independiente.</p>
-          </footer>`
-        : `<footer>
+      : `<footer>
           <p><strong>Tesis20</strong> · Asesoría y acompañamiento académico en Lima y todo el Perú.</p>
           <address>Jr. Lincoln 638, Pueblo Libre, Lima – Perú · <a href="tel:+51918714054">(+51) 918 714 054</a></address>
-          <p><a href="/nido">Nido20</a> · plataforma infantil independiente.</p>
+          <p><a href="/nido">Nido20</a> · cuentos ilustrados con narración para niños.</p>
         </footer>`;
 
   return `
@@ -869,17 +784,6 @@ function renderRoute(template, route) {
     route.imageType || (shareImage.endsWith(".jpg") ? "image/jpeg" : "image/png");
   let html = template;
 
-  if (route.directory) {
-    html = html.replace(
-      "</head>",
-      '    <link rel="stylesheet" href="/assets/academic-directory-v1.css?v=20260802-syntheticphotosv2" />\n  </head>',
-    );
-    html = html.replace(
-      "</body>",
-      '    <script type="module" src="/assets/academic-directory-v1.js?v=20260802-syntheticphotosv2"></script>\n  </body>',
-    );
-  }
-
   html = html.replace(/<title>[^<]*<\/title>/i, `<title>${route.title}</title>`);
   html = upsertMeta(html, "name", "description", route.description);
   html = html.replace(
@@ -947,21 +851,6 @@ async function generateStaticRoutes() {
   if (assetReferences.length === 0) {
     throw new Error("No se encontraron los assets generados por Vite en dist/index.html.");
   }
-
-  const directoryDataPath = resolve(DIST_DIRECTORY, "data/academic-directory.json");
-  await mkdir(dirname(directoryDataPath), { recursive: true });
-  await writeFile(
-    directoryDataPath,
-    JSON.stringify({ careerAreas: CAREER_AREAS, careerCount: CAREER_COUNT, teachers: TEACHERS }),
-    "utf8",
-  );
-  const portraitAssetPath = resolve(DIST_DIRECTORY, "assets/teacher-portrait-v1.js");
-  await mkdir(dirname(portraitAssetPath), { recursive: true });
-  await writeFile(
-    portraitAssetPath,
-    await readFile(resolve(process.cwd(), "src/teacher-portrait.js"), "utf8"),
-    "utf8",
-  );
 
   for (const route of [...routeDefinitions, notFoundDefinition]) {
     const rendered = renderRoute(template, route);

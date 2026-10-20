@@ -1,0 +1,233 @@
+/* Hero compartido de páginas interiores (Carreras, Asesores). */
+.page-hero {
+  position: relative;
+  overflow: hidden;
+  padding: clamp(56px, 7vw, 84px) 0;
+  background: linear-gradient(135deg, #f9cf6f 0%, var(--yellow) 55%, var(--yellow-deep) 100%);
+}
+
+.page-hero::after {
+  position: absolute;
+  right: -160px;
+  bottom: -240px;
+  width: 540px;
+  height: 540px;
+  border: 1px solid rgba(30, 32, 34, 0.12);
+  border-radius: 50%;
+  content: "";
+  pointer-events: none;
+}
+
+.page-hero__inner {
+  position: relative;
+  z-index: 1;
+  width: min(1280px, calc(100% - 64px));
+  margin-inline: auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(320px, 0.7fr);
+  align-items: center;
+  gap: clamp(36px, 5vw, 72px);
+}
+
+.page-hero__eyebrow {
+  margin-bottom: 14px;
+  color: var(--ink);
+  font-size: 12.5px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.page-hero h1 {
+  max-width: 720px;
+  font-family: var(--display);
+  font-size: clamp(38px, 4.2vw, 58px);
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  line-height: 1.02;
+  text-transform: uppercase;
+  text-wrap: balance;
+}
+
+.page-hero__intro {
+  max-width: 640px;
+  margin-top: 22px;
+  color: #3d3625;
+  font-size: 17px;
+  line-height: 1.65;
+  text-wrap: pretty;
+}
+
+.page-hero__actions {
+  margin-top: 28px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px 24px;
+}
+
+.page-hero__actions .whatsapp-button--dark {
+  color: var(--yellow);
+  box-shadow: 0 12px 26px rgba(30, 32, 34, 0.18);
+}
+
+.page-hero__actions .whatsapp-button--dark:hover {
+  border-color: #000000;
+  background: #000000;
+}
+
+.page-hero .text-link {
+  color: var(--ink);
+}
+
+.page-hero__highlights {
+  margin: 26px 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 22px;
+  list-style: none;
+}
+
+.page-hero__highlights li {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.page-hero__highlights svg {
+  color: var(--ink);
+}
+
+.page-hero__card {
+  padding: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: var(--radius-xl);
+  background: var(--ink);
+  color: var(--white);
+  box-shadow: var(--shadow-lg);
+}
+
+.page-hero__card > p {
+  color: var(--yellow);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.page-hero__card h2 {
+  margin-top: 8px;
+  font-family: var(--display);
+  font-size: 28px;
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+
+.page-hero__steps {
+  margin: 20px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 14px;
+  list-style: none;
+}
+
+.page-hero__steps li {
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+}
+
+.page-hero__steps li > span {
+  width: 30px;
+  height: 30px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--yellow);
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.page-hero__steps strong {
+  display: block;
+  font-size: 14.5px;
+}
+
+.page-hero__steps small {
+  display: block;
+  margin-top: 3px;
+  color: #cfd1d2;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.page-hero__card--stat {
+  display: grid;
+  justify-items: start;
+  gap: 4px;
+  background: rgba(255, 250, 241, 0.92);
+  color: var(--ink);
+  border-color: rgba(30, 32, 34, 0.12);
+  box-shadow: var(--shadow-md);
+}
+
+.page-hero__card--stat strong {
+  font-family: var(--display);
+  font-size: 64px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.page-hero__card--stat span {
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.page-hero__card--stat small {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+
+@media (max-width: 900px) {
+  .page-hero__inner {
+    grid-template-columns: 1fr;
+    gap: 28px;
+  }
+
+  .page-hero__card {
+    max-width: 560px;
+  }
+}
+
+@media (max-width: 640px) {
+  .page-hero__inner {
+    width: min(100%, calc(100% - 40px));
+  }
+
+  .page-hero h1 {
+    font-size: clamp(34px, 10vw, 42px);
+  }
+
+  .page-hero__intro {
+    font-size: 15.5px;
+  }
+
+  .page-hero__actions .whatsapp-button {
+    width: 100%;
+  }
+
+  .page-hero__card {
+    padding: 22px;
+  }
+
+  .page-hero__card--stat strong {
+    font-size: 52px;
+  }
+}
