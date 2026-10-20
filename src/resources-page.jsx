@@ -16,6 +16,8 @@ import {
   searchGlobalTheses,
 } from "./global-thesis-search.js";
 import { trackInteraction } from "./platform-enhancements.jsx";
+import { Breadcrumb } from "./site-core.jsx";
+import "./resources-page.css";
 import "./resources-search.css";
 
 const SEARCH_EXAMPLES = [
@@ -516,6 +518,7 @@ export default function ResourcesPage() {
       <section className="resources-hero" aria-labelledby="resources-page-title">
         <div className="resources-shell resources-hero__inner">
           <div className="resources-hero__copy">
+            <Breadcrumb current="Recursos" />
             <p>Buscador especializado de tesis</p>
             <h1 id="resources-page-title">Recursos y repositorio de tesis</h1>
             <span>

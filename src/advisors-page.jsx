@@ -1,6 +1,7 @@
 import { useId, useMemo, useState } from "react";
 import { ArrowRight } from "@phosphor-icons/react/ArrowRight";
 import { CheckCircle } from "@phosphor-icons/react/CheckCircle";
+import { Breadcrumb } from "./site-core.jsx";
 import { WhatsappLogo } from "@phosphor-icons/react/WhatsappLogo";
 import { AreaIcon } from "./area-icons.jsx";
 import { CAREER_AREAS, CAREER_COUNT } from "./data/academic-directory.js";
@@ -198,6 +199,7 @@ export function AdvisorsPage() {
       <section className="page-hero" aria-labelledby="advisors-title">
         <div className="page-hero__inner">
           <div className="page-hero__copy">
+            <Breadcrumb current="Asesores" />
             <p className="page-hero__eyebrow">Red de asesores Tesis20</p>
             <h1 id="advisors-title">Un asesor para tu carrera y tu tema</h1>
             <p className="page-hero__intro">
