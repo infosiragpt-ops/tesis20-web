@@ -8,8 +8,6 @@ import {
   useState,
 } from "react";
 import { ArrowRight } from "@phosphor-icons/react/ArrowRight";
-import { Pause } from "@phosphor-icons/react/Pause";
-import { Play } from "@phosphor-icons/react/Play";
 import { ArrowSquareOut } from "@phosphor-icons/react/ArrowSquareOut";
 import { CaretRight } from "@phosphor-icons/react/CaretRight";
 import { ChatCircleText } from "@phosphor-icons/react/ChatCircleText";
@@ -836,7 +834,6 @@ function GradeCaption({ result }) {
 
 function ProofSection() {
   const [selectedResult, setSelectedResult] = useState(null);
-  const [paused, setPaused] = useState(false);
   const resultTriggerRef = useRef(null);
   const closeResult = useCallback(() => setSelectedResult(null), []);
 
@@ -855,12 +852,8 @@ function ProofSection() {
                 desempeño y participación.
               </p>
             </div>
-          </div>
-        </div>
 
-        {/* Carrusel continuo: la lista accesible va primero; la copia solo cierra el bucle. */}
-        <div className={`grade-marquee${paused ? " is-paused" : ""}`}>
-          <div className="grade-marquee__track">
+            {/* Cuadrícula fija (sin movimiento): se recorre hacia abajo. */}
             <div
               className="results-grid"
               role="list"
@@ -873,6 +866,8 @@ function ProofSection() {
                   role="listitem"
                   aria-posinset={index + 1}
                   aria-setsize={GRADE_GALLERY_SIZE}
+                  data-reveal=""
+                  style={{ "--reveal-delay": `${(index % 3) * 80}ms` }}
                 >
                   <button
                     className="grade-card__frame"
@@ -892,7 +887,7 @@ function ProofSection() {
                       height={result.height}
                       loading="lazy"
                       decoding="async"
-                      sizes="360px"
+                      sizes="(max-width: 640px) 92vw, (max-width: 1040px) 46vw, 380px"
                       draggable="false"
                     />
                     <GradeCaption result={result} />
@@ -905,51 +900,18 @@ function ProofSection() {
                 </figure>
               ))}
             </div>
-            <div className="results-grid results-grid--clone" aria-hidden="true">
-              {gradeResults.map((result) => (
-                <div className="grade-card" key={`${result.id}-copia`}>
-                  <span className="grade-card__frame">
-                    <img
-                      src={result.thumbnail}
-                      alt=""
-                      width={result.width}
-                      height={result.height}
-                      loading="lazy"
-                      decoding="async"
-                      draggable="false"
-                    />
-                    <GradeCaption result={result} />
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
 
-        <div className="proof-section__inner">
-          <div className="results-proof__footer">
-            <button
-              type="button"
-              className="marquee-toggle"
-              aria-pressed={paused}
-              onClick={() => setPaused((current) => !current)}
-            >
-              {paused ? (
-                <Play size={15} weight="fill" aria-hidden="true" />
-              ) : (
-                <Pause size={15} weight="fill" aria-hidden="true" />
-              )}
-              {paused ? "Reanudar galería" : "Pausar galería"}
-            </button>
-            <a className="text-link" href="/evidencias">
-              Ver los casos completos en Evidencias <ArrowRight size={18} aria-hidden="true" />
-            </a>
+            <div className="results-proof__footer">
+              <a className="text-link" href="/evidencias">
+                Ver los casos completos en Evidencias <ArrowRight size={18} aria-hidden="true" />
+              </a>
+            </div>
+            <QuickFacts
+              servicesCount={services.length}
+              casesCount={publishedEvidenceGroups.length}
+              stagesCount={3}
+            />
           </div>
-          <QuickFacts
-            servicesCount={services.length}
-            casesCount={publishedEvidenceGroups.length}
-            stagesCount={3}
-          />
         </div>
       </section>
 
