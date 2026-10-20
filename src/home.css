@@ -1319,47 +1319,24 @@
   line-height: 1.6;
 }
 
-.grade-marquee {
-  margin-top: 40px;
-  -webkit-mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
-  mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
-}
-
-.grade-marquee__track {
-  width: max-content;
-  padding-block: 8px 14px;
-  display: flex;
-  animation: marquee 95s linear infinite;
-}
-
-.grade-marquee:hover .grade-marquee__track,
-.grade-marquee:focus-within .grade-marquee__track,
-.grade-marquee.is-paused .grade-marquee__track {
-  animation-play-state: paused;
-}
-
-@keyframes marquee {
-  to {
-    transform: translate3d(-50%, 0, 0);
-  }
-}
-
 .results-grid {
-  padding-right: 18px;
-  display: flex;
-  gap: 18px;
+  margin-top: 40px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
 }
 
 .grade-card {
-  width: 340px;
+  min-width: 0;
   margin: 0;
-  flex: none;
 }
 
 .grade-card__frame {
   width: 100%;
+  height: 100%;
   padding: 6px 6px 0;
-  display: block;
+  display: flex;
+  flex-direction: column;
   border: 1px solid var(--line);
   border-radius: 18px;
   background: var(--white);
@@ -1382,13 +1359,12 @@ button.grade-card__frame:hover {
 .grade-card__frame img {
   width: 100%;
   height: auto;
-  aspect-ratio: 1134 / 534;
   border-radius: 12px;
   background: #f3f1ec;
-  object-fit: cover;
 }
 
 .grade-card__caption {
+  margin-top: auto;
   padding: 12px 8px;
   display: flex;
   align-items: center;
@@ -1625,6 +1601,10 @@ button.grade-card__frame:hover {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .results-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .quick-facts__inner {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
@@ -1780,8 +1760,9 @@ button.grade-card__frame:hover {
     display: none;
   }
 
-  .grade-card {
-    width: 280px;
+  .results-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
   }
 
   .quick-facts article {
@@ -1806,23 +1787,6 @@ button.grade-card__frame:hover {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .grade-marquee {
-    padding: 0 20px 8px;
-    overflow-x: auto;
-    scroll-snap-type: x mandatory;
-    -webkit-mask-image: none;
-    mask-image: none;
-  }
-
-  .grade-marquee__track {
-    animation: none;
-  }
-
-  .grade-card {
-    scroll-snap-align: start;
-  }
-
-  .results-grid--clone,
   .marquee-toggle,
   .uni-marquee__group + .uni-marquee__group {
     display: none;
