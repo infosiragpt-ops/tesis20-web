@@ -387,7 +387,6 @@
 .uni-marquee {
   padding: 44px 0 34px;
   overflow: hidden;
-  border-bottom: 1px solid var(--line-soft);
   background:
     linear-gradient(180deg, var(--white) 0%, var(--cream) 100%);
 }
@@ -1288,6 +1287,11 @@
   padding: var(--section-space) 0 72px;
   overflow: hidden;
   background: var(--cream);
+}
+
+/* Al pie de «Nuestros estudiantes»: mismo bloque crema, menos aire arriba. */
+.uni-marquee + .proof-section {
+  padding-top: clamp(40px, 5vw, 64px);
 }
 
 .proof-section__inner {

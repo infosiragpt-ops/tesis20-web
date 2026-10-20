@@ -2033,11 +2033,12 @@ export function App() {
         <main id="main-content" tabIndex="-1">
           <Hero />
           <UniversityStrip />
+          {/* Las notas van al pie de «Nuestros estudiantes»: un solo bloque de prueba social. */}
+          <ProofSection />
           <ServicesPreview services={services} />
           <ProcessSection />
           <WhyBento />
           <PortalShowcase />
-          <ProofSection />
           <DiagnosticWizard />
           <FaqSection
             title="Respuestas antes de comenzar"
