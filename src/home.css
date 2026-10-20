@@ -383,60 +383,127 @@
   color: #fca5a5;
 }
 
-/* ---------- Universidades ---------- */
-.uni-strip {
+/* ---------- Universidades: cinta de logos ---------- */
+.uni-marquee {
+  padding: 44px 0 34px;
+  overflow: hidden;
   border-bottom: 1px solid var(--line-soft);
-  background: var(--white);
+  background:
+    linear-gradient(180deg, var(--white) 0%, var(--cream) 100%);
 }
 
-.uni-strip__inner {
-  padding: 26px 0;
+.uni-marquee__head {
+  margin-bottom: 26px;
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
+  align-items: flex-end;
   justify-content: space-between;
-  gap: 18px 40px;
+  gap: 16px 32px;
 }
 
-.uni-strip__inner > p {
-  color: var(--muted);
-  font-size: 12.5px;
+.uni-marquee__head .section-eyebrow {
+  margin-bottom: 10px;
+}
+
+.uni-marquee h2 {
+  font-family: var(--heading);
+  font-size: clamp(22px, 2.1vw, 28px);
   font-weight: 800;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+  letter-spacing: -0.024em;
+  line-height: 1.15;
 }
 
-.uni-strip ul {
-  margin: 0;
-  padding: 0;
+.uni-marquee__rows {
+  display: grid;
+  gap: 14px;
+}
+
+.uni-marquee__row {
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+}
+
+.uni-marquee__track {
+  width: max-content;
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 14px 44px;
+  animation: marquee 48s linear infinite;
+}
+
+.uni-marquee__row--reverse .uni-marquee__track {
+  animation-direction: reverse;
+  animation-duration: 54s;
+}
+
+.uni-marquee__row:hover .uni-marquee__track,
+.uni-marquee__rows.is-paused .uni-marquee__track {
+  animation-play-state: paused;
+}
+
+.uni-marquee__group {
+  margin: 0;
+  padding: 0 14px 0 0;
+  display: flex;
+  gap: 14px;
   list-style: none;
 }
 
-.uni-strip li {
-  display: grid;
-  gap: 3px;
+.uni-logo {
+  height: 78px;
+  min-width: 132px;
+  padding: 0 26px;
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border: 1px solid var(--line-soft);
+  border-radius: 18px;
+  background: var(--white);
+  box-shadow: var(--shadow-sm);
+  transition: transform 220ms var(--ease-out), border-color 220ms ease, box-shadow 220ms ease;
 }
 
-.uni-strip strong {
+.uni-logo:hover {
+  border-color: rgba(30, 32, 34, 0.18);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+.uni-logo img {
+  width: auto;
+  height: auto;
+  max-width: 176px;
+  max-height: 46px;
+}
+
+.uni-logo--square img {
+  max-height: 44px;
+}
+
+.uni-logo--tall img,
+.uni-logo--mark img {
+  max-height: 54px;
+}
+
+.uni-logo--mark span {
   color: #2b2e31;
   font-family: var(--display);
-  font-size: 26px;
+  font-size: 22px;
   font-weight: 600;
-  letter-spacing: 0.04em;
-  line-height: 1;
+  letter-spacing: 0.03em;
 }
 
-.uni-strip li span {
+.uni-marquee__note {
+  margin-top: 22px;
   color: var(--muted);
-  font-size: 12px;
+  font-size: 12.5px;
+  line-height: 1.55;
+  text-align: center;
 }
 
-.uni-strip__more strong {
-  color: var(--coral);
+.uni-marquee__note a {
+  color: var(--ink-soft);
+  font-weight: 700;
+  text-underline-offset: 3px;
 }
 
 /* ---------- Servicios ---------- */
@@ -1660,8 +1727,30 @@ button.grade-card__frame:hover {
     display: none;
   }
 
-  .uni-strip ul {
-    gap: 14px 26px;
+  .uni-marquee__head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .uni-logo {
+    height: 64px;
+    min-width: 108px;
+    padding: 0 18px;
+    border-radius: 14px;
+  }
+
+  .uni-logo img {
+    max-width: 136px;
+    max-height: 36px;
+  }
+
+  .uni-logo--square img {
+    max-height: 36px;
+  }
+
+  .uni-logo--tall img,
+  .uni-logo--mark img {
+    max-height: 44px;
   }
 
   .service-tiles,
@@ -1734,8 +1823,26 @@ button.grade-card__frame:hover {
   }
 
   .results-grid--clone,
-  .marquee-toggle {
+  .marquee-toggle,
+  .uni-marquee__group + .uni-marquee__group {
     display: none;
+  }
+
+  .uni-marquee__row {
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+
+  .uni-marquee__track {
+    width: auto;
+    justify-content: center;
+    animation: none;
+  }
+
+  .uni-marquee__group {
+    padding: 0 20px;
+    flex-wrap: wrap;
+    justify-content: center;
   }
 
   .hero-float,
