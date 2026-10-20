@@ -5,19 +5,14 @@ import { AppErrorBoundary } from "./platform-enhancements.jsx";
 import { Observability } from "./observability.jsx";
 import "./styles.css";
 
-const servesStaticDirectory =
-  import.meta.env.PROD && ["/carreras", "/docentes"].includes(window.location.pathname.replace(/\/$/, ""));
-
-if (!servesStaticDirectory) {
-  createRoot(document.getElementById("root")).render(
-    <React.StrictMode>
-      <AppErrorBoundary>
-        <App />
-        <Observability />
-      </AppErrorBoundary>
-    </React.StrictMode>,
-  );
-}
+createRoot(document.getElementById("root")).render(
+  <React.StrictMode>
+    <AppErrorBoundary>
+      <App />
+      <Observability />
+    </AppErrorBoundary>
+  </React.StrictMode>,
+);
 
 if (import.meta.env.PROD && "serviceWorker" in navigator) {
   window.addEventListener(

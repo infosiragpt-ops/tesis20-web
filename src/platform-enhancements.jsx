@@ -69,17 +69,13 @@ const PAGE_META = {
     imageAlt: "Catálogo internacional de carreras y áreas académicas de Tesis20",
   },
   teachers: {
-    title: "Docentes y asesores por carrera | Tesis20",
+    title: "Asesores de tesis por carrera y especialidad | Tesis20",
     description:
-      "Encuentra docentes por nombre, carrera y universidad, revisa su perfil y solicita orientación mediante el WhatsApp oficial de Tesis20.",
+      "Describe tu carrera y tu tema y Tesis20 te propone un asesor por área de conocimiento: metodología, SPSS, artículos científicos y sustentación.",
     path: "/docentes",
     schemaType: "CollectionPage",
-    image: `${SITE_ORIGIN}/assets/docentes/docentes-grid-v1.jpg`,
-    imageAlt: "Directorio ilustrativo de docentes asesores de Tesis20",
-    imageType: "image/jpeg",
-    imageWidth: 1672,
-    imageHeight: 941,
-    noindex: true,
+    image: DEFAULT_SHARE_IMAGE,
+    imageAlt: "Red de asesores de tesis por especialidad de Tesis20",
   },
   nido: {
     title: "Cuentos ilustrados con narración para niños | Tesis20 Nido",
@@ -588,11 +584,11 @@ export function ScrollProgress() {
   );
 }
 
-export function QuickFacts({ servicesCount, resultsCount, stagesCount }) {
+export function QuickFacts({ servicesCount, casesCount, stagesCount }) {
   const idPrefix = useId();
   const facts = [
-    { value: servicesCount, label: "servicios especializados" },
-    { value: resultsCount, label: "imágenes de calificaciones" },
+    { value: servicesCount, label: "servicios con precio referencial" },
+    { value: casesCount, label: "casos documentados en Evidencias" },
     { value: stagesCount, label: "etapas de acompañamiento" },
   ];
 
@@ -620,7 +616,7 @@ export function QuickFacts({ servicesCount, resultsCount, stagesCount }) {
         </dl>
         <p>
           <ShieldCheck size={22} weight="fill" aria-hidden="true" />
-          <span>Evidencias anonimizadas para proteger la privacidad.</span>
+          <span>Contrato por escrito y evidencias anonimizadas para proteger la privacidad.</span>
         </p>
       </div>
     </section>

@@ -50,7 +50,6 @@ import {
 } from "./platform-enhancements.jsx";
 import { AudioPlayer } from "./audio-player.jsx";
 import { DiagnosticWizard } from "./diagnostic-wizard.jsx";
-import { PlatformSwitcher } from "./platform-switcher.jsx";
 import contractTemplate from "./data/contract-template.json";
 import presentationTranscript from "../audio-scripts/presentacion.txt?raw";
 import articleTranscript from "../audio-scripts/articulo-cientifico.txt?raw";
@@ -62,12 +61,12 @@ import defenseTranscript from "../audio-scripts/simulacion-sustentacion.txt?raw"
 
 const NidoPage = lazy(() => import("./nido/nido-page.jsx"));
 const ResourcesPage = lazy(() => import("./resources-page.jsx"));
-const CareersPage = import.meta.env.DEV
-  ? lazy(() => import("./academic-directory-pages.jsx").then((module) => ({ default: module.CareersPage })))
-  : null;
-const TeachersPage = import.meta.env.DEV
-  ? lazy(() => import("./academic-directory-pages.jsx").then((module) => ({ default: module.TeachersPage })))
-  : null;
+const CareersPage = lazy(() =>
+  import("./academic-directory-pages.jsx").then((module) => ({ default: module.CareersPage })),
+);
+const AdvisorsPage = lazy(() =>
+  import("./advisors-page.jsx").then((module) => ({ default: module.AdvisorsPage })),
+);
 
 const whatsappPhone = "51918714054";
 
@@ -82,7 +81,7 @@ const whatsappMessages = {
   contract: "¡Hola! Revisé el contrato general de Tesis20 y deseo orientación antes de comenzar.",
   resources: "¡Hola! Revisé los recursos y el repositorio de tesis y deseo orientación para mi investigación.",
   careers: "¡Hola! Revisé el catálogo de carreras de Tesis20 y deseo ayuda para ubicar mi especialidad.",
-  teachers: "¡Hola! Revisé el directorio de docentes y deseo ayuda para elegir un asesor según mi carrera y tema.",
+  teachers: "¡Hola! Busco un asesor para mi tesis según mi carrera y mi tema. ¿Me orientan?",
 };
 
 function getPageFromPathname(pathname = window.location.pathname) {
@@ -141,18 +140,21 @@ function internalNavigationProps(item, currentPage) {
   };
 }
 
+// Etiquetas cortas: la barra debe entrar en una sola fila a 1024 px con el
+// Login y el CTA. Los nombres largos («Recursos y repositorio») viven en el
+// título de cada página y en el pie.
 const navigation = [
   { label: "Inicio", href: "#inicio", servicesHref: "/#inicio", page: "home" },
   { label: "Servicios", href: "/servicios", page: "services" },
   { label: "Carreras", href: "/carreras", page: "careers" },
-  { label: "Docentes", href: "/docentes", page: "teachers" },
+  { label: "Asesores", href: "/docentes", page: "teachers" },
   {
     label: "Evidencias",
     href: "/evidencias",
     page: "evidence",
   },
   { label: "Contrato", href: "/contrato", page: "contract" },
-  { label: "Recursos y repositorio", href: "/recursos", page: "resources" },
+  { label: "Recursos", href: "/recursos", page: "resources" },
   // Cierra la barra a la derecha: es la puerta al portal
   // de gestión (antes se llamaba «Pagos») y se dibuja como botón de cuenta.
   {
@@ -162,6 +164,13 @@ const navigation = [
     login: true,
   },
 ];
+
+/** Plataforma hermana: enlace discreto en el pie y al final del menú móvil. */
+const nidoLink = {
+  label: "Nido20",
+  description: "Cuentos ilustrados con narración para niños",
+  href: "/nido",
+};
 
 const contractDocxHref = "/downloads/contrato-general-asesoria-academica-tesis20.docx";
 const contractPdfHref = "/downloads/contrato-general-asesoria-academica-tesis20.pdf";
@@ -703,34 +712,21 @@ function Header({ menuOpen, onMenuToggle, onNavigate, currentPage, isScrolled })
   return (
     <header className={`site-header ${isScrolled ? "site-header--scrolled" : ""}`}>
       <div className="header-inner">
-        <div className="brand-ecosystem">
-          <PlatformSwitcher
-            menuOpen={menuOpen}
-            onCloseMenu={onNavigate}
-            currentPlatform={
-              currentPage === "careers"
-                ? "carreras"
-                : currentPage === "teachers"
-                  ? "docentes"
-                  : "tesis"
-            }
+        <a
+          className="brand"
+          href={currentPage === "home" ? "#inicio" : "/#inicio"}
+          aria-label="Tesis20 - Inicio"
+          onClick={onNavigate}
+        >
+          <img
+            src="/assets/tesis20-logo.png"
+            alt="Tesis20"
+            width="300"
+            height="300"
+            decoding="async"
+            fetchPriority="high"
           />
-          <a
-            className="brand"
-            href={currentPage === "home" ? "#inicio" : "/#inicio"}
-            aria-label="Tesis20 - Inicio"
-            onClick={onNavigate}
-          >
-            <img
-              src="/assets/tesis20-logo.png"
-              alt="Tesis20"
-              width="300"
-              height="300"
-              decoding="async"
-              fetchPriority="high"
-            />
-          </a>
-        </div>
+        </a>
 
         <nav className="desktop-navigation" aria-label="Navegación principal">
           {navigation.map((item) => (
@@ -819,6 +815,18 @@ function Header({ menuOpen, onMenuToggle, onNavigate, currentPage, isScrolled })
             </a>
           ))}
           <WhatsappButton className="mobile-navigation__cta">Quiero orientación</WhatsappButton>
+          <a
+            className="mobile-navigation__platform"
+            href={nidoLink.href}
+            onClick={onNavigate}
+            {...internalNavigationProps(nidoLink, currentPage)}
+          >
+            <span>
+              <strong>{nidoLink.label}</strong>
+              <small>{nidoLink.description}</small>
+            </span>
+            <CaretRight size={18} aria-hidden="true" />
+          </a>
         </div>
       </nav>
     </header>
@@ -1035,12 +1043,14 @@ function ProofSection() {
         <div className="proof-section__inner">
           <div className="results-proof">
             <div className="results-proof__header">
+              <p className="section-eyebrow">Calificaciones compartidas</p>
               <h2 id="resultados-title">Resultados reportados por estudiantes</h2>
+              <span className="section-heading__mark" aria-hidden="true" />
               <p className="results-proof__disclaimer">
-                Galería de 15 imágenes organizada con 5 capturas anonimizadas de casos
-                individuales. Los resultados fueron reportados por estudiantes y no
-                constituyen una garantía de resultados futuros; cada experiencia depende
-                de su desempeño y participación.
+                Galería de {GRADE_GALLERY_SIZE} imágenes organizada con 5 capturas anonimizadas de
+                casos individuales. Los resultados fueron reportados por estudiantes y no
+                constituyen una garantía de resultados futuros; cada experiencia depende de su
+                desempeño y participación.
               </p>
             </div>
             <div
@@ -1085,6 +1095,11 @@ function ProofSection() {
                   </figcaption>
                 </figure>
               ))}
+            </div>
+            <div className="results-proof__footer">
+              <a className="text-link" href="/evidencias">
+                Ver los casos completos en Evidencias <ArrowRight size={18} aria-hidden="true" />
+              </a>
             </div>
           </div>
         </div>
@@ -1219,12 +1234,18 @@ function serviceWhatsappHref(service) {
 
 function ServiceCard({ service, index, expandedByDefault = false, showDetailLink = true }) {
   const [expanded, setExpanded] = useState(expandedByDefault);
+  // En el catálogo el reproductor va plegado: la tarjeta se lee de un vistazo
+  // y el audio se abre solo si interesa. En la ficha del servicio ya viene abierto.
+  const [audioOpen, setAudioOpen] = useState(expandedByDefault);
   const Icon = service.Icon;
   const initialBenefits = 4;
   const hasMoreBenefits = service.benefits.length > initialBenefits;
   const visibleBenefits = expanded
     ? service.benefits
     : service.benefits.slice(0, initialBenefits);
+  const audioMinutes = service.audioDuration
+    ? `${Math.floor(service.audioDuration / 60)}:${String(Math.round(service.audioDuration % 60)).padStart(2, "0")}`
+    : null;
 
   return (
     <article
@@ -1237,7 +1258,7 @@ function ServiceCard({ service, index, expandedByDefault = false, showDetailLink
     >
       <div className="service-card__header">
         <span className="service-card__icon" aria-hidden="true">
-          <Icon size={34} weight="light" />
+          <Icon size={30} weight="duotone" />
         </span>
         <div className="service-card__heading">
           <span>
@@ -1245,25 +1266,26 @@ function ServiceCard({ service, index, expandedByDefault = false, showDetailLink
           </span>
           <h3 id={`${service.id}-title`} itemProp="name">{service.title}</h3>
         </div>
-        <p className="service-card__price" aria-label={`Precio referencial desde ${service.price}`}>
-          <span>Desde</span>
-          <strong>{service.price}</strong>
-          <small>alcance a confirmar</small>
-        </p>
       </div>
+
+      <p className="service-card__price" aria-label={`Precio referencial desde ${service.price}, alcance a confirmar`}>
+        <span>Desde</span>
+        <strong>{service.price}</strong>
+        <small>precio referencial · alcance a confirmar</small>
+      </p>
 
       <div className="service-card__body">
         <p className="service-card__summary" itemProp="description">{service.summary}</p>
         <meta itemProp="areaServed" content="Perú" />
         <meta itemProp="serviceType" content={service.category} />
         <div className="service-card__includes">
-          <span>Este servicio incluye</span>
+          <span>Incluye</span>
           <strong>{service.benefits.length} puntos</strong>
         </div>
         <ul id={`${service.id}-beneficios`}>
           {visibleBenefits.map((benefit) => (
             <li key={benefit}>
-              <CheckCircle size={20} weight="bold" aria-hidden="true" />
+              <CheckCircle size={18} weight="fill" aria-hidden="true" />
               <span>{benefit}</span>
             </li>
           ))}
@@ -1298,21 +1320,30 @@ function ServiceCard({ service, index, expandedByDefault = false, showDetailLink
         )}
 
         {service.audio ? (
-          <AudioPlayer
-            src={service.audio}
-            title={service.title}
-            durationHint={service.audioDuration}
-            transcript={service.transcript}
-          />
+          <div className="service-card__audio">
+            {audioOpen ? (
+              <AudioPlayer
+                src={service.audio}
+                title={service.title}
+                durationHint={service.audioDuration}
+                transcript={service.transcript}
+              />
+            ) : (
+              <button
+                type="button"
+                className="service-card__audio-toggle"
+                aria-expanded="false"
+                onClick={() => {
+                  setAudioOpen(true);
+                  trackInteraction("service_audio_open", { service: service.id });
+                }}
+              >
+                <span className="service-card__audio-play" aria-hidden="true">▶</span>
+                <span>Escuchar descripción{audioMinutes ? ` · ${audioMinutes} min` : ""}</span>
+              </button>
+            )}
+          </div>
         ) : null}
-
-        <div className="service-card__trust-links" aria-label={`Información adicional sobre ${service.title}`}>
-          {showDetailLink ? (
-            <a href={`/servicios/${service.id}`}>Ver servicio completo</a>
-          ) : null}
-          <a href="/evidencias">Ver evidencias</a>
-          <a href="/contrato">Leer condiciones</a>
-        </div>
 
         <a
           className="service-card__cta"
@@ -1324,9 +1355,16 @@ function ServiceCard({ service, index, expandedByDefault = false, showDetailLink
           onClick={() => trackInteraction("service_whatsapp_click", { service: service.id })}
         >
           <WhatsappLogo size={22} weight="fill" aria-hidden="true" />
-          <span>Consultar {service.title}</span>
+          <span>Consultar por WhatsApp</span>
         </a>
-        <p className="service-card__price-note">Precio referencial sujeto a revisión del alcance.</p>
+
+        <div className="service-card__trust-links" aria-label={`Información adicional sobre ${service.title}`}>
+          {showDetailLink ? (
+            <a href={`/servicios/${service.id}`}>Ver servicio completo</a>
+          ) : null}
+          <a href="/evidencias">Evidencias</a>
+          <a href="/contrato">Condiciones</a>
+        </div>
       </div>
     </article>
   );
@@ -1484,7 +1522,7 @@ function EvidencePage() {
         <div className="evidence-hero__inner">
           <div className="evidence-hero__copy">
             <p>Casos compartidos por estudiantes</p>
-            <h1 id="evidence-page-title">Evidencias de acompañamiento y resultados reportados</h1>
+            <h1 id="evidence-page-title">Evidencias y resultados reportados</h1>
             <span>
               Organizamos cada caso por estudiante y mostramos sus capturas completas con
               datos anonimizados. Son experiencias individuales y no garantizan resultados futuros.
@@ -2138,14 +2176,21 @@ function Footer() {
             loading="lazy"
             decoding="async"
           />
-          <p>Tu tesis, con una ruta clara y acompañamiento real.</p>
+          <p>Asesoría de tesis con ruta clara, contrato por escrito y autoría del estudiante.</p>
           <WhatsappButton className="footer-brand__cta">Solicitar orientación</WhatsappButton>
+          <a className="footer-platform" href={nidoLink.href}>
+            <span>
+              <strong>{nidoLink.label}</strong>
+              <small>{nidoLink.description}</small>
+            </span>
+            <ArrowRight size={16} aria-hidden="true" />
+          </a>
         </div>
         <nav className="footer-column" aria-labelledby="footer-links-title">
-          <h2 id="footer-links-title">Enlaces rápidos</h2>
+          <h2 id="footer-links-title">Navegación</h2>
           <a href="/servicios">Servicios</a>
           <a href="/carreras">Carreras</a>
-          <a href="/docentes">Docentes</a>
+          <a href="/docentes">Asesores por especialidad</a>
           <a href="/evidencias">Evidencias</a>
           <a href="/contrato">Contrato</a>
           <a href="/recursos">Recursos y repositorio</a>
@@ -2154,9 +2199,9 @@ function Footer() {
             target="_blank"
             rel="noopener noreferrer"
             referrerPolicy="no-referrer"
-            aria-label="Login (se abre en una pestaña nueva)"
+            aria-label="Login al portal del alumno (se abre en una pestaña nueva)"
           >
-            Login
+            Login · portal del alumno
           </a>
         </nav>
         <address className="footer-column footer-contact">
@@ -2384,13 +2429,13 @@ export function App() {
         <Suspense fallback={<main id="main-content" tabIndex="-1">Preparando recursos…</main>}>
           <ResourcesPage />
         </Suspense>
-      ) : currentPage === "careers" && CareersPage ? (
+      ) : currentPage === "careers" ? (
         <Suspense fallback={<main id="main-content" tabIndex="-1">Preparando carreras…</main>}>
           <CareersPage />
         </Suspense>
-      ) : currentPage === "teachers" && TeachersPage ? (
-        <Suspense fallback={<main id="main-content" tabIndex="-1">Preparando docentes…</main>}>
-          <TeachersPage />
+      ) : currentPage === "teachers" ? (
+        <Suspense fallback={<main id="main-content" tabIndex="-1">Preparando asesores…</main>}>
+          <AdvisorsPage />
         </Suspense>
       ) : currentPage === "not-found" ? (
         <NotFoundPage />
@@ -2402,7 +2447,7 @@ export function App() {
           <ProofSection />
           <QuickFacts
             servicesCount={services.length}
-            resultsCount={gradeResults.length}
+            casesCount={publishedEvidenceGroups.length}
             stagesCount={3}
           />
           <AudioIntroduction />

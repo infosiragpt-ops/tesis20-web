@@ -4,12 +4,7 @@ import { access, readFile, readdir, stat } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { gzipSync } from "node:zlib";
-import { CAREER_AREAS, TEACHERS } from "../src/data/academic-directory.js";
-import {
-  assignTeacherPortraits,
-  TEACHER_PORTRAIT_COUNT,
-  TEACHER_PORTRAIT_POOLS,
-} from "../src/teacher-portrait.js";
+import { CAREER_AREAS } from "../src/data/academic-directory.js";
 import { ACTIVE_THESIS_REPOSITORIES } from "../src/data/thesis-repositories.js";
 import { CLASSIC_COLLECTION } from "../src/nido/cuentos/classic-collection.js";
 
@@ -46,17 +41,15 @@ const routeSpecs = [
   {
     path: "/docentes",
     output: "dist/docentes.html",
-    title: "Docentes y asesores por carrera | Tesis20",
-    h1: "Encuentra un docente para tu tema",
+    title: "Asesores de tesis por carrera y especialidad | Tesis20",
+    h1: "Un asesor para tu carrera y tu tema",
     content: [
-      "Perfiles docentes demostrativos",
-      "¿Qué asesoría necesitas?",
-      "Buscar docentes",
-      "Especialidades",
-      "Directorio demostrativo",
+      "Asesores por área de conocimiento",
+      "Del planteamiento a la sustentación",
+      "Solicitar asesor por WhatsApp",
+      "IBM SPSS",
     ],
     schemaType: "CollectionPage",
-    indexable: false,
   },
   {
     path: "/nido",
@@ -324,12 +317,6 @@ const vercelText = await read("vercel.json");
 const appSource = await read("src/App.jsx");
 const nidoGamesSource = await read("src/nido/nido-games.jsx");
 const nidoFocusStyles = await read("src/nido/nido-focus.css");
-const academicDirectoryText = await read("dist/data/academic-directory.json");
-const academicDirectory = JSON.parse(academicDirectoryText);
-const teacherSearchSource = await read("src/teacher-search.js");
-const teacherDirectoryRuntime = await read("public/assets/academic-directory-v1.js");
-const teacherPortraitAsset = await read("dist/assets/teacher-portrait-v1.js");
-const teacherPhotoManifest = JSON.parse(await read("public/assets/docentes/synthetic-v1/manifest.json"));
 const thesisIndexText = await read("public/data/theses-index.json");
 const thesisIndex = JSON.parse(thesisIndexText);
 const manifest = JSON.parse(manifestText);
@@ -352,96 +339,16 @@ check(
     nidoFocusStyles.includes("position: fixed"),
   "La apertura de juegos de Nido debe conservar el diálogo modal y su fallback visible.",
 );
-check(
-  JSON.stringify(academicDirectory.teachers) === JSON.stringify(TEACHERS),
-  "El JSON construido de docentes debe coincidir exactamente con la fuente académica.",
-);
+// El catálogo de carreras es la única fuente del directorio académico.
 const listedCareers = new Set(CAREER_AREAS.flatMap((area) => area.careers));
-check(TEACHERS.length === 4_000, "El directorio debe contener exactamente 4,000 perfiles demostrativos.");
-check(new Set(TEACHERS.map((teacher) => teacher.id)).size === TEACHERS.length, "Cada docente debe tener un ID único.");
-check(new Set(TEACHERS.map((teacher) => teacher.name)).size === TEACHERS.length, "Cada docente debe tener un nombre demostrativo único.");
-check(new Set(TEACHERS.map((teacher) => teacher.profileCode)).size === TEACHERS.length, "Cada docente debe tener un código de perfil único.");
+check(listedCareers.size >= 200, "El catálogo de carreras debe conservar al menos 200 carreras orientativas.");
 check(
-  new Set(TEACHERS.map((teacher) => teacher.photo || `avatar:${teacher.avatarSeed}`)).size === TEACHERS.length,
-  "Cada docente debe tener una fotografía o semilla de retrato única.",
+  CAREER_AREAS.every((area) => area.id && area.name && area.description && area.careers.length > 0),
+  "Cada área de conocimiento debe declarar id, nombre, descripción y carreras.",
 );
 check(
-  [...listedCareers].every((career) => TEACHERS.some((teacher) => teacher.careers.includes(career))),
-  "Los perfiles docentes deben cubrir todas las carreras del catálogo.",
-);
-check(
-  TEACHERS.every((teacher) =>
-    Array.isArray(teacher.specialties) &&
-    teacher.specialties.length >= 3 &&
-    Array.isArray(teacher.searchTerms) &&
-    teacher.searchTerms.length >= 3
-  ),
-  "Cada docente debe declarar especialidades visibles y términos de búsqueda relacionados.",
-);
-check(
-  TEACHERS.every((teacher) =>
-    teacher.isDemo === true &&
-    /^T20-D\d{4}$/.test(teacher.profileCode) &&
-    Number.isInteger(teacher.experienceYears) &&
-    teacher.experienceYears >= 6 &&
-    Number.isInteger(teacher.avatarSeed) &&
-    teacher.avatarSeed > 0 &&
-    ["feminine", "masculine"].includes(teacher.portraitPresentation) &&
-    teacher.description.startsWith("Perfil demostrativo") &&
-    teacher.universities.every((university) => university.endsWith("— demo")) &&
-    teacher.careers.every((career) => listedCareers.has(career))
-  ),
-  "Cada perfil debe declarar su carácter demostrativo, experiencia, universidad demo y carreras válidas.",
-);
-check(
-  academicDirectoryText.length < 5_500_000 && gzipSync(academicDirectoryText).length < 650_000,
-  "El catálogo de 4,000 docentes excede el presupuesto de transferencia.",
-);
-check(
-  teacherPortraitAsset.includes("teacherMediaMarkup") &&
-    teacherPortraitAsset.includes("data-portrait-index") &&
-    teacherPortraitAsset.includes("Imagen sintética · IA") &&
-    !teacherPortraitAsset.includes("<svg"),
-  "El build debe incluir fotografías sintéticas locales y no retratos SVG.",
-);
-check(
-  teacherPhotoManifest.type === "synthetic-demo-headshots" &&
-    teacherPhotoManifest.representsRealPeople === false &&
-    teacherPhotoManifest.portraitCount === TEACHER_PORTRAIT_COUNT &&
-    JSON.stringify(teacherPhotoManifest.presentations) === JSON.stringify(TEACHER_PORTRAIT_POOLS) &&
-    teacherPhotoManifest.sheets.length === 4,
-  "El manifiesto debe documentar 64 retratos sintéticos que no representan personas reales.",
-);
-for (const sheet of teacherPhotoManifest.sheets) {
-  const relativePath = sheet.path.replace(/^\//, "public/");
-  check(/^\/assets\/docentes\/synthetic-v1\/advisers-sheet-\d{2}\.avif$/.test(sheet.path), `Ruta de retrato sintético no permitida: ${sheet.path}`);
-  check(await exists(relativePath), `Falta la biblioteca fotográfica ${sheet.path}.`);
-  if (await exists(relativePath)) {
-    const bytes = await readFile(path.join(root, relativePath));
-    check(bytes.length <= 100 * 1024, `${sheet.path} supera 100 KiB.`);
-    check(createHash("sha256").update(bytes).digest("hex") === sheet.sha256, `${sheet.path} no coincide con su hash documentado.`);
-  }
-}
-for (let start = 0; start < TEACHERS.length; start += 24) {
-  const page = assignTeacherPortraits(TEACHERS.slice(start, start + 24));
-  check(
-    new Set(page.map(({ portraitIndex }) => portraitIndex)).size === page.length,
-    `La página docente ${Math.floor(start / 24) + 1} repite una fotografía.`,
-  );
-  check(
-    page.every(({ teacher, portraitIndex }) =>
-      TEACHER_PORTRAIT_POOLS[teacher.portraitPresentation].includes(portraitIndex)
-    ),
-    `La página docente ${Math.floor(start / 24) + 1} mezcla presentaciones de nombre y retrato.`,
-  );
-}
-check(
-  teacherSearchSource.includes("SEARCH_STOP_WORDS") &&
-    teacherDirectoryRuntime.includes("teacherSearchStopWords") &&
-    teacherDirectoryRuntime.includes("TEACHER_PAGE_SIZE = 24") &&
-    teacherDirectoryRuntime.includes("data-directory-previous") &&
-    teacherDirectoryRuntime.includes("data-directory-next"),
-  "La búsqueda de docentes debe interpretar necesidades y limitar la cantidad renderizada por página.",
+  !(await exists("src/teacher-portrait.js")) && !(await exists("public/assets/docentes")),
+  "El directorio de perfiles sintéticos fue retirado: no deben volver sus retratos ni su runtime.",
 );
 
 // El repositorio piloto solo admite tesis validadas por metadatos interoperables.
@@ -580,7 +487,7 @@ for (const asset of referencedAssets) {
 
 // La galería solicitada muestra 15 imágenes sin presentar las repeticiones como 15 casos distintos.
 check(/const\s+GRADE_GALLERY_SIZE\s*=\s*15\s*;/.test(appSource), "La galería de calificaciones debe contener 15 imágenes.");
-check(/Galería de 15 imágenes organizada con 5 capturas anonimizadas/.test(appSource), "La galería debe explicar que las 15 imágenes se organizan a partir de 5 capturas.");
+check(/Galería de \{GRADE_GALLERY_SIZE\} imágenes organizada con 5 capturas anonimizadas/.test(appSource) && /const GRADE_GALLERY_SIZE = 15;/.test(appSource), "La galería debe explicar que las 15 imágenes se organizan a partir de 5 capturas.");
 const gradeImageSources = [...appSource.matchAll(/(?:image|src):\s*["'](\/assets\/grade-results\/[^"']+)["']/g)].map((match) => match[1]);
 check(gradeImageSources.length > 0, "No se encontraron evidencias de calificaciones declaradas.");
 check(new Set(gradeImageSources).size === gradeImageSources.length, "Las rutas de evidencias de calificaciones deben ser únicas.");
@@ -663,16 +570,11 @@ for (const route of routeSpecs) {
     check(schemaNodes.some((node) => hasSchemaType(node, "ItemList")), "dist/recursos.html debe describir los documentos como ItemList.");
   }
   if (route.path === "/docentes") {
-    const renderedTeacherCards = (html.match(/data-teacher-card/g) || []).length;
     check(
-      renderedTeacherCards === Math.min(TEACHERS.length, 24),
-      "dist/docentes.html debe renderizar solo la primera página de hasta 24 docentes.",
+      !/no es una persona real|Imagen sintética|perfiles demostrativos/i.test(html),
+      "dist/docentes.html no debe volver a publicar perfiles sintéticos.",
     );
-    check(
-      /<form\b[^>]*data-directory-teacher-form/i.test(html) &&
-        /type=["']submit["'][^>]*class=["']directory-search-button["']/i.test(html),
-      "El directorio de docentes debe ejecutar la búsqueda mediante un formulario y botón explícito.",
-    );
+    check(schemaNodes.some((node) => hasSchemaType(node, "FAQPage")), "dist/docentes.html debe describir sus preguntas frecuentes como FAQPage.");
   }
   if (route.service) {
     const serviceNode = schemaNodes.find((node) => hasSchemaType(node, "Service"));
@@ -727,7 +629,7 @@ for (const route of routeSpecs) {
 
 // La app debe usar el arreglo de 15 elementos tanto en la cuadrícula como en el contador.
 check(/gradeResults\.map\(\(result,\s*index\)\s*=>/.test(appSource), "La cuadrícula debe renderizar el arreglo gradeResults.");
-check(/resultsCount=\{gradeResults\.length\}/.test(appSource), "El contador debe reflejar las 15 imágenes de la galería.");
+check(/casesCount=\{publishedEvidenceGroups\.length\}/.test(appSource), "El contador de Inicio debe reflejar los casos publicados en Evidencias.");
 check(/aria-setsize=\{GRADE_GALLERY_SIZE\}/.test(appSource), "La galería debe comunicar sus 15 elementos a tecnologías de asistencia.");
 
 // Presupuestos del artefacto final.
@@ -776,7 +678,7 @@ for (const distFile of distFiles) {
     cuentosManifestBytes = bytes;
     continue;
   }
-  if (!/\.(?:mp3|pdf|docx)$/i.test(distFile) && distFile !== "dist/data/academic-directory.json") {
+  if (!/\.(?:mp3|pdf|docx)$/i.test(distFile)) {
     deployBytesWithoutAudioAndPdf += bytes;
   }
 }
