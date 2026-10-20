@@ -1,0 +1,63 @@
+LOGOTIPOS DE UNIVERSIDADES · Tesis20 (cinta «Acompañamos a estudiantes de»)
+
+Los nombres y logotipos pertenecen a cada universidad y se muestran solo para
+identificar la institución de procedencia de los estudiantes. Tesis20 es un
+servicio independiente: no está afiliado ni representa a estas universidades.
+
+Archivos tomados de Wikimedia Commons (se recortaron márgenes y se convirtieron
+a WebP; las versiones derivadas de archivos CC BY-SA se comparten con la misma
+licencia):
+
+- unmsm.webp · Universidad Nacional Mayor de San Marcos
+  Fuente: https://commons.wikimedia.org/wiki/File:UNMSM_Escudo_y_Nombre.png
+  Autor: Kanon6996
+  Licencia: CC BY-SA 3.0 https://creativecommons.org/licenses/by-sa/3.0
+
+- usmp.webp · Universidad de San Martín de Porres
+  Fuente: https://commons.wikimedia.org/wiki/File:Universidad_San_Martin.svg
+  Autor: CD Universidad de San Martín de Porres S.A.
+  Licencia: Public domain
+
+- usil.webp · Universidad San Ignacio de Loyola
+  Fuente: https://commons.wikimedia.org/wiki/File:Usil.jpg
+  Autor: Samuraihunter
+  Licencia: Public domain
+
+- uap.webp · Universidad Alas Peruanas
+  Fuente: https://commons.wikimedia.org/wiki/File:Logo-uap-oficial.png
+  Autor: Webmasteruap
+  Licencia: CC BY-SA 4.0 https://creativecommons.org/licenses/by-sa/4.0
+
+- upao.webp · Universidad Privada Antenor Orrego
+  Fuente: https://commons.wikimedia.org/wiki/File:UPAO.jpg
+  Autor: Dante yoel
+  Licencia: Public domain
+
+- continental.webp · Universidad Continental
+  Fuente: https://commons.wikimedia.org/wiki/File:Ucontinental-logotipo.png
+  Autor: Universidad Continental
+  Licencia: CC BY-SA 4.0 https://creativecommons.org/licenses/by-sa/4.0
+
+- ucsur.webp · Universidad Científica del Sur
+  Fuente: https://commons.wikimedia.org/wiki/File:Logo-nuevo-fondo-blanco.png
+  Autor: Universidad Científica del Sur
+  Licencia: Public domain
+
+- unfv.webp · Universidad Nacional Federico Villarreal
+  Fuente: https://commons.wikimedia.org/wiki/File:Logo_UNFV.png
+  Autor: Universidad Nacional Federico Villarreal
+  Licencia: CC BY-SA 4.0 https://creativecommons.org/licenses/by-sa/4.0
+
+- ulima.webp · Universidad de Lima
+  Fuente: https://commons.wikimedia.org/wiki/File:Universidad_de_Lima_logo.svg
+  Autor: Supertoni123
+  Licencia: CC0 http://creativecommons.org/publicdomain/zero/1.0/deed.en
+
+- pucp.webp · Pontificia Universidad Católica del Perú
+  Fuente: https://commons.wikimedia.org/wiki/File:PUCP_logo.png
+  Autor: Marcomogollon
+  Licencia: CC BY-SA 4.0 https://creativecommons.org/licenses/by-sa/4.0
+
+Logotipos provenientes del repositorio de Tesis20 (material institucional
+previamente incorporado): upn, ucv, utp, upc, upch (texto en tinta para fondo
+claro) y unsa.

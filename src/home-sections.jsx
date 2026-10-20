@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from "react";
 import { ArrowRight } from "@phosphor-icons/react/ArrowRight";
 import { ArrowSquareOut } from "@phosphor-icons/react/ArrowSquareOut";
 import { CheckCircle } from "@phosphor-icons/react/CheckCircle";
@@ -8,11 +9,14 @@ import { GraduationCap } from "@phosphor-icons/react/GraduationCap";
 import { LockKey } from "@phosphor-icons/react/LockKey";
 import { MagnifyingGlass } from "@phosphor-icons/react/MagnifyingGlass";
 import { MapPin } from "@phosphor-icons/react/MapPin";
+import { Pause } from "@phosphor-icons/react/Pause";
 import { Phone } from "@phosphor-icons/react/Phone";
+import { Play } from "@phosphor-icons/react/Play";
 import { SealCheck } from "@phosphor-icons/react/SealCheck";
 import { ShieldCheck } from "@phosphor-icons/react/ShieldCheck";
 import { UserFocus } from "@phosphor-icons/react/UserFocus";
 import { VideoCamera } from "@phosphor-icons/react/VideoCamera";
+import { STUDENT_UNIVERSITIES } from "./data/student-universities.js";
 import { SafeImage } from "./platform-enhancements.jsx";
 import { PORTAL_URL, WhatsappButton } from "./site-core.jsx";
 
@@ -88,30 +92,109 @@ export function HeroFloats() {
   );
 }
 
-const UNIVERSITIES = [
-  ["UPN", "Universidad Privada del Norte"],
-  ["UCV", "Universidad César Vallejo"],
-  ["UTP", "Universidad Tecnológica del Perú"],
-];
-
-export function UniversityStrip() {
+function UniversityLogo({ university, eager }) {
+  const variant = university.mark ? " uni-logo--mark" : university.shape ? ` uni-logo--${university.shape}` : "";
   return (
-    <section className="uni-strip" aria-labelledby="uni-strip-title">
-      <div className="section-shell uni-strip__inner">
-        <p id="uni-strip-title">Acompañamos a estudiantes de</p>
-        <ul>
-          {UNIVERSITIES.map(([short, name]) => (
-            <li key={short}>
-              <strong>{short}</strong>
-              <span>{name}</span>
-            </li>
-          ))}
-          <li className="uni-strip__more">
-            <strong>+</strong>
-            <span>Otras universidades del Perú y Latinoamérica</span>
-          </li>
-        </ul>
+    <li className={`uni-logo${variant}`}>
+      <img
+        src={`/assets/universities/${university.id}.webp`}
+        alt=""
+        width={university.width}
+        height={university.height}
+        loading={eager ? "eager" : "lazy"}
+        decoding="async"
+        draggable="false"
+      />
+      {university.mark ? <span>{university.acronym}</span> : null}
+    </li>
+  );
+}
+
+/**
+ * Cinta de universidades: dos filas en sentidos opuestos. Las filas son
+ * decorativas (aria-hidden, sin enlaces); la lista para lectores de pantalla
+ * va aparte. Se pausa al pasar el mouse y con el botón (WCAG 2.2.2).
+ */
+export function UniversityStrip() {
+  const [paused, setPaused] = useState(false);
+  // Los logos fuera del tramo visible de la cinta quedan recortados y la carga
+  // diferida nunca los pediría: al acercarse la sección se cargan todos.
+  const [eager, setEager] = useState(false);
+  const sectionRef = useRef(null);
+  useEffect(() => {
+    const section = sectionRef.current;
+    if (!section || !("IntersectionObserver" in window)) {
+      setEager(true);
+      return undefined;
+    }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          setEager(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: "600px 0px" },
+    );
+    observer.observe(section);
+    return () => observer.disconnect();
+  }, []);
+  const half = Math.ceil(STUDENT_UNIVERSITIES.length / 2);
+  const rows = [STUDENT_UNIVERSITIES.slice(0, half), STUDENT_UNIVERSITIES.slice(half)];
+
+  return (
+    <section className="uni-marquee" aria-labelledby="uni-marquee-title" ref={sectionRef}>
+      <div className="section-shell uni-marquee__head">
+        <div>
+          <p className="section-eyebrow">Nuestros estudiantes</p>
+          <h2 id="uni-marquee-title">
+            Acompañamos a estudiantes de {STUDENT_UNIVERSITIES.length} universidades del Perú
+          </h2>
+        </div>
+        <button
+          type="button"
+          className="marquee-toggle"
+          aria-pressed={paused}
+          onClick={() => setPaused((current) => !current)}
+        >
+          {paused ? (
+            <Play size={15} weight="fill" aria-hidden="true" />
+          ) : (
+            <Pause size={15} weight="fill" aria-hidden="true" />
+          )}
+          {paused ? "Reanudar" : "Pausar"}
+        </button>
       </div>
+
+      <ul className="sr-only">
+        {STUDENT_UNIVERSITIES.map((university) => (
+          <li key={university.id}>
+            {university.name} ({university.acronym})
+          </li>
+        ))}
+      </ul>
+
+      <div className={`uni-marquee__rows${paused ? " is-paused" : ""}`} aria-hidden="true">
+        {rows.map((row, index) => (
+          <div className={`uni-marquee__row${index ? " uni-marquee__row--reverse" : ""}`} key={index}>
+            <div className="uni-marquee__track">
+              {[0, 1].map((copy) => (
+                <ul className="uni-marquee__group" key={copy}>
+                  {row.map((university) => (
+                    <UniversityLogo university={university} eager={eager} key={university.id} />
+                  ))}
+                </ul>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <p className="section-shell uni-marquee__note">
+        Tesis20 es un servicio independiente; no está afiliado ni representa a estas
+        universidades. Los nombres y logotipos pertenecen a sus titulares.{" "}
+        <a href="/assets/universities/creditos.txt">Créditos de las imágenes</a>
+      </p>
     </section>
   );
 }

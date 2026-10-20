@@ -1,6 +1,7 @@
 import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { CAREER_AREAS, CAREER_COUNT } from "../src/data/academic-directory.js";
+import { STUDENT_UNIVERSITIES } from "../src/data/student-universities.js";
 import { ACTIVE_THESIS_REPOSITORIES } from "../src/data/thesis-repositories.js";
 
 const DIST_DIRECTORY = resolve(process.cwd(), "dist");
@@ -141,6 +142,13 @@ const routeDefinitions = [
           <li><strong>Plan de trabajo:</strong> organizamos etapas, entregables y un cronograma realista.</li>
           <li><strong>Acompañamiento experto:</strong> coordinamos sesiones y revisiones según el servicio.</li>
         </ol>
+      </section>
+      <section aria-labelledby="static-universities-title">
+        <h2 id="static-universities-title">Acompañamos a estudiantes de ${STUDENT_UNIVERSITIES.length} universidades del Perú</h2>
+        <ul>
+          ${STUDENT_UNIVERSITIES.map((university) => `<li>${university.name} (${university.acronym})</li>`).join("\n")}
+        </ul>
+        <p>Tesis20 es un servicio independiente; no está afiliado ni representa a estas universidades.</p>
       </section>
       <section aria-labelledby="static-trust-title">
         <h2 id="static-trust-title">Información para decidir con confianza</h2>
