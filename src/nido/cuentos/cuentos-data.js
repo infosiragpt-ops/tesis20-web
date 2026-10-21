@@ -1,5 +1,6 @@
 import { PULGARCITO } from "./pulgarcito-data.js";
 import { CLASSIC_COLLECTION } from "./classic-collection.js";
+import { CLASSIC_PIN_LABELS } from "./classic-souvenirs.js";
 
 // Biblioteca de cuentos de Tesis20 Nido: ocho historias originales y tres
 // adaptaciones de clásicos («Los tres cerditos», «Caperucita Roja», «Pulgarcito»).
@@ -1539,6 +1540,7 @@ export const PIN_LABELS = {
   hoja: "Hoja de viento",
   tambor: "Tambor del tronco",
   quena: "Quena de caña",
+  ...CLASSIC_PIN_LABELS,
 };
 
 export const BOOKS = [...NARRATED_BOOKS, ...CLASSIC_COLLECTION];

@@ -3,6 +3,8 @@
 // un poco entre escenas sin dejar de ser determinista.
 
 import { mix, LIGHTS, VIEW_W, VIEW_H } from "./cuentos-art-base.jsx";
+import { CLASSIC_EMBLEMS } from "./cuentos-art-classic-emblems.jsx";
+import { pinArt } from "./classic-souvenirs.js";
 
 const GROUND = 560;
 
@@ -1459,5 +1461,6 @@ const PULGARCITO_EMBLEMS = {
 };
 
 export function emblemFor(id) {
-  return PULGARCITO_EMBLEMS[id] || EMBLEMS[id] || null;
+  const art = pinArt(id);
+  return PULGARCITO_EMBLEMS[art] || EMBLEMS[art] || CLASSIC_EMBLEMS[art] || null;
 }

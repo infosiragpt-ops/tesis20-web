@@ -33,6 +33,7 @@ import { SCULPTED_ANIMALS } from './sculpted-animals.js';
 import { buildDragon } from './sculpted-dragon.js';
 import { SCULPTED_FANTASY } from './sculpted-fantasy.js';
 import { SCULPTED_STORY_PEOPLE } from './sculpted-story-people.js';
+import { CLASSIC_EMBLEM_TOY, pinArt } from '../../classic-souvenirs.js';
 import { bakeToy } from './bake.js';
 
 const pipo = { id: "pipo", label: "Pipo", build: () => cerdito.build({ hat: true, item: "paja" }) };
@@ -102,6 +103,12 @@ export const PIN_TOY = {
   tambor: "tambor",
   quena: "quena",
 };
+
+/** Figura del souvenir en el escritorio; sin figura propia, su dibujo en medalla. */
+export function pinToy(pinId) {
+  const art = pinArt(pinId);
+  return PIN_TOY[pinId] || PIN_TOY[art] || CLASSIC_EMBLEM_TOY[art] || art;
+}
 
 /** Medalla de madera con el emblema del souvenir como textura. */
 export function badgeToy(texture, accent = "#d9a95a") {

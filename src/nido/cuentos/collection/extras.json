@@ -1,0 +1,2305 @@
+{
+ "patito-feo": {
+  "pins": [
+   {
+    "art": "hoja",
+    "label": "Hoja gigante",
+    "at": "plantas de hojas gigantescas"
+   },
+   {
+    "art": "pajarito",
+    "label": "Pajaritos del arbusto",
+    "at": "los pajaritos que estaban en los arbustos"
+   },
+   {
+    "art": "casita",
+    "label": "Cabaña de la anciana",
+    "at": "En la cabaña vivía una anciana"
+   },
+   {
+    "art": "pluma",
+    "label": "Pluma de cisne",
+    "at": "tres hermosos cisnes blancos, rizando sus plumas"
+   },
+   {
+    "art": "flor",
+    "label": "Lilas del jardín",
+    "at": "Las lilas inclinaron sus ramas"
+   }
+  ],
+  "quiz": [
+   {
+    "q": "¿Quién esperaba que nacieran sus patitos?",
+    "a": [
+     "Una mamá pata",
+     "Una mamá gallina",
+     "Una mamá cigüeña"
+    ]
+   },
+   {
+    "q": "¿Qué hacía el patito feo tan bien como los otros?",
+    "a": [
+     "Nadar",
+     "Cantar",
+     "Volar"
+    ]
+   },
+   {
+    "q": "¿Con quién vivía la anciana de la cabaña?",
+    "a": [
+     "Con su gato y su gallina",
+     "Con su perro y su oveja",
+     "Con su vaca y su burro"
+    ]
+   },
+   {
+    "q": "¿Qué aves blancas y hermosas vio volar el patito?",
+    "a": [
+     "Unos cisnes",
+     "Unas palomas",
+     "Unas gaviotas"
+    ]
+   },
+   {
+    "q": "¿Qué vio el patito al mirarse en el agua?",
+    "a": [
+     "El reflejo de un cisne",
+     "El reflejo de un pato",
+     "El reflejo de un ganso"
+    ]
+   }
+  ]
+ },
+ "rapunzel": {
+  "pins": [
+   {
+    "art": "hoja",
+    "label": "Hoja de lechuga",
+    "at": "las lechugas del huerto vecino"
+   },
+   {
+    "art": "torre",
+    "label": "Torre de Rapunzel",
+    "at": "una torre sin puertas ni escaleras"
+   },
+   {
+    "art": "trenza",
+    "label": "Trenza de Rapunzel",
+    "at": "La muchacha dejó caer la trenza"
+   },
+   {
+    "art": "ovillo",
+    "label": "Ovillo de seda",
+    "at": "un ovillo de seda"
+   },
+   {
+    "art": "gota",
+    "label": "Lágrima de felicidad",
+    "at": "Lágrimas de felicidad cayeron en los ojos"
+   }
+  ],
+  "quiz": [
+   {
+    "q": "¿Qué quería comer la futura mamá?",
+    "a": [
+     "Lechugas del huerto",
+     "Manzanas del huerto",
+     "Fresas del huerto"
+    ]
+   },
+   {
+    "q": "¿Dónde encerró la bruja a Rapunzel?",
+    "a": [
+     "En una torre",
+     "En una cueva",
+     "En un sótano"
+    ]
+   },
+   {
+    "q": "¿Qué hacía Rapunzel para pasar las horas?",
+    "a": [
+     "Cantaba",
+     "Pintaba",
+     "Bailaba"
+    ]
+   },
+   {
+    "q": "¿Qué le llevaba el príncipe a Rapunzel?",
+    "a": [
+     "Un ovillo de seda",
+     "Un ramo de flores",
+     "Una caja de dulces"
+    ]
+   },
+   {
+    "q": "¿Qué hicieron Rapunzel y el príncipe al final?",
+    "a": [
+     "Se casaron y fueron felices",
+     "Se quedaron a vivir en la torre",
+     "Se fueron a vivir con la bruja"
+    ]
+   }
+  ]
+ },
+ "bambi": {
+  "pins": [
+   {
+    "art": "buho",
+    "label": "Búho del bosque",
+    "at": "fue a despertar al búho"
+   },
+   {
+    "art": "flor",
+    "label": "Flores del bosque",
+    "at": "las flores, los ríos y los nombres"
+   },
+   {
+    "art": "hoja",
+    "label": "Hoja de árbol",
+    "at": "cortan árboles, por eso cuando"
+   },
+   {
+    "art": "gota",
+    "label": "Agua del río",
+    "at": "le ayudaron a pasar el río"
+   },
+   {
+    "art": "buho",
+    "label": "Búho viejecito",
+    "at": "El búho ya estaba viejecito"
+   }
+  ],
+  "quiz": [
+   {
+    "q": "¿Cómo se llamaba el conejito amigo de Bambi?",
+    "a": [
+     "Tambor",
+     "Pelusa",
+     "Saltarín"
+    ]
+   },
+   {
+    "q": "¿Qué le enseñaron los animalitos a Bambi?",
+    "a": [
+     "Las flores y los ríos del bosque",
+     "Las calles y casas del pueblo",
+     "Las olas y los peces del mar"
+    ]
+   },
+   {
+    "q": "¿Quién era el papá de Bambi?",
+    "a": [
+     "El jefe de la manada",
+     "El dueño del bosque",
+     "El amigo del búho"
+    ]
+   },
+   {
+    "q": "¿Cómo se llamaba la cervatilla amiga de Bambi?",
+    "a": [
+     "Farina",
+     "Lucía",
+     "Estrella"
+    ]
+   },
+   {
+    "q": "¿Qué tuvieron Bambi y Farina al final?",
+    "a": [
+     "Un pequeño cervatillo",
+     "Un pequeño conejito",
+     "Un pequeño búho"
+    ]
+   }
+  ]
+ },
+ "pinocho": {
+  "pins": [
+   {
+    "art": "estrella",
+    "label": "Varita del hada",
+    "at": "con su varita dio vida al muñeco"
+   },
+   {
+    "art": "ovillo",
+    "label": "Hilos de los títeres",
+    "at": "movidos por unos hilos"
+   },
+   {
+    "art": "zorro",
+    "label": "Zorro tramposo",
+    "at": "el zorro que iba con el gato"
+   },
+   {
+    "art": "ballena",
+    "label": "Ballena del mar",
+    "at": "se lo había tragado una ballena"
+   },
+   {
+    "art": "ola",
+    "label": "Olas de la orilla",
+    "at": "salieron nadando muy deprisa hacia la orilla"
+   }
+  ],
+  "quiz": [
+   {
+    "q": "¿Quién construyó a Pinocho?",
+    "a": [
+     "Un carpintero llamado Gepeto",
+     "Un panadero llamado Tomás",
+     "Un pescador llamado Mateo"
+    ]
+   },
+   {
+    "q": "¿Qué vendió Gepeto para comprar los libros?",
+    "a": [
+     "Su abrigo",
+     "Su sombrero",
+     "Sus zapatos"
+    ]
+   },
+   {
+    "q": "¿Qué le crecía a Pinocho cuando mentía?",
+    "a": [
+     "La nariz",
+     "El pelo",
+     "Los pies"
+    ]
+   },
+   {
+    "q": "¿Dónde encontró Pinocho a Gepeto?",
+    "a": [
+     "Dentro de una ballena",
+     "Dentro de una cueva",
+     "Dentro de un barco"
+    ]
+   },
+   {
+    "q": "¿En qué convirtió el Hada Azul a Pinocho?",
+    "a": [
+     "En un niño de verdad",
+     "En un muñeco de trapo",
+     "En un pájaro de verdad"
+    ]
+   }
+  ]
+ },
+ "liebre-tortuga": {
+  "pins": [
+   {
+    "art": "estrella",
+    "label": "Medalla soñada",
+    "at": "soñando con los premios y medallas"
+   },
+   {
+    "art": "regalo",
+    "label": "Premio de la carrera",
+    "at": "para recoger su premio"
+   }
+  ],
+  "quiz": [
+   {
+    "q": "¿Por qué se reía la liebre de la tortuga?",
+    "a": [
+     "Porque era muy lenta",
+     "Porque era muy pequeña",
+     "Porque era muy ruidosa"
+    ]
+   },
+   {
+    "q": "¿Quién levantó la bandera para empezar?",
+    "a": [
+     "El topo",
+     "El búho",
+     "El zorro"
+    ]
+   },
+   {
+    "q": "¿Qué hizo la liebre a mitad de la carrera?",
+    "a": [
+     "Se quedó dormida",
+     "Se puso a comer",
+     "Se fue a nadar"
+    ]
+   },
+   {
+    "q": "¿Cómo avanzaba la tortuga?",
+    "a": [
+     "Muy despacio, pasito a paso",
+     "Dando saltos muy grandes",
+     "Corriendo muy rápido"
+    ]
+   },
+   {
+    "q": "¿Quién ganó la Gran Carrera?",
+    "a": [
+     "La tortuga",
+     "La liebre",
+     "El topo"
+    ]
+   }
+  ]
+ },
+ "gigante-egoista": {
+  "pins": [
+   {
+    "art": "castillo",
+    "label": "Castillo del gigante",
+    "at": "jardín de un gran castillo deshabitado"
+   },
+   {
+    "art": "hoja",
+    "label": "Brotes de primavera",
+    "at": "Los árboles se llenaron de brotes"
+   },
+   {
+    "art": "pajarito",
+    "label": "Mirlo cantor",
+    "at": "oyó el canto de un mirlo"
+   },
+   {
+    "art": "martillo",
+    "label": "Mazo del gigante",
+    "at": "derribando el muro con un mazo"
+   },
+   {
+    "art": "flor",
+    "label": "Flores blancas",
+    "at": "cubiertas de delicadas flores blancas"
+   }
+  ],
+  "quiz": [
+   {
+    "q": "¿Dónde jugaban los niños al salir de la escuela?",
+    "a": [
+     "En el jardín de un castillo",
+     "En la plaza del pueblo",
+     "En la orilla de un río"
+    ]
+   },
+   {
+    "q": "¿Qué construyó el gigante alrededor del jardín?",
+    "a": [
+     "Un muro muy alto",
+     "Un puente muy largo",
+     "Una torre muy alta"
+    ]
+   },
+   {
+    "q": "¿Qué seguía en el jardín del gigante en primavera?",
+    "a": [
+     "La nieve y la escarcha",
+     "Las flores y las mariposas",
+     "Los niños y sus juegos"
+    ]
+   },
+   {
+    "q": "¿Qué hizo el gigante con el niño pequeño?",
+    "a": [
+     "Lo subió a un árbol",
+     "Lo llevó a la escuela",
+     "Lo escondió en el castillo"
+    ]
+   },
+   {
+    "q": "¿Quién estaba debajo del árbol precioso?",
+    "a": [
+     "El niño pequeño",
+     "El amigo ogro",
+     "Un mirlo cantor"
+    ]
+   }
+  ]
+ },
+ "cigarra-hormiga": {
+  "pins": [
+   {
+    "art": "hoja",
+    "label": "Brizna de hierba",
+    "at": "sentada en una brizna de hierba"
+   },
+   {
+    "art": "espiga",
+    "label": "Grano de trigo",
+    "at": "arrastrar un grano de trigo"
+   },
+   {
+    "art": "olla",
+    "label": "Desayuno de trigo",
+    "at": "un buen desayuno de trigo"
+   },
+   {
+    "art": "canasta",
+    "label": "Comida de las hormigas",
+    "at": "un poquitín de vuestra comida"
+   }
+  ],
+  "quiz": [
+   {
+    "q": "¿Dónde estaba sentada la cigarra?",
+    "a": [
+     "En una brizna de hierba",
+     "En una rama de un árbol",
+     "En una piedra del río"
+    ]
+   },
+   {
+    "q": "¿Qué arrastraba la hormiga hasta su despensa?",
+    "a": [
+     "Un grano de trigo",
+     "Una hoja seca",
+     "Una gota de miel"
+    ]
+   },
+   {
+    "q": "¿Por qué trabajaba tanto la hormiga?",
+    "a": [
+     "Porque pensaba en el mañana",
+     "Porque quería ganar un premio",
+     "Porque estaba muy aburrida"
+    ]
+   },
+   {
+    "q": "¿Cómo estaba la cigarra meses después?",
+    "a": [
+     "Con mucho frío y mucha hambre",
+     "Con mucha comida guardada",
+     "Con mucho calor y sueño"
+    ]
+   },
+   {
+    "q": "¿Qué les pidió la cigarra a las hormigas?",
+    "a": [
+     "Un poquito de comida",
+     "Un lugar para cantar",
+     "Una manta para dormir"
+    ]
+   }
+  ]
+ },
+ "leon-raton": {
+  "pins": [
+   {
+    "art": "ovillo",
+    "label": "Cuerda del camino",
+    "at": "tropezó con una cuerda estirada"
+   },
+   {
+    "art": "espiga",
+    "label": "Grano de maíz",
+    "at": "royendo un grano de maíz"
+   },
+   {
+    "art": "red",
+    "label": "Red de cuerdas",
+    "at": "roía las cuerdas de la red"
+   }
+  ],
+  "quiz": [
+   {
+    "q": "¿Quién despertó al león en su cueva?",
+    "a": [
+     "Un pequeño ratón",
+     "Un pequeño pájaro",
+     "Un pequeño conejo"
+    ]
+   },
+   {
+    "q": "¿Qué le prometió el ratón al león?",
+    "a": [
+     "Ayudarlo algún día",
+     "Traerle comida",
+     "Cantarle una canción"
+    ]
+   },
+   {
+    "q": "¿Qué cayó sobre el león en la jungla?",
+    "a": [
+     "Una red enorme",
+     "Una hoja gigante",
+     "Una piedra grande"
+    ]
+   },
+   {
+    "q": "¿Qué estaba royendo el ratón?",
+    "a": [
+     "Un grano de maíz",
+     "Un trozo de pan",
+     "Una hoja de lechuga"
+    ]
+   },
+   {
+    "q": "¿Cómo ayudó el ratón al león?",
+    "a": [
+     "Royendo las cuerdas de la red",
+     "Llamando a otros leones",
+     "Trayéndole agua fresca"
+    ]
+   }
+  ]
+ },
+ "blancanieves": {
+  "pins": [
+   {
+    "art": "espejo",
+    "label": "Espejito mágico",
+    "at": "Tenía un espejo maravilloso"
+   },
+   {
+    "art": "casita",
+    "label": "Casita de los enanos",
+    "at": "vio una casita a la que entró"
+   },
+   {
+    "art": "manzana",
+    "label": "Manzana roja y blanca",
+    "at": "parecía buena, blanca y roja"
+   },
+   {
+    "art": "buho",
+    "label": "Mochuelo del bosque",
+    "at": "primero un mochuelo, luego un cuervo"
+   },
+   {
+    "art": "castillo",
+    "label": "Castillo del príncipe",
+    "at": "ven conmigo al castillo de mi padre"
+   }
+  ],
+  "quiz": [
+   {
+    "q": "¿De qué color era el cabello de Blancanieves?",
+    "a": [
+     "Negro como el ébano",
+     "Dorado como el sol",
+     "Rojo como el fuego"
+    ]
+   },
+   {
+    "q": "¿Qué le preguntaba la reina a su espejo?",
+    "a": [
+     "Quién era la más hermosa",
+     "Qué tiempo haría mañana",
+     "Dónde estaba su corona"
+    ]
+   },
+   {
+    "q": "¿Quiénes vivían en la casita del bosque?",
+    "a": [
+     "Siete enanos",
+     "Tres ositos",
+     "Dos gigantes"
+    ]
+   },
+   {
+    "q": "¿Qué fruta le dio la campesina a Blancanieves?",
+    "a": [
+     "Una manzana",
+     "Una pera",
+     "Una naranja"
+    ]
+   },
+   {
+    "q": "¿Adónde quiso llevarla el príncipe al final?",
+    "a": [
+     "Al castillo de su padre",
+     "A un barco en el mar",
+     "A una isla muy lejana"
+    ]
+   }
+  ]
+ },
+ "cenicienta": {
+  "pins": [
+   {
+    "art": "hoja",
+    "label": "Ramita de avellano",
+    "at": "a Cenicienta, el brote de avellano"
+   },
+   {
+    "art": "olla",
+    "label": "Pucherito de lentejas",
+    "at": "vengan a ayudarme a recoger lentejas"
+   },
+   {
+    "art": "lampara",
+    "label": "Candil de aceite",
+    "at": "un candil de aceite ardía en la chimenea"
+   },
+   {
+    "art": "zapatito-oro",
+    "label": "Zapatilla de oro",
+    "at": "Recogió el príncipe la zapatilla"
+   },
+   {
+    "art": "pajarito",
+    "label": "Palomitas blancas",
+    "at": "se posaron una en cada hombro"
+   }
+  ],
+  "quiz": [
+   {
+    "q": "¿Qué le pidió Cenicienta a su padre?",
+    "a": [
+     "Una ramita",
+     "Unas perlas",
+     "Un vestido"
+    ]
+   },
+   {
+    "q": "¿Quiénes ayudaron a Cenicienta a recoger las lentejas?",
+    "a": [
+     "Las palomas y avecillas",
+     "Los ratones del granero",
+     "Las hadas del bosque"
+    ]
+   },
+   {
+    "q": "¿Qué le echó el pájaro para ir a la fiesta?",
+    "a": [
+     "Un vestido de plata y oro",
+     "Una carroza de calabaza",
+     "Una capa de terciopelo"
+    ]
+   },
+   {
+    "q": "¿Qué perdió Cenicienta en la escalera del palacio?",
+    "a": [
+     "Una zapatilla de oro",
+     "Un collar de perlas",
+     "Un guante de seda"
+    ]
+   },
+   {
+    "q": "¿A quién le quedó bien el zapato de oro?",
+    "a": [
+     "A Cenicienta",
+     "A la hermana mayor",
+     "A la hermana menor"
+    ]
+   }
+  ]
+ },
+ "bella-durmiente": {
+  "pins": [
+   {
+    "art": "rana",
+    "label": "Rana mensajera",
+    "at": "una rana saltó del agua"
+   },
+   {
+    "art": "regalo",
+    "label": "Regalos de las hadas",
+    "at": "más portentosos regalos que pudieron"
+   },
+   {
+    "art": "huso",
+    "label": "Huso de hilar",
+    "at": "una anciana sentada frente a un huso"
+   },
+   {
+    "art": "flor",
+    "label": "Flores que abren paso",
+    "at": "no había otra cosa más que bellísimas flores"
+   },
+   {
+    "art": "pajarito",
+    "label": "Palomas del tejado",
+    "at": "volaron al cielo abierto"
+   }
+  ],
+  "quiz": [
+   {
+    "q": "¿Quién le anunció a la reina que tendría una hija?",
+    "a": [
+     "Una rana",
+     "Una paloma",
+     "Una tortuga"
+    ]
+   },
+   {
+    "q": "¿Cuántas hadas había en el reino?",
+    "a": [
+     "Trece hadas",
+     "Tres hadas",
+     "Siete hadas"
+    ]
+   },
+   {
+    "q": "¿Qué encontró la princesa en la vieja torre?",
+    "a": [
+     "Una anciana hilando",
+     "Un gato dormido",
+     "Un cofre de joyas"
+    ]
+   },
+   {
+    "q": "¿Qué creció alrededor del castillo?",
+    "a": [
+     "Un muro de espinos",
+     "Un bosque de pinos",
+     "Un jardín de fresas"
+    ]
+   },
+   {
+    "q": "¿Cómo despertó Preciosa Rosa?",
+    "a": [
+     "Con un beso del príncipe",
+     "Con el canto de un gallo",
+     "Con el son de una campana"
+    ]
+   }
+  ]
+ },
+ "princesa-guisante": {
+  "pins": [
+   {
+    "art": "castillo",
+    "label": "Castillos lejanos",
+    "at": "castillos en China y España"
+   },
+   {
+    "art": "gota",
+    "label": "Gotas de aguanieve",
+    "at": "llenó el vestíbulo de aguanieve"
+   },
+   {
+    "art": "zapatito",
+    "label": "Zapatos con barro",
+    "at": "sus zapatos cubiertos de barro"
+   },
+   {
+    "art": "escalera",
+    "label": "Escalera para la cama",
+    "at": "usar una escalera para trepar a su cama"
+   },
+   {
+    "art": "guisante",
+    "label": "Guisante escondido",
+    "at": "sentir la molestia de un guisante"
+   }
+  ],
+  "quiz": [
+   {
+    "q": "¿Qué buscaba el príncipe por el mundo?",
+    "a": [
+     "Una verdadera princesa",
+     "Un tesoro escondido",
+     "Un caballo muy veloz"
+    ]
+   },
+   {
+    "q": "¿Cómo era la noche en que llegó la joven?",
+    "a": [
+     "Con una tormenta terrible",
+     "Con una luna brillante",
+     "Con un calor muy fuerte"
+    ]
+   },
+   {
+    "q": "¿Qué puso la reina debajo del colchón?",
+    "a": [
+     "Un guisante seco",
+     "Un botón de oro",
+     "Una llave pequeña"
+    ]
+   },
+   {
+    "q": "¿Cómo se sintió la joven en su cama?",
+    "a": [
+     "Muy incómoda",
+     "Muy cómoda",
+     "Muy descansada"
+    ]
+   },
+   {
+    "q": "¿Qué supo el príncipe al ver a la joven?",
+    "a": [
+     "Que era la esposa soñada",
+     "Que era una sirvienta",
+     "Que era su prima lejana"
+    ]
+   }
+  ]
+ },
+ "bella-princesa": {
+  "pins": [
+   {
+    "art": "pez",
+    "label": "Pueblito pesquero",
+    "at": "en un pueblecito pesquero una joven"
+   },
+   {
+    "art": "regalo",
+    "label": "Regalos del príncipe",
+    "at": "empezó a enviar regalos"
+   },
+   {
+    "art": "castillo",
+    "label": "Palacio soñado",
+    "at": "ganas de vivir en un palacio"
+   }
+  ],
+  "quiz": [
+   {
+    "q": "¿Dónde vivía la joven al comienzo del cuento?",
+    "a": [
+     "En un pueblecito pesquero",
+     "En un castillo de piedra",
+     "En una granja de vacas"
+    ]
+   },
+   {
+    "q": "¿Cómo llegó el príncipe al pueblo?",
+    "a": [
+     "A lomos de un corcel",
+     "En un barco de vela",
+     "En una carroza dorada"
+    ]
+   },
+   {
+    "q": "¿Quién se hizo buen amigo de la princesa?",
+    "a": [
+     "Uno de los guardias",
+     "Una criada del palacio",
+     "Un pájaro del jardín"
+    ]
+   },
+   {
+    "q": "¿Qué le dijo el soldado a la princesa?",
+    "a": [
+     "Que era bella por dentro",
+     "Que cantaba muy bonito",
+     "Que debía volver a casa"
+    ]
+   },
+   {
+    "q": "¿Con quién fue feliz la joven al final?",
+    "a": [
+     "Con el soldado",
+     "Con el príncipe",
+     "Con su madre"
+    ]
+   }
+  ]
+ },
+ "paloma-hormiga": {
+  "pins": [
+   {
+    "art": "gota",
+    "label": "Agua fresca de la fuente",
+    "at": "beber de su cristalina y fresca agua"
+   },
+   {
+    "art": "ola",
+    "label": "Agua del río",
+    "at": "una pequeña hormiga metida en el río"
+   },
+   {
+    "art": "hoja",
+    "label": "Ramita salvadora",
+    "at": "una ramita y se la acercó"
+   },
+   {
+    "art": "pajarito",
+    "label": "Paloma que alza el vuelo",
+    "at": "alzó rápidamente el vuelo"
+   },
+   {
+    "art": "pajarito",
+    "label": "Paloma agradecida",
+    "at": "la paloma fue en busca de la hormiga"
+   }
+  ],
+  "quiz": [
+   {
+    "q": "¿Para qué fue la paloma a la fuente del río?",
+    "a": [
+     "Para beber agua",
+     "Para darse un baño",
+     "Para buscar semillas"
+    ]
+   },
+   {
+    "q": "¿Quién pedía socorro desde el agua?",
+    "a": [
+     "Una pequeña hormiga",
+     "Un pequeño pez",
+     "Una pequeña rana"
+    ]
+   },
+   {
+    "q": "¿Qué usó la paloma para sacar a la hormiga?",
+    "a": [
+     "Una ramita",
+     "Una cuerda",
+     "Una piedra"
+    ]
+   },
+   {
+    "q": "¿Qué hizo la hormiga para ayudar a la paloma?",
+    "a": [
+     "Le picó el pie al cazador",
+     "Llamó a sus amigas",
+     "Cantó muy fuerte"
+    ]
+   },
+   {
+    "q": "¿Qué supieron la paloma y la hormiga al final?",
+    "a": [
+     "Que serían amigas siempre",
+     "Que vivirían en el río",
+     "Que irían de viaje juntas"
+    ]
+   }
+  ]
+ },
+ "viene-lobo": {
+  "pins": [
+   {
+    "art": "oveja",
+    "label": "Ovejas del pueblo",
+    "at": "cuidaba las ovejas de todo el pueblo"
+   },
+   {
+    "art": "casita",
+    "label": "Casas del pueblo",
+    "at": "salieron de sus casas y subieron"
+   },
+   {
+    "art": "lobo",
+    "label": "Lobo de mentira",
+    "at": "gritaba- ¡Que viene el lobo"
+   },
+   {
+    "art": "lobo",
+    "label": "Lobo de verdad",
+    "at": "un lobo de verdad se acercó"
+   },
+   {
+    "art": "oveja",
+    "label": "Ovejas del rebaño",
+    "at": "devora las ovejas! Pero nadie en el pueblo"
+   }
+  ],
+  "quiz": [
+   {
+    "q": "¿Qué cuidaba el pastorcillo?",
+    "a": [
+     "Las ovejas del pueblo",
+     "Las vacas del pueblo",
+     "Las gallinas del pueblo"
+    ]
+   },
+   {
+    "q": "¿Qué gritaba el pastorcillo desde el risco?",
+    "a": [
+     "Que venía el lobo",
+     "Que venía un oso",
+     "Que venía la lluvia"
+    ]
+   },
+   {
+    "q": "¿Cómo encontraron al pastorcillo los del pueblo?",
+    "a": [
+     "Riéndose de su broma",
+     "Dormido bajo un árbol",
+     "Llorando muy asustado"
+    ]
+   },
+   {
+    "q": "¿Qué llegó un día de invierno?",
+    "a": [
+     "Un lobo de verdad",
+     "Un oso muy grande",
+     "Una tormenta de nieve"
+    ]
+   },
+   {
+    "q": "¿Por qué nadie subió a ayudarlo al final?",
+    "a": [
+     "Porque ya no le creían",
+     "Porque estaban dormidos",
+     "Porque estaban de fiesta"
+    ]
+   }
+  ]
+ },
+ "gulliver": {
+  "pins": [
+   {
+    "art": "casita",
+    "label": "Casitas de Liliput",
+    "at": "una ciudad entera en miniatura"
+   },
+   {
+    "art": "torre",
+    "label": "Torre de Liliput",
+    "at": "había una elevada torre"
+   },
+   {
+    "art": "ovillo",
+    "label": "Hilo de los anzuelos",
+    "at": "Los liliputienses le llevaron un fino hilo"
+   },
+   {
+    "art": "sombrero",
+    "label": "Sombrero de Gulliver",
+    "at": "y su sombrero en el galeón"
+   },
+   {
+    "art": "canoa",
+    "label": "Galeón de Golbasto",
+    "at": "Era del tamaño de una cuna"
+   }
+  ],
+  "quiz": [
+   {
+    "q": "¿Qué trabajo tenía Gulliver en el barco?",
+    "a": [
+     "Era médico",
+     "Era cocinero",
+     "Era pescador"
+    ]
+   },
+   {
+    "q": "¿De qué tamaño eran los hombrecillos de Liliput?",
+    "a": [
+     "Como un dedo meñique",
+     "Como un árbol grande",
+     "Como un caballo"
+    ]
+   },
+   {
+    "q": "¿Qué hicieron al ver que Gulliver era pacífico y amable?",
+    "a": [
+     "Lo dejaron en libertad",
+     "Lo mandaron a la cárcel",
+     "Lo subieron a una torre"
+    ]
+   },
+   {
+    "q": "¿Cómo se llevó Gulliver los barcos de Blefuscu?",
+    "a": [
+     "Tirando de unos hilos",
+     "Empujándolos con un palo",
+     "Cargándolos en la espalda"
+    ]
+   },
+   {
+    "q": "¿Dónde durmió Gulliver en el barco que lo recogió?",
+    "a": [
+     "En una cama",
+     "En una hamaca",
+     "En el suelo"
+    ]
+   }
+  ]
+ },
+ "sirenita": {
+  "pins": [
+   {
+    "art": "arpa",
+    "label": "Arpa de Sirenita",
+    "at": "cantaba acompañándose con el arpa"
+   },
+   {
+    "art": "pajarito",
+    "label": "Gaviotas de bienvenida",
+    "at": "Las gaviotas revoloteaban por encima de Sirenita"
+   },
+   {
+    "art": "castillo",
+    "label": "Castillo del príncipe",
+    "at": "se dirigía hacia el castillo"
+   },
+   {
+    "art": "vasija",
+    "label": "Frasco de la poción",
+    "at": "el frasco que contenía la poción prodigiosa"
+   },
+   {
+    "art": "campana",
+    "label": "Campanillas de las hadas",
+    "at": "en medio de un sonido de campanillas"
+   }
+  ],
+  "quiz": [
+   {
+    "q": "¿Con qué instrumento se acompañaba Sirenita al cantar?",
+    "a": [
+     "Con el arpa",
+     "Con el tambor",
+     "Con la flauta"
+    ]
+   },
+   {
+    "q": "¿A qué edad podía Sirenita salir a la superficie?",
+    "a": [
+     "A los quince años",
+     "A los cinco años",
+     "A los treinta años"
+    ]
+   },
+   {
+    "q": "¿Dónde dejó Sirenita al joven que salvó del mar?",
+    "a": [
+     "En la arena de la playa",
+     "En una isla lejana",
+     "En el fondo del mar"
+    ]
+   },
+   {
+    "q": "¿Qué le dio Sirenita a la hechicera a cambio de piernas?",
+    "a": [
+     "Su hermosa voz",
+     "Su corona de perlas",
+     "Su collar de conchas"
+    ]
+   },
+   {
+    "q": "¿Quiénes estaban con Sirenita en el cielo?",
+    "a": [
+     "Las hadas del viento",
+     "Las gaviotas del mar",
+     "Los caballitos de mar"
+    ]
+   }
+  ]
+ },
+ "soldadito": {
+  "pins": [
+   {
+    "art": "regalo",
+    "label": "Regalo de cumpleaños",
+    "at": "eran su regalo de cumpleaños"
+   },
+   {
+    "art": "reloj",
+    "label": "Reloj de medianoche",
+    "at": "el reloj dio las doce campanadas"
+   },
+   {
+    "art": "canoa",
+    "label": "Barco de periódico",
+    "at": "construyendo un barco con un periódico"
+   },
+   {
+    "art": "pez",
+    "label": "Gran pez",
+    "at": "un gran pez se lo tragara"
+   },
+   {
+    "art": "castillo",
+    "label": "Castillo de papel",
+    "at": "el mismo hermoso castillo con la linda"
+   }
+  ],
+  "quiz": [
+   {
+    "q": "¿Qué tenía de diferente nuestro soldadito?",
+    "a": [
+     "Tenía una sola pierna",
+     "Tenía un solo brazo",
+     "Tenía una gran barba"
+    ]
+   },
+   {
+    "q": "¿De qué estaba hecha la bailarina?",
+    "a": [
+     "De papel",
+     "De plomo",
+     "De madera"
+    ]
+   },
+   {
+    "q": "¿Con qué hicieron los muchachos el barquito?",
+    "a": [
+     "Con un periódico",
+     "Con una caja",
+     "Con una hoja seca"
+    ]
+   },
+   {
+    "q": "¿Quién se tragó al soldadito en el agua?",
+    "a": [
+     "Un gran pez",
+     "Una tortuga",
+     "Un pato blanco"
+    ]
+   },
+   {
+    "q": "¿Adónde volvió el soldadito después de salir del pez?",
+    "a": [
+     "Al mismo salón de antes",
+     "A la tienda de juguetes",
+     "Al fondo del mar"
+    ]
+   }
+  ]
+ },
+ "gato-botas": {
+  "pins": [
+   {
+    "art": "canasta",
+    "label": "Bolso del gato",
+    "at": "Si me das un bolso"
+   },
+   {
+    "art": "botas",
+    "label": "Botas del gato",
+    "at": "el gato se puso sus botas galantemente"
+   },
+   {
+    "art": "pajarito",
+    "label": "Perdices para el rey",
+    "at": "recibió las perdices con gran placer"
+   },
+   {
+    "art": "espiga",
+    "label": "Granos del Marqués",
+    "at": "todos estos granos pertenecen al Marqués"
+   },
+   {
+    "art": "castillo",
+    "label": "Castillo del Marqués",
+    "at": "bienvenido a este castillo de mi señor"
+   }
+  ],
+  "quiz": [
+   {
+    "q": "¿Qué le tocó al hijo menor del molinero?",
+    "a": [
+     "El gato",
+     "El molino",
+     "El asno"
+    ]
+   },
+   {
+    "q": "¿Qué nombre le dio el gato a su amo?",
+    "a": [
+     "Marqués de Carabás",
+     "Príncipe de Molinos",
+     "Conde de las Botas"
+    ]
+   },
+   {
+    "q": "¿Dónde escondió el gato la ropa de su amo?",
+    "a": [
+     "Bajo una gran piedra",
+     "Dentro de un árbol",
+     "En el molino viejo"
+    ]
+   },
+   {
+    "q": "¿En qué animal grande se convirtió primero el ogro?",
+    "a": [
+     "En un león",
+     "En un caballo",
+     "En un oso"
+    ]
+   },
+   {
+    "q": "¿Qué encontraron en la gran sala del castillo?",
+    "a": [
+     "Una magnífica fiesta",
+     "Una cama muy grande",
+     "Un tesoro escondido"
+    ]
+   }
+  ]
+ },
+ "guillermo-tell": {
+  "pins": [
+   {
+    "art": "sombrero",
+    "label": "Sombrero en el palo",
+    "at": "un palo alto coronado por un sombrero"
+   },
+   {
+    "art": "hoja",
+    "label": "Joven roble",
+    "at": "un campo donde crecía un joven roble"
+   },
+   {
+    "art": "manzana",
+    "label": "Manzana roja",
+    "at": "una pequeña manzana roja sobre su cabeza"
+   },
+   {
+    "art": "canoa",
+    "label": "Barca del lago",
+    "at": "La embarcación cabeceaba y se balanceaba"
+   },
+   {
+    "art": "casita",
+    "label": "Casa en la montaña",
+    "at": "la ladera de la montaña hacia su casa"
+   }
+  ],
+  "quiz": [
+   {
+    "q": "¿Qué había en lo alto del palo de la plaza?",
+    "a": [
+     "Un sombrero",
+     "Una bandera",
+     "Una campana"
+    ]
+   },
+   {
+    "q": "¿Qué le dijo el hijo a Tell antes del tiro?",
+    "a": [
+     "Tú puedes hacerlo, padre",
+     "Tengo mucho miedo, padre",
+     "Vámonos a casa, padre"
+    ]
+   },
+   {
+    "q": "¿Qué le pasó a la manzana con el tiro de Tell?",
+    "a": [
+     "Se partió en dos mitades",
+     "Se puso de color azul",
+     "Salió volando al lago"
+    ]
+   },
+   {
+    "q": "¿Qué pasó en el lago cuando iban en el barco?",
+    "a": [
+     "Se levantó un fuerte viento",
+     "Salió un gran arcoíris",
+     "Se congeló toda el agua"
+    ]
+   },
+   {
+    "q": "¿Quién esperaba a Tell en su casa de la montaña?",
+    "a": [
+     "Su hijo",
+     "Su abuela",
+     "Su vecino"
+    ]
+   }
+  ]
+ },
+ "alibaba": {
+  "pins": [
+   {
+    "art": "canasta",
+    "label": "Cesto de Alí Babá",
+    "at": "buscó su cesto y se fue"
+   },
+   {
+    "art": "cofre",
+    "label": "Tesoro de los ladrones",
+    "at": "Miles de monedas de oro que relucían como estrellas"
+   },
+   {
+    "art": "farol",
+    "label": "Antorcha del ladrón",
+    "at": "llevaba una antorcha que iluminaba toda la cueva"
+   },
+   {
+    "art": "herradura",
+    "label": "Caballos de Alí Babá",
+    "at": "compraron un centenar de caballos"
+   },
+   {
+    "art": "regalo",
+    "label": "Saquito para el pueblo",
+    "at": "le dio un saquito a cada uno"
+   }
+  ],
+  "quiz": [
+   {
+    "q": "¿En qué trabajaba Alí Babá?",
+    "a": [
+     "Era leñador",
+     "Era pescador",
+     "Era panadero"
+    ]
+   },
+   {
+    "q": "¿Qué palabras abrían la cueva de los ladrones?",
+    "a": [
+     "Ábrete, Sésamo",
+     "Ábrete, montaña",
+     "Ábrete, piedra"
+    ]
+   },
+   {
+    "q": "¿Qué descubrió Alí Babá dentro de la cueva?",
+    "a": [
+     "Montañas de oro y joyas",
+     "Montañas de leña seca",
+     "Montañas de nieve"
+    ]
+   },
+   {
+    "q": "¿Quién llegó a arrestar a los ladrones?",
+    "a": [
+     "La guardia del reino",
+     "Los leñadores del pueblo",
+     "La esposa de Alí Babá"
+    ]
+   },
+   {
+    "q": "¿Qué le dio Alí Babá a cada habitante del pueblo?",
+    "a": [
+     "Un saquito con riquezas",
+     "Un caballo blanco",
+     "Un cesto de leña"
+    ]
+   }
+  ]
+ },
+ "barba-azul": {
+  "pins": [
+   {
+    "art": "llave",
+    "label": "Llavecita del gabinete",
+    "at": "En cuanto a esta llavecita"
+   },
+   {
+    "art": "espejo",
+    "label": "Espejo de marco de plata",
+    "at": "y de los espejos donde se veía"
+   },
+   {
+    "art": "carta",
+    "label": "Cartas del viaje",
+    "at": "había recibido cartas en el camino"
+   },
+   {
+    "art": "torre",
+    "label": "Torre de la hermana Ana",
+    "at": "sube a lo más alto de la torre"
+   },
+   {
+    "art": "oveja",
+    "label": "Rebaño de ovejas",
+    "at": "Es un rebaño de ovejas"
+   }
+  ],
+  "quiz": [
+   {
+    "q": "¿De qué color era la barba de aquel hombre?",
+    "a": [
+     "Azul",
+     "Roja",
+     "Negra"
+    ]
+   },
+   {
+    "q": "¿Qué le entregó Barba Azul a su esposa antes del viaje?",
+    "a": [
+     "Las llaves de la casa",
+     "Un collar de perlas",
+     "Un vestido de seda"
+    ]
+   },
+   {
+    "q": "¿Por dónde bajó la esposa al piso de abajo?",
+    "a": [
+     "Por una escalera secreta",
+     "Por una ventana abierta",
+     "Por un pasillo del jardín"
+    ]
+   },
+   {
+    "q": "¿Adónde subió la hermana Ana para mirar el camino?",
+    "a": [
+     "A lo alto de la torre",
+     "A la copa de un árbol",
+     "Al techo de la cocina"
+    ]
+   },
+   {
+    "q": "¿Quiénes llegaron a ayudar a la esposa?",
+    "a": [
+     "Sus dos hermanos",
+     "Sus dos amigas",
+     "Sus vecinas del campo"
+    ]
+   }
+  ]
+ },
+ "bella-bestia": {
+  "pins": [
+   {
+    "art": "castillo",
+    "label": "Mansión de la Bestia",
+    "at": "se veía una gran mansión con luces tenues"
+   },
+   {
+    "art": "rosa",
+    "label": "Rosa roja de Bella",
+    "at": "puesta en un jarrón de plata"
+   },
+   {
+    "art": "anillo",
+    "label": "Anillo mágico",
+    "at": "la Bestia le entregó un anillo mágico"
+   },
+   {
+    "art": "farol",
+    "label": "Candelabro flotante",
+    "at": "los candelabros flotaban escaleras arriba"
+   },
+   {
+    "art": "espejo",
+    "label": "Espejo de Bella",
+    "at": "mientras se peinaba frente al espejo"
+   }
+  ],
+  "quiz": [
+   {
+    "q": "¿Cuántas hijas tenía el hombre rico?",
+    "a": [
+     "Tres hijas",
+     "Dos hijas",
+     "Cinco hijas"
+    ]
+   },
+   {
+    "q": "¿Qué regalo le pidió Bella a su padre?",
+    "a": [
+     "Una rosa roja",
+     "Un collar de plata",
+     "Un vestido precioso"
+    ]
+   },
+   {
+    "q": "¿Qué le entregó la Bestia al padre de Bella?",
+    "a": [
+     "Un anillo mágico",
+     "Un jarrón de plata",
+     "Una manta de piel"
+    ]
+   },
+   {
+    "q": "¿Cuántos días pudo Bella visitar a su familia?",
+    "a": [
+     "Siete días",
+     "Tres días",
+     "Treinta días"
+    ]
+   },
+   {
+    "q": "¿En quién se convirtió la Bestia al final?",
+    "a": [
+     "En un príncipe",
+     "En un caballo",
+     "En un mago"
+    ]
+   }
+  ]
+ },
+ "heidi": {
+  "pins": [
+   {
+    "art": "botas",
+    "label": "Botas de Heidi",
+    "at": "medias de lana, unas pesadas botas"
+   },
+   {
+    "art": "campana",
+    "label": "Campanitas de las cabras",
+    "at": "escuchar las campanitas de latón"
+   },
+   {
+    "art": "escalera",
+    "label": "Escalera del henil",
+    "at": "una escalera apoyada contra la pared"
+   },
+   {
+    "art": "queso",
+    "label": "Queso del abuelo",
+    "at": "una rebanada de pan con queso"
+   },
+   {
+    "art": "luna",
+    "label": "Luna sobre la casita",
+    "at": "hasta que unas nubes cubrieron la luna"
+   }
+  ],
+  "quiz": [
+   {
+    "q": "¿Quién llevaba a Heidi montaña arriba?",
+    "a": [
+     "Su tía Adela",
+     "Su amiga Berta",
+     "Su abuela Clara"
+    ]
+   },
+   {
+    "q": "¿Por qué se quitó Heidi la ropa en el prado?",
+    "a": [
+     "Porque tenía mucho calor",
+     "Porque quería nadar",
+     "Porque estaba mojada"
+    ]
+   },
+   {
+    "q": "¿Dónde decidió dormir Heidi en la casa del abuelo?",
+    "a": [
+     "Arriba, en el henil",
+     "En el cobertizo",
+     "Junto al fuego del hogar"
+    ]
+   },
+   {
+    "q": "¿Qué le sirvió el abuelo a Heidi para cenar?",
+    "a": [
+     "Leche y pan con queso",
+     "Sopa de verduras",
+     "Arroz con pollo"
+    ]
+   },
+   {
+    "q": "¿Cómo se llamaban las dos cabras del abuelo?",
+    "a": [
+     "Flor y Mariposa",
+     "Nieve y Estrella",
+     "Luna y Canela"
+    ]
+   }
+  ]
+ },
+ "aladino": {
+  "pins": [
+   {
+    "art": "casita",
+    "label": "Casita de Aladino",
+    "at": "en una pequeña y sencilla casita"
+   },
+   {
+    "art": "perla",
+    "label": "Joyas de la cueva",
+    "at": "monedas de plata y joyas exquisitas"
+   },
+   {
+    "art": "lampara",
+    "label": "Lámpara de Aladino",
+    "at": "comenzó a frotar la vieja lámpara de aceite"
+   },
+   {
+    "art": "castillo",
+    "label": "Palacio de Aladino",
+    "at": "con un elegante y cómodo palacio"
+   },
+   {
+    "art": "herradura",
+    "label": "Caballos de Aladino",
+    "at": "un ejército de caballos y sirvientes"
+   }
+  ],
+  "quiz": [
+   {
+    "q": "¿Con quién vivía Aladino en su casita?",
+    "a": [
+     "Con su madre",
+     "Con su abuelo",
+     "Con su hermano"
+    ]
+   },
+   {
+    "q": "¿Qué le pidió el tío que sacara de la cueva?",
+    "a": [
+     "Una vieja lámpara de aceite",
+     "Un cofre lleno de monedas",
+     "Una corona de oro y plata"
+    ]
+   },
+   {
+    "q": "¿Quién apareció cuando Aladino frotó la lámpara?",
+    "a": [
+     "Un enorme genio",
+     "Un pájaro dorado",
+     "Un caballo blanco"
+    ]
+   },
+   {
+    "q": "¿De quién se enamoró Aladino?",
+    "a": [
+     "De la hija del Sultán",
+     "De la hija del panadero",
+     "De una pastora del desierto"
+    ]
+   },
+   {
+    "q": "¿Qué le pidió Aladino al genio al final?",
+    "a": [
+     "Su antigua vida de felicidad",
+     "Una montaña de oro y joyas",
+     "Un barco para viajar lejos"
+    ]
+   }
+  ]
+ },
+ "bremen": {
+  "pins": [
+   {
+    "art": "tambor",
+    "label": "Timbales del perro",
+    "at": "tú puedes tocar los timbales"
+   },
+   {
+    "art": "pajarito",
+    "label": "Gallo cantor",
+    "at": "estaba el gallo y cantaba con todas sus fuerzas"
+   },
+   {
+    "art": "farol",
+    "label": "Lucecita en el bosque",
+    "at": "una lucecita que brillaba a lo lejos"
+   },
+   {
+    "art": "olla",
+    "label": "Cena de los músicos",
+    "at": "comieron como si tuvieran hambre muy atrasada"
+   },
+   {
+    "art": "casita",
+    "label": "Casa de los músicos",
+    "at": "no se atrevieron a volver a la casa"
+   }
+  ],
+  "quiz": [
+   {
+    "q": "¿Qué quería ser el burro en la ciudad de Bremen?",
+    "a": [
+     "Músico callejero",
+     "Cocinero famoso",
+     "Cartero del pueblo"
+    ]
+   },
+   {
+    "q": "¿Qué instrumento iba a tocar el perro?",
+    "a": [
+     "Los timbales",
+     "El laúd",
+     "La flauta"
+    ]
+   },
+   {
+    "q": "¿Qué vio el gallo desde lo alto del árbol?",
+    "a": [
+     "Una lucecita a lo lejos",
+     "Un río muy grande",
+     "Una montaña de nieve"
+    ]
+   },
+   {
+    "q": "¿Qué animal subió hasta arriba, sobre la cabeza del gato?",
+    "a": [
+     "El gallo",
+     "El burro",
+     "El perro"
+    ]
+   },
+   {
+    "q": "¿Dónde se quedaron a vivir los cuatro músicos?",
+    "a": [
+     "En la casa de los ladrones",
+     "En la ciudad de Bremen",
+     "En la granja del gallo"
+    ]
+   }
+  ]
+ },
+ "minotauro": {
+  "pins": [
+   {
+    "art": "canoa",
+    "label": "Barco de velas negras",
+    "at": "a bordo de un barco de velas negras"
+   },
+   {
+    "art": "castillo",
+    "label": "Palacio del rey Minos",
+    "at": "el magnífico palacio de mármol del rey Minos"
+   },
+   {
+    "art": "pez",
+    "label": "Delfines saltarines",
+    "at": "escenas de toros y delfines saltarines"
+   },
+   {
+    "art": "ovillo",
+    "label": "Ovillo de Ariadna",
+    "at": "Sacando la madeja de hilo de debajo"
+   },
+   {
+    "art": "canoa",
+    "label": "Barco de regreso",
+    "at": "donde se hallaba anclado el barco"
+   }
+  ],
+  "quiz": [
+   {
+    "q": "¿De qué color eran las velas del barco?",
+    "a": [
+     "Negras",
+     "Blancas",
+     "Rojas"
+    ]
+   },
+   {
+    "q": "¿A qué isla viajó Teseo en el barco?",
+    "a": [
+     "A la isla de Creta",
+     "A la isla de Rodas",
+     "A la isla de Malta"
+    ]
+   },
+   {
+    "q": "¿Quién ayudó a Teseo a escapar del laberinto?",
+    "a": [
+     "La princesa Ariadna",
+     "El rey Minos",
+     "Un marinero del puerto"
+    ]
+   },
+   {
+    "q": "¿Qué le dio Ariadna para hallar la salida?",
+    "a": [
+     "Una madeja de hilo",
+     "Un mapa del palacio",
+     "Una lámpara encendida"
+    ]
+   },
+   {
+    "q": "¿Hacia qué ciudad navegaron todos al final?",
+    "a": [
+     "Hacia Atenas",
+     "Hacia Roma",
+     "Hacia Troya"
+    ]
+   }
+  ]
+ },
+ "zapatero-magico": {
+  "pins": [
+   {
+    "art": "zapatito",
+    "label": "Zapatos mágicos",
+    "at": "confeccionaba unos zapatos muy lindos"
+   },
+   {
+    "art": "carta",
+    "label": "Carta del Rey",
+    "at": "llegó una carta de palacio"
+   },
+   {
+    "art": "rosa",
+    "label": "Pétalos rojos",
+    "at": "unos pétalos rojos muy suaves"
+   },
+   {
+    "art": "pajarito",
+    "label": "Animalitos del bosque",
+    "at": "sus amigos, los animalitos del bosque"
+   },
+   {
+    "art": "martillo",
+    "label": "Herramientas del zapatero",
+    "at": "no estaba en las herramientas"
+   }
+  ],
+  "quiz": [
+   {
+    "q": "¿Con qué jugaba el niño mientras su mamá leía?",
+    "a": [
+     "Con una pelota vieja",
+     "Con un trompo de madera",
+     "Con un carrito rojo"
+    ]
+   },
+   {
+    "q": "¿Quiénes ayudaban al zapatero anciano?",
+    "a": [
+     "Los animalitos del bosque",
+     "Los niños del pueblo",
+     "Los soldados del Rey"
+    ]
+   },
+   {
+    "q": "¿Para quién pidió el Rey unos zapaticos?",
+    "a": [
+     "Para su hija, la princesa",
+     "Para su esposa, la reina",
+     "Para su hijo, el príncipe"
+    ]
+   },
+   {
+    "q": "¿Qué le llevaron los pajaritos al zapatero?",
+    "a": [
+     "Unos pétalos rojos",
+     "Unas plumas azules",
+     "Unas hojas verdes"
+    ]
+   },
+   {
+    "q": "¿Dónde estaba la magia de los zapatos?",
+    "a": [
+     "En el amor del zapatero",
+     "En las herramientas",
+     "En los materiales del Rey"
+    ]
+   }
+  ]
+ },
+ "tres-deseos": {
+  "pins": [
+   {
+    "art": "carta",
+    "label": "Carta de las hadas",
+    "at": "tenía una carta arrugada"
+   },
+   {
+    "art": "estrella",
+    "label": "Tres deseos mágicos",
+    "at": "Nos han concedido que expresemos tres deseos"
+   },
+   {
+    "art": "corona",
+    "label": "Corona de rey",
+    "at": "una corona de rey para ti"
+   },
+   {
+    "art": "pan-pulgarcito",
+    "label": "Hogaza de pan",
+    "at": "con una hogaza de pan"
+   },
+   {
+    "art": "carta",
+    "label": "Otra carta de las hadas",
+    "at": "echar otra carta al correo"
+   }
+  ],
+  "quiz": [
+   {
+    "q": "¿Qué tenía Magda en el regazo?",
+    "a": [
+     "Una carta arrugada",
+     "Un gato dormido",
+     "Una canasta de pan"
+    ]
+   },
+   {
+    "q": "¿Cuántos deseos les concedieron las hadas?",
+    "a": [
+     "Tres deseos",
+     "Dos deseos",
+     "Siete deseos"
+    ]
+   },
+   {
+    "q": "¿Qué pidió Federico porque no estaba la cena?",
+    "a": [
+     "Unas pocas salchichas",
+     "Un pastel de manzana",
+     "Una sopa de verduras"
+    ]
+   },
+   {
+    "q": "¿Dónde se quedaron pegadas las salchichas?",
+    "a": [
+     "En la nariz de Federico",
+     "En la mano de Magda",
+     "En la puerta de la casa"
+    ]
+   },
+   {
+    "q": "¿Qué hicieron Federico y Magda al final?",
+    "a": [
+     "Se abrazaron y bailaron",
+     "Se fueron a dormir",
+     "Salieron a pasear"
+    ]
+   }
+  ]
+ },
+ "navidad-papa-noel": {
+  "pins": [
+   {
+    "art": "trineo",
+    "label": "Trineo de Papá Noel",
+    "at": "los patines del trineo se congelaban"
+   },
+   {
+    "art": "espejo",
+    "label": "Espejo de Papá Noel",
+    "at": "Se miró en el espejo"
+   },
+   {
+    "art": "regalo",
+    "label": "Regalos de Navidad",
+    "at": "con todos los regalos a cuestas"
+   },
+   {
+    "art": "zapatito",
+    "label": "Zapato con tarjeta",
+    "at": "había un zapato con una tarjeta"
+   },
+   {
+    "art": "luna",
+    "label": "Luna de oropel",
+    "at": "Una luna de oropel se columpió"
+   }
+  ],
+  "quiz": [
+   {
+    "q": "¿De qué color era el chaquetón de Papá Noel?",
+    "a": [
+     "Rojo",
+     "Verde",
+     "Azul"
+    ]
+   },
+   {
+    "q": "¿Cómo se llamaba el reno de Papá Noel?",
+    "a": [
+     "Rodolfo",
+     "Rodrigo",
+     "Ramiro"
+    ]
+   },
+   {
+    "q": "¿En qué mes probó Papá Noel repartir los regalos?",
+    "a": [
+     "En julio",
+     "En enero",
+     "En mayo"
+    ]
+   },
+   {
+    "q": "¿Dónde estaba la familia de la primera casa?",
+    "a": [
+     "De vacaciones",
+     "En la escuela",
+     "En el mercado"
+    ]
+   },
+   {
+    "q": "¿Cuándo hará Papá Noel los regalos en el futuro?",
+    "a": [
+     "En Nochebuena",
+     "En pleno verano",
+     "En su cumpleaños"
+    ]
+   }
+  ]
+ },
+ "duendes-zapatero": {
+  "pins": [
+   {
+    "art": "zapatito",
+    "label": "Zapatos brillantes",
+    "at": "perfectos y brillantes hasta la última hebilla"
+   },
+   {
+    "art": "botas",
+    "label": "Botas de montar",
+    "at": "botas de montar, largas y relucientes"
+   },
+   {
+    "art": "reloj",
+    "label": "Reloj de los duendes",
+    "at": "de detrás del reloj"
+   },
+   {
+    "art": "regalo",
+    "label": "Regalo para los duendes",
+    "at": "Deberíamos hacerles un regalo"
+   },
+   {
+    "art": "ovillo",
+    "label": "Guantes de lana",
+    "at": "sus nuevos guantes de lana"
+   }
+  ],
+  "quiz": [
+   {
+    "q": "¿Qué quedaba en la mesa del zapatero?",
+    "a": [
+     "Una tira de cuero",
+     "Un par de botas",
+     "Una caja de hilos"
+    ]
+   },
+   {
+    "q": "¿Qué encontró el zapatero en la mesa por la mañana?",
+    "a": [
+     "Unos zapatos terminados",
+     "Una bolsa de monedas",
+     "Una carta misteriosa"
+    ]
+   },
+   {
+    "q": "¿Quiénes cosían los zapatos por la noche?",
+    "a": [
+     "Seis duendecillos",
+     "Tres ratoncitos",
+     "Cuatro gatitos"
+    ]
+   },
+   {
+    "q": "¿Qué cosió la esposa para los duendecillos?",
+    "a": [
+     "Camisas y pantalones",
+     "Gorros y bufandas",
+     "Vestidos y faldas"
+    ]
+   },
+   {
+    "q": "¿Qué hicieron los duendes al ver la ropa nueva?",
+    "a": [
+     "Se la pusieron y bailaron",
+     "Se escondieron asustados",
+     "Se quedaron dormidos"
+    ]
+   }
+  ]
+ },
+ "perla-dragon": {
+  "pins": [
+   {
+    "art": "perla",
+    "label": "Perla del dragón",
+    "at": "Tenía una perla de enorme tamaño"
+   },
+   {
+    "art": "cometa",
+    "label": "Cometa del Príncipe",
+    "at": "hicieron una cometa muy hermosa"
+   },
+   {
+    "art": "farol",
+    "label": "Linterna de papel",
+    "at": "puso en su lugar la linterna de papel"
+   },
+   {
+    "art": "canoa",
+    "label": "Junco del Príncipe",
+    "at": "divisó un junco chino que navegaba"
+   },
+   {
+    "art": "cofre",
+    "label": "Tesoro imperial",
+    "at": "la joya más preciada del tesoro imperial"
+   }
+  ],
+  "quiz": [
+   {
+    "q": "¿Dónde tenía su cueva el dragón?",
+    "a": [
+     "En lo alto del monte",
+     "En el fondo del mar",
+     "En medio de un bosque"
+    ]
+   },
+   {
+    "q": "¿Quién envió al Príncipe a buscar la perla?",
+    "a": [
+     "El Emperador de la China",
+     "El rey de la isla",
+     "Un viejo pescador"
+    ]
+   },
+   {
+    "q": "¿En qué subió el Príncipe por los aires?",
+    "a": [
+     "En una cometa",
+     "En un globo rojo",
+     "En un caballo alado"
+    ]
+   },
+   {
+    "q": "¿Qué dejó el Príncipe en lugar de la perla?",
+    "a": [
+     "Una linterna de papel",
+     "Una piedra redonda",
+     "Una pelota de trapo"
+    ]
+   },
+   {
+    "q": "¿Dónde quedó la perla al final del cuento?",
+    "a": [
+     "En el tesoro imperial",
+     "En la cueva del dragón",
+     "En el fondo del mar"
+    ]
+   }
+  ]
+ },
+ "habichuelas": {
+  "pins": [
+   {
+    "art": "habichuela",
+    "label": "Habichuelas mágicas",
+    "at": "llevaba un saquito de habichuelas"
+   },
+   {
+    "art": "huevo-oro",
+    "label": "Gallina de huevos de oro",
+    "at": "ponia huevos de oro cada vez"
+   },
+   {
+    "art": "castillo",
+    "label": "Castillo del gigante",
+    "at": "dirigiendose al castillo del gigante"
+   },
+   {
+    "art": "arpa",
+    "label": "Arpa encantada",
+    "at": "un arpa, oh maravilla"
+   },
+   {
+    "art": "cofre",
+    "label": "Cajita de monedas de oro",
+    "at": "con el producto de la cajita"
+   }
+  ],
+  "quiz": [
+   {
+    "q": "¿Qué recibió Periquín a cambio de la vaca?",
+    "a": [
+     "Unas habichuelas",
+     "Unas monedas de oro",
+     "Un caballo blanco"
+    ]
+   },
+   {
+    "q": "¿Qué pasó con las habichuelas durante la noche?",
+    "a": [
+     "Crecieron muchísimo",
+     "Se volvieron de oro",
+     "Se las comió un pájaro"
+    ]
+   },
+   {
+    "q": "¿Qué ponía la gallina del gigante?",
+    "a": [
+     "Huevos de oro",
+     "Huevos de colores",
+     "Huevos de chocolate"
+    ]
+   },
+   {
+    "q": "¿Qué tocaba música sola en el castillo?",
+    "a": [
+     "Un arpa",
+     "Una flauta",
+     "Un tambor"
+    ]
+   },
+   {
+    "q": "¿Con qué vivieron felices Periquín y su madre?",
+    "a": [
+     "Con la cajita de monedas",
+     "Con una tienda de pan",
+     "Con un huerto de papas"
+    ]
+   }
+  ]
+ }
+}

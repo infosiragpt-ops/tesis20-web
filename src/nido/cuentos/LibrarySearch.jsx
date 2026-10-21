@@ -39,8 +39,8 @@ export function LibrarySearch({ books, state, onOpen }) {
   return <div className="cuentos-library-search" ref={rootRef} onKeyDown={event => {
     if (open && event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); close(); }
   }}>
-    <button ref={triggerRef} type="button" className="cuentos-btn" aria-expanded={open} aria-controls="story-search-panel" onClick={() => setOpen(value => !value)}>
-      ⌕ Buscar entre {books.length} libros
+    <button ref={triggerRef} type="button" className="cuentos-btn" aria-expanded={open} aria-controls="story-search-panel" aria-label={`Buscar entre ${books.length} libros`} title={`Buscar entre ${books.length} libros`} onClick={() => setOpen(value => !value)}>
+      <span aria-hidden="true">⌕</span><span className="cuentos-library-search__label" aria-hidden="true"> Buscar entre {books.length} libros</span>
     </button>
     {open ? <section id="story-search-panel" className="cuentos-search-panel" aria-label="Buscar un cuento">
       <div className="cuentos-search-panel__head">
@@ -68,7 +68,7 @@ export function LibrarySearch({ books, state, onOpen }) {
           <img src={book.cover.image} alt="" width="40" height="58" loading="lazy" decoding="async" />
           <span className="cuentos-search-result__copy">
             <strong>{book.title}</strong>
-            <small>{isClassicEdition(book) ? 'Voz de estudio · texto íntegro' : 'Voz de estudio · souvenirs'} · {book.pages.length} páginas</small>
+            <small>{isClassicEdition(book) ? 'Voz de estudio · texto íntegro · souvenirs' : 'Voz de estudio · souvenirs'} · {book.pages.length} páginas</small>
             {status.started ? <span className="cuentos-search-result__progress">{status.finished ? 'Completado · volver a leer' : `Continuar en la página ${resumePage(book, status) + 1} · ${status.pct}% leído`}</span> : null}
           </span>
         </button></li>;

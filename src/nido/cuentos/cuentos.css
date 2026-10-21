@@ -640,6 +640,9 @@
 .cuentos-source a { color: #3b4967; text-decoration: underline; }
 @media (max-width: 760px) {
   .cuentos-library-search { top: 112px; left: 12px; width: min(380px, calc(100vw - 24px)); }
+  /* En el teléfono el rótulo tapaba la figura de la repisa: queda la lupa. */
+  .cuentos-library-search > button { width: 44px; padding: 0; justify-content: center; font-size: 20px; }
+  .cuentos-library-search__label { display: none; }
   .cuentos-search-panel { max-height: calc(100dvh - 182px); }
   .cuentos-stars-row { max-width: calc(100vw - 24px); }
   .cuentos-stars-row select { max-width: 132px; font-size: 10px; }
@@ -667,7 +670,10 @@
   box-shadow: none;
 }
 
-@media (max-width: 760px) and (orientation: portrait) {
+/* Vertical (teléfono o tableta): la escena arriba y el texto en su tarjeta.
+   Mismo corte que la cámara vertical de stage.js (ancho/alto < 0,85); en una
+   tableta el texto impreso en la hoja quedaba fuera de cuadro. */
+@media (max-aspect-ratio: 17/20) {
   .cuentos--reading { background: linear-gradient(180deg, #92744e, #c39253 52%, #d1a369); }
   .cuentos--reading .cuentos-canvas { top: 130px; height: calc(61% - 130px); }
   .cuentos--reading .cuentos-zoom { top: 138px; bottom: auto; z-index: 15; }
@@ -1400,6 +1406,12 @@
 
 /* -------------------------- responsivo -------------------------- */
 
+/* Entre 761 y 900 px la cabecera de escritorio no cabía y se cortaba el
+   botón de inicio: los contadores pierden su rótulo. */
+@media (max-width: 900px) {
+  .cuentos-stat em { display: none; }
+}
+
 @media (max-width: 1000px) {
   .cuentos-card--floating {
     width: min(400px, 44vw);
@@ -1802,7 +1814,7 @@
   transform: translateX(-50%);
 }
 
-@media (max-width: 760px) and (orientation: portrait) {
+@media (max-aspect-ratio: 17/20) {
   .cuentos--reading.cuentos--cinema .cuentos-canvas { top: 130px; height: calc(61% - 130px); }
   .cuentos--reading.cuentos--cinema .cuentos-zoom { top: 138px; bottom: auto; }
   .cuentos-device-voice { top: 144px; bottom: auto; right: 12px; left: auto; transform: none; max-width: calc(100% - 150px); font-size: 9px; }

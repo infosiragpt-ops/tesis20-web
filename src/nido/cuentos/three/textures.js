@@ -581,11 +581,13 @@ export function storyPageTexture(book, page, pageIndex, totalPages) {
 
   ctx.fillStyle = "#5a3b24";
   ctx.font = `900 ${compact ? 92 : 76}px ui-rounded, "Trebuchet MS", sans-serif`;
-  const titleLines = wrapWords(ctx, page.t, 790).slice(0, 3);
+  // Las hojas de los clásicos no llevan rótulo después de la primera: el
+  // texto sube y ocupa el lugar del título.
+  const titleLines = page.t ? wrapWords(ctx, page.t, 790).slice(0, 3) : [];
   const titleStart = titleLines.length > 1 ? 250 : 285;
   titleLines.forEach((line, index) => ctx.fillText(line, 512, titleStart + index * 82));
 
-  const ruleY = titleStart + titleLines.length * 82 + 22;
+  const ruleY = titleLines.length ? titleStart + titleLines.length * 82 + 22 : 196;
   ctx.strokeStyle = book.accent;
   ctx.lineWidth = 8;
   ctx.beginPath();
