@@ -3692,7 +3692,8 @@ main:focus-visible {
   color: var(--yellow);
 }
 
-.mobile-navigation__platform {
+/* Mismo peso que la regla genérica de enlaces del menú (que va antes): gana esta. */
+.mobile-navigation__inner > a.mobile-navigation__platform {
   margin-top: 18px;
   padding: 14px 16px;
   display: flex;
@@ -3706,7 +3707,7 @@ main:focus-visible {
   text-decoration: none;
 }
 
-.mobile-navigation__platform > span {
+.mobile-navigation__inner > a.mobile-navigation__platform > span {
   display: grid;
   gap: 2px;
 }

@@ -163,6 +163,7 @@ const navigation = [
   // de gestión (antes se llamaba «Pagos») y se dibuja como botón de cuenta.
   {
     label: "Login",
+    mobileLabel: "Iniciar sesión",
     href: "https://www.gestion.tesis20.com",
     external: true,
     login: true,
@@ -670,6 +671,20 @@ function Header({ menuOpen, onMenuToggle, onNavigate, currentPage, isScrolled })
 
         <WhatsappButton className="header-cta">Quiero orientación</WhatsappButton>
 
+        {/* Móvil: acceso directo al portal junto al menú (en escritorio es «Login» en la barra). */}
+        <a
+          className="header-login"
+          href={PORTAL_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          referrerPolicy="no-referrer"
+          aria-label="Iniciar sesión en el portal del estudiante (se abre en una pestaña nueva)"
+          onClick={() => trackInteraction("navigation_click", { page: "login", location: "mobile_header" })}
+        >
+          <User size={17} weight="bold" aria-hidden="true" />
+          <span>Iniciar sesión</span>
+        </a>
+
         <button
           className="menu-button"
           type="button"
@@ -710,13 +725,13 @@ function Header({ menuOpen, onMenuToggle, onNavigate, currentPage, isScrolled })
               onClick={onNavigate}
               ref={index === 0 ? firstMobileLinkRef : undefined}
               aria-current={item.page === currentPage ? "page" : undefined}
-              aria-label={item.external ? `${item.label} (se abre en una pestaña nueva)` : undefined}
+              aria-label={item.external ? `${item.mobileLabel || item.label} (se abre en una pestaña nueva)` : undefined}
               referrerPolicy={item.external ? "no-referrer" : undefined}
               {...internalNavigationProps(item, currentPage)}
             >
               <span>
                 {item.login ? <User size={18} weight="bold" aria-hidden="true" /> : null}
-                {item.label}
+                {item.mobileLabel || item.label}
               </span>
               {item.external ? (
                 <ArrowSquareOut size={18} aria-hidden="true" />
