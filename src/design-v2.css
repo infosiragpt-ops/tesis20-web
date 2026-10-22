@@ -217,6 +217,60 @@ h3 {
   }
 }
 
+/* Móvil: «Iniciar sesión» junto a las tres rayitas. En escritorio el acceso
+   es el «Login» de la barra, así que aquí no se muestra. */
+.header-login {
+  display: none;
+}
+
+@media (max-width: 930px) {
+  .header-inner {
+    gap: 10px;
+  }
+
+  .header-login {
+    min-height: 44px;
+    margin-left: auto;
+    padding: 0 16px 0 13px;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    border: 1.5px solid rgba(30, 32, 34, 0.78);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.34);
+    color: var(--ink);
+    font-size: 14px;
+    font-weight: 800;
+    line-height: 1;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: background 180ms ease, color 180ms ease, border-color 180ms ease;
+  }
+
+  .header-login:hover,
+  .header-login:active {
+    border-color: var(--ink);
+    background: var(--ink);
+    color: var(--yellow);
+  }
+
+  .menu-button {
+    margin-left: 0;
+  }
+}
+
+/* Celulares muy angostos (320–359 px): sin icono para que todo entre. */
+@media (max-width: 359px) {
+  .header-login {
+    padding: 0 12px;
+    font-size: 13px;
+  }
+
+  .header-login svg {
+    display: none;
+  }
+}
+
 /* Heroes interiores: misma superficie con grano y retícula de puntos. */
 .services-hero,
 .evidence-hero,
