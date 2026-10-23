@@ -827,6 +827,64 @@ check(
   stylesheetBytes <= 212 * 1024,
   `El CSS total con rutas diferidas no debe superar 212 KiB (${Math.ceil(stylesheetBytes / 1024)} KiB).`,
 );
+
+// Toda animación CSS necesita su @keyframes. Si falta, no hay error: el
+// elemento simplemente no se mueve (así quedó quieta la cinta de universidades
+// el 2026-10-22). Se revisa todo el CSS construido y los <style> en línea.
+{
+  const ANIMATION_KEYWORDS = new Set([
+    "none", "initial", "inherit", "unset", "revert", "revert-layer",
+    "linear", "ease", "ease-in", "ease-out", "ease-in-out", "step-start", "step-end",
+    "infinite", "normal", "reverse", "alternate", "alternate-reverse",
+    "forwards", "backwards", "both", "running", "paused",
+  ]);
+  const splitTopLevel = (value, separator) => {
+    const parts = [];
+    let depth = 0;
+    let current = "";
+    for (const char of value) {
+      if (char === "(") depth += 1;
+      if (char === ")") depth -= 1;
+      if (depth === 0 && (separator === " " ? /\s/.test(char) : char === separator)) {
+        if (current.trim()) parts.push(current.trim());
+        current = "";
+      } else {
+        current += char;
+      }
+    }
+    if (current.trim()) parts.push(current.trim());
+    return parts;
+  };
+  const cssSources = [];
+  for (const asset of buildAssets.filter((file) => file.endsWith(".css"))) {
+    cssSources.push(await read(asset));
+  }
+  for (const htmlFile of distFiles.filter((file) => file.endsWith(".html"))) {
+    const html = await read(htmlFile);
+    for (const match of html.matchAll(/<style\b[^>]*>([\s\S]*?)<\/style>/gi)) cssSources.push(match[1]);
+  }
+  const allCss = cssSources.join("\n");
+  const definedKeyframes = new Set(
+    [...allCss.matchAll(/@(?:-webkit-)?keyframes\s+([-\w]+)/g)].map((match) => match[1]),
+  );
+  const missingKeyframes = new Set();
+  for (const match of allCss.matchAll(/(?:^|[;{\s])(?:-webkit-)?animation(-name)?\s*:\s*([^;}]+)/g)) {
+    const isNameOnly = Boolean(match[1]);
+    for (const layer of splitTopLevel(match[2].replace(/!important/g, ""), ",")) {
+      const tokens = splitTopLevel(layer, " ");
+      const name = isNameOnly
+        ? tokens[0]
+        : tokens.find((token) => /^-?[a-zA-Z_][-\w]*$/.test(token) && !ANIMATION_KEYWORDS.has(token));
+      if (name && !ANIMATION_KEYWORDS.has(name) && !name.startsWith("var(") && !definedKeyframes.has(name)) {
+        missingKeyframes.add(name);
+      }
+    }
+  }
+  check(
+    missingKeyframes.size === 0,
+    `Animaciones CSS sin @keyframes (no se moverían): ${[...missingKeyframes].join(", ")}.`,
+  );
+}
 // 2026-08-02: 9 → 9.5 MiB para 64 fotografías sintéticas empaquetadas en
 // cuatro hojas AVIF locales (267 KiB medidos). Solo /docentes las referencia;
 // no se incorporaron 4,000 binarios ni dependencias externas.

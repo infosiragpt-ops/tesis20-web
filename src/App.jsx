@@ -3,6 +3,7 @@ import {
   Suspense,
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -1900,7 +1901,8 @@ export function App() {
 
   // Aparición suave al hacer scroll para todo [data-reveal]. Sin JS, sin
   // IntersectionObserver o con «reducir movimiento», el contenido se ve igual.
-  useEffect(() => {
+  // useLayoutEffect: la clase se aplica antes del primer pintado (sin parpadeo).
+  useLayoutEffect(() => {
     const root = document.documentElement;
     if (
       !("IntersectionObserver" in window) ||
