@@ -427,6 +427,14 @@
   animation: marquee 48s linear infinite;
 }
 
+/* Cada fila tiene dos copias iguales: correr -50% cierra el bucle sin salto.
+   Sin este @keyframes la cinta queda quieta (la animación no falla, no se mueve). */
+@keyframes marquee {
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
 .uni-marquee__row--reverse .uni-marquee__track {
   animation-direction: reverse;
   animation-duration: 54s;

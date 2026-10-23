@@ -2,6 +2,7 @@ import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { CAREER_AREAS, CAREER_COUNT } from "../src/data/academic-directory.js";
 import { STUDENT_UNIVERSITIES } from "../src/data/student-universities.js";
+import { BOOT_HEAD_MARKUP, headerInnerMarkup, shellKind } from "./skeleton-shell.mjs";
 import { ACTIVE_THESIS_REPOSITORIES } from "../src/data/thesis-repositories.js";
 
 const DIST_DIRECTORY = resolve(process.cwd(), "dist");
@@ -525,22 +526,10 @@ function createNavigation(route) {
       </header>`;
   }
 
-  // Misma navegación en todas las páginas: React monta la cabecera real
-  // (menú móvil, Login, CTA) sobre este esqueleto indexable.
+  // La misma cabecera que monta React (clases, enlaces e íconos): se ve igual
+  // desde el primer cuadro, antes de que cargue la app. Ver skeleton-shell.mjs.
   return `
-    <header data-seo-header>
-      <a href="/" aria-label="Tesis20, inicio">Tesis20</a>
-      <nav aria-label="Navegación principal">
-        <a href="/">Inicio</a>
-        <a href="/servicios">Servicios</a>
-        <a href="/carreras">Carreras</a>
-        <a href="/docentes">Asesores</a>
-        <a href="/evidencias">Evidencias</a>
-        <a href="/contrato">Contrato</a>
-        <a href="/recursos">Recursos</a>
-        <a href="https://www.gestion.tesis20.com">Login</a>
-      </nav>
-    </header>`;
+    <header class="site-header" data-seo-header>${headerInnerMarkup(route.path)}</header>`;
 }
 
 function createStaticMarkup(route) {
@@ -557,7 +546,7 @@ function createStaticMarkup(route) {
         </footer>`;
 
   return `
-    <div data-seo-prerendered="true">
+    <div data-seo-prerendered="true" data-seo-shell="${shellKind(route.path)}">
       ${createNavigation(route)}
       <main id="main-content">
         ${route.content}
@@ -850,6 +839,9 @@ function renderRoute(template, route, routeAssets = {}) {
       (canonicalTag) => `${canonicalTag}\n    <link rel="alternate" hreflang="es-PE" href="${canonicalUrl}" />\n    <link rel="alternate" hreflang="es" href="${canonicalUrl}" />\n    <link rel="alternate" hreflang="x-default" href="${canonicalUrl}" />`,
     );
   }
+
+  // Arranque sin destello: el texto para buscadores no se pinta mientras carga la app.
+  html = html.replace("</head>", `    ${BOOT_HEAD_MARKUP}\n  </head>`);
 
   const structuredData = createStructuredData(route);
   if (structuredData) {
