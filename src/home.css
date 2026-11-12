@@ -523,13 +523,28 @@
   margin: 0;
   padding: 0;
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 18px;
   list-style: none;
 }
 
 .service-tiles > li {
   display: flex;
+}
+
+/* En escritorio (4 columnas) la última fila siempre se completa, sea cual sea
+   el número de servicios: si sobran dos tarjetas, ocupan media fila cada una;
+   si sobra una o tres, la última se ensancha. */
+@media (min-width: 1101px) {
+  .service-tiles > li:nth-last-child(2):nth-child(4n + 1),
+  .service-tiles > li:nth-last-child(2):nth-child(4n + 1) + li,
+  .service-tiles > li:last-child:nth-child(4n + 3) {
+    grid-column: span 2;
+  }
+
+  .service-tiles > li:last-child:nth-child(4n + 1) {
+    grid-column: 1 / -1;
+  }
 }
 
 .service-tile {
@@ -1611,6 +1626,11 @@ button.grade-card__frame:hover {
 
   .service-tiles {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  /* Dos columnas: con un número impar, la última tarjeta ocupa la fila. */
+  .service-tiles > li:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
   }
 
   .results-grid {

@@ -64,8 +64,8 @@ const services = [
     ],
   },
   {
-    name: "Trabajo de suficiencia profesional",
-    price: 1600,
+    name: "Trabajo de suficiencia profesional – UPN",
+    price: 1800,
     description:
       "Acompañamiento para convertir la experiencia profesional en un trabajo académico sustentable.",
     anchor: "suficiencia-profesional",
@@ -78,6 +78,60 @@ const services = [
       "Organización del problema, objetivos y bases teóricas",
       "Orientación para metodología, análisis y resultados",
       "Revisión de conclusiones, bibliografía y anexos",
+    ],
+  },
+  {
+    name: "Proyecto de tesis – UCV",
+    price: 800,
+    description:
+      "Acompañamiento para el proyecto de investigación con la estructura que solicita la Universidad César Vallejo.",
+    anchor: "proyecto-tesis-ucv",
+    seoTitle: "Asesoría para proyecto de tesis UCV | Tesis20",
+    heading: "Asesoría para proyecto de tesis en la UCV",
+    seoDescription:
+      "Desarrolla tu proyecto de tesis para la Universidad César Vallejo: realidad problemática, objetivos, metodología, matrices y aspectos administrativos desde S/ 800.",
+    details: [
+      "Realidad problemática, formulación del problema, justificación, objetivos e hipótesis",
+      "Antecedentes y bases teóricas",
+      "Metodología: tipo y diseño, población y muestra, técnicas e instrumentos",
+      "Aspectos administrativos: recursos, presupuesto y cronograma",
+      "Matriz de operacionalización o de categorización y matriz de consistencia",
+    ],
+  },
+  {
+    name: "Tesis de maestría – UCV",
+    price: 1600,
+    description:
+      "Acompañamiento por etapas para la tesis de maestría con la estructura de la Escuela de Posgrado de la Universidad César Vallejo.",
+    anchor: "tesis-maestria-ucv",
+    seoTitle: "Asesoría para tesis de maestría UCV | Tesis20",
+    heading: "Asesoría para tesis de maestría en la UCV",
+    seoDescription:
+      "Avanza tu tesis de maestría de la Universidad César Vallejo con orientación en el problema, la metodología, los instrumentos, los resultados y la discusión.",
+    details: [
+      "Realidad problemática con sustento epistemológico, objetivos e hipótesis",
+      "Antecedentes internacionales y nacionales, y bases teóricas",
+      "Metodología, instrumentos con validez y confiabilidad, y matrices",
+      "Orientación para el análisis de resultados y la discusión",
+      "Conclusiones, recomendaciones, resumen y abstract",
+    ],
+  },
+  {
+    name: "Revisión sistemática (RSL) – UCV",
+    price: 700,
+    description:
+      "Asesoría para el artículo de revisión de literatura científica con el método PRISMA y la estructura que solicita la Universidad César Vallejo.",
+    anchor: "rsl-ucv",
+    seoTitle: "Asesoría para revisión sistemática (RSL) UCV | Tesis20",
+    heading: "Asesoría para revisión sistemática de literatura (RSL) en la UCV",
+    seoDescription:
+      "Elabora tu revisión sistemática de literatura para la Universidad César Vallejo con el método PRISMA: búsqueda en bases de datos, selección de estudios y análisis.",
+    details: [
+      "Pregunta de investigación y criterios de inclusión y exclusión",
+      "Ecuaciones de búsqueda en Scopus, WoS, SciELO y Redalyc",
+      "Selección de estudios con diagrama de flujo PRISMA",
+      "Matriz de análisis de los artículos incluidos",
+      "Introducción, metodología, resultados, conclusiones y referencias",
     ],
   },
   {
@@ -95,6 +149,24 @@ const services = [
       "Preparación y vaciado de la base de datos",
       "Procesamiento estadístico con IBM SPSS",
       "Orientación para interpretar y presentar resultados",
+    ],
+  },
+  {
+    name: "Parafraseo IA a 0%",
+    price: 200,
+    description:
+      "Reescritura del texto académico con el objetivo de dejar en 0 % el reporte de detección de IA, conservando las ideas y las citas.",
+    anchor: "parafraseo-ia",
+    seoTitle: "Parafraseo para bajar el porcentaje de IA | Tesis20",
+    heading: "Parafraseo para bajar el porcentaje de IA",
+    seoDescription:
+      "Reescritura de tu texto académico con el objetivo de dejar en 0 % el reporte de detección de IA, conservando tus ideas, citas y referencias. Desde S/ 200.",
+    details: [
+      "Revisión del reporte de detección de IA de tu documento",
+      "Reescritura de los párrafos marcados como IA",
+      "Se conservan tus ideas, citas y referencias",
+      "Revisión de coherencia, ortografía y redacción académica",
+      "Verificación final del porcentaje de IA",
     ],
   },
   {
