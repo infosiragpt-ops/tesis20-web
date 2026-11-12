@@ -51,10 +51,16 @@ import {
 } from "./platform-enhancements.jsx";
 import { AudioPlayer } from "./audio-player.jsx";
 import { DiagnosticWizard } from "./diagnostic-wizard.jsx";
-import { loadContractPage, loadedRouteModules } from "./route-modules.js";
+import {
+  loadAdvisorsPage,
+  loadCareersPage,
+  loadContractPage,
+  loadedRouteModules,
+  loadResourcesPage,
+} from "./route-modules.js";
 import {
   FinalCta,
-  HeroFloats,
+  Hero,
   PortalShowcase,
   ProcessSection,
   ServicesPreview,
@@ -77,14 +83,15 @@ import spssTranscript from "../audio-scripts/ibm-spss-statistics.txt?raw";
 import defenseTranscript from "../audio-scripts/simulacion-sustentacion.txt?raw";
 
 const NidoPage = lazy(() => import("./nido/nido-page.jsx"));
-const ResourcesPage = lazy(() => import("./resources-page.jsx"));
+// Páginas con chunk propio: main.jsx precarga el de la ruta actual antes de
+// montar (route-modules.js), así se pintan directo; lazy() queda de respaldo.
+const ResourcesPage = lazy(loadResourcesPage);
 const CareersPage = lazy(() =>
-  import("./academic-directory-pages.jsx").then((module) => ({ default: module.CareersPage })),
+  loadCareersPage().then((module) => ({ default: module.CareersPage })),
 );
 const AdvisorsPage = lazy(() =>
-  import("./advisors-page.jsx").then((module) => ({ default: module.AdvisorsPage })),
+  loadAdvisorsPage().then((module) => ({ default: module.AdvisorsPage })),
 );
-// Contrato: chunk propio (CSS + JSON del modelo) precargado por main.jsx en /contrato.
 const LazyContractPage = lazy(() =>
   loadContractPage().then((module) => ({ default: module.ContractPage })),
 );
@@ -188,7 +195,7 @@ const evidenceGroups = [
     images: [
       {
         src: "/assets/evidence/case-672-payment-full.jpg",
-        thumbnail: "/assets/thumbnails/evidence/case-672-payment-full.jpg",
+        thumbnail: "/assets/thumbnails/evidence/case-672-payment-full.webp",
         alt: "Captura completa y anonimizada de un pago compartido durante el proceso",
         label: "Inicio del proceso",
         width: 1994,
@@ -196,7 +203,7 @@ const evidenceGroups = [
       },
       {
         src: "/assets/evidence/case-672-reported-result-full.jpg",
-        thumbnail: "/assets/thumbnails/evidence/case-672-reported-result-full.jpg",
+        thumbnail: "/assets/thumbnails/evidence/case-672-reported-result-full.webp",
         alt: "Captura completa y anonimizada de estudiante que reporta una calificación de 19",
         label: "Resultado reportado",
         width: 1280,
@@ -204,7 +211,7 @@ const evidenceGroups = [
       },
       {
         src: "/assets/evidence/case-672-grade-full.jpg",
-        thumbnail: "/assets/thumbnails/evidence/case-672-grade-full.jpg",
+        thumbnail: "/assets/thumbnails/evidence/case-672-grade-full.webp",
         alt: "Captura completa y anonimizada de calificaciones con promedio final 19",
         label: "Calificación compartida",
         width: 1280,
@@ -220,7 +227,7 @@ const evidenceGroups = [
     images: [
       {
         src: "/assets/evidence/case-407-reported-result-full.jpg",
-        thumbnail: "/assets/thumbnails/evidence/case-407-reported-result-full.jpg",
+        thumbnail: "/assets/thumbnails/evidence/case-407-reported-result-full.webp",
         alt: "Captura completa y anonimizada de estudiante que reporta una calificación de 17",
         label: "Resultado reportado",
         width: 1280,
@@ -228,7 +235,7 @@ const evidenceGroups = [
       },
       {
         src: "/assets/evidence/case-407-audio-feedback-full.png",
-        thumbnail: "/assets/thumbnails/evidence/case-407-audio-feedback-full.jpg",
+        thumbnail: "/assets/thumbnails/evidence/case-407-audio-feedback-full.webp",
         alt: "Captura completa y anonimizada del seguimiento por audio y un resultado académico reportado",
         label: "Seguimiento por audio",
         width: 1992,
@@ -244,7 +251,7 @@ const evidenceGroups = [
     images: [
       {
         src: "/assets/evidence/case-267-grade-result-full.jpg",
-        thumbnail: "/assets/thumbnails/evidence/case-267-grade-result-full.jpg",
+        thumbnail: "/assets/thumbnails/evidence/case-267-grade-result-full.webp",
         alt: "Captura completa y anonimizada de estudiante que comparte una calificación de 17",
         label: "Calificación compartida",
         width: 1346,
@@ -260,7 +267,7 @@ const evidenceGroups = [
     images: [
       {
         src: "/assets/evidence/case-099-reported-result-full.jpg",
-        thumbnail: "/assets/thumbnails/evidence/case-099-reported-result-full.jpg",
+        thumbnail: "/assets/thumbnails/evidence/case-099-reported-result-full.webp",
         alt: "Captura completa y anonimizada de un chat grupal donde la estudiante comparte los lineamientos de su docente y reporta una nota de 16 en el parcial",
         label: "Resultado reportado",
         width: 2000,
@@ -276,7 +283,7 @@ const evidenceGroups = [
     images: [
       {
         src: "/assets/evidence/case-468-reported-result-full.jpg",
-        thumbnail: "/assets/thumbnails/evidence/case-468-reported-result-full.jpg",
+        thumbnail: "/assets/thumbnails/evidence/case-468-reported-result-full.webp",
         alt: "Captura completa y anonimizada de un chat donde la estudiante comparte la guía y el título de su tesis (ocultos) y reporta una nota de 19 en el parcial",
         label: "Resultado reportado",
         width: 2000,
@@ -434,7 +441,7 @@ const services = [
 const gradeImages = [
   {
     image: "/assets/grade-results/grade-01-average-19.png",
-    thumbnail: "/assets/thumbnails/grade-results/grade-01-average-19.jpg",
+    thumbnail: "/assets/thumbnails/grade-results/grade-01-average-19.webp",
     width: 1134,
     height: 534,
     average: "19",
@@ -443,7 +450,7 @@ const gradeImages = [
   },
   {
     image: "/assets/grade-results/grade-02-average-17.png",
-    thumbnail: "/assets/thumbnails/grade-results/grade-02-average-17.jpg",
+    thumbnail: "/assets/thumbnails/grade-results/grade-02-average-17.webp",
     width: 1138,
     height: 528,
     average: "17",
@@ -452,7 +459,7 @@ const gradeImages = [
   },
   {
     image: "/assets/grade-results/grade-03-average-18.png",
-    thumbnail: "/assets/thumbnails/grade-results/grade-03-average-18.jpg",
+    thumbnail: "/assets/thumbnails/grade-results/grade-03-average-18.webp",
     width: 1140,
     height: 534,
     average: "18",
@@ -461,7 +468,7 @@ const gradeImages = [
   },
   {
     image: "/assets/grade-results/grade-04-average-06.png",
-    thumbnail: "/assets/thumbnails/grade-results/grade-04-average-06.jpg",
+    thumbnail: "/assets/thumbnails/grade-results/grade-04-average-06.webp",
     width: 1142,
     height: 528,
     average: "06",
@@ -470,7 +477,7 @@ const gradeImages = [
   },
   {
     image: "/assets/grade-results/grade-05-average-17.png",
-    thumbnail: "/assets/thumbnails/grade-results/grade-05-average-17.jpg",
+    thumbnail: "/assets/thumbnails/grade-results/grade-05-average-17.webp",
     width: 1138,
     height: 542,
     average: "17",
@@ -632,7 +639,7 @@ function Header({ menuOpen, onMenuToggle, onNavigate, currentPage, isScrolled })
           onClick={onNavigate}
         >
           <img
-            src="/assets/tesis20-logo.png"
+            src="/assets/tesis20-logo.webp"
             alt="Tesis20"
             width="300"
             height="300"
@@ -770,70 +777,6 @@ function SectionHeading({ eyebrow, children, align = "center", id }) {
   );
 }
 
-function Hero() {
-  return (
-    <section className="hero" id="inicio" aria-labelledby="hero-title">
-      <div className="hero-inner">
-        <div className="hero-copy">
-          <p className="hero-eyebrow">
-            <span className="live-dot" aria-hidden="true" />
-            Asesoría de tesis · Lima y todo el Perú
-          </p>
-          <h1 id="hero-title">
-            Asesoría y acompañamiento para <mark>tu tesis</mark>
-          </h1>
-          <p className="hero-intro">
-            Te guiamos paso a paso para que desarrolles tu investigación con una ruta
-            clara, manteniendo tu autoría y responsabilidad académica.
-          </p>
-          <div className="hero-actions">
-            <WhatsappButton location="hero">Quiero orientación</WhatsappButton>
-            <a className="text-link" href="#servicios-destacados">
-              <span>Ver servicios y precios</span>
-              <ArrowRight size={19} aria-hidden="true" />
-            </a>
-          </div>
-          <ul className="hero-proof-points" aria-label="Lo que incluye el acompañamiento">
-            <li>
-              <CheckCircle size={18} weight="fill" aria-hidden="true" />
-              <span>Diagnóstico inicial</span>
-            </li>
-            <li>
-              <CheckCircle size={18} weight="fill" aria-hidden="true" />
-              <span>Contrato por escrito</span>
-            </li>
-            <li>
-              <CheckCircle size={18} weight="fill" aria-hidden="true" />
-              <span>Autoría del estudiante</span>
-            </li>
-          </ul>
-        </div>
-
-        <div
-          className="hero-visual"
-          role="group"
-          aria-label="Estudiantes avanzando con apoyo de Tesis20"
-        >
-          <div className="hero-stage" aria-hidden="true" />
-          <SafeImage
-            className="hero-students"
-            src="/assets/hero-students.png"
-            srcSet="/assets/hero-students.avif 800w"
-            alt="Grupo de estudiantes universitarios"
-            width="800"
-            height="999"
-            decoding="async"
-            fetchPriority="high"
-            sizes="(max-width: 930px) 92vw, 46vw"
-            draggable="false"
-          />
-          <HeroFloats />
-        </div>
-      </div>
-    </section>
-  );
-}
-
 function GradeCaption({ result }) {
   return (
     <span className="grade-card__caption">
@@ -876,7 +819,7 @@ function ProofSection() {
               aria-label={`Galería de ${GRADE_GALLERY_SIZE} imágenes de resultados académicos`}
             >
               {gradeResults.map((result, index) => (
-                <figure
+                <div
                   className="grade-card"
                   key={result.id}
                   role="listitem"
@@ -908,12 +851,12 @@ function ProofSection() {
                     />
                     <GradeCaption result={result} />
                   </button>
-                  <figcaption className="sr-only">
+                  <p className="sr-only">
                     Imagen {index + 1} de {GRADE_GALLERY_SIZE}, correspondiente a la captura{" "}
                     {result.captureNumber}: promedio {result.average}, parcial {result.partial} y
                     final {result.final}. Pulsa para ver la imagen completa.
-                  </figcaption>
-                </figure>
+                  </p>
+                </div>
               ))}
             </div>
 
@@ -1085,14 +1028,18 @@ function ServiceCard({ service, index, expandedByDefault = false, showDetailLink
           target="_blank"
           rel="noopener noreferrer"
           referrerPolicy="no-referrer"
-          aria-label={`Consultar ${service.title} por WhatsApp (se abre en una pestaña nueva)`}
+          aria-label={`Consultar por WhatsApp sobre ${service.title} (se abre en una pestaña nueva)`}
           onClick={() => trackInteraction("service_whatsapp_click", { service: service.id })}
         >
           <WhatsappLogo size={22} weight="fill" aria-hidden="true" />
           <span>Consultar por WhatsApp</span>
         </a>
 
-        <div className="service-card__trust-links" aria-label={`Información adicional sobre ${service.title}`}>
+        <div
+          className="service-card__trust-links"
+          role="group"
+          aria-label={`Información adicional sobre ${service.title}`}
+        >
           {showDetailLink ? (
             <a href={`/servicios/${service.id}`}>Ver servicio completo</a>
           ) : null}
@@ -1181,8 +1128,8 @@ function ServiceDetailPage({ service }) {
           <SectionHeading eyebrow="Acompañamiento responsable" id="service-integrity-title">
             Tu autoría e integridad primero
           </SectionHeading>
-          <div className="service-process__grid" role="list" aria-label="Principios del servicio">
-            <article role="listitem">
+          <div className="service-process__grid" role="group" aria-label="Principios del servicio">
+            <article>
               <span>01</span>
               <h3>Tu investigación</h3>
               <p>
@@ -1190,7 +1137,7 @@ function ServiceDetailPage({ service }) {
                 sobre el contenido presentado a tu institución.
               </p>
             </article>
-            <article role="listitem">
+            <article>
               <span>02</span>
               <h3>Datos auténticos</h3>
               <p>
@@ -1198,7 +1145,7 @@ function ServiceDetailPage({ service }) {
                 fuentes, resultados ni evidencias académicas.
               </p>
             </article>
-            <article role="listitem">
+            <article>
               <span>03</span>
               <h3>Alcance transparente</h3>
               <p>
@@ -1318,11 +1265,11 @@ function EvidencePage() {
 
                 <div
                   className={`evidence-gallery evidence-gallery--${group.images.length}`}
-                  role="list"
-                  aria-label={`Secuencia del caso ${groupIndex + 1}`}
+                  role="group"
+                  aria-label={`Secuencia del caso ${groupIndex + 1}: ${group.images.length} ${group.images.length === 1 ? "captura" : "capturas"}`}
                 >
                   {group.images.map((image, imageIndex) => (
-                    <figure className="evidence-item" key={image.src} role="listitem">
+                    <figure className="evidence-item" key={image.src}>
                       <button
                         type="button"
                         aria-haspopup="dialog"
@@ -1677,18 +1624,18 @@ function ServicesPage() {
           <SectionHeading eyebrow="Antes de comenzar" id="service-process-title">
             Una decisión clara en tres pasos
           </SectionHeading>
-          <div className="service-process__grid" role="list" aria-label="Proceso de orientación">
-            <article role="listitem">
+          <div className="service-process__grid" role="group" aria-label="Proceso de orientación">
+            <article>
               <span>01</span>
               <h3>Cuéntanos tu avance</h3>
               <p>Comparte tu etapa, requisitos y principales dudas.</p>
             </article>
-            <article role="listitem">
+            <article>
               <span>02</span>
               <h3>Revisamos el alcance</h3>
               <p>Identificamos el servicio y los puntos que realmente necesitas.</p>
             </article>
-            <article role="listitem">
+            <article>
               <span>03</span>
               <h3>Definimos la ruta</h3>
               <p>Recibes una orientación clara antes de iniciar el acompañamiento.</p>
@@ -1716,7 +1663,7 @@ function Footer() {
       <div className="footer-inner">
         <div className="footer-brand">
           <img
-            src="/assets/tesis20-logo.png"
+            src="/assets/tesis20-logo.webp"
             alt="Tesis20"
             width="300"
             height="300"
@@ -1746,9 +1693,9 @@ function Footer() {
             target="_blank"
             rel="noopener noreferrer"
             referrerPolicy="no-referrer"
-            aria-label="Login al portal del alumno (se abre en una pestaña nueva)"
           >
             Login · portal del alumno
+            <span className="sr-only"> (se abre en una pestaña nueva)</span>
           </a>
         </nav>
         <address className="footer-column footer-contact">
@@ -1831,6 +1778,9 @@ function NotFoundPage() {
 
 export function App() {
   const PreloadedContractPage = loadedRouteModules["/contrato"]?.ContractPage;
+  const PreloadedResourcesPage = loadedRouteModules["/recursos"]?.default;
+  const PreloadedCareersPage = loadedRouteModules["/carreras"]?.CareersPage;
+  const PreloadedAdvisorsPage = loadedRouteModules["/docentes"]?.AdvisorsPage;
   const [menuOpen, setMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const currentPage = getPageFromPathname();
@@ -2033,17 +1983,29 @@ export function App() {
           </Suspense>
         )
       ) : currentPage === "resources" ? (
-        <Suspense fallback={<main id="main-content" tabIndex="-1">Preparando recursos…</main>}>
-          <ResourcesPage />
-        </Suspense>
+        PreloadedResourcesPage ? (
+          <PreloadedResourcesPage />
+        ) : (
+          <Suspense fallback={<main id="main-content" tabIndex="-1">Preparando recursos…</main>}>
+            <ResourcesPage />
+          </Suspense>
+        )
       ) : currentPage === "careers" ? (
-        <Suspense fallback={<main id="main-content" tabIndex="-1">Preparando carreras…</main>}>
-          <CareersPage />
-        </Suspense>
+        PreloadedCareersPage ? (
+          <PreloadedCareersPage />
+        ) : (
+          <Suspense fallback={<main id="main-content" tabIndex="-1">Preparando carreras…</main>}>
+            <CareersPage />
+          </Suspense>
+        )
       ) : currentPage === "teachers" ? (
-        <Suspense fallback={<main id="main-content" tabIndex="-1">Preparando asesores…</main>}>
-          <AdvisorsPage />
-        </Suspense>
+        PreloadedAdvisorsPage ? (
+          <PreloadedAdvisorsPage />
+        ) : (
+          <Suspense fallback={<main id="main-content" tabIndex="-1">Preparando asesores…</main>}>
+            <AdvisorsPage />
+          </Suspense>
+        )
       ) : currentPage === "not-found" ? (
         <NotFoundPage />
       ) : (

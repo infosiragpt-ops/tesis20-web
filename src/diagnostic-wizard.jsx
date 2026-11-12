@@ -119,7 +119,8 @@ export function DiagnosticWizard() {
         <div className="diagnostic-card" aria-live="polite">
           {!completed ? (
             <>
-              <div className="diagnostic-progress" aria-label={`Paso ${stepIndex + 1} de ${STEPS.length}`}>
+              {/* Decorativa: el paso se lee en el texto «Paso X de N» de abajo. */}
+              <div className="diagnostic-progress" aria-hidden="true">
                 <span style={{ width: `${((stepIndex + 1) / STEPS.length) * 100}%` }} />
               </div>
               <p className="diagnostic-card__step">Paso {stepIndex + 1} de {STEPS.length}</p>

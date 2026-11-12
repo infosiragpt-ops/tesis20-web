@@ -37,6 +37,22 @@ npm run preview -- --port 3000
 - `/contrato` — Contrato general y descarga del PDF
 - `/recursos` — Buscador híbrido de tesis: repositorios PE (OAI-PMH) + corpus global OpenAlex (disertaciones, ranking por relevancia y citas)
 
+## Carga y rendimiento
+
+- **Hero de Inicio prerenderizado.** `npm run build` renderiza `<Hero />` (`src/home-sections.jsx`) en Node
+  (`scripts/home-hero-prerender.mjs`) y lo escribe en `dist/index.html`: titular, botón de WhatsApp y foto se
+  ven con el primer pintado, antes de que cargue la app. Sus animaciones quedan en pausa hasta que React lo
+  reemplaza por el mismo marcado, así el cambio no se nota. No uses `window`, estado ni efectos en `<Hero />`.
+- **Foto del hero.** `hero-students-640.avif` (640w) y `hero-students.avif` (800w). El `srcset`/`sizes` vive en
+  `HERO_PHOTO_SRCSET`/`HERO_PHOTO_SIZES` y debe coincidir con la precarga de `index.html` (lo valida `npm run quality`).
+- **Páginas con chunk propio** (`/contrato`, `/recursos`, `/carreras`, `/docentes`): `src/route-modules.js` las
+  precarga antes de montar y su HTML trae `modulepreload` + CSS. Sin eso la página monta con un `<main>` provisional
+  y el pie salta (CLS ~0,9). Al añadir otra página diferida, regístrala en `route-modules.js` y en `routeAssets`
+  de `scripts/generate-static-routes.mjs`.
+- **Miniaturas en WebP** (`public/assets/thumbnails/`): se generan desde la captura completa al mismo ancho
+  (calidad 88 en calificaciones, 84 en evidencias). El logo de cabecera y pie es `tesis20-logo.webp`.
+- **Texto legible en móvil:** ningún texto de lectura baja de 12 px; rótulos y etiquetas, de 11 px.
+
 ## Aviso
 
 Las evidencias públicas se muestran anonimizadas. El contrato incluido es un modelo general informativo y debe completarse y revisarse según el servicio concreto antes de firmarse.

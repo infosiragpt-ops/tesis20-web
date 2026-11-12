@@ -2,6 +2,7 @@ import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { CAREER_AREAS, CAREER_COUNT } from "../src/data/academic-directory.js";
 import { STUDENT_UNIVERSITIES } from "../src/data/student-universities.js";
+import { renderHomeHeroMarkup } from "./home-hero-prerender.mjs";
 import { BOOT_HEAD_MARKUP, headerInnerMarkup, shellKind } from "./skeleton-shell.mjs";
 import { ACTIVE_THESIS_REPOSITORIES } from "../src/data/thesis-repositories.js";
 
@@ -115,6 +116,9 @@ const services = [
   },
 ];
 
+// Lugar del hero prerenderizado dentro del contenido estático de Inicio.
+const HOME_HERO_SLOT = "<!--tesis20:home-hero-->";
+
 const routeDefinitions = [
   {
     output: "index.html",
@@ -124,11 +128,10 @@ const routeDefinitions = [
       "Asesoría académica personalizada para tesis, proyectos, análisis estadístico y sustentación, con metodología por etapas y autoría del estudiante.",
     heading: "Asesoría y acompañamiento para tu tesis",
     schemaType: "WebPage",
+    // El hero (H1, botón de WhatsApp y foto) es el de React, ya dibujado:
+    // lo inserta generateStaticRoutes() con renderHomeHeroMarkup().
     content: `
-      <p class="eyebrow">Bienvenido a Tesis20</p>
-      <h1>Asesoría y acompañamiento para tu tesis</h1>
-      <p>Te guiamos paso a paso para que avances en tu tesis o proyecto con una ruta clara, orientación personalizada y seguimiento profesional.</p>
-      <p><a href="https://api.whatsapp.com/send?phone=51918714054">Quiero orientación</a> <a href="/servicios">Conocer los servicios</a></p>
+      ${HOME_HERO_SLOT}
       <section aria-labelledby="static-services-title">
         <h2 id="static-services-title">Acompañamiento para cada etapa de tu investigación</h2>
         <p>Brindamos orientación en proyectos de tesis, trabajos de titulación, artículos científicos, análisis estadístico y preparación de sustentaciones.</p>
@@ -781,8 +784,9 @@ function renderRoute(template, route, routeAssets = {}) {
     route.imageType || (shareImage.endsWith(".jpg") ? "image/jpeg" : "image/png");
   let html = template;
 
-  // Páginas con chunk propio (p. ej. /contrato): su JS y CSS se descargan en
-  // paralelo con el bundle principal, en vez de esperar a que este se ejecute.
+  // Páginas con chunk propio (/contrato, /recursos, /carreras, /docentes): su JS
+  // y CSS se descargan en paralelo con el bundle principal, en vez de esperar a
+  // que este se ejecute.
   const extraAssets = routeAssets[route.path] || [];
   if (extraAssets.length) {
     const tags = extraAssets
@@ -871,9 +875,29 @@ async function generateStaticRoutes() {
     builtAssets
       .filter((file) => file.startsWith(`${prefix}-`) && /\.(?:js|css)$/.test(file))
       .map((file) => `/build-assets/${file}`);
+  // Chunks de las páginas que main.jsx precarga antes de montar (route-modules.js).
+  // El hero compartido va primero: su CSS debe cargar antes que el de la página,
+  // en el mismo orden en que Vite lo inyecta al importar el chunk.
+  const pageHeroAssets = chunkAssets("page-hero");
   const routeAssets = {
     "/contrato": chunkAssets("contract-page"),
+    "/recursos": chunkAssets("resources-page"),
+    "/carreras": [...pageHeroAssets, ...chunkAssets("academic-directory-pages")],
+    "/docentes": [...pageHeroAssets, ...chunkAssets("advisors-page")],
   };
+  for (const [path, assets] of Object.entries(routeAssets)) {
+    if (!assets.some((asset) => asset.endsWith(".js"))) {
+      throw new Error(`No se encontró el chunk de ${path} en dist/build-assets.`);
+    }
+  }
+
+  // Inicio se publica con su hero ya dibujado (ver home-hero-prerender.mjs).
+  const homeHeroMarkup = await renderHomeHeroMarkup();
+  const homeRoute = routeDefinitions.find((route) => route.path === "/");
+  if (!homeRoute.content.includes(HOME_HERO_SLOT)) {
+    throw new Error("El contenido estático de Inicio perdió el lugar del hero prerenderizado.");
+  }
+  homeRoute.content = homeRoute.content.replace(HOME_HERO_SLOT, homeHeroMarkup);
 
   for (const route of [...routeDefinitions, notFoundDefinition]) {
     const rendered = renderRoute(template, route, routeAssets);

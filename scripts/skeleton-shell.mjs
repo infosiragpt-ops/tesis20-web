@@ -6,8 +6,12 @@
  * como texto sin diseño durante ~1 s. Ahora:
  *  - la cabecera prerenderizada usa las mismas clases y el mismo marcado que
  *    la cabecera de React, así que se ve idéntica desde el primer cuadro;
- *  - el resto del contenido no se pinta mientras arranca la app: en su lugar
- *    se ve el fondo del hero. React reemplaza todo al montar;
+ *  - en Inicio, el hero es el mismo componente de React ya dibujado (ver
+ *    home-hero-prerender.mjs): titular, botón y foto se ven con el primer
+ *    pintado. Sus animaciones quedan en pausa en el primer cuadro y arrancan
+ *    cuando React lo reemplaza, así el cambio no se nota;
+ *  - el resto del contenido no se pinta mientras arranca la app (en las
+ *    páginas interiores se ve el fondo del hero). React reemplaza todo al montar;
  *  - respaldo: si la app no arranca en 4 s, el texto se muestra igual;
  *  - sin JavaScript (<noscript>) todo se ve como siempre y el menú es usable.
  * La CSP permite estilos en línea (style-src 'unsafe-inline'), no scripts.
@@ -47,7 +51,7 @@ export function headerInnerMarkup(path) {
   const external = 'target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer"';
 
   return `<div class="header-inner">` +
-    `<a class="brand" href="/" aria-label="Tesis20 - Inicio"><img alt="Tesis20" width="300" height="300" decoding="async" fetchpriority="high" src="/assets/tesis20-logo.png"></a>` +
+    `<a class="brand" href="/" aria-label="Tesis20 - Inicio"><img alt="Tesis20" width="300" height="300" decoding="async" fetchpriority="high" src="/assets/tesis20-logo.webp"></a>` +
     `<nav class="desktop-navigation" aria-label="Navegación principal">${links}` +
     `<a class="nav-link nav-link--login" href="${PORTAL_URL}" ${external} aria-label="Login (se abre en una pestaña nueva)">${svg(16, USER_BOLD)}Login</a></nav>` +
     `<a class="whatsapp-button header-cta" href="${whatsappHref}" ${external} aria-label="Quiero orientación por WhatsApp (se abre en una pestaña nueva)">${svg(24, WHATSAPP_FILL)}<span>Quiero orientación</span></a>` +
@@ -67,8 +71,10 @@ const BOOT_CSS = `
 [data-seo-shell]>main,[data-seo-shell]>footer,[data-seo-shell=nido]>header{visibility:hidden;animation:arranque-respaldo 1ms 4s forwards}
 [data-seo-shell=home]>main,[data-seo-shell=page]>main{position:relative}
 [data-seo-shell=home]>main::before,[data-seo-shell=page]>main::before{content:"";position:absolute;top:0;right:0;left:0;height:min(620px,calc(100vh - 72px));height:min(620px,calc(100svh - 72px));background:var(--hero-surface,#f5bd42);visibility:visible;animation:arranque-fin 1ms 4s forwards}
-[data-seo-shell=home]>main::before{height:min(740px,calc(100vh - 72px));height:min(740px,calc(100svh - 72px))}
-@media (max-width:930px){[data-seo-shell=home]>main::before,[data-seo-shell=page]>main::before{height:calc(100vh - 72px);height:calc(100svh - 72px)}}
+[data-seo-shell=home]>main::before{display:none}
+[data-seo-shell=home]>main>.hero{visibility:visible}
+[data-seo-shell] .hero *,[data-seo-shell] .hero *::before,[data-seo-shell] .hero *::after{animation-play-state:paused!important}
+@media (max-width:930px){[data-seo-shell=page]>main::before{height:calc(100vh - 72px);height:calc(100svh - 72px)}}
 @keyframes arranque-respaldo{to{visibility:visible}}
 @keyframes arranque-fin{to{visibility:hidden}}
 `.trim();
@@ -76,6 +82,7 @@ const BOOT_CSS = `
 const NO_SCRIPT_CSS = `
 [data-seo-shell]>*{visibility:visible!important;animation:none!important}
 [data-seo-shell]>main::before{display:none!important}
+[data-seo-shell] .hero *,[data-seo-shell] .hero *::before,[data-seo-shell] .hero *::after{animation-play-state:running!important}
 [data-seo-header] .menu-button{display:none!important}
 @media (max-width:930px){[data-seo-header] .header-inner{height:auto;padding:10px 0;flex-wrap:wrap}[data-seo-header] .desktop-navigation{width:100%;margin:0;display:flex;flex-wrap:wrap;gap:4px 18px;order:3}[data-seo-header] .nav-link{padding:8px 0}[data-seo-header] .nav-link::after{bottom:2px}}
 `.trim();

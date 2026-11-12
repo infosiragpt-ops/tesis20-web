@@ -614,7 +614,7 @@ footer[id] {
 .service-card__heading > span {
   display: block;
   color: var(--coral);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 800;
   letter-spacing: 0.09em;
   text-transform: uppercase;
@@ -660,7 +660,7 @@ footer[id] {
   flex-basis: 100%;
   margin-top: 4px;
   color: var(--muted);
-  font-size: 11.5px;
+  font-size: 12px;
 }
 
 .service-card__body {
@@ -681,7 +681,7 @@ footer[id] {
   display: flex;
   justify-content: space-between;
   color: var(--muted);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -721,7 +721,7 @@ footer[id] {
   place-items: center;
   border-radius: 50%;
   background: var(--yellow);
-  font-size: 10px;
+  font-size: 11px;
 }
 
 .service-card ul {
@@ -877,7 +877,7 @@ footer[id] {
 
 .evidence-privacy p {
   color: var(--yellow);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 900;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -971,7 +971,7 @@ footer[id] {
 
 .evidence-group__header > div > span {
   color: #55461f;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 900;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -1087,7 +1087,7 @@ footer[id] {
   border-radius: 9px;
   background: var(--ink);
   color: var(--yellow);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 900;
 }
 
@@ -1921,7 +1921,7 @@ body {
 
 .audio-player__heading span {
   color: #696c6e;
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 900;
   letter-spacing: 0.07em;
   text-transform: uppercase;
@@ -1930,7 +1930,7 @@ body {
 .audio-player__heading strong {
   overflow: hidden;
   color: var(--ink);
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.2;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1946,7 +1946,7 @@ body {
 
 .audio-player__timeline > span {
   color: #5f6264;
-  font-size: 11px;
+  font-size: 12px;
   font-variant-numeric: tabular-nums;
 }
 
@@ -2005,7 +2005,7 @@ body {
 .audio-player__error {
   margin-top: 6px;
   color: #8b2b2b;
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.35;
 }
 
@@ -2024,7 +2024,7 @@ body {
 .audio-player__notice {
   margin-top: 5px;
   color: #664d12;
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.35;
 }
 
@@ -2087,7 +2087,7 @@ body {
 
 .image-lightbox__toolbar span {
   color: var(--muted);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 900;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -2291,13 +2291,13 @@ body {
 
 .service-card__includes strong {
   color: var(--ink);
-  font-size: 10px;
+  font-size: 11px;
 }
 
 .service-card__price-note {
   margin-top: 11px;
   color: var(--muted);
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.4;
   text-align: center;
 }
@@ -2425,7 +2425,7 @@ body {
 }
 
 .evidence-hero__facts span {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 800;
 }
 
@@ -2763,6 +2763,16 @@ body {
     grid-column: 1 / -1;
   }
 
+  /* «capturas completas» entra en una línea en pantallas de 360 px. */
+  .evidence-hero__facts li {
+    padding-inline: 10px;
+    gap: 6px;
+  }
+
+  .evidence-hero__facts span {
+    white-space: nowrap;
+  }
+
   .faq-section {
     padding: 64px 0;
   }
@@ -2870,7 +2880,7 @@ body {
   }
 
   .mobile-contact-bar > div {
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 700;
   }
 
@@ -3349,7 +3359,7 @@ main:focus-visible {
 
 .service-card__price small {
   color: #50431f;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.02em;
 }
@@ -3394,7 +3404,7 @@ main:focus-visible {
   width: 100%;
   margin-left: 46px;
   color: var(--muted);
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
 }
 
@@ -3425,7 +3435,7 @@ main:focus-visible {
   border-radius: 9px;
   background: var(--white);
   color: var(--ink);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 900;
   cursor: pointer;
 }
@@ -3447,7 +3457,7 @@ main:focus-visible {
   margin-top: 8px;
   border-top: 1px solid rgba(30, 32, 34, 0.16);
   color: #424648;
-  font-size: 11px;
+  font-size: 13px;
   line-height: 1.55;
 }
 
@@ -3581,6 +3591,51 @@ main:focus-visible {
   .audio-player {
     grid-template-columns: 46px minmax(0, 1fr) 44px;
   }
+}
+
+/* Celular: entre el botón de reproducir y el de volumen no caben los tres
+   controles (−10 s, velocidad, +10 s) y el último caía solo a otra fila. El
+   contenido pasa a filas propias a todo el ancho del reproductor: título,
+   [reproducir · línea de tiempo · volumen], controles y transcripción. */
+@media (max-width: 560px) {
+  .audio-player {
+    row-gap: 6px;
+  }
+
+  .audio-player__content {
+    display: contents;
+  }
+
+  .audio-player__heading {
+    order: -1;
+    grid-column: 1 / -1;
+  }
+
+  .audio-player__timeline,
+  .audio-player__error {
+    margin-top: 0;
+  }
+
+  .audio-player__secondary-controls,
+  .audio-player__notice,
+  .audio-player__transcript {
+    order: 2;
+    grid-column: 1 / -1;
+  }
+
+  .audio-player__secondary-controls {
+    margin-top: 0;
+    flex-wrap: nowrap;
+  }
+
+  .audio-player__secondary-controls button,
+  .audio-player__secondary-controls select {
+    flex: 1 1 0;
+    max-width: 96px;
+  }
+}
+
+@media (max-width: 760px) {
 
   .service-finder__categories {
     margin-inline: -16px;

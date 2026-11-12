@@ -1,4 +1,4 @@
-const CACHE_VERSION = "v6";
+const CACHE_VERSION = "v7";
 const SHELL_CACHE = `tesis20-shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `tesis20-runtime-${CACHE_VERSION}`;
 const CACHE_PREFIX = "tesis20-";
@@ -9,6 +9,7 @@ const PRECACHE_URLS = [
   "/site.webmanifest",
   "/assets/tesis20-logo.svg",
   "/assets/tesis20-logo.png",
+  "/assets/tesis20-logo.webp",
   "/assets/oswald-600.woff2",
   "/assets/roboto.woff2",
 ];
