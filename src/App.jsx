@@ -18,6 +18,7 @@ import { Clock } from "@phosphor-icons/react/Clock";
 import { EnvelopeSimple } from "@phosphor-icons/react/EnvelopeSimple";
 import { FacebookLogo } from "@phosphor-icons/react/FacebookLogo";
 import { FileText } from "@phosphor-icons/react/FileText";
+import { Funnel } from "@phosphor-icons/react/Funnel";
 import { DownloadSimple } from "@phosphor-icons/react/DownloadSimple";
 import { GraduationCap } from "@phosphor-icons/react/GraduationCap";
 import { InstagramLogo } from "@phosphor-icons/react/InstagramLogo";
@@ -25,6 +26,7 @@ import { List } from "@phosphor-icons/react/List";
 import { LockKey } from "@phosphor-icons/react/LockKey";
 import { MagnifyingGlass } from "@phosphor-icons/react/MagnifyingGlass";
 import { MapPin } from "@phosphor-icons/react/MapPin";
+import { PencilSimpleLine } from "@phosphor-icons/react/PencilSimpleLine";
 import { Phone } from "@phosphor-icons/react/Phone";
 import { Printer } from "@phosphor-icons/react/Printer";
 import { SealCheck } from "@phosphor-icons/react/SealCheck";
@@ -301,8 +303,12 @@ const serviceSearchAliases = {
   "articulo-cientifico": "paper prisma revista publicacion scopus wos redalyc scielo",
   "tesis-i-proyecto": "tesis 1 tesis uno plan proyecto metodologia matriz consistencia",
   "tesis-ii-titulacion": "tesis 2 tesis dos informe resultados discusion conclusiones",
-  "suficiencia-profesional": "experiencia laboral titulacion trabajo profesional informe",
+  "suficiencia-profesional": "tsp upn universidad privada del norte experiencia laboral titulacion trabajo profesional informe",
+  "proyecto-tesis-ucv": "ucv cesar vallejo plan proyecto de investigacion matriz consistencia operacionalizacion cronograma presupuesto",
+  "tesis-maestria-ucv": "ucv cesar vallejo posgrado maestria magister tesis informe resultados discusion",
+  "rsl-ucv": "ucv cesar vallejo rsl revision sistematica literatura prisma articulo de revision scopus wos scielo",
   "ibm-spss-statistics": "spss estadistica estadisticas datos base analisis encuesta",
+  "parafraseo-ia": "parafraseo parafrasear ia inteligencia artificial turnitin porcentaje cero redaccion reescritura humanizar",
   "simulacion-sustentacion": "defensa exposicion jurado preguntas ppt diapositivas",
 };
 
@@ -373,8 +379,8 @@ const services = [
   },
   {
     id: "suficiencia-profesional",
-    title: "Trabajo de suficiencia profesional",
-    price: "S/ 1600",
+    title: "Trabajo de suficiencia profesional – UPN",
+    price: "S/ 1800",
     category: "Titulación",
     summary: "Acompañamiento completo para convertir tu experiencia en un trabajo sustentable.",
     audio: "/assets/audio/servicio-suficiencia-profesional.mp3",
@@ -400,6 +406,70 @@ const services = [
       "Anexos",
     ],
   },
+  // Servicios UCV: el alcance sigue la «Guía de elaboración de trabajos
+  // conducentes a grados y títulos» del Vicerrectorado de Investigación de la UCV
+  // (proyecto: introducción, metodología y aspectos administrativos; artículo de
+  // revisión: introducción, metodología, resultados y conclusiones). Sin audio.
+  {
+    id: "proyecto-tesis-ucv",
+    title: "Proyecto de tesis – UCV",
+    price: "S/ 800",
+    category: "Tesis",
+    summary: "Asesoría para tu proyecto de investigación con la estructura que pide la UCV, del problema al cronograma.",
+    Icon: ClipboardText,
+    benefits: [
+      "Estructura según la guía UCV de trabajos conducentes a grados y títulos",
+      "Título, realidad problemática y formulación del problema",
+      "Justificación, objetivos e hipótesis",
+      "Antecedentes y bases teóricas",
+      "Metodología: tipo, diseño, población, muestra y muestreo",
+      "Técnicas e instrumentos de recolección de datos",
+      "Método de análisis de datos y aspectos éticos",
+      "Aspectos administrativos: recursos, presupuesto y cronograma",
+      "Matriz de operacionalización o de categorización",
+      "Matriz de consistencia",
+      "Referencias y anexos",
+    ],
+  },
+  {
+    id: "tesis-maestria-ucv",
+    title: "Tesis de maestría – UCV",
+    price: "S/ 1600",
+    category: "Posgrado",
+    summary: "Acompañamiento por etapas para tu tesis de maestría con la estructura que pide la Escuela de Posgrado de la UCV.",
+    Icon: SealCheck,
+    benefits: [
+      "Estructura según la guía UCV para posgrado",
+      "Título, realidad problemática y sustento epistemológico",
+      "Problema, justificación, objetivos e hipótesis",
+      "Antecedentes internacionales y nacionales, y bases teóricas",
+      "Metodología: enfoque, tipo, diseño, población y muestra",
+      "Instrumentos con validez y confiabilidad",
+      "Matriz de operacionalización o de categorización y matriz de consistencia",
+      "Análisis y resultados estadísticos y discusión",
+      "Conclusiones y recomendaciones",
+      "Resumen y abstract",
+      "Referencias y anexos",
+    ],
+  },
+  {
+    id: "rsl-ucv",
+    title: "Revisión sistemática (RSL) – UCV",
+    price: "S/ 700",
+    category: "Publicación",
+    summary: "Asesoría para tu artículo de revisión de literatura científica con el método PRISMA y la estructura que pide la UCV.",
+    Icon: Funnel,
+    benefits: [
+      "Estructura del artículo de revisión de literatura científica según la guía UCV",
+      "Pregunta de investigación y criterios de inclusión y exclusión",
+      "Ecuaciones de búsqueda en Scopus, WoS, SciELO y Redalyc",
+      "Selección de estudios con diagrama de flujo PRISMA",
+      "Matriz de análisis de los artículos incluidos",
+      "Introducción, metodología, resultados y conclusiones",
+      "Resumen y abstract",
+      "Revisión de parafraseado, citación y referencias",
+    ],
+  },
   {
     id: "ibm-spss-statistics",
     title: "IBM SPSS Statistics",
@@ -416,6 +486,21 @@ const services = [
       "Análisis de datos en IBM SPSS",
       "Interpretación de datos",
       "Asesoría personalizada sobre su tema",
+    ],
+  },
+  {
+    id: "parafraseo-ia",
+    title: "Parafraseo IA a 0%",
+    price: "S/ 200",
+    category: "Redacción",
+    summary: "Reescritura de tu texto con el objetivo de dejar en 0 % el reporte de detección de IA, sin cambiar tus ideas ni tus citas.",
+    Icon: PencilSimpleLine,
+    benefits: [
+      "Revisión del reporte de detección de IA de tu documento",
+      "Reescritura de los párrafos marcados como IA",
+      "Se conservan tus ideas, citas y referencias",
+      "Revisión de coherencia, ortografía y redacción académica",
+      "Verificación final del porcentaje de IA",
     ],
   },
   {

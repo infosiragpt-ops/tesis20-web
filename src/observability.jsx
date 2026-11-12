@@ -5,7 +5,7 @@ import { SpeedInsights } from "@vercel/speed-insights/react";
 
 const PUBLIC_PATHS = new Set(["/", "/servicios", "/nido", "/evidencias", "/contrato"]);
 const SERVICE_DETAIL_PATH =
-  /^\/servicios\/(articulo-cientifico|tesis-i-proyecto|tesis-ii-titulacion|suficiencia-profesional|ibm-spss-statistics|simulacion-sustentacion)$/;
+  /^\/servicios\/(articulo-cientifico|tesis-i-proyecto|tesis-ii-titulacion|suficiencia-profesional|proyecto-tesis-ucv|tesis-maestria-ucv|rsl-ucv|ibm-spss-statistics|parafraseo-ia|simulacion-sustentacion)$/;
 
 function isPublicPath(pathname) {
   const normalizedPath = pathname.length > 1 ? pathname.replace(/\/+$/, "") : pathname;

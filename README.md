@@ -5,7 +5,7 @@ Sitio web profesional de Tesis20 para presentar servicios de asesoría académic
 ## Funcionalidades principales
 
 - Página de inicio responsive con identidad visual `#F5BD42`.
-- Catálogo interactivo de seis servicios con audios locales.
+- Catálogo interactivo de diez servicios (seis con audio local), incluidos los servicios por universidad: suficiencia profesional (UPN) y proyecto de tesis, tesis de maestría y RSL (UCV).
 - Galería de evidencias agrupadas y anonimizadas.
 - Resultados de calificaciones en dos columnas para escritorio y una para celular.
 - Contrato general de asesoría académica legible en la web y descargable en PDF.
@@ -52,6 +52,13 @@ npm run preview -- --port 3000
 - **Miniaturas en WebP** (`public/assets/thumbnails/`): se generan desde la captura completa al mismo ancho
   (calidad 88 en calificaciones, 84 en evidencias). El logo de cabecera y pie es `tesis20-logo.webp`.
 - **Texto legible en móvil:** ningún texto de lectura baja de 12 px; rótulos y etiquetas, de 11 px.
+
+## Catálogo de servicios
+
+Cada servicio se declara en dos lugares que deben ir a la par: `services` en `src/App.jsx` (tarjetas, fichas y
+buscador) y `services` en `scripts/generate-static-routes.mjs` (HTML por ruta, SEO y sitemap). Al añadir uno,
+agrégalo también a `routeSpecs` en `scripts/quality-check.mjs` y a `SERVICE_DETAIL_PATH` en `src/observability.jsx`.
+Los servicios sin audio simplemente omiten `audio`, `audioDuration` y `transcript`.
 
 ## Aviso
 

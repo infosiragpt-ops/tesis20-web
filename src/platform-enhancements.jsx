@@ -113,7 +113,7 @@ const organizationSchema = {
     "Servicio de orientación y acompañamiento académico para proyectos de investigación y tesis.",
   telephone: "+51 918 714 054",
   email: "tesis.com20@gmail.com",
-  priceRange: "S/ 250 - S/ 1600",
+  priceRange: "S/ 200 - S/ 1800",
   address: {
     "@type": "PostalAddress",
     streetAddress: "Jr. Lincoln 638",
