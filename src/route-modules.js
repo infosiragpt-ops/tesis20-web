@@ -5,9 +5,17 @@
  * La navegación entre páginas es por recarga completa, no hay router.
  */
 export const loadContractPage = () => import("./contract-page.jsx");
+export const loadResourcesPage = () => import("./resources-page.jsx");
+export const loadCareersPage = () => import("./academic-directory-pages.jsx");
+export const loadAdvisorsPage = () => import("./advisors-page.jsx");
 
+// Sin esta precarga la página monta con un <main> provisional de una línea:
+// el pie aparece pegado a la cabecera y salta hacia abajo al llegar el chunk.
 const loaders = {
   "/contrato": loadContractPage,
+  "/recursos": loadResourcesPage,
+  "/carreras": loadCareersPage,
+  "/docentes": loadAdvisorsPage,
 };
 
 export const loadedRouteModules = {};

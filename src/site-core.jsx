@@ -19,8 +19,13 @@ import {
 
 export { buildWhatsappHref, PORTAL_URL, WHATSAPP_PHONE, whatsappMessages };
 
-/** Página actual solo para elegir el mensaje de WhatsApp y la analítica. */
-export function pageKeyFromPath(pathname = window.location.pathname) {
+/**
+ * Página actual solo para elegir el mensaje de WhatsApp y la analítica.
+ * Sin `window` (prerenderizado del hero de Inicio en Node) vale la de Inicio.
+ */
+export function pageKeyFromPath(
+  pathname = typeof window === "undefined" ? "/" : window.location.pathname,
+) {
   return pageKeyForPath(pathname);
 }
 

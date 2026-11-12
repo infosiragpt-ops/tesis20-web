@@ -584,6 +584,52 @@ for (const route of routeSpecs) {
   }
 }
 
+// Inicio se publica con el hero ya dibujado (el mismo <Hero /> de React,
+// renderizado por scripts/home-hero-prerender.mjs): titular, botón y foto se
+// ven con el primer pintado, sin esperar a que arranque la app.
+const homeDocument = routeDocuments.get("/") || "";
+const heroSource = await read("src/home-sections.jsx");
+const heroSrcset = heroSource.match(/const HERO_PHOTO_SRCSET = "([^"]+)"/)?.[1] || "";
+const heroSizes = heroSource.match(/const HERO_PHOTO_SIZES = "([^"]+)"/)?.[1] || "";
+check(
+  /data-seo-shell="home">[\s\S]*?<main id="main-content">\s*<section class="hero" id="inicio"/.test(homeDocument),
+  "dist/index.html debe publicar el hero de Inicio ya renderizado como primer bloque de <main>.",
+);
+check(
+  /<h1 id="hero-title">/.test(homeDocument) && /class="whatsapp-button[^"]*" href="https:\/\/api\.whatsapp\.com\/send\?phone=51918714054/.test(homeDocument),
+  "El hero prerenderizado de Inicio debe incluir el titular y el botón de WhatsApp funcional.",
+);
+check(
+  Boolean(heroSrcset && heroSizes) &&
+    homeDocument.includes(`imagesrcset="${heroSrcset}"`) &&
+    homeDocument.includes(`imagesizes="${heroSizes}"`) &&
+    homeDocument.includes(`srcSet="${heroSrcset}"`),
+  "La precarga de la foto del hero (index.html) debe usar el mismo srcset y sizes que <Hero />.",
+);
+check(
+  /\[data-seo-shell\] \.hero \*[^{]*\{animation-play-state:paused!important\}/.test(homeDocument),
+  "Las animaciones del hero prerenderizado deben quedar en pausa hasta que monte la app (sin salto al reemplazarlo).",
+);
+
+// Las páginas con chunk propio se precargan antes de montar: si montan con el
+// <main> provisional, el pie aparece bajo la cabecera y salta (CLS ~0.9).
+const routeModulesSource = await read("src/route-modules.js");
+for (const [path, chunk] of [
+  ["/contrato", "contract-page"],
+  ["/recursos", "resources-page"],
+  ["/carreras", "academic-directory-pages"],
+  ["/docentes", "advisors-page"],
+]) {
+  check(
+    new RegExp(`"${path}":\\s*load[A-Za-z]+Page`).test(routeModulesSource),
+    `src/route-modules.js debe precargar el chunk de ${path} antes del primer render.`,
+  );
+  check(
+    new RegExp(`<link rel="modulepreload" crossorigin href="/build-assets/${chunk}-[^"]+\\.js">`).test(routeDocuments.get(path) || ""),
+    `El HTML de ${path} debe precargar su chunk (${chunk}) en paralelo con el bundle principal.`,
+  );
+}
+
 if (await exists("dist/404.html")) {
   const notFoundHtml = await read("dist/404.html");
   const notFoundTitle = getElementContents(notFoundHtml, "title").map(normalizeText);

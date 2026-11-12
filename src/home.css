@@ -275,7 +275,7 @@
 .hero-float--live small {
   display: block;
   color: var(--muted);
-  font-size: 11.5px;
+  font-size: 12px;
 }
 
 .hero-float__meter {
@@ -297,7 +297,7 @@
 
 .hero-float--grade small {
   color: var(--muted);
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -340,7 +340,7 @@
 .chapter-list em {
   padding: 3px 9px;
   border-radius: 999px;
-  font-size: 11.5px;
+  font-size: 12px;
   font-style: normal;
   font-weight: 700;
   white-space: nowrap;
@@ -596,7 +596,7 @@
   border-radius: 999px;
   background: var(--cream);
   color: var(--muted);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 800;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -640,7 +640,7 @@
   display: block;
   color: var(--muted);
   font-family: var(--body);
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 700;
 }
 
@@ -715,7 +715,7 @@
   border-radius: 999px;
   background: var(--white);
   color: var(--coral);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 800;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -1118,7 +1118,7 @@
   border-radius: 8px;
   background: var(--white);
   color: var(--muted);
-  font-size: 11.5px;
+  font-size: 12px;
   font-style: normal;
 }
 
@@ -1184,7 +1184,7 @@
 .portal-mock__head small {
   display: block;
   color: var(--muted);
-  font-size: 11.5px;
+  font-size: 12px;
 }
 
 .portal-mock__head strong {
@@ -1198,7 +1198,7 @@
   border-radius: 999px;
   background: #e0f2fe;
   color: #075985;
-  font-size: 11.5px;
+  font-size: 12px;
   font-style: normal;
   font-weight: 800;
 }
@@ -1247,7 +1247,7 @@
 
 .chapter-list--rows small {
   color: var(--muted);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 500;
 }
 
@@ -1279,7 +1279,7 @@
 .portal-mock__cards small {
   display: block;
   color: var(--muted);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 500;
 }
 
@@ -1393,7 +1393,7 @@ button.grade-card__frame:hover {
 .grade-card__caption > span {
   display: grid;
   color: var(--muted);
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;

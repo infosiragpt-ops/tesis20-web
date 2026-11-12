@@ -92,6 +92,82 @@ export function HeroFloats() {
   );
 }
 
+// Foto del hero: se dibuja a ~76vw en celulares (tope 440 px) y a 520 px como
+// máximo en escritorio. index.html la precarga con estos mismos valores
+// (imagesrcset / imagesizes): si cambian aquí, cámbialos allá.
+const HERO_PHOTO_SRCSET = "/assets/hero-students-640.avif 640w, /assets/hero-students.avif 800w";
+const HERO_PHOTO_SIZES = "(max-width: 600px) 78vw, (max-width: 930px) 440px, (max-width: 1240px) 42vw, 520px";
+
+/**
+ * Hero de Inicio. El generador de HTML estático (scripts/home-hero-prerender.mjs)
+ * renderiza este mismo componente en el servidor, así el titular, el botón y la
+ * foto se ven antes de que cargue la app y React los reemplaza sin salto: no
+ * dependas aquí de `window`, estado ni efectos que cambien el primer cuadro.
+ */
+export function Hero() {
+  return (
+    <section className="hero" id="inicio" aria-labelledby="hero-title">
+      <div className="hero-inner">
+        <div className="hero-copy">
+          <p className="hero-eyebrow">
+            <span className="live-dot" aria-hidden="true" />
+            Asesoría de tesis · Lima y todo el Perú
+          </p>
+          <h1 id="hero-title">
+            Asesoría y acompañamiento para <mark>tu tesis</mark>
+          </h1>
+          <p className="hero-intro">
+            Te guiamos paso a paso para que desarrolles tu investigación con una ruta
+            clara, manteniendo tu autoría y responsabilidad académica.
+          </p>
+          <div className="hero-actions">
+            <WhatsappButton location="hero">Quiero orientación</WhatsappButton>
+            <a className="text-link" href="#servicios-destacados">
+              <span>Ver servicios y precios</span>
+              <ArrowRight size={19} aria-hidden="true" />
+            </a>
+          </div>
+          <ul className="hero-proof-points" aria-label="Lo que incluye el acompañamiento">
+            <li>
+              <CheckCircle size={18} weight="fill" aria-hidden="true" />
+              <span>Diagnóstico inicial</span>
+            </li>
+            <li>
+              <CheckCircle size={18} weight="fill" aria-hidden="true" />
+              <span>Contrato por escrito</span>
+            </li>
+            <li>
+              <CheckCircle size={18} weight="fill" aria-hidden="true" />
+              <span>Autoría del estudiante</span>
+            </li>
+          </ul>
+        </div>
+
+        <div
+          className="hero-visual"
+          role="group"
+          aria-label="Estudiantes avanzando con apoyo de Tesis20"
+        >
+          <div className="hero-stage" aria-hidden="true" />
+          <SafeImage
+            className="hero-students"
+            src="/assets/hero-students.png"
+            srcSet={HERO_PHOTO_SRCSET}
+            alt="Grupo de estudiantes universitarios"
+            width="800"
+            height="999"
+            decoding="async"
+            fetchPriority="high"
+            sizes={HERO_PHOTO_SIZES}
+            draggable="false"
+          />
+          <HeroFloats />
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function UniversityLogo({ university, eager }) {
   const variant = university.mark ? " uni-logo--mark" : university.shape ? ` uni-logo--${university.shape}` : "";
   return (

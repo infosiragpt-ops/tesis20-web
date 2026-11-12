@@ -421,9 +421,8 @@ export function AudioPlayer({
             type="button"
             onClick={() => skipBy(-10)}
             disabled={!canSeek}
-            aria-label={`Retroceder 10 segundos en ${title}`}
           >
-            −10 s
+            −10 s<span className="sr-only">: retroceder 10 segundos en {title}</span>
           </button>
           <label className="sr-only" htmlFor={`${playerId}-rate`}>
             Velocidad de reproducción de {title}
@@ -442,9 +441,8 @@ export function AudioPlayer({
             type="button"
             onClick={() => skipBy(10)}
             disabled={!canSeek}
-            aria-label={`Avanzar 10 segundos en ${title}`}
           >
-            +10 s
+            +10 s<span className="sr-only">: avanzar 10 segundos en {title}</span>
           </button>
         </div>
         {liveStatus ? (
