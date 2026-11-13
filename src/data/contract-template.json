@@ -1,19 +1,71 @@
 {
   "title": "Contrato general de prestación de servicios de asesoría académica e investigación",
   "shortTitle": "Contrato general de asesoría académica",
-  "version": "Modelo general para Perú - Actualizado en julio de 2026",
+  "version": "Modelo general para Perú - Actualizado en noviembre de 2026",
   "intro": "Conste por el presente documento el contrato de prestación de servicios de asesoría académica e investigación que celebran, de una parte, EL PRESTADOR y, de la otra, EL CLIENTE, identificados a continuación. Ambas partes declaran que actúan libremente, que la información proporcionada es verdadera y que aceptan las cláusulas siguientes.",
-  "fields": [
-    "Número de contrato: ____________________",
-    "Lugar y fecha: ____________________",
-    "Prestador / razón social: ____________________",
-    "RUC o DNI: ____________________",
-    "Representante: ____________________",
-    "Domicilio: Jr. Lincoln 638, Pueblo Libre, Lima - Perú",
-    "Cliente: ____________________",
-    "DNI / CE: ____________________",
-    "Correo y teléfono: ____________________",
-    "Universidad / programa: ____________________"
+  "meta": [
+    {
+      "label": "Número de contrato",
+      "value": ""
+    },
+    {
+      "label": "Lugar y fecha",
+      "value": ""
+    }
+  ],
+  "parties": [
+    {
+      "role": "EL PRESTADOR",
+      "status": "Datos completos",
+      "fields": [
+        {
+          "label": "Prestador / razón social",
+          "value": "Tesis20"
+        },
+        {
+          "label": "RUC",
+          "value": "20616782348"
+        },
+        {
+          "label": "Representante",
+          "value": "Jorge Luis Carrera Salas"
+        },
+        {
+          "label": "DNI del representante",
+          "value": "72792992"
+        },
+        {
+          "label": "Domicilio",
+          "value": "Jr. Lincoln 638, Pueblo Libre, Lima - Perú"
+        },
+        {
+          "label": "Correo y teléfono",
+          "value": "tesis.com20@gmail.com · (+51) 918 714 054"
+        }
+      ]
+    },
+    {
+      "role": "EL CLIENTE",
+      "status": "Por completar",
+      "fields": [
+        {
+          "label": "Cliente",
+          "value": ""
+        },
+        {
+          "label": "DNI / CE",
+          "value": ""
+        },
+        {
+          "label": "Correo y teléfono",
+          "value": ""
+        },
+        {
+          "label": "Universidad / programa",
+          "value": ""
+        }
+      ]
+    }
   ],
   "clauses": [
     {
@@ -93,9 +145,55 @@
     }
   ],
   "signatures": [
-    "EL PRESTADOR\nNombre: ____________________\nDNI/RUC: ____________________\nFirma: ____________________",
-    "EL CLIENTE\nNombre: ____________________\nDNI/CE: ____________________\nFirma: ____________________"
+    {
+      "role": "EL PRESTADOR",
+      "fields": [
+        {
+          "label": "Nombre",
+          "value": "Jorge Luis Carrera Salas"
+        },
+        {
+          "label": "DNI",
+          "value": "72792992"
+        },
+        {
+          "label": "RUC",
+          "value": "20616782348"
+        }
+      ]
+    },
+    {
+      "role": "EL CLIENTE",
+      "fields": [
+        {
+          "label": "Nombre",
+          "value": ""
+        },
+        {
+          "label": "DNI / CE",
+          "value": ""
+        }
+      ]
+    }
   ],
+  "offices": {
+    "title": "Oficinas de atención de EL PRESTADOR",
+    "items": [
+      {
+        "city": "Lima",
+        "address": "Av. Arequipa 2491"
+      },
+      {
+        "city": "Cajamarca",
+        "address": "Av. Hoyos Rubio 1540"
+      },
+      {
+        "city": "Trujillo",
+        "address": "Oficina en la ciudad de Trujillo, La Libertad. La visita se coordina por WhatsApp."
+      }
+    ],
+    "note": "También se atiende en línea a estudiantes de todo el Perú."
+  },
   "notice": "Modelo general informativo. Debe completarse y adaptarse al servicio concreto antes de su firma. Se recomienda revisión por un abogado colegiado en Perú cuando el alcance, monto o situación particular lo justifique.",
   "legalSources": [
     {

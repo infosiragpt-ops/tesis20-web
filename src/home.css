@@ -1719,20 +1719,53 @@ button.grade-card__frame:hover {
     width: 100%;
   }
 
+  /* En celulares la foto ocupa todo el ancho: las caras quedan arriba y las
+     dos tarjetas se apilan abajo, sobre los torsos, sin montarse entre sí
+     (antes la nota tapaba el título de «Mi avance»). */
   .hero-visual {
-    min-height: 400px;
+    min-height: 0;
+  }
+
+  .hero-stage {
+    width: min(96%, 440px);
+  }
+
+  .hero-students {
+    width: min(100%, 440px);
   }
 
   .hero-float--progress {
     top: auto;
-    bottom: 5%;
+    bottom: -8px;
     left: 0;
     width: 204px;
   }
 
+  /* La nota pasa a una fila compacta (número + texto) justo encima. */
   .hero-float--grade {
-    top: 48%;
+    top: auto;
     right: 0;
+    bottom: 172px;
+    padding: 8px 14px 8px 12px;
+    grid-template-columns: auto auto;
+    align-items: center;
+    column-gap: 10px;
+  }
+
+  .hero-float--grade small {
+    grid-column: 2;
+    font-size: 10px;
+  }
+
+  .hero-float--grade strong {
+    margin-top: 0;
+    grid-row: 1 / span 2;
+    font-size: 40px;
+  }
+
+  .hero-float--grade span {
+    grid-column: 2;
+    font-size: 11px;
   }
 
   .hero-float--live {

@@ -76,6 +76,13 @@ import {
   WhatsappButton,
   whatsappMessages,
 } from "./site-core.jsx";
+import {
+  COMPANY,
+  OFFICE_ADDRESSES_LABEL,
+  OFFICE_CITIES_LABEL,
+  OFFICES,
+  officeMapsHref,
+} from "./data/company.js";
 import presentationTranscript from "../audio-scripts/presentacion.txt?raw";
 import articleTranscript from "../audio-scripts/articulo-cientifico.txt?raw";
 import thesisOneTranscript from "../audio-scripts/tesis-i-proyecto.txt?raw";
@@ -602,6 +609,10 @@ const homeFaqs = [
     question: "¿Pueden ayudarme con análisis estadístico?",
     answer:
       "Sí. Contamos con un servicio de IBM SPSS que incluye revisión, procesamiento, interpretación de resultados y asesoría sobre tu investigación.",
+  },
+  {
+    question: "¿Tienen oficinas físicas?",
+    answer: `Sí. Tenemos oficinas en ${OFFICE_ADDRESSES_LABEL}, y también atendemos en línea a estudiantes de todo el Perú. Escríbenos por WhatsApp para coordinar tu visita.`,
   },
   {
     question: "¿Cómo protegen mi información?",
@@ -1765,7 +1776,7 @@ function Footer() {
             <ArrowRight size={16} aria-hidden="true" />
           </a>
         </div>
-        <nav className="footer-column" aria-labelledby="footer-links-title">
+        <nav className="footer-column footer-nav" aria-labelledby="footer-links-title">
           <h2 id="footer-links-title">Navegación</h2>
           <a href="/servicios">Servicios</a>
           <a href="/carreras">Carreras</a>
@@ -1818,6 +1829,48 @@ function Footer() {
             </a>
           </div>
         </div>
+        <section className="footer-offices" id="oficinas" aria-labelledby="footer-offices-title">
+          <div className="footer-column">
+            <h2 id="footer-offices-title">Oficinas</h2>
+            <p>Atención presencial en {OFFICE_CITIES_LABEL}, y en línea para todo el Perú.</p>
+          </div>
+          <ul>
+            {OFFICES.map((office) => {
+              // Con dirección publicada: mapa. Sin ella: la visita se coordina por WhatsApp.
+              const mapsHref = officeMapsHref(office);
+              const action = mapsHref ? "Cómo llegar" : "Coordinar visita";
+              return (
+                <li key={office.id}>
+                  <MapPin size={22} weight="duotone" aria-hidden="true" />
+                  <address>
+                    <strong>{office.city}</strong>
+                    <span>{office.street || office.region}</span>
+                  </address>
+                  <a
+                    href={
+                      mapsHref ||
+                      buildWhatsappHref(
+                        `¡Hola! Deseo visitar la oficina de Tesis20 en ${office.city}. ¿Me comparten la dirección y el horario?`,
+                      )
+                    }
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    referrerPolicy="no-referrer"
+                    aria-label={`${action}: oficina de ${office.city} (se abre en una pestaña nueva)`}
+                    onClick={() => trackInteraction("office_link", { office: office.id })}
+                  >
+                    {action}
+                    {mapsHref ? (
+                      <ArrowSquareOut size={15} weight="bold" aria-hidden="true" />
+                    ) : (
+                      <WhatsappLogo size={16} weight="fill" aria-hidden="true" />
+                    )}
+                  </a>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
       </div>
       <div className="footer-legal">
         <details>
@@ -1833,7 +1886,9 @@ function Footer() {
           </p>
         </details>
       </div>
-      <div className="footer-bottom">© {currentYear} Tesis20. Todos los derechos reservados.</div>
+      <div className="footer-bottom">
+        © {currentYear} {COMPANY.name}. Todos los derechos reservados. <strong>RUC {COMPANY.ruc}</strong>
+      </div>
       <div className="footer-wordmark" aria-hidden="true">
         Tesis20
       </div>

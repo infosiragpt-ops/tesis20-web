@@ -430,6 +430,91 @@ h3 {
   border-top-color: rgba(255, 255, 255, 0.1);
 }
 
+/* El RUC cierra el pie junto al copyright: dato de empresa, siempre visible. */
+.footer-bottom strong {
+  padding: 0 6px;
+  color: #e9eaea;
+  white-space: nowrap;
+}
+
+/* Oficinas: última fila de la cuadrícula del pie, a todo el ancho. */
+.footer-offices {
+  padding-top: 32px;
+  grid-column: 1 / -1;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.footer-offices ul {
+  margin: 14px 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  list-style: none;
+}
+
+.footer-offices li {
+  padding: 18px 18px 8px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  column-gap: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.03);
+  color: #c7c9ca;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.footer-offices svg {
+  color: var(--yellow);
+}
+
+.footer-offices address {
+  display: grid;
+  gap: 3px;
+  font-style: normal;
+}
+
+.footer-offices strong {
+  color: var(--white);
+  font-size: 16px;
+}
+
+.footer-offices li a {
+  min-height: 44px;
+  grid-column: 2;
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--yellow);
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+@media (max-width: 760px) {
+  .footer-offices ul {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+}
+
+/* En celulares los enlaces del pie van en dos columnas: la lista ocupa la mitad. */
+@media (max-width: 640px) {
+  .footer-nav {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0 18px;
+  }
+
+  .footer-nav h2 {
+    margin-bottom: 8px;
+    grid-column: 1 / -1;
+  }
+}
+
 /* Con puntero fino no hace falta el alto táctil de 44 px entre enlaces. */
 @media (pointer: fine) and (min-width: 931px) {
   .footer-column {

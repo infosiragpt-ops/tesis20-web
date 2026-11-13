@@ -60,6 +60,20 @@ buscador) y `services` en `scripts/generate-static-routes.mjs` (HTML por ruta, S
 agrégalo también a `routeSpecs` en `scripts/quality-check.mjs` y a `SERVICE_DETAIL_PATH` en `src/observability.jsx`.
 Los servicios sin audio simplemente omiten `audio`, `audioDuration` y `transcript`.
 
+## Datos de la empresa, oficinas y contrato
+
+- **RUC y oficinas** (pie de todas las páginas, preguntas frecuentes): `src/data/company.js`. Una oficina sin
+  `street` se muestra solo con su ciudad y un enlace para coordinar la visita por WhatsApp; no inventes direcciones.
+- **Representante, domicilio, contacto y JSON-LD de la organización** (`taxID`, `location` por oficina):
+  `scripts/company-schema.mjs`. Solo se usa al generar el HTML, así esos datos no viajan en el JavaScript; la app
+  conserva el nodo `Organization` que ya trae el HTML prerenderizado.
+- **Contrato** (`/contrato`, Word y PDF): `src/data/contract-template.json` (`parties`, `signatures`, `offices`,
+  `clauses`). Tras editarlo, regenera las descargas con `python3 scripts/generate_contract_docx.py` y
+  `python3 scripts/generate_contract_pdf.py` (necesitan `python-docx`, `reportlab` y `pypdf`; el PDF debe salir en
+  2 páginas) y sube el `?v=` de los enlaces en `src/contract-page.jsx` para que nadie reciba la copia en caché.
+- `npm run quality` comprueba que los tres archivos digan lo mismo, que el RUC supere su dígito verificador y que
+  cada página publique el RUC y las oficinas en el pie y en los datos estructurados.
+
 ## Aviso
 
 Las evidencias públicas se muestran anonimizadas. El contrato incluido es un modelo general informativo y debe completarse y revisarse según el servicio concreto antes de firmarse.

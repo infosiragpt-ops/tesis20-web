@@ -16,6 +16,7 @@ import { SealCheck } from "@phosphor-icons/react/SealCheck";
 import { ShieldCheck } from "@phosphor-icons/react/ShieldCheck";
 import { UserFocus } from "@phosphor-icons/react/UserFocus";
 import { VideoCamera } from "@phosphor-icons/react/VideoCamera";
+import { OFFICE_CITIES_LABEL } from "./data/company.js";
 import { STUDENT_UNIVERSITIES } from "./data/student-universities.js";
 import { SafeImage } from "./platform-enhancements.jsx";
 import { PORTAL_URL, WhatsappButton } from "./site-core.jsx";
@@ -92,11 +93,11 @@ export function HeroFloats() {
   );
 }
 
-// Foto del hero: se dibuja a ~76vw en celulares (tope 440 px) y a 520 px como
+// Foto del hero: se dibuja a ~90vw en celulares (tope 440 px) y a 520 px como
 // máximo en escritorio. index.html la precarga con estos mismos valores
 // (imagesrcset / imagesizes): si cambian aquí, cámbialos allá.
 const HERO_PHOTO_SRCSET = "/assets/hero-students-640.avif 640w, /assets/hero-students.avif 800w";
-const HERO_PHOTO_SIZES = "(max-width: 600px) 78vw, (max-width: 930px) 440px, (max-width: 1240px) 42vw, 520px";
+const HERO_PHOTO_SIZES = "(max-width: 600px) 90vw, (max-width: 930px) 440px, (max-width: 1240px) 42vw, 520px";
 
 /**
  * Hero de Inicio. El generador de HTML estático (scripts/home-hero-prerender.mjs)
@@ -628,6 +629,10 @@ export function FinalCta() {
             <li>
               <MapPin size={20} weight="duotone" aria-hidden="true" />
               <span>Jr. Lincoln 638, Pueblo Libre, Lima</span>
+            </li>
+            <li>
+              <MapPin size={20} weight="duotone" aria-hidden="true" />
+              <a href="#oficinas">Oficinas en {OFFICE_CITIES_LABEL}</a>
             </li>
           </ul>
         </div>
