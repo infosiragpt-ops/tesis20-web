@@ -1,6 +1,13 @@
 import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { CAREER_AREAS, CAREER_COUNT } from "../src/data/academic-directory.js";
+import { OFFICE_CITIES_LABEL, OFFICES } from "../src/data/company.js";
+import {
+  buildOrganizationSchema,
+  COMPANY_DETAILS as COMPANY,
+  DOMICILE_LINE,
+  officeLine,
+} from "./company-schema.mjs";
 import { STUDENT_UNIVERSITIES } from "../src/data/student-universities.js";
 import { renderHomeHeroMarkup } from "./home-hero-prerender.mjs";
 import { BOOT_HEAD_MARKUP, headerInnerMarkup, shellKind } from "./skeleton-shell.mjs";
@@ -188,6 +195,11 @@ const services = [
   },
 ];
 
+// Oficinas y datos de la empresa: los mismos del pie y del contrato (data/company.js).
+const OFFICES_LIST_MARKUP = OFFICES.map(
+  (office) => `<li><strong>${office.city}:</strong> ${office.street || `oficina en ${office.city}, ${office.region}`}</li>`,
+).join("\n");
+
 // Lugar del hero prerenderizado dentro del contenido estático de Inicio.
 const HOME_HERO_SLOT = "<!--tesis20:home-hero-->";
 
@@ -195,9 +207,9 @@ const routeDefinitions = [
   {
     output: "index.html",
     path: "/",
-    title: "Asesoría de tesis en Lima y todo el Perú | Tesis20",
+    title: "Asesoría de tesis en Lima, Cajamarca y Trujillo | Tesis20",
     description:
-      "Asesoría académica personalizada para tesis, proyectos, análisis estadístico y sustentación, con metodología por etapas y autoría del estudiante.",
+      "Asesoría de tesis con oficinas en Lima, Cajamarca y Trujillo, y atención en línea en todo el Perú: proyectos, análisis estadístico y sustentación con contrato por escrito.",
     heading: "Asesoría y acompañamiento para tu tesis",
     schemaType: "WebPage",
     // El hero (H1, botón de WhatsApp y foto) es el de React, ya dibujado:
@@ -225,6 +237,13 @@ const routeDefinitions = [
           ${STUDENT_UNIVERSITIES.map((university) => `<li>${university.name} (${university.acronym})</li>`).join("\n")}
         </ul>
         <p>Tesis20 es un servicio independiente; no está afiliado ni representa a estas universidades.</p>
+      </section>
+      <section aria-labelledby="static-offices-title">
+        <h2 id="static-offices-title">Oficinas de Tesis20 en ${OFFICE_CITIES_LABEL}</h2>
+        <p>Atendemos de forma presencial en nuestras oficinas y en línea a estudiantes de todo el Perú.</p>
+        <ul>
+          ${OFFICES_LIST_MARKUP}
+        </ul>
       </section>
       <section aria-labelledby="static-trust-title">
         <h2 id="static-trust-title">Información para decidir con confianza</h2>
@@ -444,7 +463,7 @@ const routeDefinitions = [
     path: "/contrato",
     title: "Contrato general de asesoría académica | Tesis20",
     description:
-      "Lee y descarga el modelo general informativo de contrato de asesoría académica de Tesis20 en Word editable o PDF para revisarlo antes de contratar.",
+      "Lee y descarga el contrato general de asesoría académica de Tesis20, con RUC y datos del prestador ya completos, en Word editable o PDF antes de contratar.",
     heading: "Contrato general de asesoría académica",
     schemaType: "WebPage",
     content: `
@@ -461,6 +480,20 @@ const routeDefinitions = [
           <li>Las partes acuerdan un cronograma y los canales de coordinación.</li>
           <li>La información académica se trata de forma confidencial.</li>
           <li>No se garantizan calificaciones ni decisiones de terceros.</li>
+        </ul>
+      </section>
+      <section aria-labelledby="static-contract-provider-title">
+        <h2 id="static-contract-provider-title">Datos del prestador</h2>
+        <p>El contrato ya incluye los datos de Tesis20; el cliente solo completa los suyos.</p>
+        <ul>
+          <li><strong>Prestador:</strong> ${COMPANY.name}</li>
+          <li><strong>RUC:</strong> ${COMPANY.ruc}</li>
+          <li><strong>Representante:</strong> ${COMPANY.representative}</li>
+          <li><strong>Domicilio:</strong> ${DOMICILE_LINE}</li>
+        </ul>
+        <h3>Oficinas de atención</h3>
+        <ul>
+          ${OFFICES_LIST_MARKUP}
         </ul>
       </section>
       <section aria-labelledby="static-contract-notice-title">
@@ -615,8 +648,10 @@ function createStaticMarkup(route) {
           <p><a href="/">Volver a la plataforma Tesis de Tesis20.com</a></p>
         </footer>`
       : `<footer>
-          <p><strong>Tesis20</strong> · Asesoría y acompañamiento académico en Lima y todo el Perú.</p>
-          <address>Jr. Lincoln 638, Pueblo Libre, Lima – Perú · <a href="tel:+51918714054">(+51) 918 714 054</a></address>
+          <p><strong>Tesis20</strong> · Asesoría y acompañamiento académico en ${OFFICE_CITIES_LABEL}, y en línea para todo el Perú.</p>
+          <address>${DOMICILE_LINE} · <a href="${COMPANY.phoneHref}">${COMPANY.phone}</a></address>
+          <p>Oficinas: ${OFFICES.map(officeLine).join(" · ")}.</p>
+          <p>RUC ${COMPANY.ruc}</p>
           <p><a href="/nido">Nido20</a> · cuentos ilustrados con narración para niños.</p>
         </footer>`;
 
@@ -635,28 +670,7 @@ function createStructuredData(route) {
 
   const canonicalUrl = getCanonicalUrl(route);
   const graph = [
-    {
-      "@type": ["Organization", "ProfessionalService"],
-      "@id": `${SITE_ORIGIN}/#organization`,
-      name: "Tesis20",
-      url: `${SITE_ORIGIN}/`,
-      logo: `${SITE_ORIGIN}/assets/tesis20-logo.png`,
-      telephone: "+51 918 714 054",
-      email: "tesis.com20@gmail.com",
-      address: {
-        "@type": "PostalAddress",
-        streetAddress: "Jr. Lincoln 638",
-        addressLocality: "Pueblo Libre",
-        addressRegion: "Lima",
-        addressCountry: "PE",
-      },
-      areaServed: { "@type": "Country", name: "Perú" },
-      sameAs: [
-        "https://www.facebook.com/tesisconluis",
-        "https://www.instagram.com/tesis20.comm/",
-        "https://www.youtube.com/@tesisasesoriaycapacitacion3499",
-      ],
-    },
+    buildOrganizationSchema(SITE_ORIGIN),
     ...(route.path === "/nido"
       ? [
           {

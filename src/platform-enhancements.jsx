@@ -15,9 +15,9 @@ const DEFAULT_SHARE_IMAGE = `${SITE_ORIGIN}/assets/hero-students.png`;
 
 const PAGE_META = {
   home: {
-    title: "Asesoría de tesis en Lima y todo el Perú | Tesis20",
+    title: "Asesoría de tesis en Lima, Cajamarca y Trujillo | Tesis20",
     description:
-      "Asesoría académica personalizada para tesis, proyectos, análisis estadístico y sustentación, con metodología por etapas y autoría del estudiante.",
+      "Asesoría de tesis con oficinas en Lima, Cajamarca y Trujillo, y atención en línea en todo el Perú: proyectos, análisis estadístico y sustentación con contrato por escrito.",
     path: "/",
     schemaType: "WebPage",
     image: DEFAULT_SHARE_IMAGE,
@@ -44,7 +44,7 @@ const PAGE_META = {
   contract: {
     title: "Contrato general de asesoría académica | Tesis20",
     description:
-      "Lee y descarga el modelo general informativo de contrato de asesoría académica de Tesis20 en Word editable o PDF para revisarlo antes de contratar.",
+      "Lee y descarga el contrato general de asesoría académica de Tesis20, con RUC y datos del prestador ya completos, en Word editable o PDF antes de contratar.",
     path: "/contrato",
     schemaType: "WebPage",
     image: DEFAULT_SHARE_IMAGE,
@@ -99,38 +99,24 @@ const PAGE_META = {
   },
 };
 
-const organizationSchema = {
-  "@type": ["Organization", "ProfessionalService"],
-  "@id": `${SITE_ORIGIN}/#organization`,
-  name: "Tesis20",
-  url: SITE_ORIGIN,
-  logo: {
-    "@type": "ImageObject",
-    url: `${SITE_ORIGIN}/assets/tesis20-logo.png`,
-  },
-  image: DEFAULT_SHARE_IMAGE,
-  description:
-    "Servicio de orientación y acompañamiento académico para proyectos de investigación y tesis.",
-  telephone: "+51 918 714 054",
-  email: "tesis.com20@gmail.com",
-  priceRange: "S/ 200 - S/ 1800",
-  address: {
-    "@type": "PostalAddress",
-    streetAddress: "Jr. Lincoln 638",
-    addressLocality: "Pueblo Libre",
-    addressRegion: "Lima",
-    addressCountry: "PE",
-  },
-  areaServed: {
-    "@type": "Country",
-    name: "Perú",
-  },
-  sameAs: [
-    "https://www.facebook.com/tesisconluis",
-    "https://www.instagram.com/tesis20.comm/",
-    "https://www.youtube.com/@tesisasesoriaycapacitacion3499",
-  ],
-};
+/**
+ * Nodo Organization: el HTML prerenderizado ya lo trae completo (RUC, oficinas
+ * y contacto; ver scripts/company-schema.mjs) y la app lo conserva tal cual.
+ * Sin HTML prerenderizado (vite dev, 404) queda la identificación mínima.
+ */
+function readOrganizationSchema() {
+  const id = `${SITE_ORIGIN}/#organization`;
+  try {
+    const graph = JSON.parse(
+      document.head.querySelector("#tesis20-structured-data")?.textContent || "{}",
+    )["@graph"];
+    const node = graph?.find((item) => item?.["@id"] === id);
+    if (node) return node;
+  } catch {
+    // JSON-LD ausente o ilegible: se usa la identificación mínima.
+  }
+  return { "@type": ["Organization", "ProfessionalService"], "@id": id, name: SITE_NAME, url: `${SITE_ORIGIN}/` };
+}
 
 const nidoOrganizationSchema = {
   "@type": "Organization",
@@ -505,7 +491,7 @@ export function SeoManager({
     const schema = {
       "@context": "https://schema.org",
       "@graph": [
-        organizationSchema,
+        readOrganizationSchema(),
         ...(pageKey === "nido" ? [nidoOrganizationSchema] : []),
         websiteSchema,
         ...(!isNotFound ? [primaryImage, webpageSchema, breadcrumbs] : []),

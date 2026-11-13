@@ -27,14 +27,19 @@ WHITE = "FFFFFF"
 YELLOW_RGB = RGBColor(0xF5, 0xBD, 0x42)
 INK_RGB = RGBColor(0x1E, 0x20, 0x22)
 MUTED_RGB = RGBColor(0x5F, 0x62, 0x64)
+WHITE_RGB = RGBColor(0xFF, 0xFF, 0xFF)
+
+# El pie de página lleva el RUC: build_docx() carga aquí el contrato.
+FOOTER_DATA = {}
 
 BLANK = "____________________"
 
-EXTRA_FILL_FIELDS = [
-    "Nombre del alumno: ____________________",
-    "Servicio contratado: ____________________",
-    "Monto total (S/): ____________________",
-    "Fechas (inicio y término): ____________________",
+# Datos del servicio que se completan en Word además de los del contrato web.
+SERVICE_FIELDS = [
+    {"label": "Nombre del alumno", "value": ""},
+    {"label": "Servicio contratado", "value": ""},
+    {"label": "Monto total (S/)", "value": ""},
+    {"label": "Fechas (inicio y término)", "value": ""},
 ]
 
 
@@ -220,7 +225,9 @@ def add_footer_bar(section):
     set_paragraph_spacing(paragraph, before=4, after=0, line=200)
     add_bottom_border(paragraph, YELLOW, "16")
 
-    brand = paragraph.add_run("TESIS20  ·  Modelo general para Perú — completar antes de firmar")
+    brand = paragraph.add_run(
+        f"TESIS20  ·  RUC {provider_ruc(FOOTER_DATA)}  ·  Modelo general para Perú — completar antes de firmar"
+    )
     set_run_font(brand, size=8, bold=False, color=MUTED_RGB)
 
     page_run = paragraph.add_run("          Página ")
@@ -280,52 +287,82 @@ def add_heading_block(document, data):
 
 def add_section_label(document, text):
     paragraph = document.add_paragraph()
+    paragraph.paragraph_format.keep_with_next = True
     set_paragraph_spacing(paragraph, before=4, after=6, line=240)
     run = paragraph.add_run(text.upper())
     set_run_font(run, size=10, bold=True, color=INK_RGB)
 
 
-def add_fields_table(document, fields):
-    add_section_label(document, "Datos a completar")
-    hint = document.add_paragraph()
-    set_paragraph_spacing(hint, before=0, after=8, line=220)
-    run = hint.add_run(
-        "Completa en Word los espacios subrayados: nombre del alumno, DNI, "
-        "universidad, servicio, monto, fechas y firmas."
-    )
-    set_run_font(run, size=9, color=MUTED_RGB)
+def provider_ruc(data):
+    """RUC del prestador tal como figura en los datos de las partes."""
+    for field in data["parties"][0]["fields"]:
+        if field["label"].casefold() == "ruc":
+            return field["value"]
+    raise ValueError("El contrato no declara el RUC del prestador.")
 
-    rows = []
-    for index in range(0, len(fields), 2):
-        left = fields[index]
-        right = fields[index + 1] if index + 1 < len(fields) else ""
-        rows.append((left, right))
 
-    table = document.add_table(rows=len(rows), cols=2)
+def add_fields_grid(document, title, fields, *, status="", dark=False):
+    """Tabla de dos columnas con una barra de título: una por cada parte."""
+    rows = (len(fields) + 1) // 2
+    table = document.add_table(rows=rows + 1, cols=2)
     set_table_fixed(table, 18.0)
     table.alignment = WD_TABLE_ALIGNMENT.CENTER
     table.columns[0].width = Cm(9.0)
     table.columns[1].width = Cm(9.0)
 
-    for row_index, (left, right) in enumerate(rows):
-        row = table.rows[row_index]
-        prevent_row_split(row)
-        for cell, raw in zip(row.cells, (left, right)):
-            if not raw:
-                shade_cell(cell, LIGHT)
-                set_cell_borders(cell)
-                write_cell_text(cell, "")
-                continue
-            label, value = split_labeled_value(raw)
-            add_labeled_fill_cell(cell, label, value)
+    header_row = table.rows[0]
+    prevent_row_split(header_row)
+    header = header_row.cells[0].merge(header_row.cells[1])
+    fill = INK if dark else YELLOW
+    shade_cell(header, fill)
+    set_cell_borders(header, fill, "4")
+    set_cell_margins(header, top=70, bottom=70, left=110, right=110)
+    paragraph = write_cell_text(
+        header, title, size=10, bold=True, color=YELLOW_RGB if dark else INK_RGB
+    )
+    if status:
+        status_run = paragraph.add_run(f"   ·   {status}")
+        set_run_font(status_run, size=9, color=WHITE_RGB if dark else INK_RGB)
 
-    document.add_paragraph().paragraph_format.space_after = Pt(8)
+    for index in range(rows * 2):
+        cell = table.rows[index // 2 + 1].cells[index % 2]
+        prevent_row_split(table.rows[index // 2 + 1])
+        if index >= len(fields):
+            shade_cell(cell, LIGHT)
+            set_cell_borders(cell)
+            write_cell_text(cell, "")
+            continue
+        field = fields[index]
+        add_labeled_fill_cell(cell, field["label"], field["value"])
+
+    spacer = document.add_paragraph()
+    set_paragraph_spacing(spacer, before=0, after=0, line=120)
+
+
+def add_parties(document, data):
+    add_section_label(document, "Datos de las partes")
+    hint = document.add_paragraph()
+    hint.paragraph_format.keep_with_next = True
+    set_paragraph_spacing(hint, before=0, after=8, line=220)
+    run = hint.add_run(
+        "Los datos de Tesis20 ya están completos. Completa en Word los espacios "
+        "subrayados: tus datos, universidad, servicio, monto, fechas y firmas."
+    )
+    set_run_font(run, size=9, color=MUTED_RGB)
+
+    add_fields_grid(document, "CONTRATO", data["meta"])
+    for index, party in enumerate(data["parties"]):
+        add_fields_grid(
+            document, party["role"], party["fields"], status=party["status"], dark=index == 0
+        )
+    add_fields_grid(document, "DATOS DEL SERVICIO", SERVICE_FIELDS)
 
 
 def add_clauses(document, clauses):
     add_section_label(document, "Cláusulas")
     for clause in clauses:
         title = document.add_paragraph()
+        title.paragraph_format.keep_with_next = True
         set_paragraph_spacing(title, before=8, after=3, line=240)
         run = title.add_run(clause["title"])
         set_run_font(run, size=11, bold=True, color=INK_RGB)
@@ -373,6 +410,7 @@ def add_text_with_blanks(paragraph, text):
 def add_signatures(document, signatures):
     add_section_label(document, "Firmas")
     hint = document.add_paragraph()
+    hint.paragraph_format.keep_with_next = True
     set_paragraph_spacing(hint, before=0, after=8, line=220)
     run = hint.add_run("Espacios editables para nombre, documento de identidad y firma de cada parte.")
     set_run_font(run, size=9, color=MUTED_RGB)
@@ -384,31 +422,63 @@ def add_signatures(document, signatures):
     table.columns[1].width = Cm(9.0)
     prevent_row_split(table.rows[0])
 
-    for cell, raw in zip(table.rows[0].cells, signatures):
+    for cell, signature in zip(table.rows[0].cells, signatures):
         shade_cell(cell, WHITE)
         set_cell_borders(cell, BORDER, "8")
         set_cell_margins(cell, top=120, bottom=140, left=120, right=120)
         cell.vertical_alignment = WD_CELL_VERTICAL_ALIGNMENT.TOP
 
-        lines = raw.split("\n")
         first = cell.paragraphs[0]
         first.clear()
         set_paragraph_spacing(first, before=0, after=10, line=240)
-        heading = first.add_run(lines[0])
+        heading = first.add_run(signature["role"])
         set_run_font(heading, size=11, bold=True, color=INK_RGB)
 
-        for line in lines[1:]:
+        lines = [{"label": "Firma", "value": ""}, *signature["fields"]]
+        for line in lines:
             paragraph = cell.add_paragraph()
-            set_paragraph_spacing(paragraph, before=6, after=8, line=260)
-            label, value = split_labeled_value(line)
-            label_run = paragraph.add_run(f"{label}: ")
+            is_signature = line["label"] == "Firma"
+            set_paragraph_spacing(paragraph, before=22 if is_signature else 6, after=8, line=260)
+            label_run = paragraph.add_run(f"{line['label']}: ")
             set_run_font(label_run, size=10, bold=True, color=MUTED_RGB)
-            if value and not is_blank_value(value):
-                value_run = paragraph.add_run(value)
-                set_run_font(value_run, size=10, color=INK_RGB)
+            if line["value"] and not is_blank_value(line["value"]):
+                value_run = paragraph.add_run(line["value"])
+                set_run_font(value_run, size=10, bold=True, color=INK_RGB)
             else:
                 add_fill_in_run(paragraph, BLANK)
             add_bottom_border(paragraph, BORDER, "8")
+
+
+def add_offices(document, offices):
+    spacer = document.add_paragraph()
+    set_paragraph_spacing(spacer, before=6, after=0, line=160)
+    add_section_label(document, offices["title"])
+
+    items = offices["items"]
+    table = document.add_table(rows=1, cols=len(items))
+    set_table_fixed(table, 18.0)
+    table.alignment = WD_TABLE_ALIGNMENT.CENTER
+    prevent_row_split(table.rows[0])
+    for column in table.columns:
+        column.width = Cm(18.0 / len(items))
+
+    for cell, office in zip(table.rows[0].cells, items):
+        shade_cell(cell, LIGHT)
+        set_cell_borders(cell)
+        set_cell_margins(cell, top=90, bottom=90, left=110, right=110)
+        cell.vertical_alignment = WD_CELL_VERTICAL_ALIGNMENT.TOP
+        cell.width = Cm(18.0 / len(items))
+        city = cell.paragraphs[0]
+        city.clear()
+        set_paragraph_spacing(city, before=0, after=2, line=230)
+        set_run_font(city.add_run(office["city"]), size=10, bold=True, color=INK_RGB)
+        address = cell.add_paragraph()
+        set_paragraph_spacing(address, before=0, after=0, line=220)
+        set_run_font(address.add_run(office["address"]), size=9, color=MUTED_RGB)
+
+    note = document.add_paragraph()
+    set_paragraph_spacing(note, before=6, after=0, line=220)
+    set_run_font(note.add_run(offices["note"]), size=9, color=MUTED_RGB)
 
 
 def add_notice(document, data):
@@ -438,19 +508,9 @@ def add_notice(document, data):
     set_run_font(notice, size=9.5, color=INK_RGB)
 
 
-def collect_fields(data):
-    seen_labels = {split_labeled_value(field)[0].casefold() for field in data["fields"]}
-    fields = list(data["fields"])
-    for extra in EXTRA_FILL_FIELDS:
-        label, _ = split_labeled_value(extra)
-        if label.casefold() not in seen_labels:
-            fields.append(extra)
-            seen_labels.add(label.casefold())
-    return fields
-
-
 def build_docx():
     data = json.loads(CONTENT_PATH.read_text(encoding="utf-8"))
+    FOOTER_DATA.update(data)
     OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
     PUBLIC_PATH.parent.mkdir(parents=True, exist_ok=True)
 
@@ -479,9 +539,10 @@ def build_docx():
     add_header_bar(section)
     add_footer_bar(section)
     add_heading_block(document, data)
-    add_fields_table(document, collect_fields(data))
+    add_parties(document, data)
     add_clauses(document, data["clauses"])
     add_signatures(document, data["signatures"])
+    add_offices(document, data["offices"])
     add_notice(document, data)
 
     document.save(OUTPUT_PATH)

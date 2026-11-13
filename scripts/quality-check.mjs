@@ -5,6 +5,8 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { gzipSync } from "node:zlib";
 import { CAREER_AREAS } from "../src/data/academic-directory.js";
+import { OFFICES } from "../src/data/company.js";
+import { COMPANY_DETAILS as COMPANY } from "./company-schema.mjs";
 import { ACTIVE_THESIS_REPOSITORIES } from "../src/data/thesis-repositories.js";
 import { CLASSIC_COLLECTION } from "../src/nido/cuentos/classic-collection.js";
 
@@ -17,7 +19,7 @@ const routeSpecs = [
   {
     path: "/",
     output: "dist/index.html",
-    title: "Asesoría de tesis en Lima y todo el Perú | Tesis20",
+    title: "Asesoría de tesis en Lima, Cajamarca y Trujillo | Tesis20",
     h1: "Asesoría y acompañamiento para tu tesis",
     content: ["Quiero orientación", "Diagnóstico inicial", "evidencias anonimizadas"],
     schemaType: "WebPage",
@@ -591,6 +593,29 @@ for (const route of routeSpecs) {
   check(schemaNodes.some((node) => hasSchemaType(node, "Organization")), `${route.output} debe incluir Organization en JSON-LD.`);
   check(schemaNodes.some((node) => hasSchemaType(node, route.schemaType) && node.url === canonicalUrl), `${route.output} debe incluir ${route.schemaType} con URL canónica.`);
   check(schemaNodes.some((node) => hasSchemaType(node, "BreadcrumbList")), `${route.output} debe incluir BreadcrumbList.`);
+  // Datos de la empresa: RUC y oficinas en el JSON-LD de todas las páginas y,
+  // salvo en Nido (pie propio), también a la vista en el pie.
+  const organizationNode = schemaNodes.find(
+    (node) => hasSchemaType(node, "Organization") && node["@id"] === `${siteOrigin}/#organization`,
+  );
+  check(organizationNode?.taxID === COMPANY.ruc, `${route.output} debe declarar el RUC de Tesis20 (taxID) en Organization.`);
+  for (const office of OFFICES) {
+    const place = organizationNode?.location?.find((node) => node.address?.addressLocality === office.city);
+    check(Boolean(place), `${route.output} debe declarar la oficina de ${office.city} en Organization.location.`);
+    check(
+      (place?.address?.streetAddress || "") === office.street,
+      `${route.output} publica una dirección distinta de la registrada para la oficina de ${office.city}.`,
+    );
+    if (route.path !== "/nido") {
+      check(
+        visibleText.includes(office.street || office.city),
+        `${route.output} debe mostrar la oficina de ${office.city} en el pie.`,
+      );
+    }
+  }
+  if (route.path !== "/nido") {
+    check(visibleText.includes(`RUC ${COMPANY.ruc}`), `${route.output} debe mostrar el RUC de Tesis20 en el pie.`);
+  }
   if (route.path === "/servicios") {
     check(schemaNodes.some((node) => hasSchemaType(node, "ItemList")), "dist/servicios.html debe incluir el catálogo ItemList.");
   }
@@ -619,6 +644,58 @@ for (const route of routeSpecs) {
     check(serviceNode?.offers?.priceCurrency === "PEN", `${route.output} debe declarar priceCurrency PEN.`);
   }
 }
+
+// Datos legales: un RUC o DNI mal tipeado no debe llegar al contrato ni al pie.
+const rucDigits = COMPANY.ruc.split("").map(Number);
+const rucWeights = [5, 4, 3, 2, 7, 6, 5, 4, 3, 2];
+const rucRemainder = 11 - (rucWeights.reduce((sum, weight, position) => sum + weight * rucDigits[position], 0) % 11);
+const rucCheckDigit = rucRemainder === 10 ? 0 : rucRemainder === 11 ? 1 : rucRemainder;
+check(/^(?:10|15|17|20)\d{9}$/.test(COMPANY.ruc) && rucCheckDigit === rucDigits[10], "El RUC de Tesis20 no supera la validación del dígito verificador.");
+check(/^\d{8}$/.test(COMPANY.representativeDni), "El DNI del representante debe tener 8 dígitos.");
+
+// El contrato (web, Word y PDF) sale de contract-template.json: debe decir lo
+// mismo que data/company.js, que alimenta el pie y los datos estructurados.
+const contractTemplate = JSON.parse(await read("src/data/contract-template.json"));
+const contractProvider = Object.fromEntries(
+  (contractTemplate.parties?.[0]?.fields || []).map((field) => [field.label, field.value]),
+);
+const contractSignature = Object.fromEntries(
+  (contractTemplate.signatures?.[0]?.fields || []).map((field) => [field.label, field.value]),
+);
+check(contractProvider.RUC === COMPANY.ruc && contractSignature.RUC === COMPANY.ruc, "El contrato debe llevar el RUC de Tesis20 en los datos del prestador y en la firma.");
+check(
+  contractProvider.Representante === COMPANY.representative && contractSignature.Nombre === COMPANY.representative,
+  "El contrato debe llevar el nombre del representante en los datos del prestador y en la firma.",
+);
+check(
+  contractProvider["DNI del representante"] === COMPANY.representativeDni && contractSignature.DNI === COMPANY.representativeDni,
+  "El contrato debe llevar el DNI del representante en los datos del prestador y en la firma.",
+);
+check(
+  (contractProvider.Domicilio || "").startsWith(`${COMPANY.domicile.street}, ${COMPANY.domicile.district}`),
+  "El domicilio del contrato debe coincidir con el publicado en el pie.",
+);
+check(
+  (contractTemplate.parties?.[1]?.fields || []).every((field) => field.value === ""),
+  "Los datos del cliente deben quedar en blanco en el modelo de contrato.",
+);
+check(contractTemplate.clauses?.length === 12, "El modelo de contrato debe conservar sus 12 cláusulas.");
+for (const office of OFFICES) {
+  const contractOffice = (contractTemplate.offices?.items || []).find((item) => item.city === office.city);
+  check(
+    Boolean(contractOffice) && (!office.street || contractOffice.address === office.street),
+    `El contrato debe listar la oficina de ${office.city} con la misma dirección que el pie.`,
+  );
+}
+const contractPageSource = await read("src/contract-page.jsx");
+check(
+  /contractTemplate\.parties\.map/.test(contractPageSource) && /contractTemplate\.offices\.items\.map/.test(contractPageSource),
+  "La página del contrato debe mostrar los datos de las partes y las oficinas del modelo.",
+);
+check(
+  /OFFICES\.map/.test(appSource) && /COMPANY\.ruc/.test(appSource),
+  "El pie debe mostrar las oficinas y el RUC desde data/company.js.",
+);
 
 // Inicio se publica con el hero ya dibujado (el mismo <Hero /> de React,
 // renderizado por scripts/home-hero-prerender.mjs): titular, botón y foto se
@@ -871,9 +948,15 @@ check(
 // 1437,8 KiB, a 2 KiB del tope. Las entregas WP3–WP7 suman código y WP5 retira
 // el postprocesado Bokeh (~17 KiB). Todo sigue diferido a /nido: no cambia el
 // JS inicial (450 KiB) ni el tope por chunk (250 KiB; CuentosApp baja a 246 KiB).
+// 2026-11-13: 1480 → 1484 KiB por los datos de Tesis20 en el contrato y el pie,
+// pedidos por el dueño: partes con RUC y representante, firmas, oficinas e
+// índice de cláusulas (+3,8 KiB en el chunk diferido de /contrato) y la banda
+// de oficinas con RUC del pie (+1,6 KiB). Medido: 1482,2 KiB. Ya compensado lo
+// posible: íconos que ya viajaban en el bundle y el JSON-LD de la organización
+// solo en el HTML prerenderizado. El JS inicial queda en 405 KiB (tope 450).
 check(
-  javascriptBytes - classicTextBytes <= 1480 * 1024,
-  `El JavaScript de aplicación sin los textos de la colección no debe superar 1480 KiB (${Math.ceil((javascriptBytes - classicTextBytes) / 1024)} KiB).`,
+  javascriptBytes - classicTextBytes <= 1484 * 1024,
+  `El JavaScript de aplicación sin los textos de la colección no debe superar 1484 KiB (${Math.ceil((javascriptBytes - classicTextBytes) / 1024)} KiB).`,
 );
 // 2026-09-12: 35 textos autorizados y 33 ilustraciones históricas. Se acotan
 // aparte los datos editoriales, sin aumentar el presupuesto del motor ni de
