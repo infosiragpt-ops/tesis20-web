@@ -786,6 +786,21 @@ for (const route of routeSpecs) {
   }
 }
 
+// Los servicios pensados para una universidad («… – UCV», «… – UPN») muestran
+// su logo: llevan el campo `university` y el archivo existe.
+const universityServiceTitles = appSource.match(/title: "[^"]* – (?:UCV|UPN)"/g) || [];
+const serviceUniversityIds = [...appSource.matchAll(/^\s+university: "([a-z]+)",$/gm)].map((match) => match[1]);
+check(
+  universityServiceTitles.length > 0 && universityServiceTitles.length === serviceUniversityIds.length,
+  "Cada servicio de una universidad (título «… – UCV» o «… – UPN») debe declarar `university` para mostrar su logo.",
+);
+for (const universityId of new Set(serviceUniversityIds)) {
+  check(
+    await exists(`public/assets/universities/${universityId}.webp`),
+    `Falta el logo public/assets/universities/${universityId}.webp de un servicio.`,
+  );
+}
+
 // La app debe usar el arreglo de 15 elementos tanto en la cuadrícula como en el contador.
 check(/gradeResults\.map\(\(result,\s*index\)\s*=>/.test(appSource), "La cuadrícula debe renderizar el arreglo gradeResults.");
 check(/casesCount=\{publishedEvidenceGroups\.length\}/.test(appSource), "El contador de Inicio debe reflejar los casos publicados en Evidencias.");

@@ -276,6 +276,29 @@ export function UniversityStrip() {
   );
 }
 
+/**
+ * Logo de la universidad en los servicios pensados para ella (UPN, UCV): ocupa
+ * el lugar del ícono en las tarjetas de Inicio y de /servicios. Es decorativo
+ * (el título ya nombra la universidad) y usa los mismos archivos de la cinta
+ * «Nuestros estudiantes», cuya nota aclara que Tesis20 no está afiliado.
+ */
+export function ServiceLogo({ university }) {
+  const { id, width, height } = STUDENT_UNIVERSITIES.find((item) => item.id === university);
+  return (
+    <span className="service-tile__icon service-tile__logo">
+      <img
+        src={`/assets/universities/${id}.webp`}
+        alt=""
+        width={width}
+        height={height}
+        loading="lazy"
+        decoding="async"
+        draggable="false"
+      />
+    </span>
+  );
+}
+
 export function ServicesPreview({ services }) {
   return (
     <section className="services-preview" id="servicios-destacados" aria-labelledby="services-preview-title">
@@ -287,13 +310,17 @@ export function ServicesPreview({ services }) {
           lead="Precios desde el monto publicado. El alcance exacto se confirma por escrito después de revisar tu avance."
         />
         <ul className="service-tiles">
-          {services.map(({ id, title, price, category, summary, Icon }, index) => (
+          {services.map(({ id, title, price, category, summary, Icon, university }, index) => (
             <li key={id} {...reveal(index)}>
               <a className="service-tile" href={`/servicios/${id}`}>
                 <span className="service-tile__top">
-                  <span className="service-tile__icon">
-                    <Icon size={26} weight="duotone" aria-hidden="true" />
-                  </span>
+                  {university ? (
+                    <ServiceLogo university={university} />
+                  ) : (
+                    <span className="service-tile__icon">
+                      <Icon size={26} weight="duotone" aria-hidden="true" />
+                    </span>
+                  )}
                   <span className="service-tile__category">{category}</span>
                 </span>
                 <h3>{title}</h3>

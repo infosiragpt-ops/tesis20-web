@@ -466,10 +466,6 @@ h3 {
   line-height: 1.45;
 }
 
-.footer-offices svg {
-  color: var(--yellow);
-}
-
 .footer-offices address {
   display: grid;
   gap: 3px;

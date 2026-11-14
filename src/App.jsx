@@ -65,6 +65,7 @@ import {
   Hero,
   PortalShowcase,
   ProcessSection,
+  ServiceLogo,
   ServicesPreview,
   UniversityStrip,
   WhyBento,
@@ -386,6 +387,7 @@ const services = [
   },
   {
     id: "suficiencia-profesional",
+    university: "upn",
     title: "Trabajo de suficiencia profesional – UPN",
     price: "S/ 1800",
     category: "Titulación",
@@ -419,6 +421,7 @@ const services = [
   // revisión: introducción, metodología, resultados y conclusiones). Sin audio.
   {
     id: "proyecto-tesis-ucv",
+    university: "ucv",
     title: "Proyecto de tesis – UCV",
     price: "S/ 800",
     category: "Tesis",
@@ -440,6 +443,7 @@ const services = [
   },
   {
     id: "tesis-maestria-ucv",
+    university: "ucv",
     title: "Tesis de maestría – UCV",
     price: "S/ 1600",
     category: "Posgrado",
@@ -461,6 +465,7 @@ const services = [
   },
   {
     id: "rsl-ucv",
+    university: "ucv",
     title: "Revisión sistemática (RSL) – UCV",
     price: "S/ 700",
     category: "Publicación",
@@ -1030,9 +1035,13 @@ function ServiceCard({ service, index, expandedByDefault = false, showDetailLink
       itemType="https://schema.org/Service"
     >
       <div className="service-card__header">
-        <span className="service-card__icon" aria-hidden="true">
-          <Icon size={30} weight="duotone" />
-        </span>
+        {service.university ? (
+          <ServiceLogo university={service.university} />
+        ) : (
+          <span className="service-card__icon" aria-hidden="true">
+            <Icon size={30} weight="duotone" />
+          </span>
+        )}
         <div className="service-card__heading">
           <span>
             Servicio {String(index + 1).padStart(2, "0")} · {service.category}
@@ -1840,7 +1849,7 @@ function Footer() {
               const mapsHref = officeMapsHref(office);
               const action = mapsHref ? "Cómo llegar" : "Coordinar visita";
               return (
-                <li key={office.id}>
+                <li className="footer-contact" key={office.id}>
                   <MapPin size={22} weight="duotone" aria-hidden="true" />
                   <address>
                     <strong>{office.city}</strong>
