@@ -91,6 +91,25 @@ tesis, tesis de maestría y RSL.
 - `npm run quality` comprueba que los tres archivos digan lo mismo, que el RUC supere su dígito verificador y que
   cada página publique el RUC y las oficinas en el pie y en los datos estructurados.
 
+## Revista Científica Tesis20 (`/revista`)
+
+- **Qué es:** revista propia con revisión por pares doble ciego, acceso abierto (CC BY 4.0) y publicación continua.
+  Recibe artículos originales, derivados de tesis y de revisión de estudiantes, egresados y docentes.
+- **Contenido:** todo el texto de la página (enfoque, áreas, tipos de artículo, proceso, normas, políticas, costo,
+  indexación y preguntas) vive en `src/data/journal.js`, que usan la página (`src/journal-page.jsx`), el HTML
+  prerenderizado (`scripts/generate-static-routes.mjs`, con el nodo `Periodical` y `FAQPage`) y `npm run quality`.
+- **Envío de manuscritos:** el formulario no guarda nada; arma el mensaje y abre WhatsApp, donde el autor adjunta
+  el Word sin nombres y la portada con sus datos (alternativa: correo con asunto, ver `JOURNAL.contactEmail`).
+- **Cobro:** el envío y la evaluación son gratis; el costo de publicación (APC) se paga solo si el artículo es
+  aceptado, con tarjeta mediante un enlace de pago de la pasarela, y el monto se informa por WhatsApp (decisión del
+  dueño, nov. 2026). Ningún pago decide la aceptación.
+- **Indexación:** la revista **no** está indexada; la página lo dice y `npm run quality` exige que lo siga diciendo
+  (anunciarla como «Scopus» sería publicidad engañosa). Hoja de ruta en `INDEXING`: ISSN (Biblioteca Nacional del
+  Perú), DOI (Crossref), Latindex y luego DOAJ, SciELO y Scopus. Actualiza `INDEXING` solo cuando cada paso se cumpla.
+- **Pendiente del dueño:** comité editorial y revisores (nombres, grados y filiación), ISSN, cuenta en la pasarela de
+  pago para generar los enlaces y, cuando haya artículos aceptados, una página por artículo con los metadatos de
+  Google Académico (`citation_*`).
+
 ## Aviso
 
 Las evidencias públicas se muestran anonimizadas. El contrato incluido es un modelo general informativo y debe completarse y revisarse según el servicio concreto antes de firmarse.

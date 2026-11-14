@@ -59,6 +59,15 @@ const PAGE_META = {
     image: DEFAULT_SHARE_IMAGE,
     imageAlt: "Buscador de tesis y biblioteca de recursos académicos de Tesis20",
   },
+  journal: {
+    title: "Revista científica: publica tu artículo o tesis | Tesis20",
+    description:
+      "Publica tu artículo científico o tu tesis en formato de artículo: revisión por pares doble ciego, acceso abierto y pago solo si tu artículo es aceptado.",
+    path: "/revista",
+    schemaType: "WebPage",
+    image: DEFAULT_SHARE_IMAGE,
+    imageAlt: "Revista Científica Tesis20: convocatoria abierta para publicar investigaciones",
+  },
   careers: {
     title: "Carreras universitarias por áreas | Tesis20",
     description:
@@ -158,6 +167,7 @@ function getSafePageKey(pathname = window.location.pathname) {
     "/evidencias": "evidence",
     "/contrato": "contract",
     "/recursos": "resources",
+    "/revista": "journal",
     "/carreras": "careers",
     "/docentes": "teachers",
     "/nido": "nido",
@@ -221,6 +231,7 @@ export function SeoManager({
       evidence: "Evidencias",
       contract: "Contrato",
       resources: "Recursos y repositorio",
+      journal: "Revista científica",
       careers: "Carreras",
       teachers: "Docentes",
       nido: "Nido",
@@ -526,6 +537,7 @@ export function RouteAnnouncer({ currentPage }) {
     evidence: "Página de evidencias cargada",
     contract: "Página de contrato cargada",
     resources: "Página de recursos cargada",
+    journal: "Página de la revista científica cargada",
     careers: "Página de carreras cargada",
     teachers: "Página de docentes cargada",
     nido: "Página de Nido cargada",

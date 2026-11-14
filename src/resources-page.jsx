@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { ArrowRight } from "@phosphor-icons/react/ArrowRight";
 import { ArrowSquareOut } from "@phosphor-icons/react/ArrowSquareOut";
 import { CheckCircle } from "@phosphor-icons/react/CheckCircle";
 import { Database } from "@phosphor-icons/react/Database";
@@ -530,6 +531,17 @@ export default function ResourcesPage() {
               <MagnifyingGlass size={18} weight="bold" aria-hidden="true" />
             </a>
           </div>
+          <aside className="resources-journal" aria-labelledby="resources-journal-title">
+            <p>Nuevo · Convocatoria abierta</p>
+            <h2 id="resources-journal-title">Publica tu investigación en la Revista Científica Tesis20</h2>
+            <span>
+              Revisión por pares doble ciego y acceso abierto. Enviar y evaluar es gratis; pagas solo
+              si tu artículo es aceptado.
+            </span>
+            <a href="/revista" onClick={() => trackInteraction("journal_click", { location: "resources_hero" })}>
+              Conocer la revista <ArrowRight size={17} weight="bold" aria-hidden="true" />
+            </a>
+          </aside>
         </div>
       </section>
 

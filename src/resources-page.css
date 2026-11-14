@@ -41,6 +41,77 @@
 .resources-hero__inner {
   position: relative;
   z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
+  gap: clamp(28px, 4vw, 56px);
+  align-items: center;
+}
+
+/* Destacado de la Revista Científica Tesis20 (/revista). */
+.resources-journal {
+  padding: 26px;
+  border-radius: var(--radius-xl);
+  background: var(--ink);
+  color: var(--white);
+  box-shadow: var(--shadow-lg);
+}
+
+.resources-journal > p {
+  color: var(--yellow);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.resources-journal h2 {
+  margin-top: 10px;
+  font-family: var(--heading);
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  text-transform: none;
+  text-wrap: balance;
+}
+
+.resources-journal > span {
+  margin-top: 10px;
+  display: block;
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 14.5px;
+  line-height: 1.55;
+}
+
+.resources-journal > a {
+  min-height: 44px;
+  margin-top: 18px;
+  padding: 10px 16px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 9px;
+  background: var(--yellow);
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 900;
+  text-decoration: none;
+  transition: transform 160ms ease;
+}
+
+.resources-journal > a:hover {
+  transform: translateY(-2px);
+}
+
+.resources-journal > a:focus-visible {
+  outline: 3px solid var(--white);
+  outline-offset: 3px;
+}
+
+@media (max-width: 900px) {
+  .resources-hero__inner {
+    grid-template-columns: 1fr;
+  }
 }
 
 .resources-hero__copy {
