@@ -160,7 +160,9 @@
           "label": "RUC",
           "value": "20616782348"
         }
-      ]
+      ],
+      "signatureImage": "/assets/contrato/firma-prestador.png",
+      "fingerprintImage": "/assets/contrato/huella-prestador.png"
     },
     {
       "role": "EL CLIENTE",

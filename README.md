@@ -78,15 +78,16 @@ tesis, tesis de maestría y RSL.
   `python3 scripts/generate_contract_pdf.py` (necesitan `python-docx`, `reportlab` y `pypdf`; el PDF debe salir en
   2 páginas) y sube el `?v=` de los enlaces en `src/contract-page.jsx` para que nadie reciba la copia en caché.
 - **Firma y huella.** El bloque de firmas trae, para cada parte, la línea de firma y el recuadro «Huella digital».
-  El modelo público va **sin firmar**. Para entregar a un cliente una copia ya firmada por el prestador, genera los
-  archivos aparte, **fuera de esta carpeta** y sin tocar la web:
+  Por decisión del dueño (14-11-2026) el modelo público va **firmado por EL PRESTADOR**: su firma y su huella están
+  en `public/assets/contrato/` (PNG con fondo transparente; la huella en resolución reducida, 300 px de alto), el
+  modelo las declara en `signatures[0].signatureImage` / `fingerprintImage` y el Word y el PDF, regenerados sin
+  argumentos, las incrustan. `vercel.json` sirve esa carpeta con `X-Robots-Tag: noindex` y `robots.txt` la excluye,
+  para que no aparezca en buscadores. `npm run quality` exige que la web, el Word y el PDF coincidan: para volver a un
+  modelo sin firmar, quita las dos claves y la carpeta y regenera las descargas.
+- **Copias firmadas aparte** (otra firma, o una copia para un cliente concreto): genéralas **fuera de esta carpeta**,
   `python3 scripts/generate_contract_docx.py --signature ~/tesis20-privado/firma.png --fingerprint ~/tesis20-privado/huella.png --output ~/tesis20-privado/contrato-firmado.docx`
-  (igual con `generate_contract_pdf.py` y `.pdf`). Las imágenes son PNG con fondo transparente; ni ellas ni las
-  copias firmadas, que las llevan incrustadas, **se guardan en este repositorio, que es público**. Los generadores
-  exigen `--output` fuera del proyecto cuando reciben la firma o la huella, y `npm run quality` falla si las
-  descargas públicas traen imágenes o si existe `public/assets/contrato/` sin que el modelo las declare.
-  Publicarlas en la web es decisión del dueño: en ese caso van en `public/assets/contrato/` (PNG), el modelo las
-  declara en `signatures[0].signatureImage` / `fingerprintImage` y se regeneran el Word y el PDF sin argumentos.
+  (igual con `generate_contract_pdf.py` y `.pdf`). Los generadores exigen `--output` fuera del proyecto cuando reciben
+  la firma o la huella, y solo aceptan PNG.
 - `npm run quality` comprueba que los tres archivos digan lo mismo, que el RUC supere su dígito verificador y que
   cada página publique el RUC y las oficinas en el pie y en los datos estructurados.
 
