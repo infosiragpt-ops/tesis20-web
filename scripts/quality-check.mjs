@@ -90,6 +90,14 @@ const routeSpecs = [
     schemaType: "CollectionPage",
   },
   {
+    path: "/revista",
+    output: "dist/revista.html",
+    title: "Revista científica: publica tu artículo o tesis | Tesis20",
+    h1: "Revista Científica Tesis20",
+    content: ["revisión por pares doble ciego", "Normas para autores", "pagas solo si tu artículo es aceptado", "Envía tu manuscrito"],
+    schemaType: "WebPage",
+  },
+  {
     path: "/servicios/articulo-cientifico",
     output: "dist/servicios/articulo-cientifico.html",
     title: "Asesoría para artículo científico | Tesis20",
@@ -630,6 +638,21 @@ for (const route of routeSpecs) {
   if (route.path === "/recursos") {
     check(schemaNodes.some((node) => hasSchemaType(node, "ItemList")), "dist/recursos.html debe describir los documentos como ItemList.");
   }
+  if (route.path === "/revista") {
+    const journalNode = schemaNodes.find((node) => hasSchemaType(node, "Periodical"));
+    check(
+      journalNode?.name === "Revista Científica Tesis20" &&
+        /creativecommons\.org\/licenses\/by\/4\.0/.test(journalNode?.license || "") &&
+        journalNode?.publisher?.["@id"] === `${siteOrigin}/#organization`,
+      "dist/revista.html debe describir la revista como Periodical con licencia CC BY 4.0 y la editorial Tesis20.",
+    );
+    check(schemaNodes.some((node) => hasSchemaType(node, "FAQPage")), "dist/revista.html debe describir sus preguntas frecuentes como FAQPage.");
+    // Nunca anunciarla como indexada mientras no lo esté (publicidad engañosa).
+    check(
+      visibleText.includes("todavía no está indexada en bases como Scopus") && !/\bindexada en Scopus\b/i.test(visibleText.replace("todavía no está indexada en bases como Scopus", "")),
+      "dist/revista.html debe decir con claridad que la revista todavía no está indexada (Scopus, SciELO, Latindex…).",
+    );
+  }
   if (route.path === "/docentes") {
     check(
       !/no es una persona real|Imagen sintética|perfiles demostrativos/i.test(html),
@@ -794,6 +817,7 @@ for (const [path, chunk] of [
   ["/recursos", "resources-page"],
   ["/carreras", "academic-directory-pages"],
   ["/docentes", "advisors-page"],
+  ["/revista", "journal-page"],
 ]) {
   check(
     new RegExp(`"${path}":\\s*load[A-Za-z]+Page`).test(routeModulesSource),
@@ -825,7 +849,7 @@ for (const route of routeSpecs) {
   const requiredPaths =
     route.path === "/nido"
       ? ["/"]
-      : ["/servicios", "/evidencias", "/contrato", "/recursos", "/nido"];
+      : ["/servicios", "/revista", "/evidencias", "/contrato", "/recursos", "/nido"];
   for (const requiredPath of requiredPaths) {
     check(hrefs.some((href) => href === requiredPath || href.startsWith(`${requiredPath}#`)), `${route.output} debe enlazar a ${requiredPath}.`);
   }
@@ -1047,9 +1071,14 @@ check(
 // de oficinas con RUC del pie (+1,6 KiB). Medido: 1482,2 KiB. Ya compensado lo
 // posible: íconos que ya viajaban en el bundle y el JSON-LD de la organización
 // solo en el HTML prerenderizado. El JS inicial queda en 405 KiB (tope 450).
+// 2026-11-14: 1484 → 1510 KiB por la Revista Científica Tesis20 (/revista),
+// pedida por el dueño: chunk diferido journal-page (+20,6 KB, casi todo el
+// texto de normas, proceso y políticas) y +1,2 KiB en el bundle principal
+// (menú, metadatos y mensaje de WhatsApp). Medido: 1505,8 KiB. El JS inicial
+// queda en 407 KiB (tope 450) y el CSS inicial no cambia.
 check(
-  javascriptBytes - classicTextBytes <= 1484 * 1024,
-  `El JavaScript de aplicación sin los textos de la colección no debe superar 1484 KiB (${Math.ceil((javascriptBytes - classicTextBytes) / 1024)} KiB).`,
+  javascriptBytes - classicTextBytes <= 1510 * 1024,
+  `El JavaScript de aplicación sin los textos de la colección no debe superar 1510 KiB (${Math.ceil((javascriptBytes - classicTextBytes) / 1024)} KiB).`,
 );
 // 2026-09-12: 35 textos autorizados y 33 ilustraciones históricas. Se acotan
 // aparte los datos editoriales, sin aumentar el presupuesto del motor ni de

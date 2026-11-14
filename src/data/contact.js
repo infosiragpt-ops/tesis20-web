@@ -15,6 +15,7 @@ export const whatsappMessages = {
   evidence: "¡Hola! Revisé los resultados reportados por estudiantes y deseo información sobre el acompañamiento de Tesis20.",
   contract: "¡Hola! Revisé el contrato general de Tesis20 y deseo orientación antes de comenzar.",
   resources: "¡Hola! Revisé los recursos y el repositorio de tesis y deseo orientación para mi investigación.",
+  journal: "¡Hola! Quiero publicar mi investigación en la Revista Científica Tesis20. ¿Me informan el proceso y el costo de publicación?",
   careers: "¡Hola! Revisé el catálogo de carreras de Tesis20 y deseo ayuda para ubicar mi especialidad.",
   teachers: "¡Hola! Busco un asesor para mi tesis según mi carrera y mi tema. ¿Me orientan?",
 };
@@ -24,6 +25,7 @@ const PAGE_BY_PATH = {
   "/evidencias": "evidence",
   "/contrato": "contract",
   "/recursos": "resources",
+  "/revista": "journal",
   "/carreras": "careers",
   "/docentes": "teachers",
 };

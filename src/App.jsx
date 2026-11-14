@@ -58,6 +58,7 @@ import {
   loadCareersPage,
   loadContractPage,
   loadedRouteModules,
+  loadJournalPage,
   loadResourcesPage,
 } from "./route-modules.js";
 import {
@@ -105,6 +106,9 @@ const AdvisorsPage = lazy(() =>
 const LazyContractPage = lazy(() =>
   loadContractPage().then((module) => ({ default: module.ContractPage })),
 );
+const JournalPage = lazy(() =>
+  loadJournalPage().then((module) => ({ default: module.JournalPage })),
+);
 
 function getPageFromPathname(pathname = window.location.pathname) {
   const normalizedPath = pathname.length > 1 ? pathname.replace(/\/+$/, "") : pathname;
@@ -115,6 +119,7 @@ function getPageFromPathname(pathname = window.location.pathname) {
     "/evidencias": "evidence",
     "/contrato": "contract",
     "/recursos": "resources",
+    "/revista": "journal",
     "/carreras": "careers",
     "/docentes": "teachers",
     "/nido": "nido",
@@ -168,6 +173,7 @@ function internalNavigationProps(item, currentPage) {
 const navigation = [
   { label: "Inicio", href: "#inicio", servicesHref: "/#inicio", page: "home" },
   { label: "Servicios", href: "/servicios", page: "services" },
+  { label: "Revista", href: "/revista", page: "journal" },
   { label: "Carreras", href: "/carreras", page: "careers" },
   { label: "Asesores", href: "/docentes", page: "teachers" },
   {
@@ -1795,6 +1801,7 @@ function Footer() {
           <a href="/docentes">Asesores por especialidad</a>
           <a href="/evidencias">Evidencias</a>
           <a href="/contrato">Contrato</a>
+          <a href="/revista">Revista científica</a>
           <a href="/recursos">Recursos y repositorio</a>
           <a
             href="https://www.gestion.tesis20.com"
@@ -1933,6 +1940,7 @@ export function App() {
   const PreloadedResourcesPage = loadedRouteModules["/recursos"]?.default;
   const PreloadedCareersPage = loadedRouteModules["/carreras"]?.CareersPage;
   const PreloadedAdvisorsPage = loadedRouteModules["/docentes"]?.AdvisorsPage;
+  const PreloadedJournalPage = loadedRouteModules["/revista"]?.JournalPage;
   const [menuOpen, setMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const currentPage = getPageFromPathname();
@@ -2156,6 +2164,14 @@ export function App() {
         ) : (
           <Suspense fallback={<main id="main-content" tabIndex="-1">Preparando asesores…</main>}>
             <AdvisorsPage />
+          </Suspense>
+        )
+      ) : currentPage === "journal" ? (
+        PreloadedJournalPage ? (
+          <PreloadedJournalPage />
+        ) : (
+          <Suspense fallback={<main id="main-content" tabIndex="-1">Preparando revista…</main>}>
+            <JournalPage />
           </Suspense>
         )
       ) : currentPage === "not-found" ? (

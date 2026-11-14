@@ -31,6 +31,7 @@ const LIST_REGULAR =
 const NAVIGATION = [
   ["Inicio", "/", "home"],
   ["Servicios", "/servicios", "services"],
+  ["Revista", "/revista", "journal"],
   ["Carreras", "/carreras", "careers"],
   ["Asesores", "/docentes", "teachers"],
   ["Evidencias", "/evidencias", "evidence"],

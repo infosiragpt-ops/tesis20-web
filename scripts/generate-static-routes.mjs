@@ -12,6 +12,19 @@ import { STUDENT_UNIVERSITIES } from "../src/data/student-universities.js";
 import { renderHomeHeroMarkup } from "./home-hero-prerender.mjs";
 import { BOOT_HEAD_MARKUP, headerInnerMarkup, shellKind } from "./skeleton-shell.mjs";
 import { ACTIVE_THESIS_REPOSITORIES } from "../src/data/thesis-repositories.js";
+import { buildWhatsappHref, whatsappMessages } from "../src/data/contact.js";
+import {
+  ARTICLE_TYPES,
+  AUTHOR_GUIDELINES,
+  EDITORIAL_POLICIES,
+  EDITORIAL_PROCESS,
+  INDEXING,
+  JOURNAL,
+  JOURNAL_AREAS,
+  JOURNAL_FAQS,
+  JOURNAL_HIGHLIGHTS,
+  PUBLICATION_COST,
+} from "../src/data/journal.js";
 
 const DIST_DIRECTORY = resolve(process.cwd(), "dist");
 const INDEX_PATH = resolve(DIST_DIRECTORY, "index.html");
@@ -530,7 +543,19 @@ const routeDefinitions = [
       <section aria-labelledby="static-resources-next-title">
         <h2 id="static-resources-next-title">Millones de disertaciones, sin mezclar ruido</h2>
         <p>El motor combina el grafo académico abierto con repositorios peruanos verificados (UPN, UCV, UNSA, UNAP, UPCH y UPC). Solo se admiten registros tipados como tesis o disertación.</p>
+        <p><a href="/revista">¿Quieres publicar tu investigación? Conoce la ${JOURNAL.name}</a></p>
       </section>`,
+  },
+  {
+    output: "revista.html",
+    path: "/revista",
+    title: "Revista científica: publica tu artículo o tesis | Tesis20",
+    description:
+      "Publica tu artículo científico o tu tesis en formato de artículo: revisión por pares doble ciego, acceso abierto y pago solo si tu artículo es aceptado.",
+    heading: JOURNAL.name,
+    schemaType: "WebPage",
+    faqItems: JOURNAL_FAQS,
+    content: journalStaticContent(),
   },
 ];
 
@@ -638,6 +663,57 @@ function createNavigation(route) {
   // desde el primer cuadro, antes de que cargue la app. Ver skeleton-shell.mjs.
   return `
     <header class="site-header" data-seo-header>${headerInnerMarkup(route.path)}</header>`;
+}
+
+function journalStaticContent() {
+  const text = escapeAttribute;
+  const whatsappHref = text(buildWhatsappHref(whatsappMessages.journal));
+  const emailHref = text(`mailto:${JOURNAL.contactEmail}?subject=${encodeURIComponent(JOURNAL.emailSubject)}`);
+  return `
+      <p class="eyebrow">${text(JOURNAL.call)}</p>
+      <h1>${text(JOURNAL.name)}</h1>
+      <p>${text(JOURNAL.intro)}</p>
+      <p><a href="#enviar">Enviar mi manuscrito</a> · <a href="#normas">Normas para autores</a></p>
+      <ul>${JOURNAL_HIGHLIGHTS.map((item) => `<li>${text(item)}</li>`).join("")}</ul>
+      <section aria-labelledby="static-journal-scope-title">
+        <h2 id="static-journal-scope-title">Enfoque y alcance</h2>
+        <p>${text(JOURNAL.scope)}</p>
+        <p>Editorial: ${text(COMPANY.name)} · RUC ${text(COMPANY.ruc)} · Licencia ${text(JOURNAL.licenseName)} (${text(JOURNAL.license)}).</p>
+        <h3>Áreas que recibimos</h3>
+        <ul>${JOURNAL_AREAS.map((area) => `<li>${text(area)}</li>`).join("")}</ul>
+      </section>
+      <section aria-labelledby="static-journal-types-title">
+        <h2 id="static-journal-types-title">Tipos de artículo</h2>
+        ${ARTICLE_TYPES.map((type) => `<article><h3>${text(type.name)}</h3><p>${text(type.description)} ${text(type.length)}, sin contar referencias.</p></article>`).join("\n        ")}
+      </section>
+      <section aria-labelledby="static-journal-process-title">
+        <h2 id="static-journal-process-title">Proceso editorial</h2>
+        <ol>${EDITORIAL_PROCESS.map((step) => `<li><strong>${text(step.title)}</strong> (${text(step.time)}): ${text(step.body)}</li>`).join("")}</ol>
+      </section>
+      <section id="normas" aria-labelledby="static-journal-guidelines-title">
+        <h2 id="static-journal-guidelines-title">Normas para autores</h2>
+        <dl>${AUTHOR_GUIDELINES.map((item) => `<dt>${text(item.title)}</dt><dd>${text(item.body)}</dd>`).join("")}</dl>
+      </section>
+      <section id="costo" aria-labelledby="static-journal-cost-title">
+        <h2 id="static-journal-cost-title">${text(PUBLICATION_COST.title)}</h2>
+        <p>${text(PUBLICATION_COST.intro)}</p>
+        <ul>${PUBLICATION_COST.points.map((point) => `<li>${text(point)}</li>`).join("")}</ul>
+      </section>
+      <section id="politicas" aria-labelledby="static-journal-policies-title">
+        <h2 id="static-journal-policies-title">Políticas editoriales</h2>
+        ${EDITORIAL_POLICIES.map((policy) => `<h3>${text(policy.title)}</h3><p>${text(policy.body)}</p>`).join("\n        ")}
+      </section>
+      <section id="indexacion" aria-labelledby="static-journal-indexing-title">
+        <h2 id="static-journal-indexing-title">${text(INDEXING.title)}</h2>
+        <p>${text(INDEXING.status)}</p>
+        <ol>${INDEXING.steps.map((step) => `<li>${text(step)}</li>`).join("")}</ol>
+        <p>${text(INDEXING.note)}</p>
+      </section>
+      <section id="enviar" aria-labelledby="static-journal-submit-title">
+        <h2 id="static-journal-submit-title">Envía tu manuscrito a la revista</h2>
+        <p>Envía el manuscrito en Word, sin nombres de autores, y una portada aparte con los datos de cada autor por <a href="${whatsappHref}">WhatsApp</a> o al correo <a href="${emailHref}">${text(JOURNAL.contactEmail)}</a>.</p>
+        <p>¿Buscas antecedentes para tu artículo? <a href="/recursos">Usa el buscador de tesis</a>.</p>
+      </section>`;
 }
 
 function createStaticMarkup(route) {
@@ -790,6 +866,22 @@ function createStructuredData(route) {
     });
   }
 
+  if (route.path === "/revista") {
+    graph.push({
+      "@type": "Periodical",
+      "@id": `${canonicalUrl}#periodical`,
+      name: JOURNAL.name,
+      alternateName: JOURNAL.shortName,
+      url: canonicalUrl,
+      description: JOURNAL.intro,
+      inLanguage: "es",
+      isAccessibleForFree: true,
+      license: JOURNAL.licenseUrl,
+      about: JOURNAL_AREAS,
+      publisher: { "@id": `${SITE_ORIGIN}/#organization` },
+    });
+  }
+
   if (route.service) {
     graph.push({
       "@type": "Service",
@@ -870,7 +962,7 @@ function renderRoute(template, route, routeAssets = {}) {
     route.imageType || (shareImage.endsWith(".jpg") ? "image/jpeg" : "image/png");
   let html = template;
 
-  // Páginas con chunk propio (/contrato, /recursos, /carreras, /docentes): su JS
+  // Páginas con chunk propio (/contrato, /recursos, /carreras, /docentes, /revista): su JS
   // y CSS se descargan en paralelo con el bundle principal, en vez de esperar a
   // que este se ejecute.
   const extraAssets = routeAssets[route.path] || [];
@@ -970,6 +1062,7 @@ async function generateStaticRoutes() {
     "/recursos": chunkAssets("resources-page"),
     "/carreras": [...pageHeroAssets, ...chunkAssets("academic-directory-pages")],
     "/docentes": [...pageHeroAssets, ...chunkAssets("advisors-page")],
+    "/revista": [...pageHeroAssets, ...chunkAssets("journal-page")],
   };
   for (const [path, assets] of Object.entries(routeAssets)) {
     if (!assets.some((asset) => asset.endsWith(".js"))) {

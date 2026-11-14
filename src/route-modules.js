@@ -8,6 +8,7 @@ export const loadContractPage = () => import("./contract-page.jsx");
 export const loadResourcesPage = () => import("./resources-page.jsx");
 export const loadCareersPage = () => import("./academic-directory-pages.jsx");
 export const loadAdvisorsPage = () => import("./advisors-page.jsx");
+export const loadJournalPage = () => import("./journal-page.jsx");
 
 // Sin esta precarga la página monta con un <main> provisional de una línea:
 // el pie aparece pegado a la cabecera y salta hacia abajo al llegar el chunk.
@@ -16,6 +17,7 @@ const loaders = {
   "/recursos": loadResourcesPage,
   "/carreras": loadCareersPage,
   "/docentes": loadAdvisorsPage,
+  "/revista": loadJournalPage,
 };
 
 export const loadedRouteModules = {};
