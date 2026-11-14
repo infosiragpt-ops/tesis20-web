@@ -18,3 +18,7 @@ design-qa.md
 .DS_Store
 *.log
 /public/assets/evidence/case-267-grade-result-full.png
+# Firma, huella y copias firmadas del contrato: son privadas y este repositorio es público.
+/contrato-firmado*
+/firma*.png
+/huella*.png

@@ -180,6 +180,15 @@
       ]
     },
     {
+      "source": "/assets/contrato/(.*)",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, noarchive, noimageindex"
+        }
+      ]
+    },
+    {
       "source": "/sw.js",
       "headers": [
         {

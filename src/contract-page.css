@@ -623,10 +623,13 @@
   line-height: 1.72;
 }
 
+/* Dos columnas solo si cada tarjeta llega a 290 px; si no (junto al índice
+   lateral en pantallas medianas, o en celulares) van una debajo de otra, para
+   que la línea de la firma nunca quede más corta que el recuadro de la huella. */
 .contract-signatures {
   margin-top: 22px;
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 290px), 1fr));
   gap: 12px;
 }
 
@@ -643,15 +646,89 @@
   letter-spacing: 0.06em;
 }
 
-.contract-signature__line {
-  margin-top: 62px;
-  padding-top: 7px;
-  border-top: 1.5px solid var(--ink);
+/* Firma sobre su línea y, al costado, el recuadro de la huella digital. Las
+   dos columnas comparten filas (subgrid): la línea de la firma queda a ras del
+   borde inferior del recuadro y los rótulos, debajo, aunque uno ocupe dos
+   renglones. Sin subgrid (navegadores antiguos), `align-content: start` deja
+   la misma primera fila de 96 px en las dos columnas. */
+.contract-signature__marks {
+  margin-top: 14px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-rows: auto auto;
+  column-gap: 16px;
+}
+
+.contract-signature__sign,
+.contract-signature__print {
+  grid-row: span 2;
+  display: grid;
+  grid-template-rows: subgrid;
+  align-content: start;
+  row-gap: 7px;
   color: var(--muted);
   font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.08em;
+  line-height: 1.25;
   text-transform: uppercase;
+}
+
+.contract-signature__print {
+  justify-items: center;
+  text-align: center;
+}
+
+/* Espacio para firmar: su borde inferior es la línea de la firma. */
+.contract-signature__sign span {
+  position: relative;
+  min-height: 96px;
+  border-bottom: 1.5px solid var(--ink);
+}
+
+/* La firma cruza la línea como una firma de puño y letra: baja un poco por
+   debajo, a la derecha del rótulo «Firma» para no taparlo, y en celulares
+   angostos se achica antes que invadir el recuadro de la huella. */
+.contract-signature__sign img {
+  --signature-offset: clamp(40px, 24%, 96px);
+  position: absolute;
+  bottom: -20px;
+  left: var(--signature-offset);
+  width: auto;
+  max-width: calc(100% - var(--signature-offset));
+  height: auto;
+  max-height: 116px;
+  pointer-events: none;
+}
+
+/* Recuadro de la huella: punteado mientras está vacío (invita a ponerla) y
+   de borde firme cuando ya la tiene. */
+.contract-signature__print span {
+  width: 78px;
+  height: 96px;
+  display: grid;
+  place-items: center;
+  border: 1.5px dashed #a9a59c;
+  border-radius: 9px;
+  background: var(--white);
+}
+
+.contract-signature__print span:has(img) {
+  border: 1px solid var(--line);
+}
+
+.contract-signature__print img {
+  width: auto;
+  height: 80px;
+}
+
+/* Temas de alto contraste oscuros: la tinta oscura sobre fondo transparente se
+   perdería contra el fondo negro. Solo en pantalla: el papel es blanco. */
+@media screen and (forced-colors: active) and (prefers-color-scheme: dark) {
+  .contract-signature__sign img,
+  .contract-signature__print img {
+    filter: invert(1);
+  }
 }
 
 .contract-signature__fields {
@@ -946,8 +1023,11 @@
       width: 30px;
     }
 
-  .contract-signature__line {
-      margin-top: 52px;
+  /* En celulares la columna de la huella mide lo que su recuadro (el rótulo
+     pasa a dos renglones) y la firma gana ancho. */
+  .contract-signature__marks {
+      grid-template-columns: minmax(0, 1fr) 78px;
+      column-gap: 12px;
     }
 
   .contract-offices {

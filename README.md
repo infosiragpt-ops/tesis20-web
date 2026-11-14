@@ -5,7 +5,7 @@ Sitio web profesional de Tesis20 para presentar servicios de asesoría académic
 ## Funcionalidades principales
 
 - Página de inicio responsive con identidad visual `#F5BD42`.
-- Catálogo interactivo de diez servicios (seis con audio local), incluidos los servicios por universidad: suficiencia profesional (UPN) y proyecto de tesis, tesis de maestría y RSL (UCV).
+- Catálogo interactivo de diez servicios (seis con audio local), incluidos los servicios por universidad: artículo científico, Tesis I, Tesis II y suficiencia profesional (UPN) y proyecto de tesis, tesis de maestría y RSL (UCV).
 - Galería de evidencias agrupadas y anonimizadas.
 - Resultados de calificaciones en dos columnas para escritorio y una para celular.
 - Contrato general de asesoría académica legible en la web y descargable en PDF.
@@ -60,9 +60,11 @@ buscador) y `services` en `scripts/generate-static-routes.mjs` (HTML por ruta, S
 agrégalo también a `routeSpecs` en `scripts/quality-check.mjs` y a `SERVICE_DETAIL_PATH` en `src/observability.jsx`.
 Los servicios sin audio simplemente omiten `audio`, `audioDuration` y `transcript`.
 
-Un servicio pensado para una universidad lleva `university: "<id>"` en `src/App.jsx` (el `id` de
-`src/data/student-universities.js`, p. ej. `"ucv"` o `"upn"`): su logo ocupa el lugar del ícono en las tarjetas de
-Inicio y de `/servicios` (`ServiceLogo` en `src/home-sections.jsx`). Los demás conservan su ícono.
+Un servicio pensado para una universidad lleva `university: "<id>"` en `src/App.jsx`, justo antes de `title` (el
+`id` de `src/data/student-universities.js`, p. ej. `"ucv"` o `"upn"`): su logo ocupa el lugar del ícono en las
+tarjetas de Inicio y de `/servicios` (`ServiceLogo` en `src/home-sections.jsx`). Los demás conservan su ícono. Hoy
+llevan el de la UPN: artículo científico, Tesis I, Tesis II y suficiencia profesional; y el de la UCV: proyecto de
+tesis, tesis de maestría y RSL.
 
 ## Datos de la empresa, oficinas y contrato
 
@@ -75,6 +77,16 @@ Inicio y de `/servicios` (`ServiceLogo` en `src/home-sections.jsx`). Los demás 
   `clauses`). Tras editarlo, regenera las descargas con `python3 scripts/generate_contract_docx.py` y
   `python3 scripts/generate_contract_pdf.py` (necesitan `python-docx`, `reportlab` y `pypdf`; el PDF debe salir en
   2 páginas) y sube el `?v=` de los enlaces en `src/contract-page.jsx` para que nadie reciba la copia en caché.
+- **Firma y huella.** El bloque de firmas trae, para cada parte, la línea de firma y el recuadro «Huella digital».
+  El modelo público va **sin firmar**. Para entregar a un cliente una copia ya firmada por el prestador, genera los
+  archivos aparte, **fuera de esta carpeta** y sin tocar la web:
+  `python3 scripts/generate_contract_docx.py --signature ~/tesis20-privado/firma.png --fingerprint ~/tesis20-privado/huella.png --output ~/tesis20-privado/contrato-firmado.docx`
+  (igual con `generate_contract_pdf.py` y `.pdf`). Las imágenes son PNG con fondo transparente; ni ellas ni las
+  copias firmadas, que las llevan incrustadas, **se guardan en este repositorio, que es público**. Los generadores
+  exigen `--output` fuera del proyecto cuando reciben la firma o la huella, y `npm run quality` falla si las
+  descargas públicas traen imágenes o si existe `public/assets/contrato/` sin que el modelo las declare.
+  Publicarlas en la web es decisión del dueño: en ese caso van en `public/assets/contrato/` (PNG), el modelo las
+  declara en `signatures[0].signatureImage` / `fingerprintImage` y se regeneran el Word y el PDF sin argumentos.
 - `npm run quality` comprueba que los tres archivos digan lo mismo, que el RUC supere su dígito verificador y que
   cada página publique el RUC y las oficinas en el pie y en los datos estructurados.
 

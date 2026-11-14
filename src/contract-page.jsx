@@ -22,8 +22,8 @@ import "./contract-page.css";
  */
 // `?v=` cambia con cada edición del modelo: quien ya lo había descargado recibe
 // el archivo nuevo en vez de la copia que guardó su navegador (caché de 1 día).
-const contractDocxHref = "/downloads/contrato-general-asesoria-academica-tesis20.docx?v=2026-11";
-const contractPdfHref = "/downloads/contrato-general-asesoria-academica-tesis20.pdf?v=2026-11";
+const contractDocxHref = "/downloads/contrato-general-asesoria-academica-tesis20.docx?v=2026-11b";
+const contractPdfHref = "/downloads/contrato-general-asesoria-academica-tesis20.pdf?v=2026-11b";
 const contractDocxFilename = "contrato-general-asesoria-academica-tesis20.docx";
 const contractPdfFilename = "contrato-general-asesoria-academica-tesis20.pdf";
 
@@ -85,7 +85,17 @@ export function ContractPage() {
 
   const handlePrint = () => {
     trackInteraction("contract_print", { location: "contract_page" });
-    window.print();
+    // window.print() congela la página: una firma o huella que aún está en
+    // camino saldría en blanco, así que se la espera (4 s como máximo).
+    const pending = [...document.querySelectorAll(".contract-signature img")].filter((image) => !image.complete);
+    if (pending.length === 0) {
+      window.print();
+      return;
+    }
+    Promise.race([
+      Promise.all(pending.map((image) => image.decode().catch(() => {}))),
+      new Promise((resolve) => setTimeout(resolve, 4000)),
+    ]).then(() => window.print());
   };
 
   return (
@@ -261,15 +271,47 @@ export function ContractPage() {
             </div>
 
             <section className="contract-signatures" aria-label="Firmas del contrato">
-              {contractTemplate.signatures.map((signature) => (
-                <div className="contract-signature" key={signature.role}>
-                  <h3>{signature.role}</h3>
-                  <p className="contract-signature__line">
-                    <span>Firma</span>
-                  </p>
-                  <FieldList fields={signature.fields} className="contract-signature__fields" />
-                </div>
-              ))}
+              {contractTemplate.signatures.map((signature) => {
+                // Firma y huella son opcionales: el modelo público va sin
+                // ellas y cada parte firma y pone su huella al imprimirlo.
+                // Sin loading="lazy": el botón «Imprimir» está arriba y el
+                // navegador no carga imágenes diferidas al imprimir.
+                const signer = signature.fields[0].value;
+                return (
+                  <div className="contract-signature" key={signature.role}>
+                    <h3>{signature.role}</h3>
+                    <div className="contract-signature__marks">
+                      <div className="contract-signature__sign">
+                        <span>
+                          {signature.signatureImage ? (
+                            <img
+                              src={signature.signatureImage}
+                              alt={`Firma de ${signer}`}
+                              decoding="async"
+                              draggable="false"
+                            />
+                          ) : null}
+                        </span>
+                        <p>Firma</p>
+                      </div>
+                      <div className="contract-signature__print">
+                        <span>
+                          {signature.fingerprintImage ? (
+                            <img
+                              src={signature.fingerprintImage}
+                              alt={`Huella digital de ${signer}`}
+                              decoding="async"
+                              draggable="false"
+                            />
+                          ) : null}
+                        </span>
+                        <p>Huella digital</p>
+                      </div>
+                    </div>
+                    <FieldList fields={signature.fields} className="contract-signature__fields" />
+                  </div>
+                );
+              })}
             </section>
 
             <section className="contract-offices" aria-labelledby="contract-offices-title">

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import argparse
 import json
 import shutil
 from pathlib import Path
@@ -13,6 +14,7 @@ from reportlab.lib.units import mm
 from reportlab.platypus import (
     BaseDocTemplate,
     Frame,
+    Image,
     KeepTogether,
     PageTemplate,
     Paragraph,
@@ -117,7 +119,91 @@ def fields_grid(title, fields, styles, *, status="", dark=False):
     return table
 
 
-def build_story(data, styles):
+def resolve_mark(explicit, declared):
+    """Imagen de la firma o de la huella: la que se pasa por línea de comandos
+    o, si el modelo la declara (ruta web bajo public/), esa. Sin ninguna, None."""
+    if explicit:
+        path = Path(explicit).expanduser()
+    elif declared:
+        path = ROOT / "public" / declared.lstrip("/")
+    else:
+        return None
+    if not path.is_file():
+        raise FileNotFoundError(f"No existe la imagen de firma o huella: {path}")
+    if path.suffix.lower() != ".png":
+        raise SystemExit(f"La firma y la huella deben ser PNG con fondo transparente (Word no admite WebP): {path}")
+    return path
+
+
+def require_private_output(signature, fingerprint, output):
+    """Una firma o huella pasada por línea de comandos es para una copia privada:
+    exige `--output` y que ese archivo quede fuera del repositorio, que es
+    público. Así un descuido no deja la copia firmada en public/downloads ni en
+    la carpeta del proyecto. (Publicarlas es otra vía: declararlas en el modelo.)"""
+    if not (signature or fingerprint):
+        return
+    if not output:
+        raise SystemExit(
+            "--signature y --fingerprint exigen --output: la copia firmada no se publica en public/downloads."
+        )
+    if ROOT in Path(output).expanduser().resolve().parents:
+        raise SystemExit(
+            "--output debe quedar fuera de la carpeta del proyecto: la copia firmada no se guarda en el repositorio."
+        )
+
+
+def fitted_image(path, max_width, max_height):
+    """Imagen escalada para caber en la caja sin deformarse (respeta la transparencia)."""
+    image = Image(str(path), mask="auto")
+    scale = min(max_width / image.imageWidth, max_height / image.imageHeight)
+    image.drawWidth = image.imageWidth * scale
+    image.drawHeight = image.imageHeight * scale
+    return image
+
+
+def signature_cell(signature, styles, signature_path=None, fingerprint_path=None):
+    """Bloque de una parte: firma sobre su línea, recuadro de la huella al
+    costado y, debajo, nombre y documento."""
+    sign_width, print_width, height = 52 * mm, 18 * mm, 21 * mm
+    marks = Table(
+        [
+            [
+                fitted_image(signature_path, sign_width - 6 * mm, height - 1 * mm) if signature_path else "",
+                fitted_image(fingerprint_path, print_width - 3 * mm, height - 3 * mm) if fingerprint_path else "",
+            ],
+            [Paragraph("FIRMA", styles["MarkCaption"]), Paragraph("HUELLA DIGITAL", styles["MarkCaption"])],
+        ],
+        colWidths=[sign_width, print_width],
+        rowHeights=[height, None],
+        hAlign="LEFT",
+    )
+    marks.setStyle(
+        TableStyle(
+            [
+                ("LINEBELOW", (0, 0), (0, 0), 0.9, INK),
+                ("BOX", (1, 0), (1, 0), 0.5, MUTED),
+                ("ALIGN", (0, 0), (-1, 0), "CENTER"),
+                ("VALIGN", (0, 0), (0, 0), "BOTTOM"),
+                ("VALIGN", (1, 0), (1, 0), "MIDDLE"),
+                ("LEFTPADDING", (0, 0), (-1, -1), 1.5),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 1.5),
+                ("TOPPADDING", (0, 0), (-1, 0), 1),
+                ("BOTTOMPADDING", (0, 0), (-1, 0), 0),
+                ("TOPPADDING", (0, 1), (-1, 1), 1.5),
+                ("BOTTOMPADDING", (0, 1), (-1, 1), 2.5),
+            ]
+        )
+    )
+    lines = [f"{field['label']}: {field['value'] or BLANK}" for field in signature["fields"]]
+    return [
+        Paragraph(f"<b>{signature['role']}</b>", styles["Field"]),
+        Spacer(1, 1 * mm),
+        marks,
+        Paragraph("<br/>".join(lines), styles["Field"]),
+    ]
+
+
+def build_story(data, styles, marks=(None, None)):
     story = [
         Paragraph(data["title"].upper(), styles["DocTitle"]),
         Paragraph(data["version"], styles["Version"]),
@@ -136,11 +222,11 @@ def build_story(data, styles):
     for clause in data["clauses"]:
         story.append(clause_flowable(clause, styles))
 
-    signature_cells = []
-    for signature in data["signatures"]:
-        lines = [f"<b>{signature['role']}</b>", "", f"Firma: {BLANK}"]
-        lines += [f"{field['label']}: {field['value'] or BLANK}" for field in signature["fields"]]
-        signature_cells.append(Paragraph("<br/>".join(lines), styles["Field"]))
+    # Solo el prestador (primera parte) puede venir ya firmado.
+    signature_cells = [
+        signature_cell(signature, styles, *(marks if index == 0 else (None, None)))
+        for index, signature in enumerate(data["signatures"])
+    ]
     signatures = Table([signature_cells], colWidths=[90 * mm, 90 * mm], hAlign="LEFT")
     signatures.setStyle(
         TableStyle(
@@ -198,11 +284,24 @@ def build_story(data, styles):
     return story
 
 
-def build_pdf():
+def build_pdf(signature=None, fingerprint=None, output=None):
+    """Genera el PDF del contrato.
+
+    Sin argumentos publica el modelo en public/downloads (sin firmar, salvo que
+    el propio modelo declare `signatureImage` / `fingerprintImage`). Con
+    `output` escribe solo ese archivo: sirve para una copia ya firmada que se
+    envía a un cliente y que no se publica en la web.
+    """
+    require_private_output(signature, fingerprint, output)
     data = json.loads(CONTENT_PATH.read_text(encoding="utf-8"))
     PAGE_STATE["ruc"] = provider_ruc(data)
-    OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
-    PUBLIC_PATH.parent.mkdir(parents=True, exist_ok=True)
+    provider = data["signatures"][0]
+    marks = (
+        resolve_mark(signature, provider.get("signatureImage")),
+        resolve_mark(fingerprint, provider.get("fingerprintImage")),
+    )
+    target = Path(output).expanduser() if output else OUTPUT_PATH
+    target.parent.mkdir(parents=True, exist_ok=True)
 
     styles = getSampleStyleSheet()
     styles.add(
@@ -264,6 +363,16 @@ def build_pdf():
     )
     styles.add(
         ParagraphStyle(
+            name="MarkCaption",
+            parent=styles["Normal"],
+            fontName="Helvetica-Bold",
+            fontSize=5.6,
+            leading=7,
+            textColor=MUTED,
+        )
+    )
+    styles.add(
+        ParagraphStyle(
             name="GridHead",
             parent=styles["Normal"],
             fontName="Helvetica",
@@ -317,20 +426,35 @@ def build_pdf():
             subject="Modelo general de contrato de asesoría académica e investigación",
         )
         doc.addPageTemplates([PageTemplate(id="contract", frames=[frame], onPage=draw_page)])
-        doc.build(build_story(data, styles))
+        doc.build(build_story(data, styles, marks))
         return len(PdfReader(str(path)).pages)
 
     # Primera pasada: cuenta las páginas. Segunda: el pie ya dice «Página X de N».
-    page_count = render(OUTPUT_PATH)
+    page_count = render(target)
     PAGE_STATE["total"] = page_count
-    page_count = render(OUTPUT_PATH)
+    page_count = render(target)
     if page_count != 2:
         raise RuntimeError(f"El contrato debe tener exactamente 2 páginas; se generaron {page_count}.")
-    shutil.copy2(OUTPUT_PATH, PUBLIC_PATH)
-    print(f"Generated: {OUTPUT_PATH}")
-    print(f"Published: {PUBLIC_PATH}")
+    print(f"Generated: {target}")
+    if not output:
+        PUBLIC_PATH.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(target, PUBLIC_PATH)
+        print(f"Published: {PUBLIC_PATH}")
     print(f"Pages: {page_count}")
 
 
+def parse_args():
+    parser = argparse.ArgumentParser(description="Genera el PDF del contrato de Tesis20.")
+    parser.add_argument("--signature", help="PNG de la firma del prestador (fondo transparente).")
+    parser.add_argument("--fingerprint", help="PNG de la huella digital del prestador.")
+    parser.add_argument(
+        "--output",
+        help="Escribe solo este archivo y no toca public/downloads. Obligatorio con --signature o "
+        "--fingerprint, y fuera de la carpeta del proyecto (la copia firmada es privada).",
+    )
+    return parser.parse_args()
+
+
 if __name__ == "__main__":
-    build_pdf()
+    options = parse_args()
+    build_pdf(options.signature, options.fingerprint, options.output)

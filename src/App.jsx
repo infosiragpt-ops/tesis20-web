@@ -308,9 +308,9 @@ const publishedEvidenceGroups = evidenceGroups.filter(
 );
 
 const serviceSearchAliases = {
-  "articulo-cientifico": "paper prisma revista publicacion scopus wos redalyc scielo",
-  "tesis-i-proyecto": "tesis 1 tesis uno plan proyecto metodologia matriz consistencia",
-  "tesis-ii-titulacion": "tesis 2 tesis dos informe resultados discusion conclusiones",
+  "articulo-cientifico": "upn universidad privada del norte paper prisma revista publicacion scopus wos redalyc scielo",
+  "tesis-i-proyecto": "upn universidad privada del norte tesis 1 tesis uno plan proyecto metodologia matriz consistencia",
+  "tesis-ii-titulacion": "upn universidad privada del norte tesis 2 tesis dos informe resultados discusion conclusiones",
   "suficiencia-profesional": "tsp upn universidad privada del norte experiencia laboral titulacion trabajo profesional informe",
   "proyecto-tesis-ucv": "ucv cesar vallejo plan proyecto de investigacion matriz consistencia operacionalizacion cronograma presupuesto",
   "tesis-maestria-ucv": "ucv cesar vallejo posgrado maestria magister tesis informe resultados discusion",
@@ -323,6 +323,7 @@ const serviceSearchAliases = {
 const services = [
   {
     id: "articulo-cientifico",
+    university: "upn",
     title: "Artículo científico",
     price: "S/ 600",
     category: "Publicación",
@@ -341,6 +342,7 @@ const services = [
   },
   {
     id: "tesis-i-proyecto",
+    university: "upn",
     title: "Tesis I – Proyecto",
     price: "S/ 650",
     category: "Tesis",
@@ -363,6 +365,7 @@ const services = [
   },
   {
     id: "tesis-ii-titulacion",
+    university: "upn",
     title: "Tesis II – De titulación",
     price: "S/ 1200",
     category: "Tesis",
@@ -1036,7 +1039,7 @@ function ServiceCard({ service, index, expandedByDefault = false, showDetailLink
     >
       <div className="service-card__header">
         {service.university ? (
-          <ServiceLogo university={service.university} />
+          <ServiceLogo university={service.university} title={service.title} />
         ) : (
           <span className="service-card__icon" aria-hidden="true">
             <Icon size={30} weight="duotone" />
