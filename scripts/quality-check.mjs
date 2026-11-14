@@ -727,6 +727,10 @@ check(
   ),
   "vercel.json debe servir /assets/contrato/ (firma y huella del contrato) con X-Robots-Tag noindex.",
 );
+check(
+  /^Disallow:\s*\/assets\/contrato\/\s*$/m.test(robots),
+  "robots.txt debe excluir /assets/contrato/ (firma y huella del contrato) de los buscadores.",
+);
 // Las descargas van con el modelo. Sin firma declarada no pueden traer imágenes
 // (sería una copia firmada publicada por descuido: el repositorio y la web son
 // públicos) ni puede quedar la carpeta de la firma en public/ o dist/; con

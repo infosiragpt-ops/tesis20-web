@@ -22,8 +22,8 @@ import "./contract-page.css";
  */
 // `?v=` cambia con cada edición del modelo: quien ya lo había descargado recibe
 // el archivo nuevo en vez de la copia que guardó su navegador (caché de 1 día).
-const contractDocxHref = "/downloads/contrato-general-asesoria-academica-tesis20.docx?v=2026-11b";
-const contractPdfHref = "/downloads/contrato-general-asesoria-academica-tesis20.pdf?v=2026-11b";
+const contractDocxHref = "/downloads/contrato-general-asesoria-academica-tesis20.docx?v=2026-11c";
+const contractPdfHref = "/downloads/contrato-general-asesoria-academica-tesis20.pdf?v=2026-11c";
 const contractDocxFilename = "contrato-general-asesoria-academica-tesis20.docx";
 const contractPdfFilename = "contrato-general-asesoria-academica-tesis20.pdf";
 
@@ -272,8 +272,9 @@ export function ContractPage() {
 
             <section className="contract-signatures" aria-label="Firmas del contrato">
               {contractTemplate.signatures.map((signature) => {
-                // Firma y huella son opcionales: el modelo público va sin
-                // ellas y cada parte firma y pone su huella al imprimirlo.
+                // Firma y huella son opcionales: el modelo trae las de EL
+                // PRESTADOR (decisión del dueño); la otra parte firma y pone
+                // su huella al imprimirlo.
                 // Sin loading="lazy": el botón «Imprimir» está arriba y el
                 // navegador no carga imágenes diferidas al imprimir.
                 const signer = signature.fields[0].value;
