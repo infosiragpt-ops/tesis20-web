@@ -586,7 +586,7 @@ footer[id] {
   position: relative;
   padding: 26px 24px 0;
   display: grid;
-  grid-template-columns: 50px minmax(0, 1fr);
+  grid-template-columns: auto minmax(0, 1fr);
   align-items: start;
   gap: 14px;
 }

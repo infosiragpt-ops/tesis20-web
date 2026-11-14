@@ -545,6 +545,15 @@
   .service-tiles > li:last-child:nth-child(4n + 1) {
     grid-column: 1 / -1;
   }
+
+  /* Tarjetas angostas: los logos se igualan más chicos para que quepan junto
+     a la etiqueta más larga (si no, cada uno se encoge distinto). El selector
+     lleva .service-tiles para ganarle a la regla general, que va más abajo. */
+  @media (max-width: 1240px) {
+    .service-tiles .service-tile__logo img {
+      max-height: 18px;
+    }
+  }
 }
 
 .service-tile {
@@ -603,6 +612,23 @@
 
 .service-tile:hover .service-tile__icon {
   background: var(--yellow);
+}
+
+/* Servicio de una universidad: su logo ocupa el lugar del ícono (misma caja,
+   a lo ancho y sin el fondo amarillo, tampoco al pasar el puntero). */
+.service-tile__logo {
+  width: auto;
+  min-width: 0;
+  padding: 0 10px;
+  border: 1px solid var(--line-soft);
+  background: none !important;
+}
+
+.service-tile__logo img {
+  width: auto;
+  max-width: 100%;
+  height: auto;
+  max-height: 28px;
 }
 
 .service-tile__category {

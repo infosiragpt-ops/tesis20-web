@@ -60,6 +60,10 @@ buscador) y `services` en `scripts/generate-static-routes.mjs` (HTML por ruta, S
 agrégalo también a `routeSpecs` en `scripts/quality-check.mjs` y a `SERVICE_DETAIL_PATH` en `src/observability.jsx`.
 Los servicios sin audio simplemente omiten `audio`, `audioDuration` y `transcript`.
 
+Un servicio pensado para una universidad lleva `university: "<id>"` en `src/App.jsx` (el `id` de
+`src/data/student-universities.js`, p. ej. `"ucv"` o `"upn"`): su logo ocupa el lugar del ícono en las tarjetas de
+Inicio y de `/servicios` (`ServiceLogo` en `src/home-sections.jsx`). Los demás conservan su ícono.
+
 ## Datos de la empresa, oficinas y contrato
 
 - **RUC y oficinas** (pie de todas las páginas, preguntas frecuentes): `src/data/company.js`. Una oficina sin
