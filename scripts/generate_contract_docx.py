@@ -1,12 +1,14 @@
 from __future__ import annotations
 
+import argparse
 import json
 import shutil
 from pathlib import Path
 
 from docx import Document
-from docx.enum.table import WD_CELL_VERTICAL_ALIGNMENT, WD_TABLE_ALIGNMENT
+from docx.enum.table import WD_CELL_VERTICAL_ALIGNMENT, WD_ROW_HEIGHT_RULE, WD_TABLE_ALIGNMENT
 from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_LINE_SPACING
+from docx.image.image import Image as DocxImage
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 from docx.shared import Cm, Pt, RGBColor, Twips
@@ -95,6 +97,21 @@ def set_cell_margins(cell, *, top=60, bottom=60, left=80, right=80):
         node.set(qn("w:type"), "dxa")
         tc_mar.append(node)
     tc_pr.append(tc_mar)
+
+
+def set_cell_edges(cell, *, top=None, left=None, bottom=None, right=None, color=BORDER):
+    """Bordes por lado, en octavos de punto; None = sin borde en ese lado."""
+    tc_pr = cell._tc.get_or_add_tcPr()
+    tc_borders = OxmlElement("w:tcBorders")
+    for edge, size in (("top", top), ("left", left), ("bottom", bottom), ("right", right)):
+        border = OxmlElement(f"w:{edge}")
+        border.set(qn("w:val"), "single" if size else "nil")
+        if size:
+            border.set(qn("w:sz"), str(size))
+            border.set(qn("w:space"), "0")
+            border.set(qn("w:color"), color)
+        tc_borders.append(border)
+    tc_pr.append(tc_borders)
 
 
 def prevent_row_split(row):
@@ -407,12 +424,97 @@ def add_text_with_blanks(paragraph, text):
             set_run_font(run, size=10.5, color=INK_RGB)
 
 
-def add_signatures(document, signatures):
+def resolve_mark(explicit, declared):
+    """Imagen de la firma o de la huella: la que se pasa por línea de comandos
+    o, si el modelo la declara (ruta web bajo public/), esa. Sin ninguna, None."""
+    if explicit:
+        path = Path(explicit).expanduser()
+    elif declared:
+        path = ROOT / "public" / declared.lstrip("/")
+    else:
+        return None
+    if not path.is_file():
+        raise FileNotFoundError(f"No existe la imagen de firma o huella: {path}")
+    if path.suffix.lower() != ".png":
+        raise SystemExit(f"La firma y la huella deben ser PNG con fondo transparente (Word no admite WebP): {path}")
+    return path
+
+
+def require_private_output(signature, fingerprint, output):
+    """Una firma o huella pasada por línea de comandos es para una copia privada:
+    exige `--output` y que ese archivo quede fuera del repositorio, que es
+    público. Así un descuido no deja la copia firmada en public/downloads ni en
+    la carpeta del proyecto. (Publicarlas es otra vía: declararlas en el modelo.)"""
+    if not (signature or fingerprint):
+        return
+    if not output:
+        raise SystemExit(
+            "--signature y --fingerprint exigen --output: la copia firmada no se publica en public/downloads."
+        )
+    if ROOT in Path(output).expanduser().resolve().parents:
+        raise SystemExit(
+            "--output debe quedar fuera de la carpeta del proyecto: la copia firmada no se guarda en el repositorio."
+        )
+
+
+def add_marks_table(cell, signature_path, fingerprint_path):
+    """Dentro de la celda de una parte: espacio de la firma sobre su línea y,
+    al costado, el recuadro de la huella digital, con sus rótulos debajo."""
+    table = cell.add_table(rows=2, cols=2)
+    table.autofit = False
+    table.alignment = WD_TABLE_ALIGNMENT.LEFT
+    widths = (Cm(5.6), Cm(2.4))
+    for column, width in zip(table.columns, widths):
+        column.width = width
+
+    marks_row, captions_row = table.rows
+    marks_row.height = Cm(2.7)
+    marks_row.height_rule = WD_ROW_HEIGHT_RULE.AT_LEAST
+    prevent_row_split(marks_row)
+
+    sign_cell, print_cell = marks_row.cells
+    for target, width in ((sign_cell, widths[0]), (print_cell, widths[1])):
+        target.width = width
+        set_cell_margins(target, top=40, bottom=20, left=60, right=60)
+    set_cell_edges(sign_cell, bottom=12, color=INK)
+    sign_cell.vertical_alignment = WD_CELL_VERTICAL_ALIGNMENT.BOTTOM
+    set_cell_edges(print_cell, top=6, left=6, bottom=6, right=6, color=MUTED)
+    print_cell.vertical_alignment = WD_CELL_VERTICAL_ALIGNMENT.CENTER
+
+    # Cada imagen se ajusta por su lado limitante, para que una firma apaisada
+    # no se salga de la celda. Las cajas descuentan los márgenes de la celda y
+    # el que LibreOffice añade a las imágenes en línea (3,2 mm por lado).
+    for target, image, max_width, max_height in (
+        (sign_cell, signature_path, Cm(4.7), Cm(2.5)),
+        (print_cell, fingerprint_path, Cm(1.52), Cm(2.3)),
+    ):
+        paragraph = target.paragraphs[0]
+        paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        paragraph.paragraph_format.space_before = Pt(0)
+        paragraph.paragraph_format.space_after = Pt(0)
+        if image:
+            native = DocxImage.from_file(str(image))
+            if native.width / native.height > max_width / max_height:
+                paragraph.add_run().add_picture(str(image), width=max_width)
+            else:
+                paragraph.add_run().add_picture(str(image), height=max_height)
+
+    for target, width, caption in zip(captions_row.cells, widths, ("Firma", "Huella digital")):
+        target.width = width
+        set_cell_edges(target)
+        set_cell_margins(target, top=40, bottom=0, left=60, right=60)
+        write_cell_text(target, caption.upper(), size=7.5, bold=True, color=MUTED_RGB)
+
+
+def add_signatures(document, signatures, marks):
     add_section_label(document, "Firmas")
     hint = document.add_paragraph()
     hint.paragraph_format.keep_with_next = True
     set_paragraph_spacing(hint, before=0, after=8, line=220)
-    run = hint.add_run("Espacios editables para nombre, documento de identidad y firma de cada parte.")
+    run = hint.add_run(
+        "Cada parte firma sobre la línea, pone su huella digital en el recuadro y completa su "
+        "nombre y documento de identidad."
+    )
     set_run_font(run, size=9, color=MUTED_RGB)
 
     table = document.add_table(rows=1, cols=2)
@@ -422,7 +524,7 @@ def add_signatures(document, signatures):
     table.columns[1].width = Cm(9.0)
     prevent_row_split(table.rows[0])
 
-    for cell, signature in zip(table.rows[0].cells, signatures):
+    for index, (cell, signature) in enumerate(zip(table.rows[0].cells, signatures)):
         shade_cell(cell, WHITE)
         set_cell_borders(cell, BORDER, "8")
         set_cell_margins(cell, top=120, bottom=140, left=120, right=120)
@@ -430,15 +532,19 @@ def add_signatures(document, signatures):
 
         first = cell.paragraphs[0]
         first.clear()
-        set_paragraph_spacing(first, before=0, after=10, line=240)
+        set_paragraph_spacing(first, before=0, after=4, line=240)
         heading = first.add_run(signature["role"])
         set_run_font(heading, size=11, bold=True, color=INK_RGB)
 
-        lines = [{"label": "Firma", "value": ""}, *signature["fields"]]
-        for line in lines:
+        # Solo el prestador (primera parte) puede venir ya firmado.
+        signature_path, fingerprint_path = marks if index == 0 else (None, None)
+        add_marks_table(cell, signature_path, fingerprint_path)
+        # Word deja un párrafo vacío tras la tabla anidada: se reduce al mínimo.
+        set_paragraph_spacing(cell.paragraphs[-1], before=0, after=0, line=80)
+
+        for line in signature["fields"]:
             paragraph = cell.add_paragraph()
-            is_signature = line["label"] == "Firma"
-            set_paragraph_spacing(paragraph, before=22 if is_signature else 6, after=8, line=260)
+            set_paragraph_spacing(paragraph, before=6, after=8, line=260)
             label_run = paragraph.add_run(f"{line['label']}: ")
             set_run_font(label_run, size=10, bold=True, color=MUTED_RGB)
             if line["value"] and not is_blank_value(line["value"]):
@@ -508,11 +614,24 @@ def add_notice(document, data):
     set_run_font(notice, size=9.5, color=INK_RGB)
 
 
-def build_docx():
+def build_docx(signature=None, fingerprint=None, output=None):
+    """Genera el Word del contrato.
+
+    Sin argumentos publica el modelo en public/downloads (sin firmar, salvo que
+    el propio modelo declare `signatureImage` / `fingerprintImage`). Con
+    `output` escribe solo ese archivo: sirve para una copia ya firmada que se
+    envía a un cliente y que no se publica en la web.
+    """
+    require_private_output(signature, fingerprint, output)
     data = json.loads(CONTENT_PATH.read_text(encoding="utf-8"))
     FOOTER_DATA.update(data)
-    OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
-    PUBLIC_PATH.parent.mkdir(parents=True, exist_ok=True)
+    provider = data["signatures"][0]
+    marks = (
+        resolve_mark(signature, provider.get("signatureImage")),
+        resolve_mark(fingerprint, provider.get("fingerprintImage")),
+    )
+    target = Path(output).expanduser() if output else OUTPUT_PATH
+    target.parent.mkdir(parents=True, exist_ok=True)
 
     document = Document()
     document.core_properties.author = "Tesis20"
@@ -541,15 +660,30 @@ def build_docx():
     add_heading_block(document, data)
     add_parties(document, data)
     add_clauses(document, data["clauses"])
-    add_signatures(document, data["signatures"])
+    add_signatures(document, data["signatures"], marks)
     add_offices(document, data["offices"])
     add_notice(document, data)
 
-    document.save(OUTPUT_PATH)
-    shutil.copy2(OUTPUT_PATH, PUBLIC_PATH)
-    print(f"Generated: {OUTPUT_PATH}")
-    print(f"Published: {PUBLIC_PATH}")
+    document.save(target)
+    print(f"Generated: {target}")
+    if not output:
+        PUBLIC_PATH.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(target, PUBLIC_PATH)
+        print(f"Published: {PUBLIC_PATH}")
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(description="Genera el Word del contrato de Tesis20.")
+    parser.add_argument("--signature", help="PNG de la firma del prestador (fondo transparente).")
+    parser.add_argument("--fingerprint", help="PNG de la huella digital del prestador.")
+    parser.add_argument(
+        "--output",
+        help="Escribe solo este archivo y no toca public/downloads. Obligatorio con --signature o "
+        "--fingerprint, y fuera de la carpeta del proyecto (la copia firmada es privada).",
+    )
+    return parser.parse_args()
 
 
 if __name__ == "__main__":
-    build_docx()
+    options = parse_args()
+    build_docx(options.signature, options.fingerprint, options.output)

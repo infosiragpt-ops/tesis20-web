@@ -696,6 +696,64 @@ check(
   /OFFICES\.map/.test(appSource) && /COMPANY\.ruc/.test(appSource),
   "El pie debe mostrar las oficinas y el RUC desde data/company.js.",
 );
+// Firmas: cada parte tiene su línea de firma y su recuadro de huella. La firma
+// y la huella del prestador son opcionales (el modelo público puede ir sin
+// firmar); si el modelo las declara, los archivos deben existir en public/ y
+// solo el prestador puede venir firmado.
+check(
+  /contract-signature__sign/.test(contractPageSource) && /Huella digital/.test(contractPageSource),
+  "El bloque de firmas del contrato debe ofrecer la línea de firma y el recuadro de la huella digital.",
+);
+const [providerSignature, ...otherSignatures] = contractTemplate.signatures || [];
+for (const key of ["signatureImage", "fingerprintImage"]) {
+  const declared = providerSignature?.[key];
+  if (declared) {
+    check(
+      /^\/assets\/[\w./-]+\.png$/.test(declared) && (await exists(path.join("public", declared))),
+      `El contrato declara ${key} (${declared}): debe ser un PNG bajo /assets/ que exista en public/ (Word no admite WebP).`,
+    );
+  }
+  check(
+    otherSignatures.every((signature) => !signature[key]),
+    `Solo el prestador puede traer ${key} en el modelo de contrato: el cliente firma su copia.`,
+  );
+}
+// Si algún día se publican, la firma y la huella no deben llegar a los buscadores.
+check(
+  vercel.headers.some(
+    (rule) =>
+      rule.source === "/assets/contrato/(.*)" &&
+      rule.headers.some((header) => header.key === "X-Robots-Tag" && /noindex/.test(header.value)),
+  ),
+  "vercel.json debe servir /assets/contrato/ (firma y huella del contrato) con X-Robots-Tag noindex.",
+);
+// Las descargas van con el modelo. Sin firma declarada no pueden traer imágenes
+// (sería una copia firmada publicada por descuido: el repositorio y la web son
+// públicos) ni puede quedar la carpeta de la firma en public/ o dist/; con
+// firma declarada, el Word y el PDF deben traerla.
+const contractIsSigned = Boolean(providerSignature?.signatureImage || providerSignature?.fingerprintImage);
+const contractDownloadHasImages = {
+  docx: (bytes) => bytes.includes("word/media/"),
+  pdf: (bytes) => /\/Subtype\s*\/Image/.test(bytes.toString("latin1")),
+};
+for (const directory of ["public", "dist"]) {
+  for (const [extension, hasImages] of Object.entries(contractDownloadHasImages)) {
+    const download = `${directory}/downloads/contrato-general-asesoria-academica-tesis20.${extension}`;
+    if (!(await exists(download))) continue;
+    check(
+      hasImages(await readFile(path.join(root, download))) === contractIsSigned,
+      contractIsSigned
+        ? `${download} no trae la firma que declara el modelo: regenera las descargas del contrato.`
+        : `${download} trae imágenes (firma o huella) aunque el modelo va sin firmar: regenera las descargas sin --signature ni --fingerprint.`,
+    );
+  }
+  if (!contractIsSigned) {
+    check(
+      !(await exists(`${directory}/assets/contrato`)),
+      `${directory}/assets/contrato existe aunque el modelo no declara firma ni huella: esas imágenes no se publican sin declararlas.`,
+    );
+  }
+}
 
 // Inicio se publica con el hero ya dibujado (el mismo <Hero /> de React,
 // renderizado por scripts/home-hero-prerender.mjs): titular, botón y foto se
@@ -788,11 +846,27 @@ for (const route of routeSpecs) {
 
 // Los servicios pensados para una universidad («… – UCV», «… – UPN») muestran
 // su logo: llevan el campo `university` y el archivo existe.
-const universityServiceTitles = appSource.match(/title: "[^"]* – (?:UCV|UPN)"/g) || [];
-const serviceUniversityIds = [...appSource.matchAll(/^\s+university: "([a-z]+)",$/gm)].map((match) => match[1]);
+const servicesWithLogo = [...appSource.matchAll(/^\s+university: "([a-z]+)",\n\s+title: "([^"]*)",$/gm)].map(
+  (match) => ({ university: match[1], title: match[2] }),
+);
+const serviceUniversityIds = servicesWithLogo.map((service) => service.university);
+// Un `university` escrito de otra forma no se reconocería arriba y, con un id
+// que no existe, la tarjeta rompería Inicio y /servicios al dibujarse.
 check(
-  universityServiceTitles.length > 0 && universityServiceTitles.length === serviceUniversityIds.length,
-  "Cada servicio de una universidad (título «… – UCV» o «… – UPN») debe declarar `university` para mostrar su logo.",
+  (appSource.match(/^\s+university\s*:/gm) || []).length === servicesWithLogo.length,
+  "Cada `university` de src/App.jsx debe ir justo antes de `title`, entre comillas dobles y con el id en minúsculas de student-universities.js.",
+);
+const universityTitleCount = (appSource.match(/title: "[^"]* – (?:UCV|UPN)"/g) || []).length;
+check(
+  universityTitleCount > 0 &&
+    servicesWithLogo.filter((service) => / – (?:UCV|UPN)$/.test(service.title)).length === universityTitleCount,
+  "Cada servicio que nombra una universidad en el título («… – UCV», «… – UPN») debe declarar `university` para mostrar su logo.",
+);
+check(
+  servicesWithLogo.every(
+    (service) => !/ – (?:UCV|UPN)$/.test(service.title) || service.title.toLowerCase().endsWith(` – ${service.university}`),
+  ),
+  "El logo de un servicio debe ser el de la universidad que nombra su título.",
 );
 for (const universityId of new Set(serviceUniversityIds)) {
   check(

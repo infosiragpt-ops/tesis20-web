@@ -279,16 +279,18 @@ export function UniversityStrip() {
 /**
  * Logo de la universidad en los servicios pensados para ella (UPN, UCV): ocupa
  * el lugar del ícono en las tarjetas de Inicio y de /servicios. Es decorativo
- * (el título ya nombra la universidad) y usa los mismos archivos de la cinta
- * «Nuestros estudiantes», cuya nota aclara que Tesis20 no está afiliado.
+ * solo cuando el título ya nombra la universidad («… – UPN»); si no, el logo
+ * es lo único que la indica y lleva su nombre como texto alternativo. Usa los
+ * mismos archivos de la cinta «Nuestros estudiantes», cuya nota aclara que
+ * Tesis20 no está afiliado.
  */
-export function ServiceLogo({ university }) {
-  const { id, width, height } = STUDENT_UNIVERSITIES.find((item) => item.id === university);
+export function ServiceLogo({ university, title }) {
+  const { id, acronym, name, width, height } = STUDENT_UNIVERSITIES.find((item) => item.id === university);
   return (
     <span className="service-tile__icon service-tile__logo">
       <img
         src={`/assets/universities/${id}.webp`}
-        alt=""
+        alt={title.includes(acronym) ? "" : name}
         width={width}
         height={height}
         loading="lazy"
@@ -315,7 +317,7 @@ export function ServicesPreview({ services }) {
               <a className="service-tile" href={`/servicios/${id}`}>
                 <span className="service-tile__top">
                   {university ? (
-                    <ServiceLogo university={university} />
+                    <ServiceLogo university={university} title={title} />
                   ) : (
                     <span className="service-tile__icon">
                       <Icon size={26} weight="duotone" aria-hidden="true" />
