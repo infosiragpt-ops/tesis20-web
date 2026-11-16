@@ -465,6 +465,10 @@ const routeDefinitions = [
           <h3>Caso terminado en 468</h3>
           <p>Una evidencia anonimizada: la estudiante comparte la guía y el título de su tesis, y reporta una nota de 19 en el parcial del documento trabajado con Tesis20.</p>
         </article>
+        <article>
+          <h3>Caso terminado en 434</h3>
+          <p>Una evidencia anonimizada de un chat grupal de titulación: Tesis20 envía el plan de tesis corregido y la estudiante comparte su primera nota, 17 sobre 20.</p>
+        </article>
       </section>
       <section aria-labelledby="static-evidence-privacy-title">
         <h2 id="static-evidence-privacy-title">Privacidad responsable</h2>
