@@ -307,6 +307,22 @@ const evidenceGroups = [
       },
     ],
   },
+  {
+    id: "caso-434",
+    phone: "+51 *** *** 434",
+    phoneSuffix: "434",
+    publicationAuthorized: true,
+    images: [
+      {
+        src: "/assets/evidence/case-434-reported-result-full.jpg",
+        thumbnail: "/assets/thumbnails/evidence/case-434-reported-result-full.webp",
+        alt: "Captura completa y anonimizada de un chat grupal de titulación: Tesis20 envía el plan de tesis corregido y la estudiante comparte su primera nota, 17 sobre 20",
+        label: "Resultado reportado",
+        width: 2000,
+        height: 1738,
+      },
+    ],
+  },
 ];
 
 const publishedEvidenceGroups = evidenceGroups.filter(
