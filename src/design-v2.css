@@ -198,22 +198,39 @@ h3 {
   transform: translateY(-1px);
 }
 
-/* Cabecera de cristal al hacer scroll. */
+/* El filtro va en su propia capa para mantener el menú móvil fijo al viewport. */
 .site-header {
-  transition: background-color 250ms ease, box-shadow 250ms ease, border-color 250ms ease;
+  transition: box-shadow 180ms ease;
 }
 
 .site-header--scrolled {
-  border-bottom-color: rgba(30, 32, 34, 0.1);
-  background: rgba(245, 189, 66, 0.86);
-  box-shadow: 0 10px 30px rgba(30, 32, 34, 0.08);
-  -webkit-backdrop-filter: saturate(1.4) blur(14px);
-  backdrop-filter: saturate(1.4) blur(14px);
+  box-shadow: 0 2px 12px rgba(82, 61, 18, 0.06);
 }
 
-@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  .site-header--scrolled {
-    background: var(--yellow);
+@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .site-header {
+    background: transparent;
+  }
+
+  .site-header::before {
+    content: "";
+    position: absolute;
+    z-index: -1;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(110deg, rgba(255, 248, 223, 0.85), rgba(255, 235, 176, 0.72));
+    -webkit-backdrop-filter: blur(16px) saturate(1.08);
+    backdrop-filter: blur(16px) saturate(1.08);
+  }
+}
+
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+  .site-header {
+    background: #fff1cc;
+  }
+
+  .site-header::before {
+    content: none;
   }
 }
 

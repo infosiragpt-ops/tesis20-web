@@ -467,7 +467,8 @@ check(!sitemap.includes("https://tesis20.com"), "sitemap.xml todavía contiene U
 
 // PWA y recursos de navegación.
 check(manifest.id === "/" && manifest.start_url === "/" && manifest.scope === "/", "El manifest debe mantener id, inicio y alcance en la raíz.");
-check(manifest.theme_color === "#F5BD42" && manifest.background_color === "#F5BD42", "El manifest debe conservar el amarillo oficial.");
+check(manifest.theme_color === "#FFF1CC" && getMetaContent(index, "name", "theme-color") === manifest.theme_color, "La web y la PWA deben usar el tono claro de la cabecera.");
+check(manifest.background_color === "#F5BD42", "El fondo de inicio de la PWA debe conservar el amarillo oficial.");
 check(Array.isArray(manifest.icons) && manifest.icons.length >= 2, "El manifest debe incluir iconos PNG y SVG.");
 check(Array.isArray(manifest.shortcuts) && manifest.shortcuts.length >= 3, "El manifest debe ofrecer accesos directos a las rutas principales.");
 

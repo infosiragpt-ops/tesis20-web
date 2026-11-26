@@ -3,7 +3,6 @@ import { createPortal } from "react-dom";
 import { ArrowLeft } from "@phosphor-icons/react/ArrowLeft";
 import { ArrowRight } from "@phosphor-icons/react/ArrowRight";
 import { ArrowUp } from "@phosphor-icons/react/ArrowUp";
-import { CheckCircle } from "@phosphor-icons/react/CheckCircle";
 import { GraduationCap } from "@phosphor-icons/react/GraduationCap";
 import { ShieldCheck } from "@phosphor-icons/react/ShieldCheck";
 import { WhatsappLogo } from "@phosphor-icons/react/WhatsappLogo";
@@ -979,25 +978,20 @@ export function ConnectionStatus({
   );
 }
 
-export function MobileContactBar({ href, page }) {
+export function MobileContactLink({ href, page }) {
   return (
-    <aside className="mobile-contact-bar" aria-label="Acceso rápido a orientación">
-      <div>
-        <CheckCircle size={18} weight="fill" aria-hidden="true" />
-        <span>Orientación personalizada</span>
-      </div>
-      <a
-        href={href}
-        target="_blank"
-        rel="noopener noreferrer"
-        referrerPolicy="no-referrer"
-        aria-label="Consultar por WhatsApp (se abre en una pestaña nueva)"
-        onClick={() => trackInteraction("whatsapp_click", { location: "mobile_bar", page })}
-      >
-        <WhatsappLogo size={20} weight="fill" aria-hidden="true" />
-        <span>Consultar</span>
-      </a>
-    </aside>
+    <a
+      className="mobile-contact-link"
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      referrerPolicy="no-referrer"
+      aria-label="Consultar por WhatsApp (se abre en una pestaña nueva)"
+      onClick={() => trackInteraction("whatsapp_click", { location: "mobile_bar", page })}
+    >
+      <WhatsappLogo size={20} weight="fill" aria-hidden="true" />
+      <span>Consultar</span>
+    </a>
   );
 }
 
