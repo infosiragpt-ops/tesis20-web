@@ -43,7 +43,7 @@ import {
   ConnectionStatus,
   FaqSection,
   ImageLightbox,
-  MobileContactBar,
+  MobileContactLink,
   QuickFacts,
   RouteAnnouncer,
   SafeImage,
@@ -1980,7 +1980,7 @@ export function App() {
       document.querySelector(".site-footer"),
       document.querySelector(".floating-whatsapp"),
       document.querySelector(".back-to-top"),
-      document.querySelector(".mobile-contact-bar"),
+      document.querySelector(".mobile-contact-link"),
     ].filter(Boolean);
     const previousStates = backgroundElements.map((element) => ({
       element,
@@ -2226,7 +2226,7 @@ export function App() {
         <WhatsappLogo size={34} weight="fill" aria-hidden="true" />
       </a>
       <BackToTop />
-      <MobileContactBar href={pageWhatsappHref} page={currentPage} />
+      <MobileContactLink href={pageWhatsappHref} page={currentPage} />
     </div>
   );
 }
