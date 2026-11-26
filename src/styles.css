@@ -105,8 +105,8 @@ footer[id] {
   position: sticky;
   top: 0;
   z-index: 50;
-  background: #fff1cc;
-  border-bottom: 1px solid rgba(167, 125, 41, 0.16);
+  background: var(--yellow);
+  border-bottom: 1px solid rgba(167, 125, 41, 0.18);
 }
 
 .header-inner {
